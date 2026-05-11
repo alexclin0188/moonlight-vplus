@@ -47,8 +47,8 @@ import androidx.core.net.toUri
 
 object UpdateManager {
     private const val TAG = "UpdateManager"
-    private const val GITHUB_API_URL = "https://api.github.com/repos/qiin2333/moonlight-vplus/releases/latest"
-    private const val GITHUB_RELEASE_PAGE = "https://github.com/qiin2333/moonlight-vplus/releases/latest"
+    private const val GITHUB_API_URL = "https://api.github.com/repos/alexclin0188/moonlight-vplus/releases/latest"
+    private const val GITHUB_RELEASE_PAGE = "https://github.com/alexclin0188/moonlight-vplus/releases/latest"
     private const val UPDATE_CHECK_INTERVAL = 4 * 60 * 60 * 1000L
 
     // 代理发现地址
