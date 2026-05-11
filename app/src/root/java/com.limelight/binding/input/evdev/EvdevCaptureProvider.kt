@@ -139,7 +139,7 @@ class EvdevCaptureProvider(
                                 // Other unhandled mouse buttons
                             }
                             else -> {
-                                val keyCode = EvdevTranslator.translateEvdevKeyCode(event.code)
+                                val keyCode = EvdevTranslator.translateEvdevKeyCode(event.code.toInt())
                                 if (keyCode.toInt() != 0) {
                                     listener.keyboardEvent(event.value != 0, keyCode)
                                 }

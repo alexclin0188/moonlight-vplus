@@ -206,6 +206,11 @@ class AppView : Activity(), AdapterFragmentCallbacks {
                 if (isFinishing || isChangingConfigurations) return@launch
 
                 populateAppGridWithCache()
+                appGridAdapter?.let { adapter ->
+                    currentRecyclerView?.let { rv ->
+                        completeRecyclerViewSetup(rv, adapter)
+                    }
+                }
                 startComputerUpdates()
 
                 try {
@@ -1455,11 +1460,23 @@ class AppView : Activity(), AdapterFragmentCallbacks {
     private fun setupRecyclerView(rv: RecyclerView) {
         currentRecyclerView = rv
 
+        val adapter = appGridAdapter
+        if (adapter == null) {
+            // The fragment can be restored before the async service binding has
+            // finished creating the adapter. Cache the RecyclerView and finish
+            // wiring it up once the adapter becomes available.
+            return
+        }
+
+        completeRecyclerViewSetup(rv, adapter)
+    }
+
+    private fun completeRecyclerViewSetup(rv: RecyclerView, adapter: AppGridAdapter) {
         // 更新selectionAnimator的RecyclerView和Adapter引用
-        selectionAnimator?.updateReferences(rv, appGridAdapter!!)
+        selectionAnimator?.updateReferences(rv, adapter)
 
         // 创建并设置bridge adapter
-        setupBridgeAdapter(rv)
+        setupBridgeAdapter(rv, adapter)
 
         // 配置布局管理器
         setupLayoutManager(rv)
@@ -1502,8 +1519,8 @@ class AppView : Activity(), AdapterFragmentCallbacks {
         }
     }
 
-    private fun setupBridgeAdapter(rv: RecyclerView) {
-        val bridge = AdapterRecyclerBridge(this, appGridAdapter)
+    private fun setupBridgeAdapter(rv: RecyclerView, adapter: AppGridAdapter) {
+        val bridge = AdapterRecyclerBridge(this, adapter)
         rv.adapter = bridge
 
         // 清理之前的bridge并保存新的引用

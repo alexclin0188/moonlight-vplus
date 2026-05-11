@@ -289,12 +289,12 @@
 
     <!-- 新添加的翻译 -->
     <string name="about_dialog_close">Cerrar</string>
-    <string name="about_dialog_description">Moonlight V+ es una versión mejorada del cliente Android de Moonlight, que proporciona una mejor experiencia de transmisión con características adicionales.</string>
+    <string name="about_dialog_description">Moonlight X es una versión mejorada del cliente Android de Moonlight, que proporciona una mejor experiencia de transmisión con características adicionales.</string>
     <string name="about_dialog_github">GitHub</string>
     <string name="about_dialog_project_info">Basado en el proyecto Moonlight-Android, mejorado por el equipo V+</string>
     <string name="about_dialog_star">Destacar Proyecto</string>
     <string name="about_dialog_qq">Unirse al Grupo QQ</string>
-    <string name="about_dialog_thanks">¡Gracias por usar Moonlight V+! Si te gusta, por favor danos una estrella en GitHub.</string>
+    <string name="about_dialog_thanks">¡Gracias por usar Moonlight X! Si te gusta, por favor danos una estrella en GitHub.</string>
     <string name="accessibility_service_label">Servicio de Teclado Moonlight</string>
     <string name="accessibility_service_description">Para proporcionar una experiencia completa de juegos de PC con tu teclado externo, este servicio necesita capturar todas las teclas del teclado.\n\nUna vez habilitado, podrás usar todos los atajos del sistema como las teclas Win/Command, Alt+Tab, etc., igual que en tu computadora.\n\nTen la seguridad de que este servicio solo se usa para enviar operaciones de teclas directamente a tu computadora, y no grabaremos ni subiremos ningún contenido de tu entrada.</string>
     <string name="add_resolution">Agregar Resolución</string>
@@ -394,7 +394,7 @@
     <string name="perf_fps_title">📊 Información de Tasa de Cuadros</string>
     <string name="perf_fps_info">Rx FPS: Tasa de Cuadros Recibida\n• Número de cuadros de video recibidos del host\n• Debería ser estable bajo condiciones ideales\n\nRd FPS: Tasa de Cuadros Renderizada\n• Número de cuadros realmente renderizados a pantalla\n• Puede reducirse debido al rendimiento del dispositivo\n\nIndicadores de Rendimiento:\n• Valores cercanos indican buen rendimiento\n• FPS de renderizado bajo puede afectar la fluidez</string>
     <string name="perf_host_latency_title">🖥️ Información de Latencia del Host</string>
-    <string name="perf_host_latency_info">La latencia del host representa el tiempo para que el host del juego procese cuadros.\n\nRango de Latencia:\n• &lt;5ms: Rendimiento fuerte del host\n• 5-10ms: Buen rendimiento del host\n• 10-20ms: Rendimiento justo del host\n• &gt;20ms: Rendimiento débil del host\n\nFactores que Influyen:\n• Rendimiento del hardware del host\n• Carga del juego\n• Uso de programas en segundo plano\n\nVer.V+:\n• Indica información de versión\n• Se muestra cuando no hay datos de latencia del host disponibles</string>
+    <string name="perf_host_latency_info">La latencia del host representa el tiempo para que el host del juego procese cuadros.\n\nRango de Latencia:\n• &lt;5ms: Rendimiento fuerte del host\n• 5-10ms: Buen rendimiento del host\n• 10-20ms: Rendimiento justo del host\n• &gt;20ms: Rendimiento débil del host\n\nFactores que Influyen:\n• Rendimiento del hardware del host\n• Carga del juego\n• Uso de programas en segundo plano\n\nVer.X:\n• Indica información de versión\n• Se muestra cuando no hay datos de latencia del host disponibles</string>
     <string name="perf_network_latency_title">🌐 Información de Latencia de Red</string>
     <string name="perf_network_latency_info">La latencia de red representa el tiempo de ida y vuelta para paquetes de datos del host al dispositivo.\n\nRango de Latencia:\n• &lt;20ms: Excelente\n• 20-50ms: Bueno\n• 50-100ms: Aceptable\n• &gt;100ms: Pobre\n\nAncho de Banda:\n• Representa la velocidad de transmisión de red\n• Afecta la calidad máxima de video\n\nValor ±:\n• Representa el rango de fluctuación de latencia\n• Valores más pequeños indican más estabilidad</string>
     <string name="perf_packet_loss_title">📶 Información de Pérdida de Paquetes</string>
@@ -484,7 +484,7 @@
     <string name="title_fixed_x_velocity">Establecer velocidad X (horizontal) fija</string>
     <string name="title_import_super_config">Importar Configuración</string>
     <string name="title_merge_super_config">Fusionar Configuración</string>
-    <string name="title_moonlight_vplus_pc_download">Descarga de Moonlight V+ PC</string>
+    <string name="title_moonlight_X_pc_download">Descarga de Moonlight X PC</string>
     <string name="title_perf_overlay_display_items">Elementos de Visualización de Superposición de Rendimiento</string>
     <string name="title_perf_overlay_orientation">Orientación de Superposición de Rendimiento</string>
     <string name="title_perf_overlay_position">Posición de Superposición de Rendimiento</string>

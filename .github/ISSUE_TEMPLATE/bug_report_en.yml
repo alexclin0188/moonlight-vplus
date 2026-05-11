@@ -8,11 +8,11 @@ body:
       value: |
         ## 📋 Before You Submit
         Thank you for taking the time to report this issue!
-        The name of this project is **Foundation Moonlight Power Plus / V+ / Vplus**, and we may use any of these names in our future communication.
+        The name of this project is **Moonlight X**.
 
         **Please check before submitting:**
         - [ ] I have searched existing issues to avoid duplicates
-        - [ ] This issue is specific to **Moonlight V+**, not the original Moonlight or other versions
+        - [ ] This issue is specific to **Moonlight X**, not the original Moonlight or other versions
         ---
 
   - type: dropdown
@@ -50,7 +50,7 @@ body:
       label: "🔄 Steps to Reproduce"
       description: "Provide detailed steps to reproduce the issue"
       placeholder: |
-        1. Open Moonlight V+
+        1. Open Moonlight X
         2. Connect to host PC
         3. Start streaming game
         4. Double-click on the touchpad with one finger and drag
@@ -111,7 +111,7 @@ body:
   - type: input
     id: moonlight-version
     attributes:
-      label: "🌙 Moonlight V+ Version"
+      label: "🌙 Moonlight X Version"
       description: "App version (Settings → About)"
       placeholder: "e.g. v12.5.1"
     validations:
@@ -201,7 +201,7 @@ body:
       options:
         - "Not tested"
         - "Yes, same issue exists"
-        - "No, only on Moonlight V+"
+        - "No, only on Moonlight X"
     validations:
       required: false
 
@@ -240,3 +240,4 @@ body:
         - Connection method: Local / Internet / VPN
     validations:
       required: false
+

@@ -1,4 +1,4 @@
-Moonlight V+ is an enhanced version of the popular Moonlight game streaming app, featuring advanced capabilities and optimizations for the ultimate streaming experience.
+Moonlight X is an enhanced version of the popular Moonlight game streaming app, featuring advanced capabilities and optimizations for the ultimate streaming experience.
 
 This app streams games, programs, or your full desktop from your PC or <a href="https://github.com/LizardByte/Sunshine">Sunshine</a> on your local network or the Internet. Mouse, keyboard, and controller input is sent from your Android device to the PC.
 
@@ -49,3 +49,4 @@ See the full setup guide https://bit.ly/1skHFjN for:
 * Using a controller connected directly to your PC
 * Streaming your full desktop
 * Adding custom apps to stream
+

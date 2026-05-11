@@ -421,9 +421,9 @@
     <!-- About -->
     <string name="title_about_mode">Sobre</string>
     <string name="summary_about_mode">Ver informações da app e detalhes do projeto</string>
-    <string name="about_dialog_description">Moonlight V+ é um cliente aprimorado construído para Foundation Sunshine, proporcionando a melhor experiência de streaming de jogos.</string>
+    <string name="about_dialog_description">Moonlight X é um cliente aprimorado construído para Foundation Sunshine, proporcionando a melhor experiência de streaming de jogos.</string>
     <string name="about_dialog_project_info">Baseado no projeto de código aberto Moonlight-Android, criado pela comunidade Foundation</string>
-    <string name="about_dialog_thanks">Obrigado por escolher o Moonlight V+! Se você achar útil, por favor dê-nos uma estrela no GitHub ⭐</string>
+    <string name="about_dialog_thanks">Obrigado por escolher o Moonlight X! Se você achar útil, por favor dê-nos uma estrela no GitHub ⭐</string>
     <string name="about_dialog_github">GitHub</string>
     <string name="about_dialog_star">Dar estrela ao projeto</string>
     <string name="about_dialog_qq">Entrar no grupo QQ</string>
@@ -506,8 +506,8 @@
     <string name="title_checkbox_rotable_screen">Seguir rotação da tela</string>
     <string name="summary_checkbox_rotable_screen">Quando ativado, a orientação da exibição será ajustada quando o dispositivo girar</string>
     
-    <!-- Moonlight V+ PC download -->
-    <string name="title_moonlight_vplus_pc_download">Download do Moonlight V+ PC</string>
+    <!-- Moonlight X PC download -->
+    <string name="title_moonlight_X_pc_download">Download do Moonlight X PC</string>
     
     <!-- Analytics settings -->
     <string name="title_enable_analytics">Ativar análise</string>

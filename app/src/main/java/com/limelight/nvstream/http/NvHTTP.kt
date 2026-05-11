@@ -949,13 +949,17 @@ class NvHTTP(
         }
 
         private fun verifyResponseStatus(xpp: XmlPullParser) {
-            val statusCode = xpp.getAttributeValue(XmlPullParser.NO_NAMESPACE, "status_code").toLong().toInt()
+            val rawStatusCode = xpp.getAttributeValue(XmlPullParser.NO_NAMESPACE, "status_code")
+            val statusCode = rawStatusCode?.toIntOrNull() ?: 599
             if (statusCode != 200) {
                 var statusMsg = xpp.getAttributeValue(XmlPullParser.NO_NAMESPACE, "status_message")
+                    ?: "Missing status_message in host response"
                 var code = statusCode
-                if (code == -1 && "Invalid" == statusMsg) {
+                if (code == -1 && statusMsg == "Invalid") {
                     code = 418
                     statusMsg = "Missing audio capture device. Reinstall GeForce Experience."
+                } else if (rawStatusCode == null) {
+                    statusMsg = "Missing status_code in host response"
                 }
                 throw HostHttpResponseException(code, statusMsg)
             }

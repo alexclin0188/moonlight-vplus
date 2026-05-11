@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="./app/src/main/res/drawable/vplus.webp" width="100" alt="Moonlight V+ Logo">
+  <img src="./app/src/main/res/drawable/vplus.webp" width="100" alt="Moonlight X Logo">
 
-  # Moonlight V+
+  # Moonlight X
 
-  [![GitHub Release](https://img.shields.io/github/v/release/qiin2333/moonlight-android?label=latest&style=flat-square)](https://github.com/qiin2333/moonlight-android/releases/latest)
+  [![GitHub Release](https://img.shields.io/github/v/release/qiin2333/moonlight-x?label=latest&style=flat-square)](https://github.com/qiin2333/moonlight-x/releases/latest)
   [![Android](https://img.shields.io/badge/Android-5.0+-34A853?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/about/versions)
   [![License](https://img.shields.io/badge/license-GPL%20v3-EF9421?style=flat-square)](LICENSE.txt)
-  [![GitHub Stars](https://img.shields.io/github/stars/qiin2333/moonlight-android?style=flat-square)](https://github.com/qiin2333/moonlight-android/stargazers)
-  [![Downloads](https://img.shields.io/github/downloads/qiin2333/moonlight-android/total?style=flat-square&color=blue)](https://github.com/qiin2333/moonlight-android/releases)
+  [![GitHub Stars](https://img.shields.io/github/stars/qiin2333/moonlight-x?style=flat-square)](https://github.com/qiin2333/moonlight-x/stargazers)
+  [![Downloads](https://img.shields.io/github/downloads/qiin2333/moonlight-x/total?style=flat-square&color=blue)](https://github.com/qiin2333/moonlight-x/releases)
 
   **基于 [Moonlight](https://github.com/moonlight-stream/moonlight-android) 的增强版 Android 游戏串流客户端**
 
@@ -29,7 +29,7 @@
 
 ## 与上游 Moonlight 的区别
 
-Moonlight V+ 在 [moonlight-android](https://github.com/moonlight-stream/moonlight-android) 的基础上增加了大量实用功能，同时保持与原版串流协议的完全兼容。
+Moonlight X 在 [moonlight-android](https://github.com/moonlight-stream/moonlight-android) 的基础上增加了大量实用功能，同时保持与原版串流协议的完全兼容。
 
 | 类别 | 功能 | 说明 | 起始版本 |
 |------|------|------|:--------:|
@@ -67,13 +67,13 @@ Moonlight V+ 在 [moonlight-android](https://github.com/moonlight-stream/moonlig
 
 ### 安装
 
-从 [Releases](https://github.com/qiin2333/moonlight-android/releases/latest) 下载最新 APK，安装后按应用内引导完成配对即可。
+从 [Releases](https://github.com/qiin2333/moonlight-x/releases/latest) 下载最新 APK，安装后按应用内引导完成配对即可。
 
 ### 从源码编译
 
 ```bash
-git clone https://github.com/qiin2333/moonlight-android.git
-cd moonlight-android
+git clone https://github.com/qiin2333/moonlight-x.git
+cd moonlight-x
 ./gradlew assembleRelease
 ```
 
@@ -117,3 +117,4 @@ cd moonlight-android
 <div align="center">
   <sub>觉得有用？给个 ⭐ 支持一下吧！</sub>
 </div>
+

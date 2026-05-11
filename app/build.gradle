@@ -122,9 +122,9 @@ android {
 
     buildTypes {
         debug {
-            applicationIdSuffix ".vplus_debug"
-            resValue "string", "app_label", "Moonlight V+"
-            resValue "string", "app_label_root", "Moonlight V+"
+            applicationIdSuffix ".x_debug"
+            resValue "string", "app_label", "Moonlight X"
+            resValue "string", "app_label_root", "Moonlight X"
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -161,8 +161,8 @@ android {
             //
             // TL;DR: Leave the following line alone!
             applicationIdSuffix ".qiin"
-            resValue "string", "app_label", "Moonlight"
-            resValue "string", "app_label_root", "Moonlight (Root)"
+            resValue "string", "app_label", "Moonlight X"
+            resValue "string", "app_label_root", "Moonlight X (Root)"
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -218,3 +218,4 @@ dependencies {
     implementation libs.kotlinx.coroutines.android
     implementation libs.androidx.lifecycle.runtime.ktx
 }
+

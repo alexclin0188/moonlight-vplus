@@ -839,11 +839,12 @@
             android:title="@string/check_for_updates"
             android:summary="@string/summary_check_for_updates" />
         <com.limelight.preferences.WebLauncherPreference
-            android:title="@string/title_moonlight_vplus_pc_download"
+            android:title="@string/title_moonlight_X_pc_download"
             url="https://github.com/qiin2333/moonlight-qt"/>
         <com.limelight.preferences.WebLauncherPreference
             android:title="@string/title_privacy_policy"
             android:summary="@string/summary_privacy_policy"
-            url="https://github.com/qiin2333/moonlight-vplus/blob/master/PRIVACY_POLICY.md"/>
+            url="https://github.com/qiin2333/moonlight-x/blob/master/PRIVACY_POLICY.md"/>
     </PreferenceCategory>
 </PreferenceScreen>
+

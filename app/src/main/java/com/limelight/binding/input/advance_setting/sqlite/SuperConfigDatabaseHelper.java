@@ -139,7 +139,7 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
     private static final int DATABASE_OLD_VERSION_4 = 4;
     private static final int DATABASE_OLD_VERSION_5 = 5;
     private static final int DATABASE_OLD_VERSION_6 = 6;
-    private static final int DATABASE_VERSION = 8;
+    private static final int DATABASE_VERSION = 9;
     private SQLiteDatabase writableDataBase;
     private SQLiteDatabase readableDataBase;
 
@@ -203,7 +203,10 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
                 "game_vibrator TEXT," +
                 "button_vibrator TEXT," +
                 "mouse_wheel_speed INTEGER," +
-                PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH + " TEXT DEFAULT 'false'" +
+                PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH + " TEXT DEFAULT 'false'," +
+                PageConfigController.COLUMN_INT_GLOBAL_OPACITY + " INTEGER DEFAULT 100," +
+                PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " INTEGER," +
+                PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER" +
                 ")";
 
         db.execSQL(createConfigTable);
@@ -245,6 +248,13 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         if (oldVersion < 8) {
             db.execSQL("ALTER TABLE element ADD COLUMN extra_attributes TEXT;");
         }
+        if (oldVersion < 9) {
+            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_OPACITY + " INTEGER DEFAULT 100;");
+            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " INTEGER;");
+            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER;");
+        }
+        db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = -1;");
+        db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = -1;");
     }
 
     /**
@@ -326,6 +336,10 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
                         element.getAsJsonObject().addProperty("extra_attributes", "{}");
                     }
                 }
+            case 8:
+                settingsJson.addProperty(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100);
+                settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
+                settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
             case DATABASE_VERSION:
                 break; // 到达最新版本，停止
             default:
@@ -339,6 +353,18 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         exportFile.setVersion(DATABASE_VERSION); // 版本号也更新为最新的
 
         return true;
+    }
+
+    private void normalizeGlobalStyleSettings(ContentValues settingValues) {
+        Long borderColor = settingValues.getAsLong(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
+        if (borderColor != null && borderColor == -1L) {
+            settingValues.putNull(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
+        }
+
+        Long textColor = settingValues.getAsLong(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
+        if (textColor != null && textColor == -1L) {
+            settingValues.putNull(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
+        }
     }
 
     public void insertElement(ContentValues values) {
@@ -772,6 +798,7 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
 
         ContentValues settingValues = gson.fromJson(settingString, ContentValues.class);
         ContentValues[] elements = gson.fromJson(elementsString, ContentValues[].class);
+        normalizeGlobalStyleSettings(settingValues);
 
         // --- 预处理，建立从旧ID到内存中ContentValues对象的映射 ---
         Map<Long, ContentValues> oldIdToObjectMap = new HashMap<>();

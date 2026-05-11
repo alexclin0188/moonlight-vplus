@@ -8,7 +8,7 @@ body:
       value: |
         ## 💡 功能建议
         感谢您花时间提出新功能建议！
-        此项目的名称为 **基地版Moonlight 威力加强版 / V+ / Vplus**，后续交流可能会使用其中任一名称。
+        此项目的名称为 **Moonlight X**。
 
         **提交前请检查**
         - [ ] 我已搜索现有 issues，避免重复
@@ -136,3 +136,4 @@ body:
       placeholder: "例如: Samsung Galaxy S23 / OnePlus 12"
     validations:
       required: false
+

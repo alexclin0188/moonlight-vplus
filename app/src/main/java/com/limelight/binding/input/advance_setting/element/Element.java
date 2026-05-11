@@ -121,6 +121,7 @@ public abstract class Element extends View {
     private boolean isClick = true;
     protected int editColor = EDIT_COLOR_EDIT;
     private ElementSelectedCallBack elementSelectedCallBack;
+    private int opacityPercent = 100;
 
 
     public Element(Map<String, Object> attributesMap, ElementController elementController, Context context) {
@@ -131,6 +132,10 @@ public abstract class Element extends View {
         this.elementType = ((Long) attributesMap.get(Element.COLUMN_INT_ELEMENT_TYPE)).intValue();
         this.layer = ((Long) attributesMap.get(COLUMN_INT_ELEMENT_LAYER)).intValue();
         this.elementController = elementController;
+        if (attributesMap.containsKey(COLUMN_INT_ELEMENT_OPACITY)) {
+            opacityPercent = ((Long) attributesMap.get(COLUMN_INT_ELEMENT_OPACITY)).intValue();
+        }
+        setElementOpacity(opacityPercent);
 
     }
 
@@ -235,6 +240,20 @@ public abstract class Element extends View {
 
     public void setElementSelectedCallBack(ElementSelectedCallBack elementSelectedCallBack) {
         this.elementSelectedCallBack = elementSelectedCallBack;
+    }
+
+    public void setElementOpacity(int opacityPercent) {
+        if (opacityPercent < 0) {
+            opacityPercent = 0;
+        } else if (opacityPercent > 100) {
+            opacityPercent = 100;
+        }
+        this.opacityPercent = opacityPercent;
+        setAlpha(opacityPercent / 100f);
+    }
+
+    public int getElementOpacity() {
+        return opacityPercent;
     }
 
     @Override

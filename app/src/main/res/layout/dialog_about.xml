@@ -31,7 +31,7 @@
             android:id="@+id/text_app_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Moonlight V+"
+            android:text="Moonlight X"
             android:textSize="26sp"
             android:textStyle="bold"
             android:textColor="@color/app_dialog_title_color"
@@ -90,3 +90,4 @@
     </LinearLayout>
 
 </ScrollView>
+

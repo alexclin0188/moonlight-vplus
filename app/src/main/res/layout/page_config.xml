@@ -20,7 +20,7 @@
             <LinearLayout
                 android:orientation="vertical"
                 android:layout_width="match_parent"
-                android:layout_height="60dp"
+                android:layout_height="wrap_content"
                 android:layout_marginVertical="5dp">
                 <FrameLayout
                     android:orientation="horizontal"
@@ -36,7 +36,7 @@
                 <Spinner
                     android:id="@+id/config_select_spinner"
                     android:layout_width="match_parent"
-                    android:layout_height="25dp"
+                    android:layout_height="wrap_content"
                     android:max="10"
                     android:min="1"
                     app:progress="10"/>
@@ -150,6 +150,66 @@
                     android:layout_height="match_parent"
                     android:checked="true"/>
             </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="30dp"
+                android:gravity="center_vertical"
+                android:textStyle="bold"
+                android:text="@string/layout_page_config_text_global_style" />
+
+            <com.limelight.binding.input.advance_setting.superpage.NumberSeekbar
+                android:id="@+id/global_opacity_number_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginVertical="5dp"
+                app:text="@string/apptext_pg_config_global_opacity"
+                app:max="100"
+                app:min="1"
+                app:progress="100" />
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginVertical="5dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/layout_page_config_text_global_border_color"/>
+                <com.limelight.binding.input.advance_setting.superpage.ElementEditText
+                    android:id="@+id/global_border_color_edit"
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="11sp"
+                    android:background="@drawable/color_input_background"
+                    android:paddingHorizontal="6dp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="40dp"
+                android:layout_marginVertical="5dp">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center_vertical"
+                    android:layout_weight="1"
+                    android:text="@string/layout_page_config_text_global_text_color"/>
+                <com.limelight.binding.input.advance_setting.superpage.ElementEditText
+                    android:id="@+id/global_text_color_edit"
+                    android:layout_width="80dp"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textSize="11sp"
+                    android:background="@drawable/color_input_background"
+                    android:paddingHorizontal="6dp" />
+            </LinearLayout>
+
             <LinearLayout
                 android:orientation="horizontal"
                 android:layout_width="match_parent"

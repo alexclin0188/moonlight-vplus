@@ -79,9 +79,9 @@ class AboutDialogPreference : Preference {
     private fun getAppName(context: Context): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.applicationInfo?.loadLabel(context.packageManager)?.toString() ?: "Moonlight V+"
+            packageInfo.applicationInfo?.loadLabel(context.packageManager)?.toString() ?: "Moonlight X"
         } catch (e: PackageManager.NameNotFoundException) {
-            "Moonlight V+"
+            "Moonlight X"
         }
     }
 
@@ -97,7 +97,8 @@ class AboutDialogPreference : Preference {
     }
 
     companion object {
-        private const val GITHUB_REPO_URL = "https://github.com/qiin2333/moonlight-vplus"
-        private const val GITHUB_STAR_URL = "https://github.com/qiin2333/moonlight-vplus/stargazers"
+        private const val GITHUB_REPO_URL = "https://github.com/qiin2333/moonlight-x"
+        private const val GITHUB_STAR_URL = "https://github.com/qiin2333/moonlight-x/stargazers"
     }
 }
+

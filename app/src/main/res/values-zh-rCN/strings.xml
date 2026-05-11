@@ -148,7 +148,7 @@
     <string name="game_menu_bitrate_range">码率范围:</string>
     <string name="game_menu_bitrate_tip">拖动滑动条实时调整码率, 需要更高的码率请到设置菜单操作。</string>
     <!-- Add computer manually activity -->
-    <string name="title_add_pc"> new\nDianLao () </string>
+    <string name="title_add_pc">添加远程主机</string>
     <string name="title_add_pc_choose">添加电脑</string>
     <string name="addpc_manual">输入 IP 地址</string>
     <string name="addpc_qr_scan">扫描二维码</string>
@@ -416,14 +416,14 @@
     <string name="pacing_smoothness">优先视频流畅度（可能会显著增大延迟）</string>
     <string name="summary_setup_guide">查看有关如何设置游戏电脑以进行流传输的说明。</string>
     <string name="title_privacy_policy">隐私政策</string>
-    <string name="summary_privacy_policy">查看 Moonlight 隐私政策。</string>
-    <string name="title_about_mode">关于 Moonlight V+</string>
-    <string name="summary_about_mode">请前往GitHub查看，喜欢的话点个Star支持一下我们吧。</string>
+    <string name="summary_privacy_policy">查看 Moonlight 隐私政策</string>
+    <string name="title_about_mode">关于 Moonlight X</string>
+    <string name="summary_about_mode">请前往GitHub查看，喜欢的话点个Star支持一下我们吧</string>
 
     <!-- About dialog strings -->
-    <string name="about_dialog_description">Moonlight V+ 是专为 Foundation Sunshine 打造的增强客户端，为您带来极致的游戏串流体验。</string>
+    <string name="about_dialog_description">Moonlight X 是专为 Foundation Sunshine 打造的增强客户端，为您带来极致的游戏串流体验。</string>
     <string name="about_dialog_project_info">基于 Moonlight-Android 开源项目，由基地社区倾力打造</string>
-    <string name="about_dialog_thanks">感谢您选择 Moonlight V+！如果觉得好用，欢迎在 GitHub 上点个 Star 支持我们 ⭐</string>
+    <string name="about_dialog_thanks">感谢您选择 Moonlight X！如果觉得好用，欢迎在 GitHub 上点个 Star 支持我们 ⭐</string>
     <string name="about_dialog_star">Star 项目</string>
     <string name="about_dialog_qq">加入QQ群</string>
     <string name="about_dialog_close">关闭</string>
@@ -595,8 +595,8 @@
     <string name="title_checkbox_rotable_screen">跟随屏幕旋转</string>
     <string name="summary_checkbox_rotable_screen">启用后，设备旋转时会同步调整显示方向。</string>
 
-    <!-- Moonlight V+ PC download -->
-    <string name="title_moonlight_vplus_pc_download">Moonlight V+ PC版下载</string>
+    <!-- Moonlight X PC download -->
+    <string name="title_moonlight_X_pc_download">Moonlight X PC版下载</string>
 
     <!-- Tip strings -->
     <string name="tip_esc_exit">💡 串流小课堂：使用"退出"按钮可以快速完全地退出串流，让屏幕恢复到串流前的状态哦～</string>
@@ -698,7 +698,7 @@
     <string name="perf_decode_latency_title">⏱️ 解码延迟信息</string>
     <string name="perf_decode_latency_info">解码延迟表示解码视频帧所需的时间。\n\n延迟范围：\n• &lt;5ms：极佳解码器性能\n• 5–10ms：良好解码器性能\n• 10–20ms：一般解码器性能\n• &gt;20ms：较差解码器性能\n\n影响因素：\n• 硬件解码器性能\n• 视频编码复杂度\n• 设备CPU/GPU负载\n• 当解码延迟低于10ms时更应关注设备的其他性能(比如帧率、分辨率、画质等)</string>
     <string name="perf_host_latency_title">🖥 主机延迟信息</string>
-    <string name="perf_host_latency_info">主机延迟表示主机处理帧所需的时间。\n\n延迟范围：\n• &lt;5ms：极佳主机性能\n• 5–10ms：良好主机性能\n• 10–20ms：一般主机性能\n• &gt;20ms：较差主机性能\n\n影响因素：\n• 主机硬件性能\n• 游戏负载\n• 后台程序使用\n\nVer.V+：\n• 表示版本信息\n• 当没有主机延迟数据时显示</string>
+    <string name="perf_host_latency_info">主机延迟表示主机处理帧所需的时间。\n\n延迟范围：\n• &lt;5ms：极佳主机性能\n• 5–10ms：良好主机性能\n• 10–20ms：一般主机性能\n• &gt;20ms：较差主机性能\n\n影响因素：\n• 主机硬件性能\n• 游戏负载\n• 后台程序使用\n\nVer.X：\n• 表示版本信息\n• 当没有主机延迟数据时显示</string>
     <!-- Performance Overlay Info Dialogs - 1% Low FPS -->
     <string name="perf_one_percent_low_title">📉 1%Low帧信息</string>
     <string name="perf_one_percent_low_info">1%Low帧通过第99百分位帧间隔来衡量帧率平滑性。\n\n原理：\n• 记录每帧渲染间隔\n• 排序后取最慢的1%%帧时间\n• 转换为FPS：1000 / P99间隔\n\n判读：\n• 接近渲染帧率：非常平滑\n• 渲染帧率的70–90%%：轻微卡顿\n• 低于70%%：明显卡顿\n\n用于检测平均帧率无法反映的微卡顿。</string>
@@ -948,6 +948,10 @@
     <string name="layout_page_config_text_f4651">按键震动</string>
     <string name="layout_page_config_text_66ab5">新增</string>
     <string name="layout_page_config_text_df603">退出王冠配置</string>
+    <string name="layout_page_config_text_global_style">全局按键样式</string>
+    <string name="layout_page_config_text_global_border_color">边框颜色</string>
+    <string name="layout_page_config_text_global_text_color">文字颜色</string>
+    <string name="apptext_pg_config_global_opacity">全局透明度</string>
     <string name="layout_page_device_text_5f411">返回</string>
     <string name="layout_page_device_text_d81bb">无</string>
     <string name="layout_page_device_text_01e77">触控模式</string>
@@ -1154,7 +1158,7 @@
     <string name="update_install_permission_msg">为了自动安装更新，需要授予应用安装权限。\n\n点击确定前往设置页面开启权限，返回后将自动开始下载。</string>
     <string name="toast_cannot_open_settings">无法打开设置页面</string>
     <string name="toast_download_service_unavailable">系统下载服务不可用</string>
-    <string name="update_download_notification_title">Moonlight V+ 更新下载</string>
+    <string name="update_download_notification_title">Moonlight X 更新下载</string>
     <string name="toast_download_started">已开始下载，下载完成后点击通知栏即可安装</string>
     <string name="toast_download_failed">下载失败: %s</string>
     <string name="update_downloading_title">正在下载更新</string>

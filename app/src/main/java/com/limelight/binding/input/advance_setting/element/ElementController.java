@@ -365,12 +365,142 @@ public class ElementController {
         contentValues.put(Element.COLUMN_LONG_CONFIG_ID, configId);
         contentValues.put(Element.COLUMN_LONG_ELEMENT_ID, elementId);
         controllerManager.getSuperConfigDatabaseHelper().insertElement(contentValues);
-
-        return loadElement(elementId);
+        Element element = loadElement(elementId);
+        applyCurrentGlobalStylesToElement(element);
+        return element;
     }
 
     protected void updateElement(long elementId, ContentValues contentValues) {
         controllerManager.getSuperConfigDatabaseHelper().updateElement(currentConfigId, elementId, contentValues);
+    }
+
+    public void applyGlobalOpacity(int opacityPercent) {
+        for (Element element : elements) {
+            element.setElementOpacity(opacityPercent);
+            ContentValues contentValues = new ContentValues();
+            contentValues.put(Element.COLUMN_INT_ELEMENT_OPACITY, opacityPercent);
+            updateElement(element.elementId, contentValues);
+        }
+    }
+
+    public void applyGlobalBorderColor(int color) {
+        for (Element element : elements) {
+            applyBorderColorToElement(element, color);
+            element.save();
+            element.invalidate();
+        }
+    }
+
+    public void applyGlobalTextColor(int color) {
+        for (Element element : elements) {
+            applyTextColorToElement(element, color);
+            element.save();
+            element.invalidate();
+        }
+    }
+
+    private void applyCurrentGlobalStylesToElement(Element element) {
+        if (element == null) {
+            return;
+        }
+
+        int globalOpacity = ((Long) controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                PageConfigController.COLUMN_INT_GLOBAL_OPACITY,
+                100L
+        )).intValue();
+        element.setElementOpacity(globalOpacity);
+        ContentValues opacityValues = new ContentValues();
+        opacityValues.put(Element.COLUMN_INT_ELEMENT_OPACITY, globalOpacity);
+        updateElement(element.elementId, opacityValues);
+
+        Integer globalBorderColor = queryOptionalGlobalColor(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
+        if (globalBorderColor != null) {
+            applyBorderColorToElement(element, globalBorderColor);
+        }
+
+        Integer globalTextColor = queryOptionalGlobalColor(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
+        if (globalTextColor != null) {
+            applyTextColorToElement(element, globalTextColor);
+        }
+
+        if (globalBorderColor != null || globalTextColor != null) {
+            element.save();
+            element.invalidate();
+        }
+    }
+
+    private Integer queryOptionalGlobalColor(String columnName) {
+        Object value = controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                columnName,
+                null
+        );
+        if (value instanceof Long) {
+            return ((Long) value).intValue();
+        }
+        return null;
+    }
+
+    private void applyBorderColorToElement(Element element, int color) {
+        if (element instanceof DigitalCommonButton) {
+            ((DigitalCommonButton) element).setElementNormalColor(color);
+            ((DigitalCommonButton) element).setElementPressedColor(color);
+        } else if (element instanceof DigitalSwitchButton) {
+            ((DigitalSwitchButton) element).setElementNormalColor(color);
+            ((DigitalSwitchButton) element).setElementPressedColor(color);
+        } else if (element instanceof DigitalMovableButton) {
+            ((DigitalMovableButton) element).setElementNormalColor(color);
+            ((DigitalMovableButton) element).setElementPressedColor(color);
+        } else if (element instanceof DigitalCombineButton) {
+            ((DigitalCombineButton) element).setElementNormalColor(color);
+            ((DigitalCombineButton) element).setElementPressedColor(color);
+        } else if (element instanceof GroupButton) {
+            ((GroupButton) element).setElementNormalColor(color);
+            ((GroupButton) element).setElementPressedColor(color);
+        } else if (element instanceof DigitalPad) {
+            ((DigitalPad) element).setElementNormalColor(color);
+            ((DigitalPad) element).setElementPressedColor(color);
+        } else if (element instanceof AnalogStick) {
+            ((AnalogStick) element).setElementNormalColor(color);
+            ((AnalogStick) element).setElementPressedColor(color);
+        } else if (element instanceof DigitalStick) {
+            ((DigitalStick) element).setElementNormalColor(color);
+            ((DigitalStick) element).setElementPressedColor(color);
+        } else if (element instanceof InvisibleAnalogStick) {
+            ((InvisibleAnalogStick) element).setElementNormalColor(color);
+            ((InvisibleAnalogStick) element).setElementPressedColor(color);
+        } else if (element instanceof InvisibleDigitalStick) {
+            ((InvisibleDigitalStick) element).setElementNormalColor(color);
+            ((InvisibleDigitalStick) element).setElementPressedColor(color);
+        } else if (element instanceof WheelPad) {
+            ((WheelPad) element).setElementNormalColor(color);
+            ((WheelPad) element).setElementPressedColor(color);
+        }
+    }
+
+    private void applyTextColorToElement(Element element, int color) {
+        if (element instanceof DigitalCommonButton) {
+            ((DigitalCommonButton) element).setElementNormalTextColor(color);
+            ((DigitalCommonButton) element).setElementPressedTextColor(color);
+        } else if (element instanceof DigitalSwitchButton) {
+            ((DigitalSwitchButton) element).setElementNormalTextColor(color);
+            ((DigitalSwitchButton) element).setElementPressedTextColor(color);
+        } else if (element instanceof DigitalMovableButton) {
+            ((DigitalMovableButton) element).setElementNormalTextColor(color);
+            ((DigitalMovableButton) element).setElementPressedTextColor(color);
+        } else if (element instanceof DigitalCombineButton) {
+            ((DigitalCombineButton) element).setElementNormalTextColor(color);
+            ((DigitalCombineButton) element).setElementPressedTextColor(color);
+        } else if (element instanceof GroupButton) {
+            ((GroupButton) element).setElementNormalTextColor(color);
+            ((GroupButton) element).setElementPressedTextColor(color);
+        } else if (element instanceof WheelPad) {
+            ((WheelPad) element).setElementNormalTextColor(color);
+            ((WheelPad) element).setElementPressedTextColor(color);
+        } else if (element instanceof SimplifyPerformance) {
+            ((SimplifyPerformance) element).setElementTextColor(color);
+        }
     }
 
     protected void deleteElement(Element element) {

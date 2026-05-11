@@ -207,7 +207,7 @@
     <string name="game_menu_bitrate_tip">Drag the slider to adjust bitrate in real-time. Higher values mean better quality but require better network.</string>
 
     <!-- Add computer manually activity -->
-    <string name="title_add_pc">Add PC Manually</string>
+    <string name="title_add_pc">Add Remote Host</string>
     <string name="title_add_pc_choose">Add Computer</string>
     <string name="addpc_manual">Enter IP Address</string>
     <string name="addpc_qr_scan">Scan QR Code</string>
@@ -505,9 +505,9 @@
     <string name="summary_about_mode">View app information and project details</string>
     
     <!-- About dialog strings -->
-    <string name="about_dialog_description">Moonlight V+ is an enhanced client built for Foundation Sunshine, delivering the ultimate game streaming experience.</string>
+    <string name="about_dialog_description">Moonlight X is an enhanced client built for Foundation Sunshine, delivering the ultimate game streaming experience.</string>
     <string name="about_dialog_project_info">Based on Moonlight-Android open source project, crafted by the Foundation community</string>
-    <string name="about_dialog_thanks">Thank you for choosing Moonlight V+! If you find it useful, please give us a star on GitHub ⭐</string>
+    <string name="about_dialog_thanks">Thank you for choosing Moonlight X! If you find it useful, please give us a star on GitHub ⭐</string>
     <string name="about_dialog_github">GitHub</string>
     <string name="about_dialog_star">Star Project</string>
     <string name="about_dialog_qq">Join QQ Group</string>
@@ -659,8 +659,8 @@
     <string name="title_checkbox_rotable_screen">Follow Screen Rotation</string>
     <string name="summary_checkbox_rotable_screen">When enabled, display orientation will be adjusted when device rotates</string>
     
-    <!-- Moonlight V+ PC download -->
-    <string name="title_moonlight_vplus_pc_download">Moonlight V+ PC Download</string>
+    <!-- Moonlight X PC download -->
+    <string name="title_moonlight_X_pc_download">Moonlight X PC Download</string>
     
     <!-- Analytics settings -->
     <string name="title_enable_analytics">Enable Analytics</string>
@@ -775,7 +775,7 @@
     <string name="perf_decode_latency_info">Decode latency represents the time required to decode video frames.\n\nLatency Range:\n• &lt;5ms: Excellent decoder performance\n• 5-10ms: Good decoder performance\n• 10-20ms: Fair decoder performance\n• &gt;20ms: Poor decoder performance\n\nInfluencing Factors:\n• Hardware decoder performance\n• Video encoding complexity\n• Device CPU/GPU load\n• When decode latency is less than 10ms, it is recommended to pay attention to other performance of the device (e.g. frame rate, resolution, image quality, etc.)</string>
     
     <string name="perf_host_latency_title">🖥️ Host Latency Information</string>
-    <string name="perf_host_latency_info">Host latency represents the time for the game host to process frames.\n\nLatency Range:\n• &lt;5ms: Strong host performance\n• 5-10ms: Good host performance\n• 10-20ms: Fair host performance\n• &gt;20ms: Weak host performance\n\nInfluencing Factors:\n• Host hardware performance\n• Game load\n• Background program usage\n\nVer.V+:\n• Indicates version information\n• Displayed when no host latency data available</string>
+    <string name="perf_host_latency_info">Host latency represents the time for the game host to process frames.\n\nLatency Range:\n• &lt;5ms: Strong host performance\n• 5-10ms: Good host performance\n• 10-20ms: Fair host performance\n• &gt;20ms: Weak host performance\n\nInfluencing Factors:\n• Host hardware performance\n• Game load\n• Background program usage\n\nVer.X:\n• Indicates version information\n• Displayed when no host latency data available</string>
 
     <!-- Performance Overlay Info Dialogs - 1% Low FPS -->
     <string name="perf_one_percent_low_title">📉 1% Low Frame Rate</string>
@@ -1023,6 +1023,10 @@
     <string name="layout_page_config_text_f4651">Button Vibration</string>
     <string name="layout_page_config_text_66ab5">Add</string>
     <string name="layout_page_config_text_df603">Exit Crown Configuration</string>
+    <string name="layout_page_config_text_global_style">Global Button Style</string>
+    <string name="layout_page_config_text_global_border_color">Border Color</string>
+    <string name="layout_page_config_text_global_text_color">Text Color</string>
+    <string name="apptext_pg_config_global_opacity">Global Opacity</string>
     <string name="layout_page_device_text_5f411">Back</string>
     <string name="layout_page_device_text_d81bb">None</string>
     <string name="layout_page_device_text_01e77">Touch Mode</string>
@@ -1209,7 +1213,7 @@
     <string name="update_install_permission_msg">To auto-install updates, please grant install permission.\n\nTap OK to open settings. Download will start automatically after you return.</string>
     <string name="toast_cannot_open_settings">Cannot open settings page</string>
     <string name="toast_download_service_unavailable">System download service unavailable</string>
-    <string name="update_download_notification_title">Moonlight V+ Update</string>
+    <string name="update_download_notification_title">Moonlight X Update</string>
     <string name="toast_download_started">Download started, tap notification to install when complete</string>
     <string name="toast_download_failed">Download failed: %s</string>
     <string name="update_downloading_title">Downloading Update</string>
@@ -1247,3 +1251,4 @@
     <string name="seekbar_increase">Increase</string>
 
 </resources>
+

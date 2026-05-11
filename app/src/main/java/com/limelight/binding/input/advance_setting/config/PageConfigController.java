@@ -3,7 +3,9 @@ package com.limelight.binding.input.advance_setting.config;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.Color;
 import android.preference.PreferenceManager;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.AdapterView;
@@ -21,8 +23,10 @@ import com.limelight.Game; // 确保导入 Game 类
 import com.limelight.R;
 import com.limelight.binding.input.advance_setting.ControllerManager;
 import com.limelight.binding.input.advance_setting.element.ElementController;
+import com.limelight.binding.input.advance_setting.superpage.ElementEditText;
 import com.limelight.binding.input.advance_setting.superpage.NumberSeekbar;
 import com.limelight.binding.input.advance_setting.superpage.SuperPageLayout;
+import com.limelight.utils.ColorPickerDialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +44,9 @@ public class PageConfigController {
     public static final String COLUMN_LONG_CONFIG_ID = "config_id";
     private static final String COLUMN_INT_MOUSE_WHEEL_SPEED = "mouse_wheel_speed";
     public static final String COLUMN_BOOLEAN_ENHANCED_TOUCH = "enhanced_touch";
+    public static final String COLUMN_INT_GLOBAL_OPACITY = "global_opacity";
+    public static final String COLUMN_INT_GLOBAL_BORDER_COLOR = "global_border_color";
+    public static final String COLUMN_INT_GLOBAL_TEXT_COLOR = "global_text_color";
 
 
     private SuperPageLayout pageConfig;
@@ -48,6 +55,12 @@ public class PageConfigController {
     private Long currentConfigId = 0L;
     private Spinner configSelectSpinner;
     private LinearLayout enhancedTouchLayout;
+    private ElementEditText globalBorderColorEdit;
+    private ElementEditText globalTextColorEdit;
+    private int currentGlobalBorderColor = 0;
+    private int currentGlobalTextColor = 0;
+    private boolean hasGlobalBorderColor = false;
+    private boolean hasGlobalTextColor = false;
 
     private List<Long> configIds = new ArrayList<>();
     private List<String> configNames = new ArrayList<>();
@@ -60,6 +73,8 @@ public class PageConfigController {
         this.enhancedTouchLayout = pageConfig.findViewById(R.id.enhanced_touch_layout);
         this.controllerManager = controllerManager;
         configSelectSpinner = pageConfig.findViewById(R.id.config_select_spinner);
+        globalBorderColorEdit = pageConfig.findViewById(R.id.global_border_color_edit);
+        globalTextColorEdit = pageConfig.findViewById(R.id.global_text_color_edit);
 
         //新增布局按钮
         pageConfig.findViewById(R.id.add_config_button).setOnClickListener(new View.OnClickListener() {
@@ -230,6 +245,7 @@ public class PageConfigController {
         loadButtonVibrator();
         loadEnhancedTouch();
         controllerManager.getElementController().loadAllElement(currentConfigId);
+        loadGlobalStyles();
         if (currentConfigId == 0L){
             pageConfig.findViewById(R.id.rename_config_button).setVisibility(View.GONE);
             pageConfig.findViewById(R.id.delete_config_button).setVisibility(View.GONE);
@@ -412,6 +428,175 @@ public class PageConfigController {
             controllerManager.getSuperConfigDatabaseHelper().updateConfig(currentConfigId, contentValues);
             controllerManager.getTouchController().setEnhancedTouch(isChecked);
         });
+    }
+
+    private void loadGlobalStyles() {
+        NumberSeekbar opacitySeekBar = pageConfig.findViewById(R.id.global_opacity_number_seekbar);
+
+        int opacity = ((Long) controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                COLUMN_INT_GLOBAL_OPACITY,
+                100L
+        )).intValue();
+        opacitySeekBar.setValueWithNoCallBack(opacity);
+        controllerManager.getElementController().applyGlobalOpacity(opacity);
+        opacitySeekBar.setOnNumberSeekbarChangeListener(new NumberSeekbar.OnNumberSeekbarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                ContentValues contentValues = new ContentValues();
+                contentValues.put(COLUMN_INT_GLOBAL_OPACITY, seekBar.getProgress());
+                controllerManager.getSuperConfigDatabaseHelper().updateConfig(currentConfigId, contentValues);
+                controllerManager.getElementController().applyGlobalOpacity(seekBar.getProgress());
+            }
+        });
+
+        Integer globalBorderColorValue = queryOptionalGlobalColor(COLUMN_INT_GLOBAL_BORDER_COLOR);
+        hasGlobalBorderColor = globalBorderColorValue != null;
+        if (hasGlobalBorderColor) {
+            currentGlobalBorderColor = globalBorderColorValue;
+            controllerManager.getElementController().applyGlobalBorderColor(currentGlobalBorderColor);
+        }
+
+        Integer globalTextColorValue = queryOptionalGlobalColor(COLUMN_INT_GLOBAL_TEXT_COLOR);
+        hasGlobalTextColor = globalTextColorValue != null;
+        if (hasGlobalTextColor) {
+            currentGlobalTextColor = globalTextColorValue;
+            controllerManager.getElementController().applyGlobalTextColor(currentGlobalTextColor);
+        }
+
+        setupColorPickerButton(
+                globalBorderColorEdit,
+                0xF0888888,
+                () -> currentGlobalBorderColor,
+                () -> hasGlobalBorderColor,
+                this::saveAndApplyGlobalBorderColor
+        );
+
+        setupColorPickerButton(
+                globalTextColorEdit,
+                0xFFFFFFFF,
+                () -> currentGlobalTextColor,
+                () -> hasGlobalTextColor,
+                this::saveAndApplyGlobalTextColor
+        );
+    }
+
+    private void saveAndApplyGlobalBorderColor(int color) {
+        currentGlobalBorderColor = color;
+        hasGlobalBorderColor = true;
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_INT_GLOBAL_BORDER_COLOR, color);
+        controllerManager.getSuperConfigDatabaseHelper().updateConfig(currentConfigId, contentValues);
+
+        long savedColorValue = ((Long) controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                COLUMN_INT_GLOBAL_BORDER_COLOR,
+                (long) color
+        )).longValue();
+        currentGlobalBorderColor = (int) savedColorValue;
+        updateColorDisplay(globalBorderColorEdit, currentGlobalBorderColor);
+
+        controllerManager.getElementController().applyGlobalBorderColor(currentGlobalBorderColor);
+        controllerManager.getElementController().loadAllElement(currentConfigId);
+        controllerManager.getElementController().applyGlobalBorderColor(currentGlobalBorderColor);
+        if (hasGlobalTextColor) {
+            controllerManager.getElementController().applyGlobalTextColor(currentGlobalTextColor);
+        }
+
+        globalBorderColorEdit.invalidate();
+        globalBorderColorEdit.requestLayout();
+    }
+
+    private void saveAndApplyGlobalTextColor(int color) {
+        currentGlobalTextColor = color;
+        hasGlobalTextColor = true;
+
+        ContentValues contentValues = new ContentValues();
+        contentValues.put(COLUMN_INT_GLOBAL_TEXT_COLOR, color);
+        controllerManager.getSuperConfigDatabaseHelper().updateConfig(currentConfigId, contentValues);
+
+        long savedColorValue = ((Long) controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                COLUMN_INT_GLOBAL_TEXT_COLOR,
+                (long) color
+        )).longValue();
+        currentGlobalTextColor = (int) savedColorValue;
+        updateColorDisplay(globalTextColorEdit, currentGlobalTextColor);
+
+        controllerManager.getElementController().applyGlobalTextColor(currentGlobalTextColor);
+        controllerManager.getElementController().loadAllElement(currentConfigId);
+        controllerManager.getElementController().applyGlobalTextColor(currentGlobalTextColor);
+        if (hasGlobalBorderColor) {
+            controllerManager.getElementController().applyGlobalBorderColor(currentGlobalBorderColor);
+        }
+
+        globalTextColorEdit.invalidate();
+        globalTextColorEdit.requestLayout();
+    }
+
+    private interface IntSupplier {
+        int get();
+    }
+
+    private interface BooleanSupplier {
+        boolean get();
+    }
+
+    private interface IntConsumer {
+        void accept(int value);
+    }
+
+    private Integer queryOptionalGlobalColor(String columnName) {
+        Object value = controllerManager.getSuperConfigDatabaseHelper().queryConfigAttribute(
+                currentConfigId,
+                columnName,
+                null
+        );
+        if (value instanceof Long) {
+            return ((Long) value).intValue();
+        }
+        return null;
+    }
+
+    private void setupColorPickerButton(ElementEditText colorDisplay, int defaultColor, IntSupplier colorSupplier, BooleanSupplier hasColorSupplier, IntConsumer onColorSelected) {
+        colorDisplay.setFocusable(false);
+        colorDisplay.setCursorVisible(false);
+        colorDisplay.setKeyListener(null);
+        colorDisplay.setOnClickListener(v -> new ColorPickerDialog(
+                context,
+                hasColorSupplier.get() ? colorSupplier.get() : defaultColor,
+                true,
+                newColor -> {
+                    onColorSelected.accept(newColor);
+                    updateColorDisplay(colorDisplay, newColor);
+                }
+        ).show());
+        updateColorDisplay(colorDisplay, hasColorSupplier.get() ? colorSupplier.get() : null);
+    }
+
+    private void updateColorDisplay(ElementEditText colorDisplay, Integer color) {
+        if (color == null) {
+            colorDisplay.setTextWithNoTextChangedCallBack("选择");
+            colorDisplay.setBackgroundColor(0xFF3A3A3A);
+            colorDisplay.setTextColor(Color.WHITE);
+            colorDisplay.setGravity(Gravity.CENTER);
+            return;
+        }
+
+        colorDisplay.setTextWithNoTextChangedCallBack(String.format("%08X", color));
+        colorDisplay.setBackgroundColor(color);
+        double luminance = (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) / 255;
+        colorDisplay.setTextColor(luminance > 0.5 ? Color.BLACK : Color.WHITE);
+        colorDisplay.setGravity(Gravity.CENTER);
     }
 
     public Long getCurrentConfigId(){

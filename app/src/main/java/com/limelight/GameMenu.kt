@@ -833,8 +833,8 @@ class GameMenu(
             val hdrSupported = app.isHdrSupported()
             val appNameTextView = customView.findViewById<TextView>(R.id.appNameTextView)
             appNameTextView.text = "$appName (${if (hdrSupported) "HDR: Supported" else "HDR: Unknown"})"
-        } catch (_: Exception) {
-            customView.findViewById<TextView>(R.id.appNameTextView)?.text = "Moonlight V+"
+        } catch (e: Exception) {
+            customView.findViewById<TextView>(R.id.appNameTextView)?.text = "Moonlight X"
         }
     }
 
@@ -1768,9 +1768,10 @@ class GameMenu(
         private const val KEY_UP_DELAY = 25L
         private const val SLEEP_DELAY = 200L
         private const val MAX_QUICK_BUTTONS = 6
-        private const val DIALOG_ALPHA = 0.7f
+        // Keep GameMenu fully opaque so Crown custom keys stay visually underneath it.
+        private const val DIALOG_ALPHA = 1.0f
         private const val DIALOG_DIM_AMOUNT = 0.3f
-        private const val GAME_MENU_TITLE = "🍥🍬 V+ GAME MENU"
+        private const val GAME_MENU_TITLE = "🍥🍬 X GAME MENU"
 
         private const val PREF_NAME = "custom_special_keys"
         private const val KEY_NAME = "data"
@@ -1801,3 +1802,4 @@ class GameMenu(
         }
     }
 }
+

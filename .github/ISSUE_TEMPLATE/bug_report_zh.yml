@@ -8,11 +8,11 @@ body:
       value: |
         ## 📋 提交前请注意
         感谢您花时间报告这个问题！
-        此项目的名称为 **基地版Moonlight 威力加强版 / V+ / Vplus**，后续交流可能会使用其中任一名称。
+        此项目的名称为 **Moonlight X**。
 
         **提交前请检查**
         - [ ] 我已搜索现有 issues，避免重复提交
-        - [ ] 此问题针对 **基地版 Moonlight V+**，而非原版 Moonlight 或其他版本
+        - [ ] 此问题针对 **基地版 Moonlight X**，而非原版 Moonlight 或其他版本
         ---
 
   - type: dropdown
@@ -50,7 +50,7 @@ body:
       label: "🔄 复现步骤"
       description: "提供详细的复现步骤"
       placeholder: |
-        1. 打开 Moonlight V+
+        1. 打开 Moonlight X
         2. 连接到主机
         3. 开始串流游戏
         4. 在触摸板模式下单根手指双击并拖拽
@@ -111,7 +111,7 @@ body:
   - type: input
     id: moonlight-version
     attributes:
-      label: "🌙 Moonlight V+ 版本"
+      label: "🌙 Moonlight X 版本"
       description: "应用版本（设置 → 关于）"
       placeholder: "例如: v12.5.1"
     validations:
@@ -201,7 +201,7 @@ body:
       options:
         - "未测试"
         - "是，同样问题存在"
-        - "否，仅在 V+ 上出现"
+        - "否，仅在 Moonlight X 上出现"
     validations:
       required: false
 
@@ -240,3 +240,4 @@ body:
         - 连接方式: 本地 / 外网 / VPN
     validations:
       required: false
+

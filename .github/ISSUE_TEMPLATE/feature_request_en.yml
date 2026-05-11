@@ -8,7 +8,7 @@ body:
       value: |
         ## 💡 Feature Request
         Thank you for taking the time to suggest a new feature!
-        The name of this project is **Foundation Moonlight Power Plus / V+ / Vplus**, and we may use any of these names in our future communication.
+        The name of this project is **Moonlight X**.
 
         **Please check before submitting:**
         - [ ] I have searched existing issues and feature requests to avoid duplicates
@@ -135,3 +135,4 @@ body:
       placeholder: "e.g. Samsung Galaxy S23 / OnePlus 12"
     validations:
       required: false
+

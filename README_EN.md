@@ -1,13 +1,13 @@
 <div align="center">
-  <img src="./app/src/main/res/drawable/vplus.webp" width="100" alt="Moonlight V+ Logo">
+  <img src="./app/src/main/res/drawable/vplus.webp" width="100" alt="Moonlight X Logo">
 
-  # Moonlight V+
+  # Moonlight X
 
-  [![GitHub Release](https://img.shields.io/github/v/release/qiin2333/moonlight-android?label=latest&style=flat-square)](https://github.com/qiin2333/moonlight-android/releases/latest)
+  [![GitHub Release](https://img.shields.io/github/v/release/qiin2333/moonlight-x?label=latest&style=flat-square)](https://github.com/qiin2333/moonlight-x/releases/latest)
   [![Android](https://img.shields.io/badge/Android-5.0+-34A853?style=flat-square&logo=android&logoColor=white)](https://developer.android.com/about/versions)
   [![License](https://img.shields.io/badge/license-GPL%20v3-EF9421?style=flat-square)](LICENSE.txt)
-  [![GitHub Stars](https://img.shields.io/github/stars/qiin2333/moonlight-android?style=flat-square)](https://github.com/qiin2333/moonlight-android/stargazers)
-  [![Downloads](https://img.shields.io/github/downloads/qiin2333/moonlight-android/total?style=flat-square&color=blue)](https://github.com/qiin2333/moonlight-android/releases)
+  [![GitHub Stars](https://img.shields.io/github/stars/qiin2333/moonlight-x?style=flat-square)](https://github.com/qiin2333/moonlight-x/stargazers)
+  [![Downloads](https://img.shields.io/github/downloads/qiin2333/moonlight-x/total?style=flat-square&color=blue)](https://github.com/qiin2333/moonlight-x/releases)
 
   **An enhanced Android game streaming client based on [Moonlight](https://github.com/moonlight-stream/moonlight-android)**
 
@@ -29,7 +29,7 @@
 
 ## What's Different from Upstream Moonlight
 
-Moonlight V+ extends [moonlight-android](https://github.com/moonlight-stream/moonlight-android) with a wide range of enhancements while maintaining full compatibility with the upstream streaming protocol.
+Moonlight X extends [moonlight-android](https://github.com/moonlight-stream/moonlight-android) with a wide range of enhancements while maintaining full compatibility with the upstream streaming protocol.
 
 | Category | Feature | Description | Since |
 |----------|---------|-------------|:-----:|
@@ -67,13 +67,13 @@ Moonlight V+ extends [moonlight-android](https://github.com/moonlight-stream/moo
 
 ### Installation
 
-Download the latest APK from [Releases](https://github.com/qiin2333/moonlight-android/releases/latest), install it, and follow the in-app guide to pair with your host.
+Download the latest APK from [Releases](https://github.com/qiin2333/moonlight-x/releases/latest), install it, and follow the in-app guide to pair with your host.
 
 ### Building from Source
 
 ```bash
-git clone https://github.com/qiin2333/moonlight-android.git
-cd moonlight-android
+git clone https://github.com/qiin2333/moonlight-x.git
+cd moonlight-x
 ./gradlew assembleRelease
 ```
 
@@ -117,3 +117,4 @@ This project is licensed under the [GPL v3](LICENSE.txt).
 <div align="center">
   <sub>Find it useful? Give us a ⭐!</sub>
 </div>
+
