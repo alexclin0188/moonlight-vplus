@@ -23,6 +23,8 @@ class NumberSeekbar : LinearLayout {
     private lateinit var numberSeekbarAdd: android.view.View
     private lateinit var numberSeekbarSeekbar: SeekBar
     private var onNumberSeekbarChangeListener: OnNumberSeekbarChangeListener? = null
+    private var minValue: Int = 0
+    private var maxValue: Int = 100
 
     constructor(context: Context) : super(context) {
         init(context, null)
@@ -53,13 +55,11 @@ class NumberSeekbar : LinearLayout {
         if (attrs != null) {
             val a = context.theme.obtainStyledAttributes(attrs, R.styleable.NumberSeekbar, 0, 0)
             try {
-                val maxValue = a.getInt(R.styleable.NumberSeekbar_max, 100)
-                val minValue = a.getInt(R.styleable.NumberSeekbar_min, 0)
+                val maxAttrValue = a.getInt(R.styleable.NumberSeekbar_max, 100)
+                val minAttrValue = a.getInt(R.styleable.NumberSeekbar_min, 0)
                 val progressValue = a.getInt(R.styleable.NumberSeekbar_progress, 0)
-                numberSeekbarSeekbar.max = maxValue
-                numberSeekbarSeekbar.min = minValue
-                numberSeekbarSeekbar.progress = progressValue
-                numberSeekbarNumber.text = progressValue.toString()
+                setRange(minAttrValue, maxAttrValue)
+                setValueInternal(progressValue, notifyListener = false)
 
                 val title = a.getString(R.styleable.NumberSeekbar_text)
                 numberSeekbarTitle.text = title
@@ -70,8 +70,9 @@ class NumberSeekbar : LinearLayout {
 
         numberSeekbarSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                numberSeekbarNumber.text = progress.toString()
-                onNumberSeekbarChangeListener?.onProgressChanged(seekBar, progress, fromUser)
+                val actualValue = progressFromSeekBar(progress)
+                numberSeekbarNumber.text = actualValue.toString()
+                onNumberSeekbarChangeListener?.onProgressChanged(seekBar, actualValue, fromUser)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar) {
@@ -84,33 +85,32 @@ class NumberSeekbar : LinearLayout {
         })
 
         numberSeekbarMinus.setOnClickListener {
-            val progress = numberSeekbarSeekbar.progress
-            if (progress > numberSeekbarSeekbar.min) {
+            val value = value
+            if (value > minValue) {
                 onNumberSeekbarChangeListener?.let { listener ->
                     listener.onStartTrackingTouch(numberSeekbarSeekbar)
-                    numberSeekbarSeekbar.progress = progress - 1
+                    setValueInternal(value - 1, notifyListener = true)
                     listener.onStopTrackingTouch(numberSeekbarSeekbar)
                 }
             }
         }
 
         numberSeekbarAdd.setOnClickListener {
-            val progress = numberSeekbarSeekbar.progress
-            if (progress < numberSeekbarSeekbar.max) {
-                numberSeekbarSeekbar.progress = progress + 1
+            val value = value
+            if (value < maxValue) {
+                setValueInternal(value + 1, notifyListener = true)
                 onNumberSeekbarChangeListener?.onStopTrackingTouch(numberSeekbarSeekbar)
             }
         }
     }
 
     val value: Int
-        get() = numberSeekbarSeekbar.progress
+        get() = progressFromSeekBar(numberSeekbarSeekbar.progress)
 
     fun setValueWithNoCallBack(value: Int) {
         val temp = onNumberSeekbarChangeListener
         onNumberSeekbarChangeListener = null
-        numberSeekbarSeekbar.progress = value
-        numberSeekbarNumber.text = value.toString()
+        setValueInternal(value, notifyListener = false)
         onNumberSeekbarChangeListener = temp
     }
 
@@ -119,14 +119,38 @@ class NumberSeekbar : LinearLayout {
     }
 
     fun setProgressMax(max: Int) {
-        numberSeekbarSeekbar.max = max
+        setRange(minValue, max)
     }
 
     fun setProgressMin(min: Int) {
-        numberSeekbarSeekbar.min = min
+        setRange(min, maxValue)
     }
 
     fun setOnNumberSeekbarChangeListener(listener: OnNumberSeekbarChangeListener?) {
         this.onNumberSeekbarChangeListener = listener
+    }
+
+    private fun setRange(min: Int, max: Int) {
+        minValue = min
+        maxValue = max.coerceAtLeast(min)
+        numberSeekbarSeekbar.max = maxValue - minValue
+        setValueInternal(value, notifyListener = false)
+    }
+
+    private fun setValueInternal(value: Int, notifyListener: Boolean) {
+        val clampedValue = value.coerceIn(minValue, maxValue)
+        val seekBarProgress = progressToSeekBar(clampedValue)
+        if (notifyListener || numberSeekbarSeekbar.progress != seekBarProgress) {
+            numberSeekbarSeekbar.progress = seekBarProgress
+        }
+        numberSeekbarNumber.text = clampedValue.toString()
+    }
+
+    private fun progressFromSeekBar(progress: Int): Int {
+        return minValue + progress
+    }
+
+    private fun progressToSeekBar(value: Int): Int {
+        return value - minValue
     }
 }
