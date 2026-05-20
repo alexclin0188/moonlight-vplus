@@ -607,7 +607,7 @@ class Game : Activity(), SurfaceHolder.Callback,
                 }
             }
             override fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int) {
-                controllerManager?.elementController?.rumbleSingleVibrator(lowFreq, highFreq, duration)
+                controllerManager?.elementController?.rumbleButtonVibrator(duration)
             }
         }
     }

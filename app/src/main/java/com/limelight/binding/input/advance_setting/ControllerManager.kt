@@ -85,7 +85,7 @@ class ControllerManager(layout: FrameLayout, context: Context) {
                         }
 
                         override fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int) {
-                            elementController?.rumbleSingleVibrator(lowFreq, highFreq, duration)
+                            elementController?.rumbleButtonVibrator(duration)
                         }
                     }, context)
                 }
