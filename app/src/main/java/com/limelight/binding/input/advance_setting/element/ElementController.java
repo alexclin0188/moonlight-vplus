@@ -66,7 +66,7 @@ public class ElementController {
     private static final String SPECIAL_KEY_PAN_ZOOM_MODE = "PZM";
     private static final String SPECIAL_KEY_OPEN_GAME_MENU = "OGM";
     private static final String SPECIAL_KEY_EDIT_MODE_SWITCH = "EMS"; // 编辑模式
-
+    public static final int CROWN_VIBRATOR_TIME = 35;
 
 
     public interface SendEventHandler {
@@ -1353,35 +1353,32 @@ public class ElementController {
 
     public void buttonVibrator() {
         if (buttonVibrator) {
-            rumbleButtonVibrator(50);
+            rumbleButtonVibrator(CROWN_VIBRATOR_TIME);
         }
     }
 
     public void rumbleButtonVibrator(int vibratorTime) {
-        if (deviceVibrator == null || vibratorTime <= 0) return;
+        if (deviceVibrator == null || !deviceVibrator.hasVibrator() || vibratorTime <= 0) return;
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             VibrationEffect effect = VibrationEffect.createOneShot(vibratorTime, VibrationEffect.DEFAULT_AMPLITUDE);
-            // TIRAMISU (Android 13) 及以上，使用 USAGE_ACCESSIBILITY 或 USAGE_TOUCH
             VibrationAttributes attrs = new VibrationAttributes.Builder()
                     .setUsage(VibrationAttributes.USAGE_ACCESSIBILITY)
                     .build();
             deviceVibrator.vibrate(effect, attrs);
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             VibrationEffect effect = VibrationEffect.createOneShot(vibratorTime, VibrationEffect.DEFAULT_AMPLITUDE);
-            // Android 8.0 ~ 12，使用 USAGE_ASSISTANCE_SONIFICATION 和 CONTENT_TYPE_SONIFICATION
-            // 这样在静音模式下也能保持振动
             AudioAttributes attrs = new AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                     .build();
             deviceVibrator.vibrate(effect, attrs);
         } else {
-            // Android 7.1 及以下核心修改点：
-            // 1. 使用旧版 API 时，如果传入 AudioAttributes，系统极易在静音时拦截它。
-            // 2. 最稳妥的做法：在 Android 8.0 以下，直接使用最单纯的 vibrate(long milliseconds) 方法，
-            //    不传递任何 AudioAttributes。系统会将其视为最基础的硬件振动，从而绕过静音模式的音频检查。
-            deviceVibrator.vibrate(vibratorTime);
+            AudioAttributes attrs = new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build();
+            deviceVibrator.vibrate(new long[]{0, vibratorTime}, -1, attrs);
         }
     }
 
