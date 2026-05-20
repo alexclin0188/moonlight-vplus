@@ -136,6 +136,9 @@
     <string name="no">No</string>
     <string name="lost_connection">Lost connection to PC</string>
     <string name="title_details">Details</string>
+    <string name="supplement_address">Set Remote Address</string>
+    <string name="supplement_address_title">Remote Address</string>
+    <string name="supplement_address_done">Remote address updated</string>
     <string name="help">Help</string>
     <string name="delete_pc_msg">Are you sure you want to delete this PC?</string>
     <string name="slow_connection_msg">Slow connection to PC\nReduce your bitrate</string>

@@ -86,6 +86,9 @@
     <string name="no"> 取消 </string>
     <string name="lost_connection"> 与电脑失去连接 </string>
     <string name="title_details"> 详情 </string>
+    <string name="supplement_address"> 补充地址 </string>
+    <string name="supplement_address_title"> 远程地址 </string>
+    <string name="supplement_address_done"> 远程地址已更新 </string>
     <string name="help"> 帮助 </string>
     <string name="delete_pc_msg"> 你确定要删除这台电脑？ </string>
     <string name="slow_connection_msg"> 与电脑连接过慢。\n 请降低码率。</string>

@@ -120,6 +120,9 @@ import android.widget.RelativeLayout
 import android.widget.Space
 import android.widget.TextView
 import android.widget.Toast
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.text.InputType
 import androidx.annotation.RequiresApi
 
 import javax.microedition.khronos.egl.EGLConfig
@@ -2018,7 +2021,9 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
                 true
             }
             VIEW_DETAILS_ID -> {
-                Dialog.displayDetailsDialog(this, getString(R.string.title_details), details.toString(), false)
+                Dialog.displayDetailsDialog(this, getString(R.string.title_details), details.toString(), false) { activity ->
+                    showRemoteAddressEditor(activity, details)
+                }
                 true
             }
             TEST_NETWORK_ID -> {
@@ -2425,6 +2430,61 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
     }
 
     // Utility
+
+    private fun showRemoteAddressEditor(activity: Activity, details: ComputerDetails) {
+        val currentAddr = details.remoteAddress?.toString() ?: ""
+        val input = EditText(activity).apply {
+            setText(currentAddr)
+            hint = "host:port"
+            inputType = InputType.TYPE_CLASS_TEXT
+            maxLines = 1
+            if (currentAddr.isNotEmpty()) setSelection(text.length)
+
+            setTextColor(Color.parseColor("#666666"))
+            setHintTextColor(Color.parseColor("#888888"))
+            background = activity.getDrawable(R.drawable.details_content_bg)
+        }
+        val dp = activity.resources.displayMetrics.density
+        input.setPadding((16 * dp).toInt(), (12 * dp).toInt(), (16 * dp).toInt(), (12 * dp).toInt())
+
+        val container = FrameLayout(activity).apply {
+            setPadding((24 * dp).toInt(), (16 * dp).toInt(), (24 * dp).toInt(), 0)
+            addView(input, FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            ))
+        }
+
+        AlertDialog.Builder(activity, R.style.AppDialogStyle)
+            .setTitle(R.string.supplement_address_title)
+            .setView(container)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val text = input.text.toString().trim()
+                if (text.isNotEmpty()) {
+                    val host: String
+                    val port: Int
+                    val colonIdx = text.lastIndexOf(':')
+                    if (colonIdx > 0 && colonIdx > text.indexOf('[')) {
+                        host = text.substring(0, colonIdx)
+                        port = text.substring(colonIdx + 1).toIntOrNull() ?: defaultFallbackPort(details)
+                    } else {
+                        host = text
+                        port = defaultFallbackPort(details)
+                    }
+                    details.remoteAddress = ComputerDetails.AddressTuple(host, port)
+                    managerBinder?.updateComputer(details)
+                    showToast(getString(R.string.supplement_address_done))
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null)
+            .show()
+    }
+
+    private fun defaultFallbackPort(details: ComputerDetails): Int {
+        return details.localAddress?.port
+            ?: details.manualAddress?.port
+            ?: 47989
+    }
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()

@@ -20,7 +20,8 @@ class Dialog private constructor(
     private val title: String,
     private val message: String,
     private val runOnDismiss: Runnable,
-    private val isDetailsDialog: Boolean = false
+    private val isDetailsDialog: Boolean = false,
+    private val onSupplementaryAddress: ((Activity) -> Unit)? = null
 ) : Runnable {
 
     private lateinit var alert: AlertDialog
@@ -160,6 +161,12 @@ class Dialog private constructor(
             runOnDismiss.run()
         }
 
+        if (onSupplementaryAddress != null) {
+            builder.setNeutralButton(R.string.supplement_address) { _, _ ->
+                onSupplementaryAddress.invoke(activity)
+            }
+        }
+
         alert = builder.create()
         alert.setCancelable(false)
         alert.setCanceledOnTouchOutside(false)
@@ -274,10 +281,10 @@ class Dialog private constructor(
             }))
         }
 
-        fun displayDetailsDialog(activity: Activity, title: String, message: String, endAfterDismiss: Boolean) {
+        fun displayDetailsDialog(activity: Activity, title: String, message: String, endAfterDismiss: Boolean, onSupplementaryAddress: ((Activity) -> Unit)? = null) {
             activity.runOnUiThread(Dialog(activity, title, message, Runnable {
                 if (endAfterDismiss) activity.finish()
-            }, isDetailsDialog = true))
+            }, isDetailsDialog = true, onSupplementaryAddress = onSupplementaryAddress))
         }
 
         fun displayDialog(activity: Activity, title: String, message: String, runOnDismiss: Runnable) {
