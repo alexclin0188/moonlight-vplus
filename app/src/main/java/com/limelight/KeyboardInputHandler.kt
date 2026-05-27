@@ -1,13 +1,11 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
 
-import android.content.res.Configuration
 import android.os.Handler
 import android.os.Looper
 import android.view.InputDevice
 import android.view.KeyCharacterMap
 import android.view.KeyEvent
-import android.widget.Toast
 import com.limelight.binding.input.ControllerHandler
 import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.nvstream.input.KeyboardPacket
@@ -27,8 +25,6 @@ class KeyboardInputHandler(private val game: Game) {
     private var modifierFlags = 0
     private var waitingForAllModifiersUp = false
     private var specialKeyCode = KeyEvent.KEYCODE_UNKNOWN
-    private var lastEscPressTime = 0L
-    private var hasShownEscHint = false
 
     private val pressedKeys = HashSet<Int>()
     private var escState = 0 // 0 = 空闲，1 = ESC已按下，2 = 已进入组合键
@@ -36,10 +32,6 @@ class KeyboardInputHandler(private val game: Game) {
     private lateinit var escConfirmRunnable: Runnable
 
     private val toggleGrab = Runnable { game.setInputGrabState(!game.grabbedInput) }
-
-    companion object {
-        private const val ESC_DOUBLE_PRESS_INTERVAL = 500L // 500毫秒内按第二次ESC才有效
-    }
 
     // Returns true if the key stroke was consumed
     private fun handleSpecialKeys(androidKeyCode: Int, down: Boolean): Boolean {
@@ -71,25 +63,29 @@ class KeyboardInputHandler(private val game: Game) {
             } else if (modifierFlags != 0) {
                 return down
             } else {
-                when (specialKeyCode) {
-                    // Toggle input grab
-                    KeyEvent.KEYCODE_Z -> {
-                        val h = game.window.decorView.handler
-                        h?.postDelayed(toggleGrab, 250)
-                    }
-                    // Quit
-                    KeyEvent.KEYCODE_Q -> game.finish()
-                    // Toggle cursor visibility
-                    KeyEvent.KEYCODE_C -> {
-                        if (!game.grabbedInput) {
-                            game.inputCaptureProvider.enableCapture()
-                            game.grabbedInput = true
+                if (specialKeyCode == game.prefConfig.escMenuKey && game.prefConfig.enableEscMenu) {
+                    game.onBackPressed()
+                } else {
+                    when (specialKeyCode) {
+                        // Toggle input grab
+                        KeyEvent.KEYCODE_Z -> {
+                            val h = game.window.decorView.handler
+                            h?.postDelayed(toggleGrab, 250)
                         }
-                        game.cursorVisible = !game.cursorVisible
-                        if (game.cursorVisible) {
-                            game.inputCaptureProvider.showCursor()
-                        } else {
-                            game.inputCaptureProvider.hideCursor()
+                        // Quit
+                        KeyEvent.KEYCODE_Q -> game.finish()
+                        // Toggle cursor visibility
+                        KeyEvent.KEYCODE_C -> {
+                            if (!game.grabbedInput) {
+                                game.inputCaptureProvider.enableCapture()
+                                game.grabbedInput = true
+                            }
+                            game.cursorVisible = !game.cursorVisible
+                            if (game.cursorVisible) {
+                                game.inputCaptureProvider.showCursor()
+                            } else {
+                                game.inputCaptureProvider.hideCursor()
+                            }
                         }
                     }
                 }
@@ -101,14 +97,15 @@ class KeyboardInputHandler(private val game: Game) {
             (KeyboardPacket.MODIFIER_CTRL.toInt() or KeyboardPacket.MODIFIER_ALT.toInt() or KeyboardPacket.MODIFIER_SHIFT.toInt()) &&
             (down && nonModifierKeyCode != KeyEvent.KEYCODE_UNKNOWN)
         ) {
-            when (androidKeyCode) {
-                KeyEvent.KEYCODE_Z, KeyEvent.KEYCODE_Q, KeyEvent.KEYCODE_C -> {
-                    specialKeyCode = androidKeyCode
-                    waitingForAllModifiersUp = true
-                    return true
-                }
-                else -> return false
+            if (androidKeyCode == game.prefConfig.escMenuKey ||
+                androidKeyCode == KeyEvent.KEYCODE_Z ||
+                androidKeyCode == KeyEvent.KEYCODE_Q ||
+                androidKeyCode == KeyEvent.KEYCODE_C) {
+                specialKeyCode = androidKeyCode
+                waitingForAllModifiersUp = true
+                return true
             }
+            return false
         }
 
         return false
@@ -150,7 +147,13 @@ class KeyboardInputHandler(private val game: Game) {
         // 自定义组合键，只能其它+esc，esc+其它时，esc抬起时其它才会down
         val keyCode = event.keyCode
         pressedKeys.add(keyCode)
-        if (game.prefConfig.enableCustomKeyMap) {
+
+        // Check for Ctrl+Shift+Alt+escMenuKey chord - let handleSpecialKeys handle it
+        val isEscMenuChord = game.prefConfig.enableEscMenu &&
+            keyCode == game.prefConfig.escMenuKey &&
+            event.isCtrlPressed && event.isShiftPressed && event.isAltPressed
+
+        if (!isEscMenuChord && game.prefConfig.enableCustomKeyMap) {
             if (keyCode == KeyEvent.KEYCODE_ESCAPE) {
                 escState = 1
                 escConfirmRunnable = Runnable {
@@ -317,28 +320,6 @@ class KeyboardInputHandler(private val game: Game) {
             }
         }
 
-        if (isPhysicalKeyboardConnected()) {
-            // ESC键双击逻辑
-            if (event.keyCode == game.prefConfig.escMenuKey && game.prefConfig.enableEscMenu) {
-                val currentTime = System.currentTimeMillis()
-
-                if (currentTime - lastEscPressTime <= ESC_DOUBLE_PRESS_INTERVAL && hasShownEscHint) {
-                    game.onBackPressed()
-                    lastEscPressTime = 0
-                    hasShownEscHint = false
-                    return true
-                } else {
-                    var keyName = KeyEvent.keyCodeToString(game.prefConfig.escMenuKey)
-                    if (keyName.startsWith("KEYCODE_")) {
-                        keyName = keyName.substring("KEYCODE_".length)
-                    }
-                    Toast.makeText(game, game.getString(R.string.toast_press_again_to_open_menu, keyName), Toast.LENGTH_SHORT).show()
-                    lastEscPressTime = currentTime
-                    hasShownEscHint = true
-                }
-            }
-        }
-
         val keyCode = event.keyCode
         pressedKeys.remove(keyCode)
 
@@ -470,10 +451,6 @@ class KeyboardInputHandler(private val game: Game) {
         }
         game.conn?.sendUtf8Text(event.characters)
         return true
-    }
-
-    private fun isPhysicalKeyboardConnected(): Boolean {
-        return game.resources.configuration.keyboard == Configuration.KEYBOARD_QWERTY
     }
 
     /**

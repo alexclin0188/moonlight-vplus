@@ -102,4 +102,13 @@ class SmartAudioRenderer(
     fun resumeProcessing() {
         (delegate as? AndroidAudioRenderer)?.resumeProcessing()
     }
+
+    /** Forwarded for [AndroidAudioRenderer.setMuted] when active. */
+    fun setMuted(muted: Boolean) {
+        (delegate as? AndroidAudioRenderer)?.setMuted(muted)
+    }
+
+    /** Whether the active delegate is currently muted. */
+    val isMuted: Boolean
+        get() = (delegate as? AndroidAudioRenderer)?.isMuted() ?: false
 }

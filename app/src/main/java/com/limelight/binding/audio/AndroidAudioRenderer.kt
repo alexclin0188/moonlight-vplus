@@ -24,7 +24,10 @@ class AndroidAudioRenderer(
     private var spatializer: Spatializer? = null
 
     // 保存当前的静音状态
+    @Volatile
     private var isMuted = false
+
+    fun isMuted(): Boolean = isMuted
     // 保存目标音量增益。默认 1.0f (100%)
     private var mTargetVolume = 1.0f
     // 标记是否处于暂停丢包状态

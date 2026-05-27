@@ -929,6 +929,20 @@ class GameMenu(
                 btn.setOnClickListener {
                     Toast.makeText(game, getString(R.string.toast_enable_mic_redirect), Toast.LENGTH_SHORT).show()
                 }
+            } else if (id == "toggle_audio") {
+                if (game.isAudioMuted) {
+                    btn.alpha = 0.5f
+                    if (action != null && action.iconDisabledRes != 0)
+                        btn.setUniformIcon(action.iconDisabledRes)
+                }
+                btn.setOnClickListener {
+                    game.toggleAudioMute()
+                    val isMuted = game.isAudioMuted
+                    btn.alpha = if (isMuted) 0.5f else 1.0f
+                    if (action != null) {
+                        btn.setUniformIcon(if (isMuted) action.iconDisabledRes else action.iconRes)
+                    }
+                }
             } else {
                 val clickListener = createQuickActionListener(id, customKeys)
                 if (clickListener != null) {
@@ -1047,7 +1061,7 @@ class GameMenu(
     private fun createQuickActionListener(id: String, customKeys: List<CustomKeyData>?): View.OnClickListener? {
         return when (id) {
             "send_win" -> View.OnClickListener { sendKeys(shortArrayOf(KeyboardTranslator.VK_LWIN.s())) }
-            "send_esc" -> View.OnClickListener { sendKeys(shortArrayOf(KeyboardTranslator.VK_ESCAPE.s())) }
+            "toggle_audio" -> View.OnClickListener { game.toggleAudioMute() }
             "toggle_hdr" -> View.OnClickListener { sendKeys(shortArrayOf(KeyboardTranslator.VK_LWIN.s(), KeyboardTranslator.VK_MENU.s(), KeyboardTranslator.VK_B.s())) }
             "toggle_mic" -> View.OnClickListener { toggleMicrophone() }
             "send_sleep" -> View.OnClickListener {

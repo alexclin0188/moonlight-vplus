@@ -188,6 +188,9 @@ class Game : Activity(), SurfaceHolder.Callback,
     private var isChangingResolution = false
     private var audioRenderer: com.limelight.binding.audio.SmartAudioRenderer? = null
 
+    val isAudioMuted: Boolean
+        get() = audioRenderer?.isMuted ?: false
+
     enum class BackKeyMenuMode {
         GAME_MENU, CROWN_MODE, NO_MENU
     }
@@ -1954,6 +1957,15 @@ class Game : Activity(), SurfaceHolder.Callback,
             prefConfig.enablePerfOverlay = false
             prefConfig.perfOverlayLocked = false
             performanceOverlayManager?.applyOverlayState()
+        }
+    }
+
+    fun toggleAudioMute() {
+        audioRenderer?.let { renderer ->
+            val newMuted = !renderer.isMuted
+            renderer.setMuted(newMuted)
+            val msg = if (newMuted) getString(R.string.toast_audio_muted) else getString(R.string.toast_audio_unmuted)
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
     }
 
