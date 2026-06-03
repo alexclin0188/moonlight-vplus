@@ -80,8 +80,6 @@
         android:icon="@mipmap/ic_launcher_saba"
         android:roundIcon="@mipmap/ic_launcher_saba"
         android:installLocation="auto"
-        android:gwpAsanMode="always"
-        android:localeConfig="@xml/locales_config"
         android:enableOnBackInvokedCallback="false"
         android:theme="@style/AppTheme"
         tools:targetApi="vanillaIceCream">
@@ -161,7 +159,6 @@
             android:roundIcon="@mipmap/ic_launcher_saba"
             android:label="@string/app_label"
             android:theme="@style/Theme.App.Starting"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
 
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -182,7 +179,6 @@
             android:noHistory="true"
             android:exported="true"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
@@ -190,7 +186,6 @@
         <activity
             android:name=".AppView"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
@@ -198,7 +193,6 @@
         <activity
             android:name=".SunshineWebUiActivity"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="@string/pcview_menu_open_webui">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -208,7 +202,6 @@
             android:name=".preferences.StreamSettings"
             android:theme="@style/SettingsThemeCompat"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="Streaming Settings">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -217,7 +210,6 @@
         <activity
             android:name=".preferences.CapabilityDiagnosticActivity"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="Capability Diagnostic">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -227,7 +219,6 @@
             android:name=".preferences.AddComputerManually"
             android:resizeableActivity="true"
             android:windowSoftInputMode="stateVisible"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="Add Computer Manually">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
@@ -239,7 +230,6 @@
 
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="false"
             android:launchMode="singleTask"
 
             android:theme="@style/StreamTheme"
@@ -312,7 +302,6 @@
         <activity
             android:name=".HelpActivity"
             android:resizeableActivity="true"
-            android:enableOnBackInvokedCallback="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />

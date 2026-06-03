@@ -61,3 +61,5 @@ scripts/
 
 # Baseline profile binary artifacts
 app/nonRoot/release/baselineProfiles/
+
+.omo
