@@ -29,6 +29,11 @@ Thumbs.db
 .classpath
 .project
 
+# All root-level dot-directories (except .git and .github)
+/.*/
+!/.git/
+!/.github/
+
 # Android Studio
 .idea
 #.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
