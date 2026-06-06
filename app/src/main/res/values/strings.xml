@@ -42,7 +42,7 @@
     <string name="pcview_open_webui_unavailable">No reachable address available for Web management</string>
     <string name="pcview_open_webui_no_browser">No browser available to open Web management</string>
     <string name="sunshine_webui_ssl_warning_title">Untrusted Certificate</string>
-    <string name="sunshine_webui_ssl_warning_msg">The host\'s certificate does not match the one Moonlight has on file. The page may have been tampered with. Continue anyway?\n\nURL: %1$s</string>
+    <string name="sunshine_webui_ssl_warning_msg">The host\'s certificate does not match the one MoonLink has on file. The page may have been tampered with. Continue anyway?\n\nURL: %1$s</string>
     <string name="sunshine_webui_ssl_proceed">Continue</string>
     <string name="sunshine_webui_auth_title">Sign in to %1$s (%2$s)</string>
     <string name="sunshine_webui_auth_user_hint">Username</string>
@@ -53,12 +53,12 @@
 
     <!-- Network test strings -->
     <string name="nettest_title_waiting">Testing Network Connection</string>
-    <string name="nettest_text_waiting">Moonlight is testing your network connection to determine if any required ports are blocked.\n\nThis may take a few seconds…</string>
+    <string name="nettest_text_waiting">MoonLink is testing your network connection to determine if any required ports are blocked.\n\nThis may take a few seconds…</string>
     <string name="nettest_title_done">Network Test Complete</string>
-    <string name="nettest_text_success">Your network does not appear to be blocking Moonlight. If you still have trouble connecting, check your PC\'s firewall settings.\n\nIf you are trying to stream over the Internet, install the Moonlight Internet Hosting Tool on your PC and run the included Internet Streaming Tester to check your PC\'s Internet connection.</string>
-    <string name="nettest_text_inconclusive">The network test could not be performed because none of Moonlight\'s connection testing servers were reachable. Check your Internet connection or try again later.</string>
-    <string name="nettest_text_failure">Your device\'s current network connection seems to be blocking Moonlight. Streaming over the Internet may not work while connected to this network.\n\nThe following network ports were blocked:\n</string>
-    <string name="nettest_text_blocked">Your device\'s current network connection is blocking Moonlight. Streaming over the Internet may not work while connected to this network.</string>
+    <string name="nettest_text_success">Your network does not appear to be blocking MoonLink. If you still have trouble connecting, check your PC\'s firewall settings.\n\nIf you are trying to stream over the Internet, install the MoonLink Internet Hosting Tool on your PC and run the included Internet Streaming Tester to check your PC\'s Internet connection.</string>
+    <string name="nettest_text_inconclusive">The network test could not be performed because none of MoonLink\'s connection testing servers were reachable. Check your Internet connection or try again later.</string>
+    <string name="nettest_text_failure">Your device\'s current network connection seems to be blocking MoonLink. Streaming over the Internet may not work while connected to this network.\n\nThe following network ports were blocked:\n</string>
+    <string name="nettest_text_blocked">Your device\'s current network connection is blocking MoonLink. Streaming over the Internet may not work while connected to this network.</string>
 
     <!-- Pair messages -->
     <string name="pairing">Pairing…</string>
@@ -96,7 +96,7 @@
     </string>
     <string name="error_interrupted">The operation was interrupted</string>
     <string name="title_decoding_error">Video Decoder Crashed</string>
-    <string name="message_decoding_error">Moonlight has crashed due to an incompatibility with this device\'s video decoder. Try adjusting the streaming settings if the crashes continue.</string>
+    <string name="message_decoding_error">MoonLink has crashed due to an incompatibility with this device\'s video decoder. Try adjusting the streaming settings if the crashes continue.</string>
     <string name="title_decoding_reset">Video Settings Reset</string>
     <string name="message_decoding_reset">Your device\'s video decoder continues to crash at your selected streaming settings. Your streaming settings have been reset to default.</string>
     <string name="error_usb_prohibited">USB access is prohibited by your device administrator. Check your Knox or MDM settings.</string>
@@ -293,12 +293,12 @@
     <string name="summary_seekbar_vibrate_fallback_strength">Amplify or reduce the vibration intensity on your device</string>
     <string name="suffix_seekbar_vibrate_fallback_strength">%</string>
     <string name="title_seekbar_deadzone">Adjust analog stick deadzone</string>
-    <string name="summary_seekbar_deadzone">Note: Some games can enforce a larger deadzone than what Moonlight is configured to use.</string>
+    <string name="summary_seekbar_deadzone">Note: Some games can enforce a larger deadzone than what MoonLink is configured to use.</string>
     <string name="suffix_seekbar_deadzone">%</string>
     <string name="title_checkbox_xb1_driver">Xbox 360/One USB gamepad driver</string>
     <string name="summary_checkbox_xb1_driver">Enables a built-in USB driver for devices without native Xbox controller support</string>
     <string name="title_checkbox_usb_bind_all">Override native Xbox gamepad support</string>
-    <string name="summary_checkbox_usb_bind_all">Use Moonlight\'s USB driver for all supported gamepads, even if native Xbox controller support is present</string>
+    <string name="summary_checkbox_usb_bind_all">Use MoonLink\'s USB driver for all supported gamepads, even if native Xbox controller support is present</string>
     <string name="title_checkbox_mouse_emulation">Mouse emulation via gamepad</string>
     <string name="summary_checkbox_mouse_emulation">Long pressing the Start button will switch the gamepad into mouse mode</string>
     <string name="title_checkbox_enable_start_key_menu">Long-press Start key actions</string>
@@ -413,11 +413,11 @@
     <string name="title_checkbox_enable_background_audio">Background Audio Mode</string>
     <string name="summary_checkbox_enable_background_audio">Hide the entire window and play audio in background, allowing you to use other apps while listening</string>
     <string name="title_language_list">Language</string>
-    <string name="summary_language_list">Language to use for Moonlight</string>
+    <string name="summary_language_list">Language to use for MoonLink</string>
     <string name="title_checkbox_small_icon_mode">Use small box art</string>
     <string name="summary_checkbox_small_icon_mode">Smaller box art in the app grid allows more apps to be visible on screen</string>
     <string name="title_checkbox_resume_stream">Resume stream automatically</string>
-    <string name="summary_checkbox_resume_stream">Automatically resume the stream when returning to Moonlight from the background</string>
+    <string name="summary_checkbox_resume_stream">Automatically resume the stream when returning to MoonLink from the background</string>
 
     <string name="category_host_settings">Host Settings</string>
     <string name="title_checkbox_enable_sops">Optimize game settings</string>
@@ -503,14 +503,14 @@
     <string name="title_troubleshooting">Troubleshooting guide</string>
     <string name="summary_troubleshooting">View tips for diagnosing and fixing common streaming issues</string>
     <string name="title_privacy_policy">Privacy policy</string>
-    <string name="summary_privacy_policy">View Moonlight\'s privacy policy</string>
+    <string name="summary_privacy_policy">View MoonLink\'s privacy policy</string>
     <string name="title_about_mode">About</string>
     <string name="summary_about_mode">View app information and project details</string>
     
     <!-- About dialog strings -->
-    <string name="about_dialog_description">Moonlight X is an enhanced client built for Foundation Sunshine, delivering the ultimate game streaming experience.</string>
-    <string name="about_dialog_project_info">Based on Moonlight-Android open source project, crafted by the Foundation community</string>
-    <string name="about_dialog_thanks">Thank you for choosing Moonlight X! If you find it useful, please give us a star on GitHub ⭐</string>
+    <string name="about_dialog_description">MoonLink is an enhanced client built for Foundation Sunshine, delivering the ultimate game streaming experience.</string>
+    <string name="about_dialog_project_info">Based on MoonLink-Android open source project, crafted by the Foundation community</string>
+    <string name="about_dialog_thanks">Thank you for choosing MoonLink! If you find it useful, please give us a star on GitHub ⭐</string>
     <string name="about_dialog_github">GitHub</string>
     <string name="about_dialog_star">Star Project</string>
     <string name="about_dialog_qq">Join QQ Group</string>
@@ -628,14 +628,14 @@
     <string name="background_source_dialog_later">Decide later</string>
 
     <!-- Crash report prompt -->
-    <string name="crash_report_dialog_title">Moonlight closed unexpectedly last time</string>
+    <string name="crash_report_dialog_title">MoonLink closed unexpectedly last time</string>
     <string name="crash_report_dialog_message">Send the diagnostic log to the developer to help fix it?\n\n%1$s</string>
     <string name="crash_report_share">Share log</string>
     <string name="crash_report_copy">Copy</string>
     <string name="crash_report_photo">Photo summary</string>
     <string name="crash_report_copied">Crash log copied to clipboard</string>
     <string name="crash_report_dismiss">Ignore</string>
-    <string name="crash_report_subject">Moonlight crash report</string>
+    <string name="crash_report_subject">MoonLink crash report</string>
     <string name="crash_report_photo_title">Photo-friendly crash summary</string>
     <string name="crash_report_photo_hint">Take a photo of this screen and send it to the developer.</string>
     <string name="crash_report_photo_id">Report ID</string>
@@ -662,8 +662,8 @@
     <string name="title_checkbox_rotable_screen">Follow Screen Rotation</string>
     <string name="summary_checkbox_rotable_screen">When enabled, display orientation will be adjusted when device rotates</string>
     
-    <!-- Moonlight X PC download -->
-    <string name="title_moonlight_X_pc_download">Moonlight X PC Download</string>
+    <!-- MoonLink PC download -->
+    <string name="title_moonlight_X_pc_download">MoonLink PC Download</string>
     
     <!-- Analytics settings -->
     <string name="title_enable_analytics">Enable Analytics</string>
@@ -750,7 +750,7 @@
     <string name="gyro_no_controller_detected">No controller detected, gyro disabled</string>
 
     <!-- Accessibility service -->
-    <string name="accessibility_service_label">Moonlight Keyboard Service</string>
+    <string name="accessibility_service_label">MoonLink Keyboard Service</string>
     <string name="accessibility_service_description">
         To provide a complete PC gaming experience with your external keyboard, this service needs to capture all keyboard keys.
         \n\n
@@ -852,7 +852,7 @@
     <string name="game_menu_toggle_remote_mouse">Show/Hide Remote Mouse</string>
     <string name="toast_remote_mouse_toast">Remote mouse displayed/hidden</string>
     <string name="notification_channel_name">Streaming backend service</string>
-    <string name="notification_channel_desc">Keep the connection active when Moonlight is running in the background</string>
+    <string name="notification_channel_desc">Keep the connection active when MoonLink is running in the background</string>
 
     <!-- Output Buffer Queue Limit -->
     <string name="title_seekbar_output_buffer_queue_limit">Output Buffer Queue Limit</string>
@@ -1218,7 +1218,7 @@
     <string name="update_install_permission_msg">To auto-install updates, please grant install permission.\n\nTap OK to open settings. Download will start automatically after you return.</string>
     <string name="toast_cannot_open_settings">Cannot open settings page</string>
     <string name="toast_download_service_unavailable">System download service unavailable</string>
-    <string name="update_download_notification_title">Moonlight X Update</string>
+    <string name="update_download_notification_title">MoonLink Update</string>
     <string name="toast_download_started">Download started, tap notification to install when complete</string>
     <string name="toast_download_failed">Download failed: %s</string>
     <string name="update_downloading_title">Downloading Update</string>

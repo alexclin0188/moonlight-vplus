@@ -470,7 +470,7 @@
                 android:id="@+id/appNameTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Moonlight"
+                android:text="MoonLink"
                 android:textColor="@color/theme_pink_primary"
                 android:textSize="12sp"
                 android:textStyle="bold"

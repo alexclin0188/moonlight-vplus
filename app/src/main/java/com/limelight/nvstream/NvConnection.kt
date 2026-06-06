@@ -54,7 +54,7 @@ open class NvConnection(
             // Settings.Global.getString can return null on some OEM ROMs.
             Settings.Global.getString(appContext.contentResolver, "device_name")
                 ?: Build.MODEL
-                ?: "Moonlight V+ Client"
+                ?: "MoonLink Client"
         }
     private val context: ConnectionContext = ConnectionContext()
     private val isMonkey: Boolean = ActivityManager.isUserAMonkey()

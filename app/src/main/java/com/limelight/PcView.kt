@@ -474,7 +474,7 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
 
         clientName = Settings.Global.getString(contentResolver, "device_name")
             ?: Build.MODEL
-            ?: "Moonlight V+ Client"
+            ?: "MoonLink Client"
         backgroundImageView = findViewById(R.id.pcBackgroundImage)
 
         loadBackgroundImage()
@@ -2378,7 +2378,7 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
             }
         } catch (ignored: PackageManager.NameNotFoundException) {
         }
-        return "Moonlight V+"
+        return "MoonLink"
     }
 
     private fun openUrl(url: String) {

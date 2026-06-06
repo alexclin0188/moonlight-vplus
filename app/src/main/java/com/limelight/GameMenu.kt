@@ -834,7 +834,7 @@ class GameMenu(
             val appNameTextView = customView.findViewById<TextView>(R.id.appNameTextView)
             appNameTextView.text = "$appName (${if (hdrSupported) "HDR: Supported" else "HDR: Unknown"})"
         } catch (e: Exception) {
-            customView.findViewById<TextView>(R.id.appNameTextView)?.text = "Moonlight X"
+            customView.findViewById<TextView>(R.id.appNameTextView)?.text = "MoonLink"
         }
     }
 

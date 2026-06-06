@@ -79,9 +79,9 @@ class AboutDialogPreference : Preference {
     private fun getAppName(context: Context): String {
         return try {
             val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-            packageInfo.applicationInfo?.loadLabel(context.packageManager)?.toString() ?: "Moonlight X"
+            packageInfo.applicationInfo?.loadLabel(context.packageManager)?.toString() ?: "MoonLink"
         } catch (e: PackageManager.NameNotFoundException) {
-            "Moonlight X"
+            "MoonLink"
         }
     }
 

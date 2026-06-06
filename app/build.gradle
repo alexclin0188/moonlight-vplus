@@ -123,8 +123,8 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".x_debug"
-            resValue "string", "app_label", "Moonlight X"
-            resValue "string", "app_label_root", "Moonlight X"
+            resValue "string", "app_label", "MoonLink"
+            resValue "string", "app_label_root", "MoonLink"
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -161,8 +161,8 @@ android {
             //
             // TL;DR: Leave the following line alone!
             applicationIdSuffix ".qiin"
-            resValue "string", "app_label", "Moonlight X"
-            resValue "string", "app_label_root", "Moonlight X (Root)"
+            resValue "string", "app_label", "MoonLink"
+            resValue "string", "app_label_root", "MoonLink (Root)"
 
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'

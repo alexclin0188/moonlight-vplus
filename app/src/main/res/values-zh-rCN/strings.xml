@@ -55,7 +55,7 @@
     <string name="error_unknown_host"> 无法解析主机地址 </string>
     <string name="error_404">GFE返回了HTTP 404 错误，确保你的电脑显卡支持串流。使用远程桌面软件同样会引起此错误，请尝试重启电脑或重装GFE。</string>
     <string name="title_decoding_error"> 视频解码器崩溃 </string>
-    <string name="message_decoding_error">由于与该设备的视频解码器不兼容，Moonlight已崩溃。如果崩溃继续，请尝试调整串流设置。</string>
+    <string name="message_decoding_error">由于与该设备的视频解码器不兼容，MoonLink已崩溃。如果崩溃继续，请尝试调整串流设置。</string>
     <string name="title_decoding_reset"> 重置视频设置 </string>
     <string name="message_decoding_reset"> 由于设备的视频解码器在你选择的串流设置上持续崩溃，已重置你的串流设置。 </string>
     <string name="error_usb_prohibited"> 设备管理员已禁止USB访问。请检查您的Knox或MDM设置。 </string>
@@ -227,7 +227,7 @@
     <string name="suffix_seekbar_flat_region_pixels">像素</string>
 
     <string name="title_checkbox_sync_touch_event_with_display">触控事件与显示刷新同步</string>
-    <string name="summary_checkbox_sync_touch_event_with_display">打开后触控事件上报率与显示刷新率同步，比如显示为60Hz，那么触控与之同步。不一定有用，习惯哪个用哪个。Moonlight原版相当于禁用该项。</string>
+    <string name="summary_checkbox_sync_touch_event_with_display">打开后触控事件上报率与显示刷新率同步，比如显示为60Hz，那么触控与之同步。不一定有用，习惯哪个用哪个。MoonLink原版相当于禁用该项。</string>
 
     <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">多点触控模式下打开本地键盘切换</string>
     <string name="title_seekbar_keyboard_toggle_fingers_native_touch">轻敲手指数量</string>
@@ -241,7 +241,7 @@
     <string name="title_checkbox_xb1_driver">Xbox 360/One 手柄驱动 </string>
     <string name="summary_checkbox_xb1_driver"> 为缺少原生Xbox手柄支持的设备启用内置USB驱动。 </string>
     <string name="title_checkbox_usb_bind_all"> 覆盖安卓手柄支持 </string>
-    <string name="summary_checkbox_usb_bind_all"> 强制Moonlight的USB驱动接管所有受支持的Xbox手柄。 </string>
+    <string name="summary_checkbox_usb_bind_all"> 强制MoonLink的USB驱动接管所有受支持的Xbox手柄。 </string>
     <string name="title_checkbox_mouse_emulation"> 通过手柄模拟鼠标 </string>
     <string name="summary_checkbox_mouse_emulation"> 长按开始键将手柄切换为鼠标模式。 </string>
     <string name="title_checkbox_enable_start_key_menu"> 长按开始键功能 </string>
@@ -311,11 +311,11 @@
     <string name="category_ui_settings">界面设置</string>
     <string name="category_display_behavior">画面设置</string>
     <string name="title_language_list"> 语言 </string>
-    <string name="summary_language_list"> 选择Moonlight显示的语言。 </string>
+    <string name="summary_language_list"> 选择MoonLink显示的语言。 </string>
     <string name="title_checkbox_small_icon_mode"> 使用小图标 </string>
     <string name="summary_checkbox_small_icon_mode"> 使用小图标以在屏幕上显示更多项目。 </string>
     <string name="title_checkbox_resume_stream">自动恢复串流</string>
-    <string name="summary_checkbox_resume_stream">当从后台切回Moonlight时，自动恢复串流会话。</string>
+    <string name="summary_checkbox_resume_stream">当从后台切回MoonLink时，自动恢复串流会话。</string>
     <string name="category_host_settings">主机设置</string>
     <string name="title_checkbox_enable_sops"> 自动优化主机设置 </string>
     <string name="summary_checkbox_enable_sops"> 允许主机自动更改为与客户端最佳匹配的显示设置。 </string>
@@ -359,16 +359,16 @@
     <string name="title_osc_opacity">更改屏幕按钮透明度</string>
     <string name="dialog_title_osc_opacity">透明度</string>
     <string name="summary_osc_opacity">令屏幕按钮变得更透明/更不透明。</string>
-    <string name="nettest_text_failure">您设备的当前网络似乎正在阻止Moonlight。连接到该网络时，可能无法通过互联网串流。
+    <string name="nettest_text_failure">您设备的当前网络似乎正在阻止MoonLink。连接到该网络时，可能无法通过互联网串流。
 \n
 \n以下网络端口被阻止：
 \n</string>
-    <string name="nettest_text_inconclusive">网络测试无法执行，因为无法连接到Moonlight的连接测试服务器。检查您的互联网连接或稍后再试。</string>
-    <string name="nettest_text_success">您的网络似乎没有屏蔽Moonlight。如果您仍然无法连接，请检查您的电脑的防火墙设置。
+    <string name="nettest_text_inconclusive">网络测试无法执行，因为无法连接到MoonLink的连接测试服务器。检查您的互联网连接或稍后再试。</string>
+    <string name="nettest_text_success">您的网络似乎没有屏蔽MoonLink。如果您仍然无法连接，请检查您的电脑的防火墙设置。
 \n
-\n如果您想通过互联网进行流媒体传输，请在您的电脑上安装Moonlight互联网主机工具，并运行附带的互联网流媒体测试器来检查您的电脑的互联网连接。</string>
+\n如果您想通过互联网进行流媒体传输，请在您的电脑上安装MoonLink互联网主机工具，并运行附带的互联网流媒体测试器来检查您的电脑的互联网连接。</string>
     <string name="nettest_title_done">网络测试完成</string>
-    <string name="nettest_text_waiting">Moonlight正在测试你的网络连接，请确保所需端口没有被屏蔽。
+    <string name="nettest_text_waiting">MoonLink正在测试你的网络连接，请确保所需端口没有被屏蔽。
 \n
 \n这可能需要几秒钟……</string>
     <string name="nettest_title_waiting">测试网络连接中</string>
@@ -377,7 +377,7 @@
     <string name="pcview_open_webui_unavailable">未找到可用主机地址，无法打开 Web 管理</string>
     <string name="pcview_open_webui_no_browser">未找到可用浏览器</string>
     <string name="sunshine_webui_ssl_warning_title">证书不可信</string>
-    <string name="sunshine_webui_ssl_warning_msg">主机证书与 Moonlight 配对时存储的不一致，页面可能已被篡改。是否仍然继续？\n\nURL：%1$s</string>
+    <string name="sunshine_webui_ssl_warning_msg">主机证书与 MoonLink 配对时存储的不一致，页面可能已被篡改。是否仍然继续？\n\nURL：%1$s</string>
     <string name="sunshine_webui_ssl_proceed">继续</string>
     <string name="sunshine_webui_auth_title">登录 %1$s（%2$s）</string>
     <string name="sunshine_webui_auth_user_hint">用户名</string>
@@ -403,7 +403,7 @@
     <string name="no_frame_received_error">您的网络连接质量不佳。请降低视频码率设置或更换更快的网络连接。</string>
     <string name="no_video_received_error">没有接收到来自主机的视频。</string>
     <string name="video_decoder_init_failed">视频解码器初始化失败。您的设备可能不支持选定的分辨率或帧数。</string>
-    <string name="nettest_text_blocked">您设备当前的网络连接拦截了Moonlight。连接到该网络时可能无法通过互联网串流。</string>
+    <string name="nettest_text_blocked">您设备当前的网络连接拦截了MoonLink。连接到该网络时可能无法通过互联网串流。</string>
     <string name="perf_overlay_netlatency">平均网络延迟： %1$d ms (抖动： %2$d ms)</string>
     <string name="perf_overlay_streamdetails">视频流： %1$s %2$.2f FPS</string>
     <string name="resolution_prefix_native_fullscreen">原生全屏</string>
@@ -419,14 +419,14 @@
     <string name="pacing_smoothness">优先视频流畅度（可能会显著增大延迟）</string>
     <string name="summary_setup_guide">查看有关如何设置游戏电脑以进行流传输的说明。</string>
     <string name="title_privacy_policy">隐私政策</string>
-    <string name="summary_privacy_policy">查看 Moonlight 隐私政策</string>
-    <string name="title_about_mode">关于 Moonlight X</string>
+    <string name="summary_privacy_policy">查看 MoonLink 隐私政策</string>
+    <string name="title_about_mode">关于 MoonLink</string>
     <string name="summary_about_mode">请前往GitHub查看，喜欢的话点个Star支持一下我们吧</string>
 
     <!-- About dialog strings -->
-    <string name="about_dialog_description">Moonlight X 是专为 Foundation Sunshine 打造的增强客户端，为您带来极致的游戏串流体验。</string>
-    <string name="about_dialog_project_info">基于 Moonlight-Android 开源项目，由基地社区倾力打造</string>
-    <string name="about_dialog_thanks">感谢您选择 Moonlight X！如果觉得好用，欢迎在 GitHub 上点个 Star 支持我们 ⭐</string>
+    <string name="about_dialog_description">MoonLink 是专为 Foundation Sunshine 打造的增强客户端，为您带来极致的游戏串流体验。</string>
+    <string name="about_dialog_project_info">基于 MoonLink-Android 开源项目，由基地社区倾力打造</string>
+    <string name="about_dialog_thanks">感谢您选择 MoonLink！如果觉得好用，欢迎在 GitHub 上点个 Star 支持我们 ⭐</string>
     <string name="about_dialog_star">Star 项目</string>
     <string name="about_dialog_qq">加入QQ群</string>
     <string name="about_dialog_close">关闭</string>
@@ -442,7 +442,7 @@
     <string name="pacing_latency">优先最低延迟</string>
     <string name="pacing_experimental_low_latency">全都要！(超低延迟与超平滑帧率)</string>
 
-    <string name="summary_seekbar_deadzone">注意：有些游戏可以执行一个比Moonlight摇杆配置的更大的盲区。</string>
+    <string name="summary_seekbar_deadzone">注意：有些游戏可以执行一个比MoonLink摇杆配置的更大的盲区。</string>
     <string name="title_checkbox_absolute_mouse_mode">适合远程桌面的鼠标模式</string>
     <string name="summary_checkbox_absolute_mouse_mode">这可以使得鼠标加速在远程桌面使用中表现得更自然，但它与许多游戏不兼容。</string>
     <string name="title_checkbox_enable_esc_menu">允许自定义键打开返回菜单</string>
@@ -571,7 +571,7 @@
     <string name="crash_report_photo">拍照摘要</string>
     <string name="crash_report_copied">崩溃日志已复制到剪贴板</string>
     <string name="crash_report_dismiss">忽略</string>
-    <string name="crash_report_subject">Moonlight 崩溃日志</string>
+    <string name="crash_report_subject">MoonLink 崩溃日志</string>
     <string name="crash_report_photo_title">适合拍照发送的崩溃摘要</string>
     <string name="crash_report_photo_hint">请拍下此页面并发送给开发者，方便快速定位问题。</string>
     <string name="crash_report_photo_id">报告 ID</string>
@@ -598,8 +598,8 @@
     <string name="title_checkbox_rotable_screen">跟随屏幕旋转</string>
     <string name="summary_checkbox_rotable_screen">启用后，设备旋转时会同步调整显示方向。</string>
 
-    <!-- Moonlight X PC download -->
-    <string name="title_moonlight_X_pc_download">Moonlight X PC版下载</string>
+    <!-- MoonLink PC download -->
+    <string name="title_moonlight_X_pc_download">MoonLink PC版下载</string>
 
     <!-- Tip strings -->
     <string name="tip_esc_exit">💡 串流小课堂：使用"退出"按钮可以快速完全地退出串流，让屏幕恢复到串流前的状态哦～</string>
@@ -681,7 +681,7 @@
     <string name="gyro_no_controller_detected">未检测到手柄，陀螺仪已禁用</string>
 
     <!-- Accessibility service -->
-    <string name="accessibility_service_label">Moonlight 键盘服务</string>
+    <string name="accessibility_service_label">MoonLink 键盘服务</string>
     <string name="accessibility_service_description">
         为了让您的外接键盘在串流游戏中获得完整的PC体验，此服务需要捕获所有键盘按键。\n\n
         开启后，您将可以在游戏中无缝使用 Win/Command 键、Alt+Tab 等所有系统快捷键，就像在电脑前一样。\n\n
@@ -772,7 +772,7 @@
     <string name="game_menu_toggle_remote_mouse">显示/隐藏远程鼠标</string>
     <string name="toast_remote_mouse_toast">远程鼠标已显示/隐藏。</string>
     <string name="notification_channel_name">串流后台服务</string>
-    <string name="notification_channel_desc">当 Moonlight 在后台运行时保持连接活跃</string>
+    <string name="notification_channel_desc">当 MoonLink 在后台运行时保持连接活跃</string>
 
     <!-- 输出缓冲区队列大小 -->
     <string name="title_seekbar_output_buffer_queue_limit">输出缓冲区队列大小</string>
@@ -1161,7 +1161,7 @@
     <string name="update_install_permission_msg">为了自动安装更新，需要授予应用安装权限。\n\n点击确定前往设置页面开启权限，返回后将自动开始下载。</string>
     <string name="toast_cannot_open_settings">无法打开设置页面</string>
     <string name="toast_download_service_unavailable">系统下载服务不可用</string>
-    <string name="update_download_notification_title">Moonlight X 更新下载</string>
+    <string name="update_download_notification_title">MoonLink 更新下载</string>
     <string name="toast_download_started">已开始下载，下载完成后点击通知栏即可安装</string>
     <string name="toast_download_failed">下载失败: %s</string>
     <string name="update_downloading_title">正在下载更新</string>
