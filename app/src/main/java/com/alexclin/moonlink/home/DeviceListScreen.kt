@@ -1,9 +1,13 @@
 package com.alexclin.moonlink.home
 
+import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.core.net.toUri
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,6 +31,7 @@ import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
 import com.alexclin.moonlink.theme.macosGray
 import com.limelight.Game
+import com.google.zxing.integration.android.IntentIntegrator
 import com.limelight.R
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -39,6 +44,7 @@ import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // ── Menu action model ─────────────────────────────────────────────
 
@@ -79,6 +85,84 @@ fun DeviceListScreen(
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
+    // ── Add-device menu state & QR launcher ──────────────────────
+    var showAddMenu by remember { mutableStateOf(false) }
+
+    val qrCodeLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val contents = result.data?.getStringExtra("SCAN_RESULT")?.trim()
+        if (contents == null) return@rememberLauncherForActivityResult
+
+        val uri = contents.toUri()
+        if ("moonlight" != uri.scheme || "pair" != uri.host) {
+            scope.launch { snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.qr_invalid_code)) }
+            return@rememberLauncherForActivityResult
+        }
+
+        val host = uri.getQueryParameter("host")
+            ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
+        val pin = uri.getQueryParameter("pin")
+            ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
+        val portStr = uri.getQueryParameter("port")
+        var port = NvHTTP.DEFAULT_HTTP_PORT
+        if (portStr != null) { try { port = portStr.toInt() } catch (_: NumberFormatException) {} }
+
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val addDetails = ComputerDetails()
+                    addDetails.manualAddress = ComputerDetails.AddressTuple(host, port)
+                    val added = managerBinder?.addComputerBlocking(addDetails) == true
+                    if (!added) {
+                        withContext(Dispatchers.Main) {
+                            snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.addpc_fail))
+                        }
+                        return@withContext
+                    }
+
+                    var computer = managerBinder?.getComputer(addDetails.uuid!!)
+                    if (computer == null) computer = addDetails
+
+                    val httpConn = NvHTTP(
+                        ServerHelper.getCurrentAddressFromComputer(computer),
+                        computer.httpsPort,
+                        managerBinder?.getUniqueId() ?: "",
+                        android.provider.Settings.Global.getString(
+                            context.contentResolver, "device_name"
+                        ) ?: android.os.Build.MODEL ?: "MoonLink Client",
+                        computer.serverCert,
+                        PlatformBinding.getCryptoProvider(context)
+                    )
+
+                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
+                        withContext(Dispatchers.Main) {
+                            snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.addpc_success))
+                        }
+                        return@withContext
+                    }
+
+                    val pairResult = httpConn.pairingManager.pair(
+                        httpConn.getServerInfo(true), pin
+                    )
+
+                    val msg = when (pairResult.state) {
+                        PairingManager.PairState.PAIRED -> {
+                            managerBinder?.invalidateStateForComputer(addDetails.uuid!!)
+                            context.getString(com.limelight.R.string.qr_pair_success)
+                        }
+                        PairingManager.PairState.PIN_WRONG -> context.getString(com.limelight.R.string.pair_incorrect_pin)
+                        else -> context.getString(com.limelight.R.string.pair_fail)
+                    }
+                    withContext(Dispatchers.Main) { snackbarHostState.showSnackbar(msg) }
+                }
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar("配对异常: ${e.message ?: e.javaClass.simpleName}")
+            }
+        }
+    }
+
     // Separate paired / unpaired
     val paired   = computers.filter { it.pairState == com.limelight.nvstream.http.PairingManager.PairState.PAIRED }
         .sortedWith(compareByDescending<ComputerDetails> { it.state == ComputerDetails.State.ONLINE }
@@ -106,10 +190,34 @@ fun DeviceListScreen(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     )
                     Spacer(Modifier.height(16.dp))
-                    Button(onClick = {
-                        context.startActivity(Intent(context, AddComputerManually::class.java))
-                    }) {
-                        Text("手动添加")
+                    Box {
+                        Button(onClick = { showAddMenu = true }) {
+                            Text("手动添加")
+                        }
+                        DropdownMenu(
+                            expanded = showAddMenu,
+                            onDismissRequest = { showAddMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(context.getString(com.limelight.R.string.addpc_manual)) },
+                                onClick = {
+                                    showAddMenu = false
+                                    context.startActivity(Intent(context, AddComputerManually::class.java))
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(context.getString(com.limelight.R.string.addpc_qr_scan)) },
+                                onClick = {
+                                    showAddMenu = false
+                                    val integrator = IntentIntegrator(context as Activity)
+                                    integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                                    integrator.setPrompt(context.getString(com.limelight.R.string.qr_scan_prompt))
+                                    integrator.setBeepEnabled(false)
+                                    integrator.setOrientationLocked(false)
+                                    qrCodeLauncher.launch(integrator.createScanIntent())
+                                }
+                            )
+                        }
                     }
                 }
             }

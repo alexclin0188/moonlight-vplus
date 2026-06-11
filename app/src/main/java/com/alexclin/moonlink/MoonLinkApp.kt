@@ -1,6 +1,9 @@
 package com.alexclin.moonlink
 
+import android.app.Activity
 import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -31,8 +35,17 @@ import com.alexclin.moonlink.home.DeviceListScreen
 import com.alexclin.moonlink.navigation.MoonLinkRoute
 import com.alexclin.moonlink.settings.*
 import com.alexclin.moonlink.vpn.VpnScreen
+import com.google.zxing.integration.android.IntentIntegrator
+import com.limelight.R
+import com.limelight.binding.PlatformBinding
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
+import com.limelight.nvstream.http.NvHTTP
+import com.limelight.nvstream.http.PairingManager
+import com.limelight.utils.ServerHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // ── Bottom tab descriptor ─────────────────────────────────────────
 
@@ -99,6 +112,86 @@ fun MoonLinkApp(
     // Snackbar host state shared across screens
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // ── Add-device menu state & QR scanner launcher ──────────────
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var showAddMenu by remember { mutableStateOf(false) }
+
+    val qrCodeLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val contents = result.data?.getStringExtra("SCAN_RESULT")?.trim()
+        if (contents == null) return@rememberLauncherForActivityResult
+
+        val uri = contents.toUri()
+        if ("moonlight" != uri.scheme || "pair" != uri.host) {
+            scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.qr_invalid_code)) }
+            return@rememberLauncherForActivityResult
+        }
+
+        val host = uri.getQueryParameter("host")
+            ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
+        val pin = uri.getQueryParameter("pin")
+            ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
+        val portStr = uri.getQueryParameter("port")
+        var port = NvHTTP.DEFAULT_HTTP_PORT
+        if (portStr != null) { try { port = portStr.toInt() } catch (_: NumberFormatException) {} }
+
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val addDetails = ComputerDetails()
+                    addDetails.manualAddress = ComputerDetails.AddressTuple(host, port)
+                    val added = managerBinder?.addComputerBlocking(addDetails) == true
+                    if (!added) {
+                        withContext(Dispatchers.Main) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.addpc_fail))
+                        }
+                        return@withContext
+                    }
+
+                    var computer = managerBinder?.getComputer(addDetails.uuid!!)
+                    if (computer == null) computer = addDetails
+
+                    val httpConn = NvHTTP(
+                        ServerHelper.getCurrentAddressFromComputer(computer),
+                        computer.httpsPort,
+                        managerBinder?.getUniqueId() ?: "",
+                        android.provider.Settings.Global.getString(
+                            context.contentResolver, "device_name"
+                        ) ?: android.os.Build.MODEL ?: "MoonLink Client",
+                        computer.serverCert,
+                        PlatformBinding.getCryptoProvider(context)
+                    )
+
+                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
+                        withContext(Dispatchers.Main) {
+                            snackbarHostState.showSnackbar(context.getString(R.string.addpc_success))
+                        }
+                        return@withContext
+                    }
+
+                    val pairResult = httpConn.pairingManager.pair(
+                        httpConn.getServerInfo(true), pin
+                    )
+
+                    val msg = when (pairResult.state) {
+                        PairingManager.PairState.PAIRED -> {
+                            managerBinder?.invalidateStateForComputer(addDetails.uuid!!)
+                            context.getString(R.string.qr_pair_success)
+                        }
+                        PairingManager.PairState.PIN_WRONG -> context.getString(R.string.pair_incorrect_pin)
+                        else -> context.getString(R.string.pair_fail)
+                    }
+                    withContext(Dispatchers.Main) { snackbarHostState.showSnackbar(msg) }
+                }
+            } catch (e: Exception) {
+                snackbarHostState.showSnackbar("配对异常: ${e.message ?: e.javaClass.simpleName}")
+            }
+        }
+    }
+
     Scaffold(
         // ── Unified top bar ───────────────────────────────
         topBar = {
@@ -120,11 +213,34 @@ fun MoonLinkApp(
                     actions = {
                         when (currentRoute) {
                             MoonLinkRoute.DeviceList.route -> {
-                                val context = LocalContext.current
-                                IconButton(onClick = {
-                                    context.startActivity(Intent(context, com.limelight.preferences.AddComputerManually::class.java))
-                                }) {
-                                    Icon(Icons.Default.Add, contentDescription = "添加设备")
+                                Box {
+                                    IconButton(onClick = { showAddMenu = true }) {
+                                        Icon(Icons.Default.Add, contentDescription = "添加设备")
+                                    }
+                                    DropdownMenu(
+                                        expanded = showAddMenu,
+                                        onDismissRequest = { showAddMenu = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(context.getString(R.string.addpc_manual)) },
+                                            onClick = {
+                                                showAddMenu = false
+                                                context.startActivity(Intent(context, com.limelight.preferences.AddComputerManually::class.java))
+                                            }
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(context.getString(R.string.addpc_qr_scan)) },
+                                            onClick = {
+                                                showAddMenu = false
+                                                val integrator = IntentIntegrator(context as Activity)
+                                                integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
+                                                integrator.setPrompt(context.getString(R.string.qr_scan_prompt))
+                                                integrator.setBeepEnabled(false)
+                                                integrator.setOrientationLocked(false)
+                                                qrCodeLauncher.launch(integrator.createScanIntent())
+                                            }
+                                        )
+                                    }
                                 }
                             }
                             "tab_vpn" -> {
