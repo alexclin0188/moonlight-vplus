@@ -150,8 +150,9 @@
         <!-- Samsung DeX support requires explicit placement of android:resizeableActivity="true"
              in each activity even though it is implied by targeting API 24+ -->
 
+        <!-- ═══ MoonLink 新版主页 (Compose) ═══ -->
         <activity
-            android:name=".PcView"
+            android:name="com.alexclin.moonlink.MoonLinkMainActivity"
             android:exported="true"
             android:resizeableActivity="true"
             android:banner="@drawable/atv_banner"
@@ -172,6 +173,21 @@
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
                 <category android:name="tv.ouya.intent.category.APP" />
             </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".PcView"
+            android:exported="true"
+            android:resizeableActivity="true"
+            android:banner="@drawable/atv_banner"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher"
+            android:label="@string/app_label"
+            android:theme="@style/Theme.App.Starting"
+            android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
+
+            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
+            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
         <!-- Small hack to support launcher shortcuts without relaunching over and over again when the back button is pressed -->
         <activity

@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
 }
 
 // 仅在存在 google-services.json 且满足条件时应用 Google Services 插件
@@ -21,7 +22,7 @@ android {
     namespace 'com.limelight'
 
     defaultConfig {
-        minSdk 22
+        minSdk 23
         targetSdk 35
 
         versionName "12.9.1"
@@ -39,6 +40,7 @@ android {
 
     buildFeatures {
         buildConfig = true
+        compose = true
     }
 
     productFlavors {
@@ -81,6 +83,12 @@ android {
 
     kotlinOptions {
         jvmTarget = '11'
+    }
+
+    packaging {
+        jniLibs {
+            useLegacyPackaging = true
+        }
     }
 
     lint {
@@ -217,5 +225,18 @@ dependencies {
     implementation libs.kotlin.stdlib
     implementation libs.kotlinx.coroutines.android
     implementation libs.androidx.lifecycle.runtime.ktx
+
+    // Compose
+    implementation libs.androidx.activity.compose
+    implementation platform(libs.androidx.compose.bom)
+    implementation libs.androidx.compose.ui
+    implementation libs.androidx.compose.ui.graphics
+    implementation libs.androidx.compose.ui.tooling.preview
+    implementation libs.androidx.compose.material3
+    implementation libs.androidx.compose.material.icons.extended
+    implementation libs.androidx.compose.foundation
+    implementation libs.androidx.navigation.compose
+    implementation libs.androidx.lifecycle.viewmodel.compose
+    debugImplementation libs.androidx.compose.ui.tooling
 }
 

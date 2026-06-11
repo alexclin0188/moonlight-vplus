@@ -8,6 +8,7 @@ import android.database.sqlite.SQLiteException
 import com.limelight.LimeLog
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvHTTP
+import com.limelight.nvstream.http.PairingManager
 
 import org.json.JSONException
 import org.json.JSONObject
@@ -154,6 +155,10 @@ class ComputerDatabaseManager(c: Context) {
                     .generateCertificate(ByteArrayInputStream(derCertData)) as X509Certificate
             }
         } catch (_: CertificateException) {
+        }
+
+        if (details.serverCert != null) {
+            details.pairState = PairingManager.PairState.PAIRED
         }
 
         details.state = ComputerDetails.State.UNKNOWN

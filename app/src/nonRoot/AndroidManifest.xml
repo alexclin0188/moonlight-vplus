@@ -3,6 +3,6 @@
 
     <!-- Non-root application name -->
     <!-- FIXME: We should set extractNativeLibs=false but this breaks installation on the Fire TV 3 -->
-    <application android:label="Moonlight X" />
+    <application android:label="MoonLink" />
 </manifest>
 
