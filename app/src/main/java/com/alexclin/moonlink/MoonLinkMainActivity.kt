@@ -45,6 +45,8 @@ class MoonLinkMainActivity : ComponentActivity() {
                     override fun onServiceConnected(name: ComponentName, service: IBinder) {
                         val b = service as ComputerManagerService.ComputerManagerBinder
                         binderState.value = b
+                        val snapshot = b.getAllComputers()
+                        computers.addAll(snapshot)
                         b.startPolling()
 
                         // Collect on a scope that lives as long as the effect

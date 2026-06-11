@@ -200,6 +200,7 @@ private fun DeviceCard(
     val context = LocalContext.current
     val isOnline = computer.state == ComputerDetails.State.ONLINE
     val isUnknown = computer.state == ComputerDetails.State.UNKNOWN
+    val isPairedUnknown = isUnknown && computer.pairState == PairingManager.PairState.PAIRED
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -228,8 +229,8 @@ private fun DeviceCard(
                     modifier = Modifier.fillMaxSize(),
                 )
 
-                // Status badge (bottom-start)
-                if (!isUnknown) {
+                // Status badge (bottom-start) – shown for known states or paired+unknown
+                if (!isUnknown || isPairedUnknown) {
                     val badgeColor = if (isOnline) statusOnline else statusOffline
                     val badgeText  = if (isOnline) "在线" else "离线"
                     Box(
@@ -259,8 +260,8 @@ private fun DeviceCard(
                     )
                 }
 
-                // Loading dots for UNKNOWN (marquee animation)
-                if (isUnknown) {
+                // Loading dots for unpaired UNKNOWN (marquee animation)
+                if (isUnknown && !isPairedUnknown) {
                     val infiniteTransition = rememberInfiniteTransition(label = "loading")
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),

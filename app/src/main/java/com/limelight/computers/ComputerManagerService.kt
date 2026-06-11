@@ -284,6 +284,12 @@ class ComputerManagerService : Service() {
             return null
         }
 
+        fun getAllComputers(): List<ComputerDetails> {
+            synchronized(pollingTuples) {
+                return pollingTuples.map { ComputerDetails(it.computer) }
+            }
+        }
+
         fun invalidateStateForComputer(uuid: String) {
             synchronized(pollingTuples) {
                 for (tuple in pollingTuples) {
