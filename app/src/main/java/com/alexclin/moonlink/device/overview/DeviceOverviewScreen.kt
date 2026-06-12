@@ -25,11 +25,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.theme.macosGray
 import com.alexclin.moonlink.theme.windowsBlue
+import com.alexclin.moonlink.home.DeviceBoxArt
+import com.alexclin.moonlink.theme.statusOffline
+import com.alexclin.moonlink.theme.statusOnline
+import androidx.compose.animation.core.*
+import androidx.compose.ui.graphics.graphicsLayer
 import com.limelight.AppView
 import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
+import com.limelight.nvstream.http.PairingManager
 import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import kotlinx.coroutines.Dispatchers
@@ -97,13 +103,64 @@ fun DeviceOverviewScreen(
                             },
                         contentAlignment = Alignment.Center,
                     ) {
-                        // Desktop placeholder
-                        Icon(
-                            Icons.Default.DesktopWindows,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                        // Desktop box art
+                        DeviceBoxArt(
+                            uuid = computer.uuid,
+                            isOnline = isOnline,
+                            modifier = Modifier.fillMaxSize(),
                         )
+
+                        // Status badge (bottom-start)
+                        val badgeColor = if (isOnline) statusOnline else statusOffline
+                        val badgeText  = if (isOnline) "在线" else "离线"
+                        Box(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(8.dp)
+                                .background(
+                                    badgeColor.copy(alpha = 0.85f),
+                                    RoundedCornerShape(4.dp),
+                                )
+                                .padding(horizontal = 6.dp, vertical = 2.dp),
+                        ) {
+                            Text(
+                                text = badgeText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.White,
+                            )
+                        }
+
+                        // Loading dots for unpaired UNKNOWN (marquee animation)
+                        val isUnknown = computer.state == ComputerDetails.State.UNKNOWN
+                        val isPairedUnknown = computer.pairState == PairingManager.PairState.PAIRED
+                        if (isUnknown && !isPairedUnknown) {
+                            val infiniteTransition = rememberInfiniteTransition(label = "loading")
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                modifier = Modifier.align(Alignment.Center),
+                            ) {
+                                repeat(3) { index ->
+                                    val alpha by infiniteTransition.animateFloat(
+                                        initialValue = 0.3f,
+                                        targetValue = 1f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(600, delayMillis = index * 200),
+                                            repeatMode = RepeatMode.Reverse,
+                                        ),
+                                        label = "dot$index",
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .size(8.dp)
+                                            .graphicsLayer { this.alpha = alpha }
+                                            .background(
+                                                MaterialTheme.colorScheme.primary,
+                                                RoundedCornerShape(50),
+                                            ),
+                                    )
+                                }
+                            }
+                        }
 
                         // OS icon at top-center
                         val isMac = computer.name?.lowercase()?.let {
