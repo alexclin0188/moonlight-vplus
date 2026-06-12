@@ -652,7 +652,18 @@ private fun MoreActionsDialog(
                                     val pm = httpConn.pairingManager
                                     val pairResult = pm.pair(httpConn.getServerInfo(true), pin)
                                     val resultMsg = when (pairResult.state) {
-                                        PairingManager.PairState.PAIRED -> "配对成功"
+                                        PairingManager.PairState.PAIRED -> {
+                                            managerBinder?.getComputer(computer.uuid!!)?.let { c ->
+                                                c.serverCert = pm.pairedCert
+                                                c.pairState = PairingManager.PairState.PAIRED
+                                            }
+                                            pairResult.pairName?.let { name ->
+                                                context.getSharedPreferences("pair_name_map", Context.MODE_PRIVATE)
+                                                    .edit().putString(computer.uuid, name).apply()
+                                            }
+                                            managerBinder?.invalidateStateForComputer(computer.uuid!!)
+                                            "配对成功"
+                                        }
                                         PairingManager.PairState.PIN_WRONG -> "PIN 码错误"
                                         PairingManager.PairState.FAILED -> "配对失败"
                                         PairingManager.PairState.ALREADY_IN_PROGRESS -> "配对已在进行中"

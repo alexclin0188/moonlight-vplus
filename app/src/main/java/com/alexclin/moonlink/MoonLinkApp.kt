@@ -1,6 +1,7 @@
 package com.alexclin.moonlink
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -172,12 +173,21 @@ fun MoonLinkApp(
                         return@withContext
                     }
 
-                    val pairResult = httpConn.pairingManager.pair(
+                    val pm = httpConn.pairingManager
+                    val pairResult = pm.pair(
                         httpConn.getServerInfo(true), pin
                     )
 
                     val msg = when (pairResult.state) {
                         PairingManager.PairState.PAIRED -> {
+                            managerBinder?.getComputer(addDetails.uuid!!)?.let { c ->
+                                c.serverCert = pm.pairedCert
+                                c.pairState = PairingManager.PairState.PAIRED
+                            }
+                            pairResult.pairName?.let { name ->
+                                context.getSharedPreferences("pair_name_map", Context.MODE_PRIVATE)
+                                    .edit().putString(addDetails.uuid, name).apply()
+                            }
                             managerBinder?.invalidateStateForComputer(addDetails.uuid!!)
                             context.getString(R.string.qr_pair_success)
                         }
