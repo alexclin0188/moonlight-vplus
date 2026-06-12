@@ -42,6 +42,10 @@ import com.limelight.nvstream.http.PairingManager
 import com.limelight.utils.Iperf3Tester
 import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -287,6 +291,7 @@ fun DeviceOverviewScreen(
                             row.forEach { app ->
                                 AppIconItem(
                                     app = app,
+                                    uuid = uuid,
                                     isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
                                     onClick = {
                                         launchStreamFromOverview(context, computer, managerBinder, useLastSettings, app)
@@ -364,11 +369,65 @@ private fun OverviewActionButton(
     }
 }
 
+// ── App icon loader ─────────────────────────────────────────────────
+
+/** Memory cache for app icons: <uuid_appId> → Bitmap */
+private val iconCache = mutableMapOf<String, Bitmap>()
+
+@Composable
+private fun AppIconImage(
+    appId: Int,
+    uuid: String,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    var bitmap by remember(appId, uuid) { mutableStateOf<Bitmap?>(null) }
+    var isLoaded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(appId, uuid) {
+        withContext(Dispatchers.IO) {
+            val cacheKey = "${uuid}_$appId"
+            val cached = iconCache[cacheKey]
+            if (cached != null) {
+                bitmap = cached
+                isLoaded = true
+                return@withContext
+            }
+            val file = java.io.File(context.cacheDir, "boxart/$uuid/$appId.png")
+            if (file.exists()) {
+                val bmp = BitmapFactory.decodeFile(file.absolutePath)
+                if (bmp != null) {
+                    iconCache[cacheKey] = bmp
+                    bitmap = bmp
+                    isLoaded = true
+                }
+            }
+        }
+    }
+
+    if (isLoaded && bitmap != null) {
+        Image(
+            bitmap = bitmap!!.asImageBitmap(),
+            contentDescription = null,
+            modifier = modifier,
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Icon(
+            Icons.Default.Apps,
+            contentDescription = null,
+            modifier = modifier,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+        )
+    }
+}
+
 // ── App grid item ─────────────────────────────────────────────────
 
 @Composable
 private fun AppIconItem(
     app: NvApp,
+    uuid: String,
     isRunning: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -380,7 +439,7 @@ private fun AppIconItem(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(contentAlignment = Alignment.BottomEnd) {
-            // App icon placeholder
+            // App icon — loaded from disk cache with fallback
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -388,11 +447,10 @@ private fun AppIconItem(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(
-                    Icons.Default.Apps,
-                    contentDescription = null,
-                    modifier = Modifier.size(28.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                AppIconImage(
+                    appId = app.appId,
+                    uuid = uuid,
+                    modifier = Modifier.fillMaxSize(),
                 )
             }
             if (isRunning) {
