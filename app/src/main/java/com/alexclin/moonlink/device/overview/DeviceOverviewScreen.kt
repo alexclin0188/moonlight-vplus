@@ -35,11 +35,15 @@ import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
+import com.limelight.binding.PlatformBinding
+import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
+import com.limelight.utils.Iperf3Tester
 import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DeviceOverviewScreen(
@@ -472,7 +476,57 @@ private fun MoreActionsDialog(
         text = {
             Column {
                 DialogActionRow("配对 / 取消配对") {
-                    Toast.makeText(context, "配对功能开发中…", Toast.LENGTH_SHORT).show()
+                    if (managerBinder != null) {
+                        scope.launch(Dispatchers.IO) {
+                            try {
+                                val address = ServerHelper.getCurrentAddressFromComputer(computer)
+                                val httpConn = NvHTTP(
+                                    address,
+                                    computer.httpsPort,
+                                    managerBinder.getUniqueId(),
+                                    android.os.Build.MODEL,
+                                    computer.serverCert,
+                                    PlatformBinding.getCryptoProvider(context)
+                                )
+                                if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
+                                    // Already paired → unpair
+                                    httpConn.unpair()
+                                    val newState = httpConn.getPairState()
+                                    val msg = if (newState == PairingManager.PairState.NOT_PAIRED) "已取消配对" else "取消配对失败"
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                    }
+                                } else {
+                                    // Not paired → pair
+                                    val pin = PairingManager.generatePinString()
+                                    withContext(Dispatchers.Main) {
+                                        android.app.AlertDialog.Builder(context)
+                                            .setTitle("配对")
+                                            .setMessage("请在主机上输入以下 PIN 码:\n\n$pin\n\n（主机屏幕上会显示输入框）")
+                                            .setCancelable(false)
+                                            .setPositiveButton("确定", null)
+                                            .show()
+                                    }
+                                    val pm = httpConn.pairingManager
+                                    val pairResult = pm.pair(httpConn.getServerInfo(true), pin)
+                                    val resultMsg = when (pairResult.state) {
+                                        PairingManager.PairState.PAIRED -> "配对成功"
+                                        PairingManager.PairState.PIN_WRONG -> "PIN 码错误"
+                                        PairingManager.PairState.FAILED -> "配对失败"
+                                        PairingManager.PairState.ALREADY_IN_PROGRESS -> "配对已在进行中"
+                                        else -> "配对失败"
+                                    }
+                                    withContext(Dispatchers.Main) {
+                                        Toast.makeText(context, resultMsg, Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(context, "配对异常: ${e.message}", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }
+                    }
                     onDismiss()
                 }
                 if (!isOnline) {
@@ -526,7 +580,13 @@ private fun MoreActionsDialog(
                     onDismiss()
                 }
                 DialogActionRow("网络测试 (iPerf3)") {
-                    Toast.makeText(context, "iPerf3 功能开发中…", Toast.LENGTH_SHORT).show()
+                    val activity = context as? android.app.Activity
+                    if (activity != null) {
+                        val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
+                        Iperf3Tester(activity, ip).show()
+                    } else {
+                        Toast.makeText(context, "无法获取设备地址", Toast.LENGTH_SHORT).show()
+                    }
                     onDismiss()
                 }
                 DialogActionRow("打开 Sunshine 网页管理") {
