@@ -29,6 +29,13 @@
         android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"
         android:maxSdkVersion="33" />
 
+    <!-- Android 10+ (API 29) 开始，WifiManager.createMulticastLock 需要定位权限。
+         仅 pre-Android 14 的 JmDNS 路径需要，Android 14+ 用 NsdManager 不依赖此权限。
+         maxSdkVersion="33" 确保不会在 Android 12+ 的隐私弹窗中冗余展示。 -->
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="33" />
+
     <uses-feature
         android:name="android.hardware.touchscreen"
         android:required="false" />

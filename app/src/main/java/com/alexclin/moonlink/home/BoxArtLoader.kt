@@ -20,9 +20,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.limelight.computers.ComputerManagerService
+import com.limelight.binding.PlatformBinding
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
+import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.utils.CacheHelper
+import com.limelight.utils.ServerHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.StringReader
@@ -34,6 +38,16 @@ import java.util.concurrent.ConcurrentHashMap
  */
 private val boxArtMemoryCache = ConcurrentHashMap<String, Bitmap>()
 private val loadingUuids = ConcurrentHashMap.newKeySet<String>()
+
+/**
+ * Invalidate the in-memory box art cache for a given UUID.
+ * Call this after downloading new box art to disk so that the next
+ * [DeviceBoxArt] composition re-reads from disk instead of stale memory.
+ */
+fun invalidateBoxArtCache(uuid: String) {
+    boxArtMemoryCache.remove(uuid)
+    loadingUuids.remove(uuid)
+}
 
 /**
  * Composable that displays the box art thumbnail for a device.
@@ -48,12 +62,13 @@ fun DeviceBoxArt(
     isOnline: Boolean,
     modifier: Modifier = Modifier,
     clipShape: RoundedCornerShape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
+    refreshKey: Int = 0,
 ) {
     val context = LocalContext.current
     var bitmap by remember(uuid) { mutableStateOf<Bitmap?>(null) }
 
     // Async load from disk if not in memory cache
-    LaunchedEffect(uuid, isOnline) {
+    LaunchedEffect(uuid, isOnline, refreshKey) {
         if (uuid == null || bitmap != null) return@LaunchedEffect
         if (uuid in loadingUuids) return@LaunchedEffect
 
@@ -151,4 +166,63 @@ private fun calculateSampleSize(width: Int, height: Int): Int {
         }
     }
     return sampleSize
+}
+
+/**
+ * 从主机拉取 app list 并下载所有 box art 缩略图到磁盘缓存。
+ *
+ * 被 [DeviceOverviewScreen] 和 [DeviceListScreen] 复用，
+ * 消除两处的重复代码。
+ *
+ * @return 拉取到的 app 列表；如果网络请求失败或条件不满足则返回 null。
+ */
+suspend fun fetchAndCacheAppListAndBoxArt(
+    context: Context,
+    computer: ComputerDetails,
+    managerBinder: ComputerManagerService.ComputerManagerBinder,
+): List<NvApp>? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val address = ServerHelper.getCurrentAddressFromComputer(computer)
+            val http = NvHTTP(
+                address,
+                computer.httpsPort,
+                managerBinder.getUniqueId(),
+                android.os.Build.MODEL,
+                computer.serverCert,
+                PlatformBinding.getCryptoProvider(context)
+            )
+            val rawXml = http.getAppListRaw()
+            val apps = NvHTTP.getAppListByReader(StringReader(rawXml))
+            val uuid = computer.uuid ?: return@withContext null
+
+            // 写入 app list 缓存
+            CacheHelper.openCacheFileForOutput(
+                context.cacheDir, "applist", uuid
+            ).use { out ->
+                CacheHelper.writeStringToOutputStream(out, rawXml)
+            }
+
+            // 下载 box art 到磁盘
+            for (app in apps) {
+                val boxArtFile = CacheHelper.openPath(
+                    false, context.cacheDir, "boxart", uuid, "${app.appId}.png"
+                )
+                if (boxArtFile.exists() && boxArtFile.length() > 0L) continue
+                try {
+                    http.getBoxArt(app)?.use { stream ->
+                        CacheHelper.openCacheFileForOutput(
+                            context.cacheDir, "boxart", uuid, "${app.appId}.png"
+                        ).use { out ->
+                            CacheHelper.writeInputStreamToOutputStream(stream, out, 20L * 1024 * 1024)
+                        }
+                    }
+                } catch (_: Exception) { /* 跳过单个 app 的封面失败 */ }
+            }
+
+            apps
+        } catch (_: Exception) {
+            null
+        }
+    }
 }

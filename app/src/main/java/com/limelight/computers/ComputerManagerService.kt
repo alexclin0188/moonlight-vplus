@@ -97,6 +97,11 @@ class ComputerManagerService : Service() {
                 val privateBinder = binder as DiscoveryService.DiscoveryBinder
                 privateBinder.setListener(createDiscoveryListener())
                 discoveryBinder = privateBinder
+                // 如果 polling 已经激活但 DiscoveryService 刚刚绑定完成（startPollingInternal
+                // 运行时 discoveryBinder 还为 null），则立即启动发现，避免静默丢失。
+                if (pollingActive) {
+                    privateBinder.startDiscovery(MDNS_QUERY_PERIOD_MS)
+                }
                 (this as Object).notifyAll()
             }
         }
@@ -290,17 +295,21 @@ class ComputerManagerService : Service() {
             }
         }
 
-        fun invalidateStateForComputer(uuid: String) {
-            synchronized(pollingTuples) {
-                for (tuple in pollingTuples) {
-                    if (uuid == tuple.computer.uuid) {
-                        synchronized(tuple.networkLock) {
-                            tuple.computer.state = ComputerDetails.State.UNKNOWN
-                        }
+    fun invalidateStateForComputer(uuid: String) {
+        synchronized(pollingTuples) {
+            for (tuple in pollingTuples) {
+                if (uuid == tuple.computer.uuid) {
+                    synchronized(tuple.networkLock) {
+                        tuple.computer.state = ComputerDetails.State.UNKNOWN
                     }
+                    // 立即发射到 flow，让 UI 层能感知到 pairState / state 的变更，
+                    // 无需等待下一个轮询周期（~1500ms）。修复 Compose UI 配对后
+                    // 设备仍显示在「未配对设备」列表的问题。
+                    _computerUpdates.tryEmit(tuple.computer)
                 }
             }
         }
+    }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {

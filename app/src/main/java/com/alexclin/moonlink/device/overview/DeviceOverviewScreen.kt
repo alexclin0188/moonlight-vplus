@@ -24,14 +24,15 @@ import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
+import com.alexclin.moonlink.home.fetchAndCacheAppListAndBoxArt
 import com.limelight.AppView
 import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
-import com.limelight.binding.PlatformBinding
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
+import com.limelight.binding.PlatformBinding
 import com.limelight.utils.Iperf3Tester
 import com.limelight.utils.AppSettingsManager
 import com.limelight.utils.ServerHelper
@@ -56,9 +57,25 @@ fun DeviceOverviewScreen(
     val scope   = rememberCoroutineScope()
 
     val computer = findComputer(computers, uuid)
-    val appList  = remember(uuid) { loadCachedAppList(context, uuid) }
+    var appList by remember(uuid) { mutableStateOf(loadCachedAppList(context, uuid)) }
     val appSettingsManager = remember { AppSettingsManager(context) }
     var useLastSettings by remember { mutableStateOf(appSettingsManager.isUseLastSettingsEnabled) }
+
+    // ── 主动拉取 app list & box art ─────────────────────
+    // 如果缓存中没有 app list 且设备在线+已配对，则异步从主机拉取并缓存。
+    // 这解决了快速启动区不展示（Bug 3）以及 box art 缩略图无法加载（Bug 2）的问题。
+    LaunchedEffect(uuid, computer?.state, computer?.pairState) {
+        if (computer != null && appList.isEmpty() &&
+            computer.state == ComputerDetails.State.ONLINE &&
+            computer.pairState == PairingManager.PairState.PAIRED &&
+            managerBinder != null
+        ) {
+            val fetched = fetchAndCacheAppListAndBoxArt(context, computer, managerBinder)
+            if (fetched != null && fetched.isNotEmpty()) {
+                appList = fetched
+            }
+        }
+    }
 
     // Quick actions dialog
     var showQuickActions by remember { mutableStateOf(false) }

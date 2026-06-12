@@ -22,14 +22,21 @@ class JmDNSDiscoveryAgent(
     listener: MdnsDiscoveryListener
 ) : MdnsDiscoveryAgent(listener), ServiceListener {
 
-    private val multicastLock: WifiManager.MulticastLock
+    private var multicastLock: WifiManager.MulticastLock? = null
     private var discoveryThread: Thread? = null
     private val pendingResolution = HashSet<String>()
 
     init {
-        val wifiMgr = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        multicastLock = wifiMgr.createMulticastLock("Limelight mDNS")
-        multicastLock.setReferenceCounted(false)
+        try {
+            val wifiMgr = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+            multicastLock = wifiMgr.createMulticastLock("Limelight mDNS")
+            multicastLock!!.setReferenceCounted(false)
+        } catch (e: SecurityException) {
+            // Android 10+ (API 29) 需要 ACCESS_COARSE_LOCATION 运行时权限才能创建多播锁。
+            // 如果没有权限，multicastLock 保持 null，JmDNS 仍会尝试工作（部分路由/热点环境
+            // 即使没有多播锁也能收到响应）。用户授权权限后重新 startDiscovery 即可。
+            LimeLog.severe("mDNS: Cannot create multicast lock - missing location permission: ${e.message}")
+        }
     }
 
     private fun handleResolvedServiceInfo(info: ServiceInfo) {
@@ -51,7 +58,7 @@ class JmDNSDiscoveryAgent(
     override fun startDiscovery(discoveryIntervalMs: Int) {
         stopDiscovery()
 
-        multicastLock.acquire()
+        multicastLock?.acquire()
 
         synchronized(listeners) {
             listeners.add(this)
@@ -95,7 +102,7 @@ class JmDNSDiscoveryAgent(
     }
 
     override fun stopDiscovery() {
-        multicastLock.release()
+        multicastLock?.release()
 
         synchronized(listeners) {
             listeners.remove(this)
@@ -134,6 +141,13 @@ class JmDNSDiscoveryAgent(
                 if (!networkInterface.isUp) return false
                 // Omit multicast check - some devices lie about not supporting multicast
                 if (networkInterface.isLoopback) return false
+                // 跳过 VPN 虚拟网卡（TUN、PPP、rmnet 等），确保 mDNS 套接字绑定到
+                // 物理 WiFi/以太网接口，避免 EasyTier 等 VPN 将多播流量路由到虚拟网络。
+                val name = networkInterface.name.lowercase()
+                if (name.startsWith("tun") || name.startsWith("ppp") ||
+                    name.startsWith("rmnet") || name.startsWith("pdp") ||
+                    name.startsWith("wwan")
+                ) return false
                 true
             } catch (e: Exception) {
                 false

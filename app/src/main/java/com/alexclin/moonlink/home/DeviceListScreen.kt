@@ -42,6 +42,7 @@ import com.limelight.nvstream.http.PairingManager
 import com.limelight.binding.PlatformBinding
 import com.limelight.preferences.AddComputerManually
 import com.limelight.utils.ServerHelper
+import com.limelight.utils.CacheHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import com.alexclin.moonlink.device.overview.loadCachedAppList
 import kotlinx.coroutines.Dispatchers
@@ -89,6 +90,9 @@ fun DeviceListScreen(
 
     // ── Add-device menu state & QR launcher ──────────────────────
     var showAddMenu by remember { mutableStateOf(false) }
+
+    // ── Trigger to force DeviceBoxArt to reload from disk ────────
+    var refreshTrigger by remember { mutableStateOf(0) }
 
     val qrCodeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -174,6 +178,42 @@ fun DeviceListScreen(
         }
     }
 
+    // ── 主动获取 box art 缩略图 ──────────────────────────
+    // 为所有在线+已配对且无缓存的设备，自动拉取应用列表并下载缩略图到磁盘，
+    // 这样 DeviceBoxArt 在首页就能直接展示桌面图片，无需先进入设备概要页。
+    LaunchedEffect(computers, managerBinder) {
+        val targets = computers.filter {
+            it.state == ComputerDetails.State.ONLINE &&
+            it.pairState == PairingManager.PairState.PAIRED &&
+            it.uuid != null
+        }
+        if (targets.isEmpty() || managerBinder == null) return@LaunchedEffect
+
+        var needsRefresh = false
+        for (computer in targets) {
+            val uuid = computer.uuid!!
+            // 检查磁盘上是否已有 box art（轻量文件 I/O，但避免在 main 线程执行）
+            val hasCached = withContext(Dispatchers.IO) {
+                val boxArtDir = CacheHelper.openPath(false, context.cacheDir, "boxart", uuid)
+                val appListFile = CacheHelper.openPath(false, context.cacheDir, "applist", uuid)
+                boxArtDir.isDirectory() &&
+                    (boxArtDir.listFiles()?.isNotEmpty() == true || appListFile.exists())
+            }
+            if (hasCached) continue
+
+            // 主动拉取（fetchAndCacheAppListAndBoxArt 内部已切到 Dispatchers.IO）
+            val result = fetchAndCacheAppListAndBoxArt(context, computer, managerBinder)
+            if (result != null) needsRefresh = true
+        }
+        if (needsRefresh) {
+            // 清除所有目标设备的内存缓存，使 DeviceBoxArt 下次从磁盘重载
+            for (computer in targets) {
+                computer.uuid?.let { invalidateBoxArtCache(it) }
+            }
+            refreshTrigger++
+        }
+    }
+
     // Separate paired / unpaired
     val paired   = computers.filter { it.pairState == com.limelight.nvstream.http.PairingManager.PairState.PAIRED }
         .sortedWith(compareByDescending<ComputerDetails> { it.state == ComputerDetails.State.ONLINE }
@@ -250,6 +290,7 @@ fun DeviceListScreen(
                             onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                             snackbarHostState = snackbarHostState,
                             scope = scope,
+                            refreshKey = refreshTrigger,
                         )
                     }
                 }
@@ -271,6 +312,7 @@ fun DeviceListScreen(
                             onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                             snackbarHostState = snackbarHostState,
                             scope = scope,
+                            refreshKey = refreshTrigger,
                         )
                     }
                 }
@@ -315,6 +357,7 @@ private fun DeviceCard(
     onNavigateToDetail: () -> Unit,
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
+    refreshKey: Int = 0,
 ) {
     val context = LocalContext.current
     val isOnline = computer.state == ComputerDetails.State.ONLINE
@@ -348,6 +391,7 @@ private fun DeviceCard(
                     uuid = computer.uuid,
                     isOnline = isOnline,
                     modifier = Modifier.fillMaxSize(),
+                    refreshKey = refreshKey,
                 )
 
                 // Status badge (bottom-start) – shown for known states or paired+unknown

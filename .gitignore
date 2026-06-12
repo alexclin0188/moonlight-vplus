@@ -33,9 +33,10 @@ Thumbs.db
 /.*/
 !/.git/
 !/.github/
+!/.opencode/
 
 # Android Studio
-.idea
+.kotlin/.idea
 #.idea/workspace.xml - remove # and delete .idea if it better suit your needs.
 .gradle
 build/
@@ -68,3 +69,5 @@ scripts/
 app/nonRoot/release/baselineProfiles/
 
 .omo
+
+*.log

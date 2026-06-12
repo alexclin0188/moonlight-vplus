@@ -1,18 +1,24 @@
 package com.alexclin.moonlink
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.theme.MoonLinkTheme
@@ -100,6 +106,26 @@ class MoonLinkMainActivity : ComponentActivity() {
                 }
                 prefs.registerOnSharedPreferenceChangeListener(listener)
                 onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+            }
+
+            // ── 运行时权限：Android 10-13 需要 ACCESS_COARSE_LOCATION 才能创建
+            //    WifiManager.MulticastLock（JmDNS 路径必须）。Android 14+ 使用 NsdManager 不需此权限。
+            //    JmDNSDiscoveryAgent 已有 SecurityException 兜底，静默降级。
+            val locationPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { /* 权限结果由 JmDNSDiscoveryAgent 的 SecurityException 处理，无需额外通知 */ }
+
+            LaunchedEffect(Unit) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE
+                ) {
+                    if (ContextCompat.checkSelfPermission(
+                            context, Manifest.permission.ACCESS_COARSE_LOCATION
+                        ) != PackageManager.PERMISSION_GRANTED
+                    ) {
+                        locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    }
+                }
             }
 
             val darkTheme = when (themeMode) {
