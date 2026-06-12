@@ -40,6 +40,7 @@ import com.limelight.binding.PlatformBinding
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
 import com.limelight.utils.Iperf3Tester
+import com.limelight.utils.AppSettingsManager
 import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import android.graphics.Bitmap
@@ -63,7 +64,8 @@ fun DeviceOverviewScreen(
 
     val computer = findComputer(computers, uuid)
     val appList  = remember(uuid) { loadCachedAppList(context, uuid) }
-    var useLastSettings by remember { mutableStateOf(true) }
+    val appSettingsManager = remember { AppSettingsManager(context) }
+    var useLastSettings by remember { mutableStateOf(appSettingsManager.isUseLastSettingsEnabled) }
 
     // Quick actions dialog
     var showQuickActions by remember { mutableStateOf(false) }
@@ -114,7 +116,7 @@ fun DeviceOverviewScreen(
                             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable(enabled = isOnline) {
-                                launchStreamFromOverview(context, computer, managerBinder, useLastSettings)
+                                launchStreamFromOverview(context, computer, managerBinder, useLastSettings, appSettingsManager)
                             },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -208,11 +210,17 @@ fun DeviceOverviewScreen(
                             Spacer(Modifier.height(6.dp))
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable { useLastSettings = !useLastSettings },
+                                modifier = Modifier.clickable {
+                                    useLastSettings = !useLastSettings
+                                    appSettingsManager.setUseLastSettingsEnabled(useLastSettings)
+                                },
                             ) {
                                 Checkbox(
                                     checked = useLastSettings,
-                                    onCheckedChange = { useLastSettings = it },
+                                    onCheckedChange = {
+                                        useLastSettings = it
+                                        appSettingsManager.setUseLastSettingsEnabled(it)
+                                    },
                                     colors = CheckboxDefaults.colors(
                                         checkedColor = MaterialTheme.colorScheme.primary,
                                     ),
@@ -294,7 +302,7 @@ fun DeviceOverviewScreen(
                                     uuid = uuid,
                                     isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
                                     onClick = {
-                                        launchStreamFromOverview(context, computer, managerBinder, useLastSettings, app)
+                                        launchStreamFromOverview(context, computer, managerBinder, useLastSettings, appSettingsManager, app)
                                     },
                                     modifier = Modifier.weight(1f),
                                 )
@@ -330,6 +338,7 @@ fun DeviceOverviewScreen(
             managerBinder = managerBinder,
             snackbarHostState = snackbarHostState,
             scope = scope,
+            appSettingsManager = appSettingsManager,
             onDismiss = { showMoreActions = false },
             onNavigateToDetail = {
                 showMoreActions = false
@@ -533,6 +542,7 @@ private fun MoreActionsDialog(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
+    appSettingsManager: AppSettingsManager,
     onDismiss: () -> Unit,
     onNavigateToDetail: () -> Unit,
 ) {
@@ -613,7 +623,7 @@ private fun MoreActionsDialog(
                 }
                 if (isOnline && hasRunningGame) {
                     DialogActionRow("恢复串流") {
-                        launchStreamFromOverview(context, computer, managerBinder, false, forceResume = true)
+                        launchStreamFromOverview(context, computer, managerBinder, false, appSettingsManager, forceResume = true)
                         onDismiss()
                     }
                     DialogActionRow("退出应用") {
@@ -645,7 +655,7 @@ private fun MoreActionsDialog(
                 }
                 DialogActionRow("副屏幕 (VDD)") {
                     computer.useVdd = true
-                    launchStreamFromOverview(context, computer, managerBinder, false)
+                    launchStreamFromOverview(context, computer, managerBinder, false, appSettingsManager)
                     computer.useVdd = false
                     onDismiss()
                 }
@@ -736,6 +746,7 @@ private fun launchStreamFromOverview(
     computer: ComputerDetails,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     useLastSettings: Boolean,
+    appSettingsManager: AppSettingsManager,
     app: NvApp? = null,
     forceResume: Boolean = false,
 ) {
@@ -752,5 +763,17 @@ private fun launchStreamFromOverview(
         Toast.makeText(context, "无可启动的应用，请先打开应用列表加载", Toast.LENGTH_SHORT).show()
         return
     }
-    ServerHelper.doStart(activity, targetApp, computer, managerBinder, forceResume)
+
+    val intent = if (useLastSettings) {
+        appSettingsManager.createStartIntentWithLastSettingsIfEnabled(
+            activity, targetApp, computer, managerBinder,
+            forceResumeCurrentSession = forceResume
+        )
+    } else {
+        ServerHelper.createStartIntent(
+            activity, targetApp, computer, managerBinder,
+            forceResumeCurrentSession = forceResume
+        )
+    }
+    context.startActivity(intent)
 }
