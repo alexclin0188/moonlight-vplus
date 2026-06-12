@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +66,8 @@ fun DeviceOverviewScreen(
     // More actions dialog
     var showMoreActions by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
     if (computer == null) {
         // Device not found
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -79,12 +82,16 @@ fun DeviceOverviewScreen(
 
     val isOnline = computer.state == ComputerDetails.State.ONLINE
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        // ── Main card ─────────────────────────────
+    Scaffold(
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            // ── Main card ─────────────────────────────
         Card(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -299,12 +306,14 @@ fun DeviceOverviewScreen(
 
             Spacer(Modifier.height(32.dp))
         }
+    }
 
     // ── Quick Actions Dialog ────────────────────────────
     if (showQuickActions) {
         QuickActionsDialog(
             computer = computer,
             managerBinder = managerBinder,
+            snackbarHostState = snackbarHostState,
             onDismiss = { showQuickActions = false },
         )
     }
@@ -314,6 +323,7 @@ fun DeviceOverviewScreen(
         MoreActionsDialog(
             computer = computer,
             managerBinder = managerBinder,
+            snackbarHostState = snackbarHostState,
             scope = scope,
             onDismiss = { showMoreActions = false },
             onNavigateToDetail = {
@@ -410,6 +420,7 @@ private fun AppIconItem(
 private fun QuickActionsDialog(
     computer: ComputerDetails,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
+    snackbarHostState: SnackbarHostState,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
@@ -462,6 +473,7 @@ private fun QuickActionsDialog(
 private fun MoreActionsDialog(
     computer: ComputerDetails,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
+    snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
     onDismiss: () -> Unit,
     onNavigateToDetail: () -> Unit,
