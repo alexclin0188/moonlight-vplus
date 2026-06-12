@@ -176,8 +176,8 @@ fun DeviceOverviewScreen(
                         // OS icon + IP at top-start area
                         Row(
                             modifier = Modifier
-                                .align(Alignment.TopStart)
-                                .padding(start = 8.dp, top = 12.dp),
+                                .align(Alignment.TopCenter)
+                                .padding(top = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             val isMac = computer.name?.lowercase()?.let {
