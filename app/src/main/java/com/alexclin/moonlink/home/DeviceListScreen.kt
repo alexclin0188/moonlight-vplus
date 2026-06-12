@@ -42,6 +42,7 @@ import com.limelight.binding.PlatformBinding
 import com.limelight.preferences.AddComputerManually
 import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
+import com.alexclin.moonlink.device.overview.loadCachedAppList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -632,7 +633,22 @@ private fun launchStream(
         return
     }
 
-    val desktopApp = NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
+    val desktopApp: NvApp
+    if (computer.supportsDesktopSpecialApp) {
+        desktopApp = NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
+    } else {
+        val cachedApps = loadCachedAppList(context, computer.uuid)
+        if (cachedApps.isEmpty()) {
+            android.widget.Toast.makeText(
+                context,
+                "无可启动的应用，请先打开应用列表加载",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+        desktopApp = cachedApps.firstOrNull { it.appName.equals("Desktop", ignoreCase = true) }
+            ?: cachedApps.first()
+    }
     ServerHelper.doStart(activity, desktopApp, target, managerBinder, forceResume)
 }
 

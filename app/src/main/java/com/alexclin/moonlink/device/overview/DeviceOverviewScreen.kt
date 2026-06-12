@@ -527,6 +527,23 @@ private fun DialogActionRow(text: String, onClick: () -> Unit) {
 
 // ── Stream launcher (overview page) ───────────────────────────────
 
+/**
+ * Gets the default app for quick-start (thumbnail click with no specific app).
+ * Uses DesktopSpecialApp if supported, otherwise falls back to cached app list
+ * and prefers "Desktop" app (case-insensitive) or the first available app.
+ */
+private fun getDefaultQuickStartApp(computer: ComputerDetails, context: Context): NvApp? {
+    if (computer.supportsDesktopSpecialApp) {
+        return NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
+    }
+
+    val appList = loadCachedAppList(context, computer.uuid)
+    if (appList.isEmpty()) return null
+
+    // Prefer "Desktop" app if present, otherwise use first available
+    return appList.find { it.appName.equals("Desktop", ignoreCase = true) } ?: appList.first()
+}
+
 private fun launchStreamFromOverview(
     context: Context,
     computer: ComputerDetails,
@@ -544,6 +561,9 @@ private fun launchStreamFromOverview(
         return
     }
 
-    val targetApp = app ?: NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
+    val targetApp = app ?: getDefaultQuickStartApp(computer, context) ?: run {
+        Toast.makeText(context, "无可启动的应用，请先打开应用列表加载", Toast.LENGTH_SHORT).show()
+        return
+    }
     ServerHelper.doStart(activity, targetApp, computer, managerBinder, forceResume)
 }
