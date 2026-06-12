@@ -40,7 +40,7 @@ fun UiSettingsScreen() {
                         "深色" to "dark",
                         "浅色" to "light",
                     ),
-                    defaultValue = "system",
+                    defaultValue = "dark",
                 )
             }
             // 3. 使用小图标

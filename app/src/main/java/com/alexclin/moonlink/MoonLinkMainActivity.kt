@@ -4,13 +4,17 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.content.SharedPreferences
 import android.os.Bundle
 import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.theme.MoonLinkTheme
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -82,7 +86,29 @@ class MoonLinkMainActivity : ComponentActivity() {
                 }
             }
 
-            MoonLinkTheme {
+            // Read theme preference and observe changes
+            val context = LocalContext.current
+            val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+            var themeMode by remember { mutableStateOf(prefs.getString("list_theme_mode", "dark") ?: "dark") }
+
+            // Observe preference changes for live theme switching
+            DisposableEffect(Unit) {
+                val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                    if (key == "list_theme_mode") {
+                        themeMode = prefs.getString("list_theme_mode", "dark") ?: "dark"
+                    }
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+            }
+
+            val darkTheme = when (themeMode) {
+                "dark"  -> true
+                "light" -> false
+                else    -> isSystemInDarkTheme() // "system" → follow device
+            }
+
+            MoonLinkTheme(darkTheme = darkTheme) {
                 MoonLinkApp(
                     managerBinder = binderState.value,
                     computers     = computers,
