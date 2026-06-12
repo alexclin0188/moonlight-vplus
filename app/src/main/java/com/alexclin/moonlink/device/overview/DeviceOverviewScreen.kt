@@ -80,6 +80,8 @@ fun DeviceOverviewScreen(
     }
 
     val isOnline = computer.state == ComputerDetails.State.ONLINE
+    val isPaired = computer.pairState == PairingManager.PairState.PAIRED
+    val canShowActions = isOnline && isPaired
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -109,7 +111,8 @@ fun DeviceOverviewScreen(
                             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                             .clickable(enabled = isOnline) {
-                                launchStreamFromOverview(context, computer, managerBinder, useLastSettings, appSettingsManager)
+                                val forceResume = computer.runningGameId != 0
+                                launchStreamFromOverview(context, computer, managerBinder, useLastSettings, appSettingsManager, forceResume = forceResume)
                             },
                         contentAlignment = Alignment.Center,
                     ) {
@@ -201,44 +204,46 @@ fun DeviceOverviewScreen(
                         }
 
                         // Bottom overlay: "进入桌面 >" + checkbox
-                        Column(
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .padding(bottom = 16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-                            Text(
-                                "进入桌面 >",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.SemiBold,
-                                ),
-                                color = Color.White,
-                            )
-                            Spacer(Modifier.height(6.dp))
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.clickable {
-                                    useLastSettings = !useLastSettings
-                                    appSettingsManager.setUseLastSettingsEnabled(useLastSettings)
-                                },
+                        if (canShowActions) {
+                            Column(
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .padding(bottom = 16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Checkbox(
-                                    checked = useLastSettings,
-                                    onCheckedChange = {
-                                        useLastSettings = it
-                                        appSettingsManager.setUseLastSettingsEnabled(it)
-                                    },
-                                    colors = CheckboxDefaults.colors(
-                                        checkedColor = MaterialTheme.colorScheme.primary,
-                                    ),
-                                    modifier = Modifier.size(20.dp),
-                                )
-                                Spacer(Modifier.width(4.dp))
                                 Text(
-                                    "以最近一次配置启动",
-                                    style = MaterialTheme.typography.bodyMedium,
+                                    "进入桌面 >",
+                                    style = MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
                                     color = Color.White,
                                 )
+                                Spacer(Modifier.height(6.dp))
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.clickable {
+                                        useLastSettings = !useLastSettings
+                                        appSettingsManager.setUseLastSettingsEnabled(useLastSettings)
+                                    },
+                                ) {
+                                    Checkbox(
+                                        checked = useLastSettings,
+                                        onCheckedChange = {
+                                            useLastSettings = it
+                                            appSettingsManager.setUseLastSettingsEnabled(it)
+                                        },
+                                        colors = CheckboxDefaults.colors(
+                                            checkedColor = MaterialTheme.colorScheme.primary,
+                                        ),
+                                        modifier = Modifier.size(20.dp),
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        "以最近一次配置启动",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = Color.White,
+                                    )
+                                }
                             }
                         }
 
@@ -256,12 +261,14 @@ fun DeviceOverviewScreen(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                     ) {
-                        OverviewActionButton(
-                            icon = Icons.Default.Bolt,
-                            label = "快捷操作",
-                            modifier = Modifier.weight(1f),
-                            onClick = { showQuickActions = true },
-                        )
+                        if (canShowActions) {
+                            OverviewActionButton(
+                                icon = Icons.Default.Bolt,
+                                label = "快捷操作",
+                                modifier = Modifier.weight(1f),
+                                onClick = { showQuickActions = true },
+                            )
+                        }
                         VerticalDivider(modifier = Modifier.height(56.dp))
                         OverviewActionButton(
                             icon = Icons.Default.Info,
@@ -281,7 +288,7 @@ fun DeviceOverviewScreen(
             }
 
             // ── Quick launch section ──────────────────────
-            if (appList.isNotEmpty()) {
+            if (canShowActions && appList.isNotEmpty()) {
                 Spacer(Modifier.height(24.dp))
                 Text(
                     "快速启动",
@@ -609,7 +616,8 @@ private fun MoreActionsDialog(
         title = { Text("更多操作") },
         text = {
             Column {
-                DialogActionRow("配对 / 取消配对") {
+                val pairLabel = if (computer.pairState == PairingManager.PairState.PAIRED) "取消配对" else "配对"
+                DialogActionRow(pairLabel) {
                     if (managerBinder != null) {
                         scope.launch(Dispatchers.IO) {
                             try {
@@ -676,33 +684,10 @@ private fun MoreActionsDialog(
                     onDismiss()
                 }
                 if (isOnline && hasRunningGame) {
-                    DialogActionRow("恢复串流") {
-                        launchStreamFromOverview(context, computer, managerBinder, false, appSettingsManager, forceResume = true)
-                        onDismiss()
-                    }
                     DialogActionRow("退出应用") {
                         if (context is android.app.Activity && managerBinder != null) {
                             val app = NvApp().apply { appId = computer.runningGameId; appName = "Running" }
                             ServerHelper.doQuit(context, computer, app, managerBinder, null)
-                        }
-                        onDismiss()
-                    }
-                }
-                DialogActionRow("完整应用列表") {
-                    val intent = Intent(context, AppView::class.java).apply {
-                        putExtra(AppView.NAME_EXTRA, computer.name)
-                        putExtra(AppView.UUID_EXTRA, computer.uuid)
-                    }
-                    context.startActivity(intent)
-                    onDismiss()
-                }
-                DialogActionRow("查看详情") {
-                    onNavigateToDetail()
-                }
-                if (isOnline) {
-                    DialogActionRow("睡眠") {
-                        if (context is android.app.Activity && managerBinder != null) {
-                            ServerHelper.pcSleep(context, computer, managerBinder, null)
                         }
                         onDismiss()
                     }
@@ -721,17 +706,6 @@ private fun MoreActionsDialog(
                     } else {
                         Toast.makeText(context, "无法获取设备地址", Toast.LENGTH_SHORT).show()
                     }
-                    onDismiss()
-                }
-                DialogActionRow("打开 Sunshine 网页管理") {
-                    val addr = computer.activeAddress?.address
-                    val url = if (addr != null) "https://$addr:${computer.httpsPort}" else ""
-                    val intent = Intent(context, SunshineWebUiActivity::class.java).apply {
-                        putExtra(SunshineWebUiActivity.EXTRA_URL, url)
-                        putExtra(SunshineWebUiActivity.EXTRA_TITLE, computer.name ?: "Sunshine")
-                        computer.serverCert?.let { putExtra(SunshineWebUiActivity.EXTRA_SERVER_CERT, it.encoded) }
-                    }
-                    context.startActivity(intent)
                     onDismiss()
                 }
                 DialogActionRow("为此设备禁用 IPv6") {
