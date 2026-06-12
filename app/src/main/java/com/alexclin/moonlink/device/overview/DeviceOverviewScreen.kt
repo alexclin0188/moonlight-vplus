@@ -492,20 +492,67 @@ private fun QuickActionsDialog(
 ) {
     val context = LocalContext.current
     val activity = context as? android.app.Activity
+    val scope = rememberCoroutineScope()
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("快捷操作") },
         text = {
             Column {
-                // TODO: 向主机发送实际重启命令（RESTART 信号）
                 DialogActionRow("重启") {
-                    Toast.makeText(context, "重启命令已发送", Toast.LENGTH_SHORT).show()
+                    if (activity != null && managerBinder != null) {
+                        scope.launch {
+                            try {
+                                val address = ServerHelper.getCurrentAddressFromComputer(computer)
+                                val httpConn = NvHTTP(
+                                    address,
+                                    computer.httpsPort,
+                                    managerBinder.getUniqueId(),
+                                    android.os.Build.MODEL,
+                                    computer.serverCert,
+                                    PlatformBinding.getCryptoProvider(context)
+                                )
+                                withContext(Dispatchers.IO) {
+                                    val success = httpConn.pcRestart()
+                                    withContext(Dispatchers.Main) {
+                                        snackbarHostState.showSnackbar(
+                                            if (success) "重启命令已发送" else "重启失败"
+                                        )
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("重启异常: ${e.message}")
+                            }
+                        }
+                    }
                     onDismiss()
                 }
-                // TODO: 向主机发送实际关机命令（SHUTDOWN 信号）
                 DialogActionRow("关机") {
-                    Toast.makeText(context, "关机命令已发送", Toast.LENGTH_SHORT).show()
+                    if (activity != null && managerBinder != null) {
+                        scope.launch {
+                            try {
+                                val address = ServerHelper.getCurrentAddressFromComputer(computer)
+                                val httpConn = NvHTTP(
+                                    address,
+                                    computer.httpsPort,
+                                    managerBinder.getUniqueId(),
+                                    android.os.Build.MODEL,
+                                    computer.serverCert,
+                                    PlatformBinding.getCryptoProvider(context)
+                                )
+                                withContext(Dispatchers.IO) {
+                                    val success = httpConn.pcShutdown()
+                                    withContext(Dispatchers.Main) {
+                                        snackbarHostState.showSnackbar(
+                                            if (success) "关机命令已发送" else "关机失败"
+                                        )
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                snackbarHostState.showSnackbar("关机异常: ${e.message}")
+                            }
+                        }
+                    }
                     onDismiss()
                 }
                 DialogActionRow("睡眠") {
