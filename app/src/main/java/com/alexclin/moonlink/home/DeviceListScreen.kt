@@ -322,7 +322,9 @@ private fun DeviceCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
         ) {
             // ── Thumbnail area (left, clickable → stream) ──
             Box(
@@ -344,7 +346,7 @@ private fun DeviceCard(
                     val badgeText  = if (isOnline) "在线" else "离线"
                     Box(
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
+                            .align(Alignment.TopStart)
                             .padding(6.dp)
                             .background(
                                 badgeColor.copy(alpha = 0.85f),
@@ -401,7 +403,7 @@ private fun DeviceCard(
             }
 
             // ── Info area (right, clickable → overview, long click → menu) ──
-            Column(
+            Row(
                 modifier = Modifier
                     .weight(0.6f)
                     .fillMaxHeight()
@@ -410,59 +412,71 @@ private fun DeviceCard(
                         onLongClick = { showMenu = true },
                     )
                     .padding(horizontal = 10.dp, vertical = 6.dp),
-                verticalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = computer.name ?: "未知设备",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                )
-
-                Spacer(Modifier.height(4.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    // OS type icon
-                    val isMac = computer.name?.lowercase()?.let {
-                        it.contains("mac") || it.contains("darwin")
-                    } ?: false
-                    val osIcon = if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows
-                    val osColor = if (isMac) macosGray else windowsBlue
-                    Icon(
-                        imageVector = osIcon,
-                        contentDescription = if (isMac) "macOS" else "Windows",
-                        modifier = Modifier.size(16.dp),
-                        tint = osColor.copy(alpha = if (isOnline) 1f else 0.5f),
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = computer.name ?: "未知设备",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
                     )
 
-                    // Running game indicator
-                    if (computer.runningGameId != 0) {
-                        Spacer(Modifier.width(6.dp))
+                    Spacer(Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        // OS type icon
+                        val isMac = computer.name?.lowercase()?.let {
+                            it.contains("mac") || it.contains("darwin")
+                        } ?: false
+                        val osIcon = if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows
+                        val osColor = if (isMac) macosGray else windowsBlue
                         Icon(
-                            Icons.Default.PlayCircle,
-                            contentDescription = "运行中",
+                            imageVector = osIcon,
+                            contentDescription = if (isMac) "macOS" else "Windows",
                             modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.primary,
+                            tint = osColor.copy(alpha = if (isOnline) 1f else 0.5f),
                         )
-                        Spacer(Modifier.width(3.dp))
+
+                        // Running game indicator
+                        if (computer.runningGameId != 0) {
+                            Spacer(Modifier.width(6.dp))
+                            Icon(
+                                Icons.Default.PlayCircle,
+                                contentDescription = "运行中",
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text(
+                                "运行中",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.primary,
+                            )
+                        }
+                    }
+
+                    // Address info
+                    computer.activeAddress?.let { addr ->
+                        Spacer(Modifier.height(3.dp))
                         Text(
-                            "运行中",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
+                            text = addr.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
                         )
                     }
                 }
 
-                // Address info
-                computer.activeAddress?.let { addr ->
-                    Spacer(Modifier.height(3.dp))
-                    Text(
-                        text = addr.toString(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                    )
-                }
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    contentDescription = "更多",
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

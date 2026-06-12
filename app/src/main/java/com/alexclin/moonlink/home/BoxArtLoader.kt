@@ -47,6 +47,7 @@ fun DeviceBoxArt(
     uuid: String?,
     isOnline: Boolean,
     modifier: Modifier = Modifier,
+    clipShape: RoundedCornerShape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
 ) {
     val context = LocalContext.current
     var bitmap by remember(uuid) { mutableStateOf<Bitmap?>(null) }
@@ -79,7 +80,7 @@ fun DeviceBoxArt(
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+            .clip(clipShape)
             .background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {

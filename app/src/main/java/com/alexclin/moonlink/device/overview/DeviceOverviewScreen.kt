@@ -87,7 +87,7 @@ fun DeviceOverviewScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .consumeWindowInsets(paddingValues)
                 .verticalScroll(rememberScrollState()),
         ) {
             // ── Main card ─────────────────────────────
@@ -118,6 +118,7 @@ fun DeviceOverviewScreen(
                             uuid = computer.uuid,
                             isOnline = isOnline,
                             modifier = Modifier.fillMaxSize(),
+                            clipShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                         )
 
                         // Status badge (bottom-start)
@@ -125,7 +126,7 @@ fun DeviceOverviewScreen(
                         val badgeText  = if (isOnline) "在线" else "离线"
                         Box(
                             modifier = Modifier
-                                .align(Alignment.BottomStart)
+                                .align(Alignment.TopStart)
                                 .padding(8.dp)
                                 .background(
                                     badgeColor.copy(alpha = 0.85f),
@@ -172,19 +173,32 @@ fun DeviceOverviewScreen(
                             }
                         }
 
-                        // OS icon at top-center
-                        val isMac = computer.name?.lowercase()?.let {
-                            it.contains("mac") || it.contains("darwin")
-                        } ?: false
-                        Icon(
-                            if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows,
-                            contentDescription = if (isMac) "macOS" else "Windows",
+                        // OS icon + IP at top-start area
+                        Row(
                             modifier = Modifier
-                                .align(Alignment.TopCenter)
-                                .padding(top = 12.dp)
-                                .size(28.dp),
-                            tint = if (isMac) macosGray else windowsBlue,
-                        )
+                                .align(Alignment.TopStart)
+                                .padding(start = 8.dp, top = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            val isMac = computer.name?.lowercase()?.let {
+                                it.contains("mac") || it.contains("darwin")
+                            } ?: false
+                            Icon(
+                                if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows,
+                                contentDescription = if (isMac) "macOS" else "Windows",
+                                modifier = Modifier.size(20.dp),
+                                tint = if (isMac) macosGray else windowsBlue,
+                            )
+                            computer.activeAddress?.let { addr ->
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = addr.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.9f),
+                                    maxLines = 1,
+                                )
+                            }
+                        }
 
                         // Bottom overlay: "进入桌面 >" + checkbox
                         Column(
