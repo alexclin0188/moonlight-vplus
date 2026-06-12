@@ -5,21 +5,14 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -659,7 +652,7 @@ private fun MoreActionsDialog(
                 if (!isOnline) {
                     DialogActionRow("发送网络唤醒 (WoL)") {
                         scope.launch(Dispatchers.IO) {
-                            try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) {}
+                            try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
                         }
                         onDismiss()
                     }
@@ -802,7 +795,7 @@ private fun launchStreamFromOverview(
 
     if (computer.state != ComputerDetails.State.ONLINE) {
         Toast.makeText(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT).show()
-        try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) {}
+        try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
         return
     }
 
