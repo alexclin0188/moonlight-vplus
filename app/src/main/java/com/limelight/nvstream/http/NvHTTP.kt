@@ -690,6 +690,49 @@ class NvHTTP(
         return getXmlString(xmlStr, "supercmd", true) != "0"
     }
 
+    /**
+     * Sends a restart command to the Sunshine host.
+     * Uses the Sunshine REST API JSON response format.
+     * On disconnect (host reboots), treats as success.
+     */
+    fun pcRestart(): Boolean {
+        try {
+            val response = openHttpConnectionToString(
+                httpClientShortConnectTimeout,
+                getHttpsUrl(true),
+                "restart"
+            )
+            // Some Sunshine endpoints return empty body on success
+            if (response.isNullOrBlank()) return true
+            val json = JSONObject(response)
+            return json.optInt("status_code", -1) == 200
+        } catch (e: Exception) {
+            // Restart may disconnect before response — treat as success
+            LimeLog.info("pcRestart: ${e.message}")
+            return true
+        }
+    }
+
+    /**
+     * Sends a shutdown command to the Sunshine host.
+     * Uses the Sunshine REST API JSON response format.
+     */
+    fun pcShutdown(): Boolean {
+        try {
+            val response = openHttpConnectionToString(
+                httpClientShortConnectTimeout,
+                getHttpsUrl(true),
+                "shutdown"
+            )
+            if (response.isNullOrBlank()) return true
+            val json = JSONObject(response)
+            return json.optInt("status_code", -1) == 200
+        } catch (e: Exception) {
+            LimeLog.info("pcShutdown: ${e.message}")
+            return false
+        }
+    }
+
     @SuppressLint("DefaultLocale")
     @Throws(IOException::class, XmlPullParserException::class, InterruptedException::class)
     fun setBitrate(bitrateKbps: Int): Boolean {
