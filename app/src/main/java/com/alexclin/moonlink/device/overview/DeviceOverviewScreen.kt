@@ -39,6 +39,7 @@ import com.limelight.utils.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.LruCache
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import kotlinx.coroutines.Dispatchers
@@ -412,7 +413,9 @@ private fun OverviewActionButton(
 // ── App icon loader ─────────────────────────────────────────────────
 
 /** Memory cache for app icons: <uuid_appId> → Bitmap */
-private val iconCache = mutableMapOf<String, Bitmap>()
+private val iconCache = object : LruCache<String, Bitmap>(100) {
+    override fun sizeOf(key: String, value: Bitmap): Int = 1
+}
 
 @Composable
 private fun AppIconImage(
@@ -427,7 +430,7 @@ private fun AppIconImage(
     LaunchedEffect(appId, uuid) {
         withContext(Dispatchers.IO) {
             val cacheKey = "${uuid}_$appId"
-            val cached = iconCache[cacheKey]
+            val cached = synchronized(iconCache) { iconCache.get(cacheKey) }
             if (cached != null) {
                 bitmap = cached
                 isLoaded = true
@@ -437,7 +440,7 @@ private fun AppIconImage(
             if (file.exists()) {
                 val bmp = BitmapFactory.decodeFile(file.absolutePath)
                 if (bmp != null) {
-                    iconCache[cacheKey] = bmp
+                    synchronized(iconCache) { iconCache.put(cacheKey, bmp) }
                     bitmap = bmp
                     isLoaded = true
                 }
@@ -729,8 +732,12 @@ private fun MoreActionsDialog(
                 DialogActionRow("网络测试 (iPerf3)") {
                     val activity = context as? android.app.Activity
                     if (activity != null) {
-                        val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
-                        Iperf3Tester(activity, ip).show()
+                        try {
+                            val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
+                            Iperf3Tester(activity, ip).show()
+                        } catch (e: java.io.IOException) {
+                            Toast.makeText(context, "设备地址不可用，请确认设备在线", Toast.LENGTH_SHORT).show()
+                        }
                     } else {
                         Toast.makeText(context, "无法获取设备地址", Toast.LENGTH_SHORT).show()
                     }

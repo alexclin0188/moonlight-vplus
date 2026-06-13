@@ -88,6 +88,8 @@ fun DeviceListScreen(
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
 
+    var isPairingLoading by remember { mutableStateOf(false) }
+
     // ── Add-device menu state & QR launcher ──────────────────────
     var showAddMenu by remember { mutableStateOf(false) }
 
@@ -112,68 +114,26 @@ fun DeviceListScreen(
         val pin = uri.getQueryParameter("pin")
             ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
         val portStr = uri.getQueryParameter("port")
-        var port = NvHTTP.DEFAULT_HTTP_PORT
-        if (portStr != null) { try { port = portStr.toInt() } catch (_: NumberFormatException) {} }
+        val port = if (portStr != null) { try { portStr.toInt() } catch (_: NumberFormatException) { NvHTTP.DEFAULT_HTTP_PORT } } else { null }
 
+        isPairingLoading = true
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    val addDetails = ComputerDetails()
-                    addDetails.manualAddress = ComputerDetails.AddressTuple(host, port)
-                    val added = managerBinder?.addComputerBlocking(addDetails) == true
-                    if (!added) {
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.addpc_fail))
-                        }
-                        return@withContext
+                val result = withContext(Dispatchers.IO) {
+                    handleQrPairResult(context, host, pin, port, managerBinder)
+                }
+                when (result) {
+                    is PairQrResult.Success -> {
+                        snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.addpc_success))
                     }
-
-                    var computer = managerBinder?.getComputer(addDetails.uuid!!)
-                    if (computer == null) computer = addDetails
-
-                    val httpConn = NvHTTP(
-                        ServerHelper.getCurrentAddressFromComputer(computer),
-                        computer.httpsPort,
-                        managerBinder?.getUniqueId() ?: "",
-                        android.provider.Settings.Global.getString(
-                            context.contentResolver, "device_name"
-                        ) ?: android.os.Build.MODEL ?: "MoonLink Client",
-                        computer.serverCert,
-                        PlatformBinding.getCryptoProvider(context)
-                    )
-
-                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(com.limelight.R.string.addpc_success))
-                        }
-                        return@withContext
+                    is PairQrResult.Error -> {
+                        snackbarHostState.showSnackbar(result.message)
                     }
-
-                    val pm = httpConn.pairingManager
-                    val pairResult = pm.pair(
-                        httpConn.getServerInfo(true), pin
-                    )
-
-                    val msg = when (pairResult.state) {
-                        PairingManager.PairState.PAIRED -> {
-                            managerBinder?.getComputer(addDetails.uuid!!)?.let { c ->
-                                c.serverCert = pm.pairedCert
-                                c.pairState = PairingManager.PairState.PAIRED
-                            }
-                            pairResult.pairName?.let { name ->
-                                context.getSharedPreferences("pair_name_map", Context.MODE_PRIVATE)
-                                    .edit().putString(addDetails.uuid, name).apply()
-                            }
-                            managerBinder?.invalidateStateForComputer(addDetails.uuid!!)
-                            context.getString(com.limelight.R.string.qr_pair_success)
-                        }
-                        PairingManager.PairState.PIN_WRONG -> context.getString(com.limelight.R.string.pair_incorrect_pin)
-                        else -> context.getString(com.limelight.R.string.pair_fail)
-                    }
-                    withContext(Dispatchers.Main) { snackbarHostState.showSnackbar(msg) }
                 }
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar("配对异常: ${e.message ?: e.javaClass.simpleName}")
+            } finally {
+                isPairingLoading = false
             }
         }
     }
@@ -221,6 +181,17 @@ fun DeviceListScreen(
     val unpaired = computers.filter { it.pairState != com.limelight.nvstream.http.PairingManager.PairState.PAIRED }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // Pairing loading indicator at top
+        if (isPairingLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+                    .size(16.dp),
+                strokeWidth = 2.dp,
+            )
+        }
+
         if (computers.isEmpty()) {
             // ── Empty state ───────────────────────────────
             Box(
@@ -280,7 +251,7 @@ fun DeviceListScreen(
             ) {
                 // ── Paired devices ─────────────────────
                 if (paired.isNotEmpty()) {
-                    item { SectionHeader("可控设备") }
+                    item(key = "header_paired") { SectionHeader("可控设备") }
                     items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
                         DeviceCard(
                             computer = computer,
@@ -291,13 +262,14 @@ fun DeviceListScreen(
                             snackbarHostState = snackbarHostState,
                             scope = scope,
                             refreshKey = refreshTrigger,
+                            setPairingLoading = { isPairingLoading = it },
                         )
                     }
                 }
 
                 // ── Unpaired devices ───────────────────
                 if (unpaired.isNotEmpty()) {
-                    item {
+                    item(key = "header_unpaired") {
                         SectionHeader(
                             title = "未配对设备",
                             showProgress = true,
@@ -313,6 +285,7 @@ fun DeviceListScreen(
                             snackbarHostState = snackbarHostState,
                             scope = scope,
                             refreshKey = refreshTrigger,
+                            setPairingLoading = { isPairingLoading = it },
                         )
                     }
                 }
@@ -358,6 +331,7 @@ private fun DeviceCard(
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
     refreshKey: Int = 0,
+    setPairingLoading: (Boolean) -> Unit = {},
 ) {
     val context = LocalContext.current
     val isOnline = computer.state == ComputerDetails.State.ONLINE
@@ -554,6 +528,7 @@ private fun DeviceCard(
                         snackbarHostState = snackbarHostState,
                         scope = scope,
                         onNavigateToDetail = onNavigateToDetail,
+                        setLoading = setPairingLoading,
                     )
                 },
             )
@@ -571,6 +546,7 @@ private fun handleMenuAction(
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
     onNavigateToDetail: () -> Unit,
+    setLoading: (Boolean) -> Unit = {},
 ) {
     val activity = context as? android.app.Activity ?: return
 
@@ -614,9 +590,9 @@ private fun handleMenuAction(
         }
         "pair" -> {
             if (computer.pairState == PairingManager.PairState.PAIRED) {
-                doUnpair(activity, computer, managerBinder, snackbarHostState, scope)
+                doUnpair(activity, computer, managerBinder, snackbarHostState, scope, setLoading)
             } else {
-                doPair(activity, computer, managerBinder, snackbarHostState, scope)
+                doPair(activity, computer, managerBinder, snackbarHostState, scope, setLoading)
             }
         }
         "resume" -> {
@@ -728,6 +704,7 @@ private fun doPair(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
+    setLoading: (Boolean) -> Unit = {},
 ) {
     if (computer.state == ComputerDetails.State.OFFLINE || computer.activeAddress == null) {
         android.widget.Toast.makeText(activity, "设备离线，无法配对", android.widget.Toast.LENGTH_SHORT).show()
@@ -735,7 +712,7 @@ private fun doPair(
     }
     if (managerBinder == null) return
 
-    android.widget.Toast.makeText(activity, "正在配对…", android.widget.Toast.LENGTH_SHORT).show()
+    setLoading(true)
 
     scope.launch {
         try {
@@ -810,6 +787,8 @@ private fun doPair(
             with(Dispatchers.Main) {
                 snackbarHostState.showSnackbar("配对异常: ${e.message}")
             }
+        } finally {
+            setLoading(false)
         }
     }
 }
@@ -820,6 +799,7 @@ private fun doUnpair(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     snackbarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
+    setLoading: (Boolean) -> Unit = {},
 ) {
     if (computer.state == ComputerDetails.State.OFFLINE || computer.activeAddress == null) {
         android.widget.Toast.makeText(activity, "设备离线，无法取消配对", android.widget.Toast.LENGTH_SHORT).show()
@@ -827,32 +807,38 @@ private fun doUnpair(
     }
     if (managerBinder == null) return
 
+    setLoading(true)
+
     scope.launch {
-        val msg = kotlinx.coroutines.withContext(Dispatchers.IO) {
-            try {
-                val httpConn = NvHTTP(
-                    ServerHelper.getCurrentAddressFromComputer(computer),
-                    computer.httpsPort,
-                    managerBinder.getUniqueId(),
-                    android.os.Build.MODEL,
-                    computer.serverCert,
-                    PlatformBinding.getCryptoProvider(activity),
-                )
-                if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
-                    httpConn.unpair()
-                    if (httpConn.getPairState() == PairingManager.PairState.NOT_PAIRED)
-                        "取消配对成功"
-                    else
-                        "取消配对失败"
-                } else {
-                    "设备未配对"
+        try {
+            val msg = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                try {
+                    val httpConn = NvHTTP(
+                        ServerHelper.getCurrentAddressFromComputer(computer),
+                        computer.httpsPort,
+                        managerBinder.getUniqueId(),
+                        android.os.Build.MODEL,
+                        computer.serverCert,
+                        PlatformBinding.getCryptoProvider(activity),
+                    )
+                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
+                        httpConn.unpair()
+                        if (httpConn.getPairState() == PairingManager.PairState.NOT_PAIRED)
+                            "取消配对成功"
+                        else
+                            "取消配对失败"
+                    } else {
+                        "设备未配对"
+                    }
+                } catch (e: Exception) {
+                    "取消配对异常: ${e.message}"
                 }
-            } catch (e: Exception) {
-                "取消配对异常: ${e.message}"
             }
-        }
-        with(Dispatchers.Main) {
-            snackbarHostState.showSnackbar(msg)
+            with(Dispatchers.Main) {
+                snackbarHostState.showSnackbar(msg)
+            }
+        } finally {
+            setLoading(false)
         }
     }
 }

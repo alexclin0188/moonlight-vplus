@@ -18,6 +18,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +34,8 @@ import androidx.navigation.navArgument
 import com.alexclin.moonlink.device.detail.DeviceDetailScreen
 import com.alexclin.moonlink.device.overview.DeviceOverviewScreen
 import com.alexclin.moonlink.home.DeviceListScreen
+import com.alexclin.moonlink.home.PairQrResult
+import com.alexclin.moonlink.home.handleQrPairResult
 import com.alexclin.moonlink.navigation.MoonLinkRoute
 import com.alexclin.moonlink.settings.*
 import com.alexclin.moonlink.vpn.VpnScreen
@@ -117,6 +120,7 @@ fun MoonLinkApp(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var showAddMenu by remember { mutableStateOf(false) }
+    var isQrLoading by remember { mutableStateOf(false) }
 
     val qrCodeLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
@@ -136,68 +140,26 @@ fun MoonLinkApp(
         val pin = uri.getQueryParameter("pin")
             ?: run { scope.launch { snackbarHostState.showSnackbar(context.getString(R.string.qr_invalid_code)) }; return@rememberLauncherForActivityResult }
         val portStr = uri.getQueryParameter("port")
-        var port = NvHTTP.DEFAULT_HTTP_PORT
-        if (portStr != null) { try { port = portStr.toInt() } catch (_: NumberFormatException) {} }
+        val port = if (portStr != null) { try { portStr.toInt() } catch (_: NumberFormatException) { NvHTTP.DEFAULT_HTTP_PORT } } else { null }
 
+        isQrLoading = true
         scope.launch {
             try {
-                withContext(Dispatchers.IO) {
-                    val addDetails = ComputerDetails()
-                    addDetails.manualAddress = ComputerDetails.AddressTuple(host, port)
-                    val added = managerBinder?.addComputerBlocking(addDetails) == true
-                    if (!added) {
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.addpc_fail))
-                        }
-                        return@withContext
+                val result = withContext(Dispatchers.IO) {
+                    handleQrPairResult(context, host, pin, port, managerBinder)
+                }
+                when (result) {
+                    is PairQrResult.Success -> {
+                        snackbarHostState.showSnackbar(context.getString(R.string.addpc_success))
                     }
-
-                    var computer = managerBinder?.getComputer(addDetails.uuid!!)
-                    if (computer == null) computer = addDetails
-
-                    val httpConn = NvHTTP(
-                        ServerHelper.getCurrentAddressFromComputer(computer),
-                        computer.httpsPort,
-                        managerBinder?.getUniqueId() ?: "",
-                        android.provider.Settings.Global.getString(
-                            context.contentResolver, "device_name"
-                        ) ?: android.os.Build.MODEL ?: "MoonLink Client",
-                        computer.serverCert,
-                        PlatformBinding.getCryptoProvider(context)
-                    )
-
-                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
-                        withContext(Dispatchers.Main) {
-                            snackbarHostState.showSnackbar(context.getString(R.string.addpc_success))
-                        }
-                        return@withContext
+                    is PairQrResult.Error -> {
+                        snackbarHostState.showSnackbar(result.message)
                     }
-
-                    val pm = httpConn.pairingManager
-                    val pairResult = pm.pair(
-                        httpConn.getServerInfo(true), pin
-                    )
-
-                    val msg = when (pairResult.state) {
-                        PairingManager.PairState.PAIRED -> {
-                            managerBinder?.getComputer(addDetails.uuid!!)?.let { c ->
-                                c.serverCert = pm.pairedCert
-                                c.pairState = PairingManager.PairState.PAIRED
-                            }
-                            pairResult.pairName?.let { name ->
-                                context.getSharedPreferences("pair_name_map", Context.MODE_PRIVATE)
-                                    .edit().putString(addDetails.uuid, name).apply()
-                            }
-                            managerBinder?.invalidateStateForComputer(addDetails.uuid!!)
-                            context.getString(R.string.qr_pair_success)
-                        }
-                        PairingManager.PairState.PIN_WRONG -> context.getString(R.string.pair_incorrect_pin)
-                        else -> context.getString(R.string.pair_fail)
-                    }
-                    withContext(Dispatchers.Main) { snackbarHostState.showSnackbar(msg) }
                 }
             } catch (e: Exception) {
                 snackbarHostState.showSnackbar("配对异常: ${e.message ?: e.javaClass.simpleName}")
+            } finally {
+                isQrLoading = false
             }
         }
     }
@@ -318,11 +280,13 @@ fun MoonLinkApp(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
-        NavHost(
-            navController = navController,
-            startDestination = MoonLinkRoute.DeviceList.route,
-            modifier = Modifier.padding(innerPadding),
-        ) {
+        Box(modifier = Modifier.padding(innerPadding)) {
+            NavHost(
+                navController = navController,
+                startDestination = MoonLinkRoute.DeviceList.route,
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                // ── Tab 1: 我的设备 ──────────────────────────────
             // ── Tab 1: 我的设备 ──────────────────────────────
             composable(MoonLinkRoute.DeviceList.route) {
                 DeviceListScreen(
@@ -415,6 +379,18 @@ fun MoonLinkApp(
                     computers     = computers,
                 )
             }
+        }
+
+        // QR pairing loading indicator at top
+        if (isQrLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .padding(top = 8.dp)
+                    .size(16.dp),
+                strokeWidth = 2.dp,
+            )
+        }
         }
     }
 }

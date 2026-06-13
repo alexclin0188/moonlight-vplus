@@ -30,13 +30,16 @@ import com.limelight.utils.ServerHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.StringReader
+import android.util.LruCache
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Module-level memory cache for device box art, keyed by computer UUID.
  * Shared across all recompositions.
  */
-private val boxArtMemoryCache = ConcurrentHashMap<String, Bitmap>()
+private val boxArtMemoryCache = object : LruCache<String, Bitmap>(50) {
+    override fun sizeOf(key: String, value: Bitmap): Int = 1
+}
 private val loadingUuids = ConcurrentHashMap.newKeySet<String>()
 
 /**
@@ -45,7 +48,7 @@ private val loadingUuids = ConcurrentHashMap.newKeySet<String>()
  * [DeviceBoxArt] composition re-reads from disk instead of stale memory.
  */
 fun invalidateBoxArtCache(uuid: String) {
-    boxArtMemoryCache.remove(uuid)
+    synchronized(boxArtMemoryCache) { boxArtMemoryCache.remove(uuid) }
     loadingUuids.remove(uuid)
 }
 
@@ -69,11 +72,12 @@ fun DeviceBoxArt(
 
     // Async load from disk if not in memory cache
     LaunchedEffect(uuid, isOnline, refreshKey) {
-        if (uuid == null || bitmap != null) return@LaunchedEffect
+        if (uuid == null) return@LaunchedEffect
+        if (refreshKey == 0 && bitmap != null) return@LaunchedEffect
         if (uuid in loadingUuids) return@LaunchedEffect
 
         // Check memory cache first
-        boxArtMemoryCache[uuid]?.let {
+        synchronized(boxArtMemoryCache) { boxArtMemoryCache.get(uuid) }?.let {
             bitmap = it
             return@LaunchedEffect
         }
@@ -85,7 +89,7 @@ fun DeviceBoxArt(
                 loadBoxArtFromDisk(context, uuid)
             }
             if (loaded != null) {
-                boxArtMemoryCache[uuid] = loaded
+                synchronized(boxArtMemoryCache) { boxArtMemoryCache.put(uuid, loaded) }
                 bitmap = loaded
             }
         } finally {

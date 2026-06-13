@@ -6,6 +6,10 @@ import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.StringReader
+import java.net.ConnectException
+import java.net.NoRouteToHostException
+import java.net.SocketException
+import java.net.SocketTimeoutException
 import java.net.UnknownHostException
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -127,6 +131,7 @@ import androidx.annotation.RequiresApi
 
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
+import javax.net.ssl.SSLException
 
 import jp.wasabeef.glide.transformations.BlurTransformation
 import jp.wasabeef.glide.transformations.ColorFilterTransformation
@@ -734,16 +739,7 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
 
     /** 把 Glide / 网络异常翻译成给用户看的简短提示，避免展示 stack trace 风格的英文。 */
     private fun friendlyNetworkError(e: Throwable): String {
-        // 拆掉 ExecutionException 包装
-        val cause = (e as? ExecutionException)?.cause ?: e
-        val msg = cause.message ?: ""
-        return when {
-            msg.contains("HttpException") || msg.contains("status code") ||
-            msg.contains("SocketException") || msg.contains("UnknownHost") ||
-            msg.contains("timeout", ignoreCase = true) ->
-                getString(R.string.refresh_failed_network)
-            else -> cause.javaClass.simpleName
-        }
+        return com.limelight.friendlyNetworkError(e) { getString(R.string.refresh_failed_network) }
     }
 
     // Image Save Methods
@@ -2465,9 +2461,15 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
                     val port: Int
                     val colonIdx = text.lastIndexOf(':')
                     if (colonIdx > 0 && colonIdx > text.indexOf('[')) {
+                        // Has a port separator (brackets present, colon after them)
                         host = text.substring(0, colonIdx)
                         port = text.substring(colonIdx + 1).toIntOrNull() ?: defaultFallbackPort(details)
+                    } else if (text.indexOf('[') != -1) {
+                        // IPv6 with brackets but no port (e.g., [::1])
+                        host = text.trim('[', ']')
+                        port = defaultFallbackPort(details)
                     } else {
+                        // All other cases (plain host, IPv6 without brackets)
                         host = text
                         port = defaultFallbackPort(details)
                     }
