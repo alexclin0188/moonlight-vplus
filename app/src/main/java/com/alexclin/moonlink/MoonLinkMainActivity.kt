@@ -138,6 +138,9 @@ class MoonLinkMainActivity : ComponentActivity() {
                 MoonLinkApp(
                     managerBinder = binderState.value,
                     computers     = computers,
+                    onComputerRemoved = { uuid ->
+                        computers.removeAll { it.uuid == uuid }
+                    },
                 )
             }
         }

@@ -31,4 +31,10 @@ sealed class MoonLinkRoute(val route: String) {
     data object SettingsScene : MoonLinkRoute("settings_scene")
     data object SettingsKeyMapping : MoonLinkRoute("settings_keymapping")
     data object SettingsHelp : MoonLinkRoute("settings_help")
+
+    /** 桌面小组件管理 */
+    data object SettingsWidget : MoonLinkRoute("settings_widget")
+
+    /** 性能与统计分析 */
+    data object SettingsPerformance : MoonLinkRoute("settings_performance")
 }

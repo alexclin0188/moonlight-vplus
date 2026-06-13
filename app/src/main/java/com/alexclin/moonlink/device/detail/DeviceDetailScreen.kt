@@ -11,6 +11,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.device.overview.findComputer
 import com.limelight.nvstream.http.ComputerDetails
@@ -20,6 +21,7 @@ import com.limelight.nvstream.http.PairingManager
 fun DeviceDetailScreen(
     uuid: String,
     computers: List<ComputerDetails>,
+    onBack: () -> Unit = {},
 ) {
     val computer = findComputer(computers, uuid)
     if (computer == null) {
@@ -29,71 +31,118 @@ fun DeviceDetailScreen(
         return
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-            // ── Basic info card ─────────────────────────
-            DetailCard {
-                DetailRow("设备名称", computer.name ?: "—")
-                DetailRow("UUID", computer.uuid ?: "—")
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
-                val stateText = when (computer.state) {
-                    ComputerDetails.State.ONLINE  -> "在线"
-                    ComputerDetails.State.OFFLINE -> "离线"
-                    else -> "检测中…"
+    if (isLandscape) {
+        // ── 横屏：全宽标题栏 + 下方可滚动内容 ──────────
+        Column(modifier = Modifier.fillMaxSize()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "返回",
+                    )
                 }
-                DetailRow("状态", stateText)
-
-                val pairText = when (computer.pairState) {
-                    PairingManager.PairState.PAIRED   -> "已配对"
-                    PairingManager.PairState.NOT_PAIRED -> "未配对"
-                    else -> "—"
-                }
-                DetailRow("配对状态", pairText)
-
-                if (computer.runningGameId != 0) {
-                    DetailRow("运行中应用 ID", computer.runningGameId.toString())
-                }
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    computer.name ?: "设备详情",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
 
-            // ── Network info card ───────────────────────
-            DetailCard {
-                SectionTitle("网络信息")
-
-                computer.activeAddress?.let {
-                    DetailRow("当前活跃地址", it.toString())
-                }
-                computer.localAddress?.let {
-                    DetailRow("局域网地址", it.toString())
-                }
-                computer.remoteAddress?.let {
-                    DetailRow("远程地址", it.toString())
-                }
-                computer.manualAddress?.let {
-                    DetailRow("手动地址", it.toString())
-                }
-                computer.ipv6Address?.let {
-                    DetailRow("IPv6 地址", it.toString())
-                }
-                DetailRow("HTTPS 端口", if (computer.httpsPort > 0) computer.httpsPort.toString() else "—")
-                DetailRow("MAC 地址", computer.macAddress ?: "—")
-                DetailRow("IPv6", if (computer.ipv6Disabled) "已禁用" else "已启用")
+            // ── 可滚动内容 ───────────────────────────────
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+            ) {
+                DetailContentCards(computer)
+                Spacer(Modifier.height(16.dp))
             }
-
-            // ── Sunshine info card ──────────────────────
-            DetailCard {
-                SectionTitle("Sunshine 信息")
-                DetailRow("Sunshine 版本", computer.getSunshineVersionDisplay().ifBlank { "—" })
-                DetailRow("NVIDIA Server", if (computer.nvidiaServer) "是" else "否")
-                DetailRow("支持多地址", if (computer.hasMultipleAddresses()) "是" else "否")
-            }
-
+        }
+    } else {
+        // ── 竖屏：原始布局 ────────────────────────────
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            DetailContentCards(computer)
             Spacer(Modifier.height(16.dp))
         }
+    }
+}
+
+// ── Shared content cards ──────────────────────────────────────────
+
+@Composable
+private fun DetailContentCards(computer: ComputerDetails) {
+    // ── Basic info card ─────────────────────────
+    DetailCard {
+        DetailRow("设备名称", computer.name ?: "—")
+        DetailRow("UUID", computer.uuid ?: "—")
+
+        val stateText = when (computer.state) {
+            ComputerDetails.State.ONLINE  -> "在线"
+            ComputerDetails.State.OFFLINE -> "离线"
+            else -> "检测中…"
+        }
+        DetailRow("状态", stateText)
+
+        val pairText = when (computer.pairState) {
+            PairingManager.PairState.PAIRED   -> "已配对"
+            PairingManager.PairState.NOT_PAIRED -> "未配对"
+            else -> "—"
+        }
+        DetailRow("配对状态", pairText)
+
+        if (computer.runningGameId != 0) {
+            DetailRow("运行中应用 ID", computer.runningGameId.toString())
+        }
+    }
+
+    // ── Network info card ───────────────────────
+    DetailCard {
+        SectionTitle("网络信息")
+
+        computer.activeAddress?.let {
+            DetailRow("当前活跃地址", it.toString())
+        }
+        computer.localAddress?.let {
+            DetailRow("局域网地址", it.toString())
+        }
+        computer.remoteAddress?.let {
+            DetailRow("远程地址", it.toString())
+        }
+        computer.manualAddress?.let {
+            DetailRow("手动地址", it.toString())
+        }
+        computer.ipv6Address?.let {
+            DetailRow("IPv6 地址", it.toString())
+        }
+        DetailRow("HTTPS 端口", if (computer.httpsPort > 0) computer.httpsPort.toString() else "—")
+        DetailRow("MAC 地址", computer.macAddress ?: "—")
+        DetailRow("IPv6", if (computer.ipv6Disabled) "已禁用" else "已启用")
+    }
+
+    // ── Sunshine info card ──────────────────────
+    DetailCard {
+        SectionTitle("Sunshine 信息")
+        DetailRow("Sunshine 版本", computer.getSunshineVersionDisplay().ifBlank { "—" })
+        DetailRow("NVIDIA Server", if (computer.nvidiaServer) "是" else "否")
+        DetailRow("支持多地址", if (computer.hasMultipleAddresses()) "是" else "否")
+    }
 }
 
 // ── Reusable components ───────────────────────────────────────────

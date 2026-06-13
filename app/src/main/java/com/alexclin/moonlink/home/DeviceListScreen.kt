@@ -8,8 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.core.net.toUri
 import androidx.compose.foundation.lazy.items
+import androidx.core.net.toUri
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -27,6 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.animation.core.*
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.draw.clipToBounds
+import kotlinx.coroutines.delay
 import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
@@ -58,20 +63,20 @@ data class DeviceMenuAction(
 )
 
 private val ALL_MENU_ACTIONS = listOf(
-    DeviceMenuAction("pair",           "配对 / 取消配对")        { true },
-    DeviceMenuAction("wol",            "发送网络唤醒 (WoL)")     { it.state == ComputerDetails.State.OFFLINE },
-    DeviceMenuAction("delete",         "删除设备")              { true },
+    DeviceMenuAction("pair",           "和电脑配对")            { it.pairState != PairingManager.PairState.PAIRED },
+    DeviceMenuAction("wol",            "发送 Wake-On-LAN 请求") { it.state == ComputerDetails.State.OFFLINE },
+    DeviceMenuAction("delete",         "删除电脑")              { it.pairState == PairingManager.PairState.PAIRED },
     DeviceMenuAction("resume",         "恢复串流")              { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
     DeviceMenuAction("quit",           "退出应用")              { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
-    DeviceMenuAction("applist",        "完整应用列表")           { true },
+    DeviceMenuAction("applist",        "浏览游戏列表")           { true },
     DeviceMenuAction("detail",         "查看详情")              { true },
-    DeviceMenuAction("sleep",          "睡眠")                 { it.state == ComputerDetails.State.ONLINE },
-    DeviceMenuAction("vdd",            "副屏幕 (VDD)")          { true },
-    DeviceMenuAction("iperf",          "网络测试 (iPerf3)")      { true },
-    DeviceMenuAction("webui",          "打开 Sunshine 网页管理") { true },
-    DeviceMenuAction("disable_ipv6",   "为此设备禁用 IPv6")      { true },
-    DeviceMenuAction("nettest",        "网络连通测试")           { true },
-    DeviceMenuAction("gs_eol",         "GameStream EOL 说明")   { true },
+    DeviceMenuAction("sleep",          "发送睡眠指令")           { it.state == ComputerDetails.State.ONLINE },
+    DeviceMenuAction("vdd",            "作为副屏串流（基地适用）") { true },
+    DeviceMenuAction("iperf",          "网络带宽测试 (iPerf3)")  { true },
+    DeviceMenuAction("webui",          "打开 Web 管理（Sunshine）") { true },
+    DeviceMenuAction("disable_ipv6",   "禁用 IPv6")             { true },
+    DeviceMenuAction("nettest",        "测试网络连接")           { true },
+    DeviceMenuAction("gs_eol",         "NVIDIA GameStream 终止服务") { it.nvidiaServer },
 )
 
 // ── Main screen composable ────────────────────────────────────────
@@ -84,6 +89,7 @@ fun DeviceListScreen(
     snackbarHostState: SnackbarHostState,
     onNavigateToOverview: (String) -> Unit,
     onNavigateToDetail: (String) -> Unit,
+    onComputerRemoved: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
@@ -244,49 +250,169 @@ fun DeviceListScreen(
                 }
             }
         } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                // ── Paired devices ─────────────────────
-                if (paired.isNotEmpty()) {
-                    item(key = "header_paired") { SectionHeader("可控设备") }
-                    items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
-                        DeviceCard(
-                            computer = computer,
-                            managerBinder = managerBinder,
-                            onStream = { launchStream(context, computer, managerBinder) },
-                            onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
-                            onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
-                            snackbarHostState = snackbarHostState,
-                            scope = scope,
-                            refreshKey = refreshTrigger,
-                            setPairingLoading = { isPairingLoading = it },
-                        )
+            val configuration = LocalConfiguration.current
+            val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
+
+            if (isLandscape) {
+                val bothNonEmpty = paired.isNotEmpty() && unpaired.isNotEmpty()
+
+                if (bothNonEmpty) {
+                    // ── 横屏：左右分栏 ─────────────────────
+                    // 可控设备在左，未配对设备在右，中间加竖直分割线
+                    Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
+                    ) {
+                        // Left: paired devices
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            item { SectionHeader("可控设备") }
+                            items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                                DeviceCard(
+                                    computer = computer,
+                                    managerBinder = managerBinder,
+                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                    snackbarHostState = snackbarHostState,
+                                    scope = scope,
+                                    refreshKey = refreshTrigger,
+                                    setPairingLoading = { isPairingLoading = it },
+                                    onComputerRemoved = onComputerRemoved,
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.width(16.dp))
+
+                        // Right: unpaired devices
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            item {
+                                SectionHeader(
+                                    title = "未配对设备",
+                                )
+                            }
+                            items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                                DeviceCard(
+                                    computer = computer,
+                                    managerBinder = managerBinder,
+                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                    snackbarHostState = snackbarHostState,
+                                    scope = scope,
+                                    refreshKey = refreshTrigger,
+                                    setPairingLoading = { isPairingLoading = it },
+                                    onComputerRemoved = onComputerRemoved,
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    // ── 横屏：只有一侧有设备，全宽单列 ────
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        if (paired.isNotEmpty()) {
+                            item { SectionHeader("可控设备") }
+                            items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                                DeviceCard(
+                                    computer = computer,
+                                    managerBinder = managerBinder,
+                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                    snackbarHostState = snackbarHostState,
+                                    scope = scope,
+                                    refreshKey = refreshTrigger,
+                                    setPairingLoading = { isPairingLoading = it },
+                                    onComputerRemoved = onComputerRemoved,
+                                )
+                            }
+                        }
+
+                        if (unpaired.isNotEmpty()) {
+                            item {
+                                SectionHeader(
+                                    title = "未配对设备",
+                                )
+                            }
+                            items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                                DeviceCard(
+                                    computer = computer,
+                                    managerBinder = managerBinder,
+                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                    snackbarHostState = snackbarHostState,
+                                    scope = scope,
+                                    refreshKey = refreshTrigger,
+                                    setPairingLoading = { isPairingLoading = it },
+                                    onComputerRemoved = onComputerRemoved,
+                                )
+                            }
+                        }
                     }
                 }
-
-                // ── Unpaired devices ───────────────────
-                if (unpaired.isNotEmpty()) {
-                    item(key = "header_unpaired") {
-                        SectionHeader(
-                            title = "未配对设备",
-                            showProgress = true,
-                        )
+            } else {
+                // ── 竖屏：单列列表 ─────────────────────
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    // ── Paired devices ─────────────────────
+                    if (paired.isNotEmpty()) {
+                        item(key = "header_paired") { SectionHeader("可控设备") }
+                        items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                            DeviceCard(
+                                computer = computer,
+                                managerBinder = managerBinder,
+                                onStream = { launchStream(context, computer, managerBinder) },
+                                onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                snackbarHostState = snackbarHostState,
+                                scope = scope,
+                                refreshKey = refreshTrigger,
+                                setPairingLoading = { isPairingLoading = it },
+                                onComputerRemoved = onComputerRemoved,
+                            )
+                        }
                     }
-                    items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
-                        DeviceCard(
-                            computer = computer,
-                            managerBinder = managerBinder,
-                            onStream = { launchStream(context, computer, managerBinder) },
-                            onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
-                            onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
-                            snackbarHostState = snackbarHostState,
-                            scope = scope,
-                            refreshKey = refreshTrigger,
-                            setPairingLoading = { isPairingLoading = it },
-                        )
+
+                    // ── Unpaired devices ───────────────────
+                    if (unpaired.isNotEmpty()) {
+                        item(key = "header_unpaired") {
+                            SectionHeader(
+                                title = "未配对设备",
+                            )
+                        }
+                        items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
+                            DeviceCard(
+                                computer = computer,
+                                managerBinder = managerBinder,
+                                onStream = { launchStream(context, computer, managerBinder) },
+                                onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
+                                onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
+                                snackbarHostState = snackbarHostState,
+                                scope = scope,
+                                refreshKey = refreshTrigger,
+                                setPairingLoading = { isPairingLoading = it },
+                                onComputerRemoved = onComputerRemoved,
+                            )
+                        }
                     }
                 }
             }
@@ -318,6 +444,73 @@ private fun SectionHeader(title: String, showProgress: Boolean = false) {
     }
 }
 
+// ── Marquee text (不换行，过长时左右缓慢滚动) ───────────────────
+
+@Composable
+private fun MarqueeText(
+    text: String,
+    style: androidx.compose.ui.text.TextStyle = MaterialTheme.typography.titleMedium,
+    color: Color = MaterialTheme.colorScheme.onSurface,
+    modifier: Modifier = Modifier,
+) {
+    var textWidth by remember { mutableStateOf(0f) }
+    var containerWidth by remember { mutableStateOf(0f) }
+    val offsetX = remember { Animatable(0f) }
+
+    val needsScroll = textWidth > containerWidth && containerWidth > 0f
+
+    LaunchedEffect(needsScroll, textWidth, containerWidth) {
+        if (needsScroll) {
+            val scrollDistance = textWidth - containerWidth
+            while (true) {
+                // Pause at start
+                offsetX.snapTo(0f)
+                delay(1500)
+                // Slowly scroll to the end
+                offsetX.animateTo(
+                    targetValue = -scrollDistance,
+                    animationSpec = tween(
+                        durationMillis = (scrollDistance * 20).toInt().coerceIn(2000, 8000),
+                        easing = androidx.compose.animation.core.LinearEasing,
+                    ),
+                )
+                // Pause at end
+                delay(1500)
+                // Slowly scroll back
+                offsetX.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(
+                        durationMillis = (scrollDistance * 20).toInt().coerceIn(2000, 8000),
+                        easing = androidx.compose.animation.core.LinearEasing,
+                    ),
+                )
+            }
+        } else {
+            offsetX.snapTo(0f)
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .onSizeChanged { containerWidth = it.width.toFloat() }
+            .clipToBounds()
+            .graphicsLayer { translationX = offsetX.value }
+    ) {
+        Text(
+            text = text,
+            style = style,
+            color = color,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Clip,
+            onTextLayout = { textLayoutResult ->
+                textWidth = textLayoutResult.size.width.toFloat()
+            },
+        )
+    }
+}
+
 // ── Device card ───────────────────────────────────────────────────
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -332,11 +525,13 @@ private fun DeviceCard(
     scope: kotlinx.coroutines.CoroutineScope,
     refreshKey: Int = 0,
     setPairingLoading: (Boolean) -> Unit = {},
+    onComputerRemoved: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val isOnline = computer.state == ComputerDetails.State.ONLINE
     val isUnknown = computer.state == ComputerDetails.State.UNKNOWN
-    val isPairedUnknown = isUnknown && computer.pairState == PairingManager.PairState.PAIRED
+    val isPaired = computer.pairState == PairingManager.PairState.PAIRED
+    val isPairedUnknown = isUnknown && isPaired
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -353,12 +548,29 @@ private fun DeviceCard(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min),
         ) {
-            // ── Thumbnail area (left, clickable → stream) ──
+            // ── Thumbnail area (left, clickable) ──
+            // 已配对 → 直接串流；未配对 → 弹出配对 PIN 码
             Box(
                 modifier = Modifier
                     .weight(0.4f)
-                    .aspectRatio(1.618f)
-                    .clickable(enabled = isOnline, onClick = onStream),
+                    .fillMaxHeight()
+                    .clickable(enabled = isOnline) {
+                        if (isPaired) {
+                            onStream()
+                        } else {
+                            handleMenuAction(
+                                actionId = "pair",
+                                computer = computer,
+                                context = context,
+                                managerBinder = managerBinder,
+                                snackbarHostState = snackbarHostState,
+                                scope = scope,
+                                onNavigateToDetail = onNavigateToDetail,
+                                setLoading = setPairingLoading,
+                                onComputerRemoved = onComputerRemoved,
+                            )
+                        }
+                    },
             ) {
                 // Box art from cache (or placeholder)
                 DeviceBoxArt(
@@ -430,13 +642,30 @@ private fun DeviceCard(
                 }
             }
 
-            // ── Info area (right, clickable → overview, long click → menu) ──
+            // ── Info area (right, clickable) ──
+            // 已配对 → 进入概要页；未配对 → 弹出配对 PIN 码
             Row(
                 modifier = Modifier
                     .weight(0.6f)
                     .fillMaxHeight()
                     .combinedClickable(
-                        onClick = onClickInfo,
+                        onClick = {
+                            if (isPaired) {
+                                onClickInfo()
+                            } else {
+                                handleMenuAction(
+                                    actionId = "pair",
+                                    computer = computer,
+                                    context = context,
+                                    managerBinder = managerBinder,
+                                    snackbarHostState = snackbarHostState,
+                                    scope = scope,
+                                    onNavigateToDetail = onNavigateToDetail,
+                                    setLoading = setPairingLoading,
+                                    onComputerRemoved = onComputerRemoved,
+                                )
+                            }
+                        },
                         onLongClick = { showMenu = true },
                     )
                     .padding(horizontal = 10.dp, vertical = 6.dp),
@@ -446,11 +675,10 @@ private fun DeviceCard(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text(
+                    MarqueeText(
                         text = computer.name ?: "未知设备",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
-                        maxLines = 1,
                     )
 
                     Spacer(Modifier.height(4.dp))
@@ -514,6 +742,23 @@ private fun DeviceCard(
         expanded = showMenu,
         onDismissRequest = { showMenu = false },
     ) {
+        // ── Header: 主机名 - 在线/离线 ────────────────
+        val statusText = if (isOnline) "在线" else "离线"
+        val headerColor = if (isOnline) statusOnline else Color.Black
+        DropdownMenuItem(
+            text = {
+                Text(
+                    text = "${computer.name ?: "未知设备"} - $statusText",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = headerColor,
+                )
+            },
+            onClick = { showMenu = false },   // 仅点击关闭菜单
+            enabled = false,                   // 不可点击
+        )
+        HorizontalDivider(modifier = Modifier.padding(horizontal = 8.dp))
+
         val visibleActions = ALL_MENU_ACTIONS.filter { it.isVisible(computer) }
         visibleActions.forEach { action ->
             DropdownMenuItem(
@@ -529,14 +774,13 @@ private fun DeviceCard(
                         scope = scope,
                         onNavigateToDetail = onNavigateToDetail,
                         setLoading = setPairingLoading,
+                        onComputerRemoved = onComputerRemoved,
                     )
                 },
             )
         }
     }
-}
-
-// ── Menu action handler ───────────────────────────────────────────
+}    // ── Menu action handler ───────────────────────────────────────────
 
 private fun handleMenuAction(
     actionId: String,
@@ -547,12 +791,14 @@ private fun handleMenuAction(
     scope: kotlinx.coroutines.CoroutineScope,
     onNavigateToDetail: () -> Unit,
     setLoading: (Boolean) -> Unit = {},
+    onComputerRemoved: ((String) -> Unit)? = null,
 ) {
     val activity = context as? android.app.Activity ?: return
 
     when (actionId) {
         "delete" -> {
             managerBinder?.removeComputer(computer)
+            computer.uuid?.let { onComputerRemoved?.invoke(it) }
             scope.launch {
                 snackbarHostState.showSnackbar("已删除设备: ${computer.name}")
             }
@@ -589,11 +835,7 @@ private fun handleMenuAction(
             onNavigateToDetail()
         }
         "pair" -> {
-            if (computer.pairState == PairingManager.PairState.PAIRED) {
-                doUnpair(activity, computer, managerBinder, snackbarHostState, scope, setLoading)
-            } else {
-                doPair(activity, computer, managerBinder, snackbarHostState, scope, setLoading)
-            }
+            doPair(activity, computer, managerBinder, snackbarHostState, scope, setLoading)
         }
         "resume" -> {
             launchStream(context, computer, managerBinder, forceResume = true)
@@ -715,6 +957,8 @@ private fun doPair(
     setLoading(true)
 
     scope.launch {
+        var pinDialog: android.app.AlertDialog? = null
+
         try {
             val result = kotlinx.coroutines.withContext(Dispatchers.IO) {
                 val httpConn = NvHTTP(
@@ -733,16 +977,24 @@ private fun doPair(
                 val pin = PairingManager.generatePinString()
 
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
-                    android.app.AlertDialog.Builder(activity)
+                    val dlg = android.app.AlertDialog.Builder(activity)
                         .setTitle("配对")
                         .setMessage("请在主机上输入以下 PIN 码:\n\n$pin\n\n（主机屏幕上会显示输入框）")
                         .setCancelable(false)
                         .setPositiveButton("确定", null)
-                        .show()
+                        .create()
+                    pinDialog = dlg
+                    dlg.show()
                 }
 
                 val pm = httpConn.pairingManager
                 val pairResult = pm.pair(httpConn.getServerInfo(true), pin)
+
+                // Dismiss the PIN dialog after pairing attempt
+                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                    pinDialog?.dismiss()
+                    pinDialog = null
+                }
 
                 when (pairResult.state) {
                     PairingManager.PairState.PAIRED -> {
@@ -784,6 +1036,7 @@ private fun doPair(
                 snackbarHostState.showSnackbar(msg)
             }
         } catch (e: Exception) {
+            pinDialog?.dismiss()
             with(Dispatchers.Main) {
                 snackbarHostState.showSnackbar("配对异常: ${e.message}")
             }
@@ -793,52 +1046,3 @@ private fun doPair(
     }
 }
 
-private fun doUnpair(
-    activity: android.app.Activity,
-    computer: ComputerDetails,
-    managerBinder: ComputerManagerService.ComputerManagerBinder?,
-    snackbarHostState: SnackbarHostState,
-    scope: kotlinx.coroutines.CoroutineScope,
-    setLoading: (Boolean) -> Unit = {},
-) {
-    if (computer.state == ComputerDetails.State.OFFLINE || computer.activeAddress == null) {
-        android.widget.Toast.makeText(activity, "设备离线，无法取消配对", android.widget.Toast.LENGTH_SHORT).show()
-        return
-    }
-    if (managerBinder == null) return
-
-    setLoading(true)
-
-    scope.launch {
-        try {
-            val msg = kotlinx.coroutines.withContext(Dispatchers.IO) {
-                try {
-                    val httpConn = NvHTTP(
-                        ServerHelper.getCurrentAddressFromComputer(computer),
-                        computer.httpsPort,
-                        managerBinder.getUniqueId(),
-                        android.os.Build.MODEL,
-                        computer.serverCert,
-                        PlatformBinding.getCryptoProvider(activity),
-                    )
-                    if (httpConn.getPairState() == PairingManager.PairState.PAIRED) {
-                        httpConn.unpair()
-                        if (httpConn.getPairState() == PairingManager.PairState.NOT_PAIRED)
-                            "取消配对成功"
-                        else
-                            "取消配对失败"
-                    } else {
-                        "设备未配对"
-                    }
-                } catch (e: Exception) {
-                    "取消配对异常: ${e.message}"
-                }
-            }
-            with(Dispatchers.Main) {
-                snackbarHostState.showSnackbar(msg)
-            }
-        } finally {
-            setLoading(false)
-        }
-    }
-}
