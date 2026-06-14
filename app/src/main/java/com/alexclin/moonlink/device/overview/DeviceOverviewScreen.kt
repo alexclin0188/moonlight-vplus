@@ -27,6 +27,7 @@ import com.alexclin.moonlink.theme.statusOnline
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
 import com.alexclin.moonlink.home.fetchAndCacheAppListAndBoxArt
+import com.alexclin.moonlink.stream.StreamActivity
 import com.limelight.AppView
 import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
@@ -1071,16 +1072,49 @@ private fun launchStreamFromOverview(
         return
     }
 
-    val intent = if (useLastSettings) {
-        appSettingsManager.createStartIntentWithLastSettingsIfEnabled(
-            activity, targetApp, computer, managerBinder,
-            forceResumeCurrentSession = forceResume
-        )
-    } else {
-        ServerHelper.createStartIntent(
-            activity, targetApp, computer, managerBinder,
-            forceResumeCurrentSession = forceResume
-        )
-    }
+    // ── 使用新版 StreamActivity ──
+    // useLastSettings 标志传递给 StreamActivity，由 StreamEngine 在初始化时应用
+    val intent = createStreamIntent(context, computer, targetApp, managerBinder, useLastSettings, forceResume)
     context.startActivity(intent)
+}
+
+/**
+ * 构造跳转新版 [StreamActivity] 的 Intent。
+ *
+ * Extras 键名与旧版 [com.limelight.Game] 保持一致。
+ */
+private fun createStreamIntent(
+    context: Context,
+    computer: ComputerDetails,
+    app: NvApp,
+    managerBinder: ComputerManagerService.ComputerManagerBinder,
+    useLastSettings: Boolean,
+    forceResume: Boolean = false,
+): Intent {
+    return Intent(context, StreamActivity::class.java).apply {
+        putExtra("Host", computer.activeAddress?.address)
+        putExtra("Port", computer.activeAddress?.port ?: 0)
+        putExtra("HttpsPort", computer.httpsPort)
+        putExtra("AppName", app.appName)
+        putExtra("AppId", app.appId)
+        putExtra("HDR", app.isHdrSupported())
+        putExtra("UUID", computer.uuid)
+        putExtra("PcName", computer.name)
+        putExtra("UniqueId", managerBinder.getUniqueId())
+        app.cmdList?.let { putExtra("CmdList", it.toString()) }
+        computer.serverCert?.let { putExtra("ServerCert", it.encoded) }
+        putExtra("ForceResumeCurrentSession", forceResume)
+        putExtra("PairName", computer.getPairName(context))
+        putExtra("usevdd", computer.useVdd)
+        if (useLastSettings) {
+            val uuid = computer.uuid
+            if (uuid != null) {
+                val settingsManager = AppSettingsManager(context)
+                val lastSettings = settingsManager.getAppLastSettings(uuid, app)
+                if (lastSettings != null) {
+                    AppSettingsManager.addLastSettingsToIntent(this, lastSettings)
+                }
+            }
+        }
+    }
 }

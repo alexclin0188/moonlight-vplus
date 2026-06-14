@@ -36,6 +36,7 @@ import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
 import com.alexclin.moonlink.theme.macosGray
+import com.alexclin.moonlink.stream.StreamActivity
 import com.limelight.Game
 import com.google.zxing.integration.android.IntentIntegrator
 import com.limelight.R
@@ -935,7 +936,25 @@ private fun launchStream(
         desktopApp = cachedApps.firstOrNull { it.appName.equals("Desktop", ignoreCase = true) }
             ?: cachedApps.first()
     }
-    ServerHelper.doStart(activity, desktopApp, target, managerBinder, forceResume)
+
+    // ── 跳转新版 StreamActivity ──
+    val intent = Intent(context, StreamActivity::class.java).apply {
+        putExtra("Host", target.activeAddress?.address)
+        putExtra("Port", target.activeAddress?.port ?: 0)
+        putExtra("HttpsPort", target.httpsPort)
+        putExtra("AppName", desktopApp.appName)
+        putExtra("AppId", desktopApp.appId)
+        putExtra("HDR", desktopApp.isHdrSupported())
+        putExtra("UUID", target.uuid)
+        putExtra("PcName", target.name)
+        putExtra("UniqueId", managerBinder.getUniqueId())
+        desktopApp.cmdList?.let { putExtra("CmdList", it.toString()) }
+        target.serverCert?.let { putExtra("ServerCert", it.encoded) }
+        putExtra("ForceResumeCurrentSession", forceResume)
+        putExtra("PairName", target.getPairName(context))
+        putExtra("usevdd", target.useVdd)
+    }
+    context.startActivity(intent)
 }
 
 // ── Pairing ───────────────────────────────────────────────────────

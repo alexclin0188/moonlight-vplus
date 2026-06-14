@@ -272,6 +272,23 @@
                 android:value="true" />
         </activity>
 
+        <!-- MoonLink 新版串流 Activity — 与旧版 Game 并行存在，验证通过后可删除旧版 -->
+        <activity
+            android:name="com.alexclin.moonlink.stream.StreamActivity"
+            android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection|density"
+            android:supportsPictureInPicture="true"
+            android:resizeableActivity="true"
+            android:launchMode="singleTask"
+            android:theme="@style/StreamTheme"
+            android:preferMinimalPostProcessing="true"
+            android:multiprocess="true">
+
+            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
+            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
+            <meta-data android:name="com.nvidia.immediateInput" android:value="true" />
+            <meta-data android:name="com.nvidia.rawCursorInput" android:value="true" />
+        </activity>
+
         <service
             android:name=".discovery.DiscoveryService"
             android:label="mDNS PC Auto-Discovery Service" />
