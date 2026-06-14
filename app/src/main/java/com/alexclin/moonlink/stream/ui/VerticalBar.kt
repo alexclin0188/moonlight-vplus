@@ -3,7 +3,9 @@ package com.alexclin.moonlink.stream.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -58,7 +60,12 @@ fun VerticalBar(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(60.dp),
+            .width(60.dp)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = {},
+            ),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
@@ -116,7 +123,12 @@ fun HorizontalBar(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(60.dp),
+            .height(60.dp)
+            .clickable(
+                indication = null,
+                interactionSource = remember { MutableInteractionSource() },
+                onClick = {},
+            ),
         shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,

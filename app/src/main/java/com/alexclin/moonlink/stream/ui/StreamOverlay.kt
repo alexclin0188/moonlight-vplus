@@ -15,10 +15,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -61,15 +63,26 @@ fun StreamOverlay(
     engine: StreamEngine,
     connectionStage: String? = null,
 ) {
-    var panelState by remember { mutableStateOf(PanelState.HIDDEN) }
+    var panelState by remember { mutableStateOf(PanelState.VERTICAL_BAR) }
     var activeEntry by remember { mutableStateOf<String?>(null) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
+    var autoHideDone by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(2000)
+        if (!autoHideDone) {
+            panelState = PanelState.HIDDEN
+            activeEntry = null
+            autoHideDone = true
+        }
+    }
 
     val onToggle = {
-        panelState = if (panelState == PanelState.HIDDEN) {
-            PanelState.VERTICAL_BAR
+        if (panelState == PanelState.HIDDEN) {
+            panelState = PanelState.VERTICAL_BAR
         } else {
-            PanelState.HIDDEN
+            panelState = PanelState.HIDDEN
+            autoHideDone = true
         }
     }
 
@@ -83,6 +96,7 @@ fun StreamOverlay(
                     panelState = PanelState.SUB_PANEL
                     activeEntry = "operations"
                 }
+                autoHideDone = true
             }
             "keyboard" -> {
                 if (panelState == PanelState.KEYBOARD_PANEL) {
@@ -92,16 +106,19 @@ fun StreamOverlay(
                     panelState = PanelState.KEYBOARD_PANEL
                     activeEntry = "keyboard"
                 }
+                autoHideDone = true
             }
             "show_desktop" -> {
                 // TODO: 阶段 5 实现 KeySender.sendWinD(engine.conn)
                 panelState = PanelState.HIDDEN
                 activeEntry = null
+                autoHideDone = true
             }
             "show_windows" -> {
                 // TODO: 阶段 5 实现 KeySender.sendWinTab(engine.conn)
                 panelState = PanelState.HIDDEN
                 activeEntry = null
+                autoHideDone = true
             }
         }
     }
@@ -141,6 +158,7 @@ fun StreamOverlay(
                     ) {
                         panelState = PanelState.HIDDEN
                         activeEntry = null
+                        autoHideDone = true
                     },
             )
         }
