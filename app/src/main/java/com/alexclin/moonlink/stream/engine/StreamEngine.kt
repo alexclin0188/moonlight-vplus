@@ -413,6 +413,114 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     }
 
     // ========================================================================
+    // 快捷操作 — 状态与切换方法
+    // ========================================================================
+
+    var isAudioMuted: Boolean = false
+    var isHdrEnabled: Boolean = false
+
+    fun toggleAudioMute() {
+        isAudioMuted = !isAudioMuted
+        audioRenderer?.setMuted(isAudioMuted)
+        displayTransientMessage(if (isAudioMuted) "声音已关闭" else "声音已开启")
+    }
+
+    fun toggleMicrophoneButton() {
+        prefConfig.enableMic = !prefConfig.enableMic
+        displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
+    }
+
+    fun toggleKeyboard() {
+        val imm = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
+        imm.toggleSoftInput(0, 0)
+    }
+
+    fun toggleVirtualController() {
+        displayTransientMessage("虚拟手柄切换（待实现）")
+    }
+
+    fun togglePerformanceOverlay() {
+        when {
+            !prefConfig.enablePerfOverlay -> {
+                prefConfig.enablePerfOverlay = true
+                prefConfig.perfOverlayLocked = false
+            }
+            !prefConfig.perfOverlayLocked -> {
+                prefConfig.perfOverlayLocked = true
+            }
+            else -> {
+                prefConfig.enablePerfOverlay = false
+                prefConfig.perfOverlayLocked = false
+            }
+        }
+        displayTransientMessage(
+            when {
+                prefConfig.enablePerfOverlay && !prefConfig.perfOverlayLocked -> "性能面板（可拖动）"
+                prefConfig.enablePerfOverlay -> "性能面板（已锁定）"
+                else -> "性能面板已隐藏"
+            }
+        )
+    }
+
+    fun togglePip() {
+        prefConfig.enablePip = !prefConfig.enablePip
+        displayTransientMessage(if (prefConfig.enablePip) "画中画已开启" else "画中画已关闭")
+    }
+
+    fun toggleGyro() {
+        prefConfig.gyroToRightStick = !prefConfig.gyroToRightStick
+        displayTransientMessage(if (prefConfig.gyroToRightStick) "体感已开启" else "体感已关闭")
+    }
+
+    fun toggleAdaptiveBitrate() {
+        prefConfig.enableAdaptiveBitrate = !prefConfig.enableAdaptiveBitrate
+        displayTransientMessage(if (prefConfig.enableAdaptiveBitrate) "自适应码率已开启" else "自适应码率已关闭")
+    }
+
+    fun toggleControlOnly() {
+        prefConfig.controlOnly = !prefConfig.controlOnly
+        displayTransientMessage(if (prefConfig.controlOnly) "纯控制模式已开启" else "纯控制模式已关闭")
+    }
+
+    fun sendKeyboardShortcut(keyCode: Short, modifier: Byte = 0) {
+        conn?.let { c ->
+            c.sendKeyboardInput(keyCode, com.limelight.nvstream.input.KeyboardPacket.KEY_DOWN, modifier, 0.toByte())
+            c.sendKeyboardInput(keyCode, com.limelight.nvstream.input.KeyboardPacket.KEY_UP, modifier, 0.toByte())
+        }
+    }
+
+    fun sendKeys(keys: ShortArray) {
+        val c = conn ?: return
+        if (keys.isEmpty()) return
+
+        var modifier: Byte = 0
+        for (key in keys) {
+            c.sendKeyboardInput(key, com.limelight.nvstream.input.KeyboardPacket.KEY_DOWN, modifier, 0.toByte())
+            modifier = (modifier.toInt() or getKeyModifier(key).toInt()).toByte()
+        }
+
+        val finalModifier = modifier
+        handler.postDelayed({
+            var mod = finalModifier
+            for (pos in keys.indices.reversed()) {
+                val key = keys[pos]
+                mod = (mod.toInt() and getKeyModifier(key).toInt().inv()).toByte()
+                c.sendKeyboardInput(key, com.limelight.nvstream.input.KeyboardPacket.KEY_UP, mod, 0.toByte())
+            }
+        }, 50)
+    }
+
+    private fun getKeyModifier(key: Short): Byte {
+        return when (key.toInt()) {
+            com.limelight.binding.input.KeyboardTranslator.VK_LSHIFT -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_SHIFT
+            com.limelight.binding.input.KeyboardTranslator.VK_LCONTROL -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_CTRL
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_META
+            com.limelight.binding.input.KeyboardTranslator.VK_MENU -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_ALT
+            else -> 0
+        }
+    }
+
+    // ========================================================================
     // SurfaceHolder.Callback
     // ========================================================================
 
@@ -494,7 +602,9 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     override fun rumble(controllerNumber: Short, lowFreqMotor: Short, highFreqMotor: Short) {}
     override fun rumbleTriggers(controllerNumber: Short, leftTrigger: Short, rightTrigger: Short) {}
-    override fun setHdrMode(enabled: Boolean, hdrMetadata: ByteArray?) {}
+    override fun setHdrMode(enabled: Boolean, hdrMetadata: ByteArray?) {
+        isHdrEnabled = enabled
+    }
     override fun setMotionEventState(controllerNumber: Short, motionType: Byte, reportRateHz: Short) {}
     override fun setControllerLED(controllerNumber: Short, r: Byte, g: Byte, b: Byte) {}
     override fun onResolutionChanged(width: Int, height: Int) {}

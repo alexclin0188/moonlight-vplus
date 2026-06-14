@@ -15,7 +15,7 @@ object QuickActionRegistry {
     /** 默认按钮配置（与旧版 6 按钮一致） */
     val DEFAULT_IDS = arrayOf(
         "send_win", "toggle_audio", "toggle_hdr",
-        "toggle_mic", "send_sleep", "quit"
+        "toggle_mic", "send_sleep"
     )
 
     data class QuickAction(
@@ -34,7 +34,6 @@ object QuickActionRegistry {
         "toggle_audio" to QuickAction("toggle_audio", "Audio",   R.drawable.ic_audio_settings, R.drawable.ic_audio_settings_disabled, R.string.quick_btn_audio),
         "toggle_mic"  to QuickAction("toggle_mic",  "Mic",     R.drawable.ic_mic_gm, R.drawable.ic_mic_gm_disabled, R.string.quick_btn_mic),
         "send_sleep"  to QuickAction("send_sleep",  "Sleep",   R.drawable.ic_btn_sleep, 0, R.string.quick_btn_sleep),
-        "quit"        to QuickAction("quit",        "Quit",    R.drawable.ic_btn_quit, 0, R.string.quick_btn_quit),
         // ── 扩展内置动作 ──
         "send_tab"          to QuickAction("send_tab",          "Tab",     R.drawable.ic_btn_keyboard),
         "send_alt_tab"      to QuickAction("send_alt_tab",      "Alt+Tab", R.drawable.ic_btn_keyboard),

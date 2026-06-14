@@ -50,12 +50,16 @@ fun VerticalBar(
     activeEntry: String?,
     onEntryClick: (String) -> Unit,
     modifier: Modifier = Modifier,
+    subPanelVisible: Boolean = false,
 ) {
+    val shape = if (subPanelVisible) RoundedCornerShape(0.dp)
+    else RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
+
     Surface(
         modifier = modifier
             .fillMaxHeight()
             .width(60.dp),
-        shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp),
+        shape = shape,
         color = MaterialTheme.colorScheme.surface,
         shadowElevation = 8.dp,
     ) {

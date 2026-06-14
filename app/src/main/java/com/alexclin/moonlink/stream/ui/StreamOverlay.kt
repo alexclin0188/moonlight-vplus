@@ -1,8 +1,12 @@
 package com.alexclin.moonlink.stream.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,9 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.roundToInt
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.PanelAnimations
 
@@ -164,6 +170,7 @@ fun StreamOverlay(
                 VerticalBar(
                     activeEntry = activeEntry,
                     onEntryClick = onEntryClick,
+                    subPanelVisible = panelState == PanelState.SUB_PANEL,
                 )
             } else {
                 HorizontalBar(
@@ -173,8 +180,29 @@ fun StreamOverlay(
             }
         }
 
-        // ── 操作子面板（阶段 2 实现） ──
-        // if (panelState == PanelState.SUB_PANEL) { SubPanelContainer(...) }
+        // ── 操作子面板 ──
+        val density = LocalDensity.current
+        val barWidthPx = with(density) { 60.dp.toPx().roundToInt() }
+        val subPanelEnter = remember(barWidthPx) {
+            slideInHorizontally(
+                initialOffsetX = { _ -> barWidthPx },
+                animationSpec = tween(250, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(200))
+        }
+        val subPanelExit = remember(barWidthPx) {
+            slideOutHorizontally(
+                targetOffsetX = { _ -> barWidthPx },
+                animationSpec = tween(200, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(150))
+        }
+        AnimatedVisibility(
+            visible = panelState == PanelState.SUB_PANEL,
+            enter = subPanelEnter,
+            exit = subPanelExit,
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            SubPanelContainer(engine = engine)
+        }
 
         // ── 键盘子面板（阶段 5 实现） ──
         // if (panelState == PanelState.KEYBOARD_PANEL) { KeyboardSubPanel(...) }
