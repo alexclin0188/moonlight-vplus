@@ -4,6 +4,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.HdrOff
 import androidx.compose.material.icons.filled.HdrOn
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Mic
@@ -15,6 +16,7 @@ import androidx.compose.material.icons.filled.SportsEsports
 import androidx.compose.material.icons.filled.Tab
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VideogameAsset
+import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.limelight.QuickActionRegistry
 
@@ -25,12 +27,12 @@ object MoonLinkQuickActions {
     const val TOGGLE_GYRO = "toggle_gyro"
 }
 
-fun getActionIcon(id: String): ImageVector? {
+fun getActionIcon(id: String, isActive: Boolean? = null): ImageVector? {
     return when (id) {
         "send_win" -> Icons.Default.Layers
         "send_esc" -> Icons.Default.Adjust
-        "toggle_hdr" -> Icons.Default.HdrOn
-        "toggle_audio" -> Icons.AutoMirrored.Filled.VolumeUp
+        "toggle_hdr" -> if (isActive == true) Icons.Default.HdrOn else Icons.Default.HdrOff
+        "toggle_audio" -> if (isActive == true) Icons.AutoMirrored.Filled.VolumeUp else Icons.Default.VolumeOff
         "toggle_mic" -> Icons.Default.Mic
         "send_sleep" -> Icons.Default.NightsStay
         "send_tab" -> Icons.Default.Tab

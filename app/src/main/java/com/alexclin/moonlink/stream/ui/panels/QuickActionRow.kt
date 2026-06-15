@@ -38,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.MoonLinkQuickActions
@@ -62,12 +63,25 @@ fun QuickActionRow(
         ) {
             Text(
                 "快捷操作",
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    lineHeight = MaterialTheme.typography.labelMedium.fontSize,
+                    platformStyle = PlatformTextStyle(includeFontPadding = false),
+                ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.weight(1f))
-            TextButton(onClick = onEditClick) {
-                Text("编辑", style = MaterialTheme.typography.labelSmall)
+            TextButton(
+                onClick = onEditClick,
+                modifier = Modifier.height(26.dp),
+                contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+            ) {
+                Text(
+                    "编辑",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        lineHeight = MaterialTheme.typography.labelSmall.fontSize,
+                        platformStyle = PlatformTextStyle(includeFontPadding = false),
+                    ),
+                )
             }
         }
 
@@ -97,13 +111,13 @@ fun QuickActionRow(
             items(visibleIds.size) { index ->
                 val id = visibleIds[index]
 
-                val icon = getActionIcon(id)
-                val label = getActionLabel(id)
                 val isActive = when (id) {
                     "toggle_audio" -> !engine.isAudioMuted
                     "toggle_hdr" -> engine.isHdrEnabled
                     else -> null
                 }
+                val icon = getActionIcon(id, isActive)
+                val label = getActionLabel(id)
                 val isAvailable = id != "toggle_mic" || engine.prefConfig.enableMic
 
                 QuickActionChip(

@@ -186,7 +186,7 @@ private fun MainListView(
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
     ) {
         item { QuickActionRow(engine = engine, configIds = configIds, onEditClick = onEditActionClick) }
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }

@@ -27,6 +27,9 @@ import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.preferences.GlPreferences
 import com.limelight.utils.AppSettingsManager
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import kotlin.math.roundToInt
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
@@ -98,6 +101,14 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     private var glRenderer: String = "opengl"
 
     private val handler = Handler(Looper.getMainLooper())
+
+    companion object {
+        /** 按键发送：按下与释放之间的延迟 (ms) */
+        private const val KEY_UP_DELAY = 25L
+
+        /** 睡眠快捷键两段式延迟 (ms) */
+        private const val SLEEP_DELAY = 200L
+    }
 
     // ========================================================================
     // 初始化
@@ -416,8 +427,8 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     // 快捷操作 — 状态与切换方法
     // ========================================================================
 
-    var isAudioMuted: Boolean = false
-    var isHdrEnabled: Boolean = false
+    var isAudioMuted: Boolean by mutableStateOf(false)
+    var isHdrEnabled: Boolean by mutableStateOf(false)
 
     fun toggleAudioMute() {
         isAudioMuted = !isAudioMuted
@@ -501,13 +512,14 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
         val finalModifier = modifier
         handler.postDelayed({
+            val c2 = conn ?: return@postDelayed
             var mod = finalModifier
             for (pos in keys.indices.reversed()) {
                 val key = keys[pos]
                 mod = (mod.toInt() and getKeyModifier(key).toInt().inv()).toByte()
-                c.sendKeyboardInput(key, com.limelight.nvstream.input.KeyboardPacket.KEY_UP, mod, 0.toByte())
+                c2.sendKeyboardInput(key, com.limelight.nvstream.input.KeyboardPacket.KEY_UP, mod, 0.toByte())
             }
-        }, 50)
+        }, KEY_UP_DELAY)
     }
 
     private fun getKeyModifier(key: Short): Byte {
@@ -518,6 +530,106 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             com.limelight.binding.input.KeyboardTranslator.VK_MENU -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_ALT
             else -> 0
         }
+    }
+
+    // ========================================================================
+    // 按键便捷方法
+    // ========================================================================
+
+    /** 显示桌面: Win+D */
+    fun sendWinD() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            0x44.toShort()
+        ))
+    }
+
+    /** 展示窗口: Win+Tab */
+    fun sendWinTab() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_TAB.toShort()
+        ))
+    }
+
+    /** 锁定: Win+L */
+    fun sendWinL() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            0x4C.toShort()
+        ))
+    }
+
+    /** 主机键盘开关: Win+Ctrl+O */
+    fun sendWinCtrlO() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_LCONTROL.toShort(),
+            0x4F.toShort()
+        ))
+    }
+
+    /** 任务管理器: Ctrl+Shift+Esc */
+    fun sendCtrlShiftEsc() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LCONTROL.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_LSHIFT.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_ESCAPE.toShort()
+        ))
+    }
+
+    /** Win 键 */
+    fun sendWin() {
+        sendKeys(shortArrayOf(com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort()))
+    }
+
+    /** Alt+Tab */
+    fun sendAltTab() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_MENU.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_TAB.toShort()
+        ))
+    }
+
+    /** Alt+F4 */
+    fun sendAltF4() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_MENU.toShort(),
+            (com.limelight.binding.input.KeyboardTranslator.VK_F1 + 3).toShort()
+        ))
+    }
+
+    /** 睡眠: Win+X → U+S（两段式，延迟 200ms） */
+    fun sendSleep() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            0x58.toShort()  // 'X'
+        ))
+        handler.postDelayed({
+            sendKeys(shortArrayOf(
+                0x55.toShort(),  // 'U'
+                0x53.toShort()   // 'S'
+            ))
+        }, SLEEP_DELAY)
+    }
+
+    /** HDR 切换: Win+Alt+B */
+    fun sendHdrToggle() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_MENU.toShort(),
+            0x42.toShort()
+        ))
+    }
+
+    /** 远程鼠标切换: Ctrl+Alt+Shift+N（与旧 GameMenu 一致） */
+    fun sendRemoteMouseToggle() {
+        sendKeys(shortArrayOf(
+            com.limelight.binding.input.KeyboardTranslator.VK_LCONTROL.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_MENU.toShort(),
+            com.limelight.binding.input.KeyboardTranslator.VK_LSHIFT.toShort(),
+            78.toShort()  // VK_N
+        ))
     }
 
     // ========================================================================

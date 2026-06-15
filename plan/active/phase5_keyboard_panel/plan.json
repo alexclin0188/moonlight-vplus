@@ -1,0 +1,141 @@
+{
+  "feature": "phase5_keyboard_panel",
+  "title": "阶段 5：键盘子面板 + 按键发送 + 直接动作",
+  "state": "building",
+  "version": "2.0",
+  "created": "2026-06-15",
+  "updated": "2026-06-15",
+  "originalPlan": "design/streamplan/06_阶段5_键盘面板与按键发送.md",
+  "reviewSummary": {
+    "issuesFound": 10,
+    "issuesFixed": 10,
+    "keyChanges": [
+      "废弃独立 KeySender.kt，改为在 StreamEngine 中添加便捷方法",
+      "sendRemoteMouseToggle 键码从 0x43(C) 修正为 VK_N(78)",
+      "CustomKeyRepository save()/delete() 存根补充完整实现",
+      "CustomKeyData.keys 类型从 ShortArray 改为 List<Short>",
+      "AddCustomKeyDialog 和 DeleteCustomKeyDialog 完整设计",
+      "KEY_UP_DELAY 统一为 25ms，移除 streamEngine 现有 50ms",
+      "postDelayed 回调中加 conn null 检查",
+      "KeyboardSubPanel 横竖屏自适应动画",
+      "StreamOverlay 集成步骤补充",
+      "验证清单补充回归测试和向后兼容项"
+    ]
+  },
+  "batches": [
+    {
+      "id": "batch1",
+      "name": "StreamEngine 便捷方法",
+      "items": [
+        "T1-1",
+        "T1-2",
+        "T1-3"
+      ]
+    },
+    {
+      "id": "batch2",
+      "name": "CustomKeyRepository + 弹窗",
+      "items": [
+        "T2-1",
+        "T2-2",
+        "T2-3"
+      ]
+    },
+    {
+      "id": "batch3",
+      "name": "KeyboardSubPanel + StreamOverlay 集成",
+      "items": [
+        "T3-1",
+        "T3-2",
+        "T3-3"
+      ]
+    },
+    {
+      "id": "batch4",
+      "name": "验证",
+      "items": [
+        "T4-1",
+        "T4-2"
+      ]
+    }
+  ],
+  "todos": [
+    {
+      "id": "T1-1",
+      "content": "修改 StreamEngine.sendKeys() 延迟 50ms → 25ms，加 null 检查",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batch1"
+    },
+    {
+      "id": "T1-2",
+      "content": "在 StreamEngine 中添加 11 个快捷方法（sendWinD, sendWinTab, sendWinL, sendWinCtrlO, sendCtrlShiftEsc, sendWin, sendAltTab, sendAltF4, sendSleep, sendHdrToggle, sendRemoteMouseToggle）",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batch1"
+    },
+    {
+      "id": "T1-3",
+      "content": "验证 QuickActionRow 不受延迟变更影响（回归测试）",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batch1"
+    },
+    {
+      "id": "T2-1",
+      "content": "实现 CustomKeyRepository.kt（完整 save/delete/loadAll，含输入验证 + 重复名称检查）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch2"
+    },
+    {
+      "id": "T2-2",
+      "content": "实现 AddCustomKeyDialog.kt（Compose AlertDialog + 名称 + 十六进制键码输入 + 格式验证）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch2"
+    },
+    {
+      "id": "T2-3",
+      "content": "实现 DeleteCustomKeyDialog.kt（Compose AlertDialog + 多选列表 + 删除确认）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch2"
+    },
+    {
+      "id": "T3-1",
+      "content": "实现 KeyboardSubPanel.kt（Compose 面板布局 + 自定义按键列表 + 弹窗调用）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch3"
+    },
+    {
+      "id": "T3-2",
+      "content": "集成到 StreamOverlay.kt（替换 TODO，添加横竖屏条件动画，连接 panelState KEYBOARD_PANEL）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch3"
+    },
+    {
+      "id": "T3-3",
+      "content": "横竖屏适配调试：横屏靠右滑入 ~280dp 窄面板，竖屏底部全宽弹出",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batch3"
+    },
+    {
+      "id": "T4-1",
+      "content": "手动验证 8 项功能（键盘面板/屏幕键盘/主机键盘/自定义按键列表/添加/删除/桌面/窗口）+ 横竖屏",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batch4"
+    },
+    {
+      "id": "T4-2",
+      "content": "向后兼容验证：新代码保存 → 旧 GameMenu 读取；旧 GameMenu 保存 → 新 KeyboardSubPanel 读取",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batch4"
+    }
+  ]
+}
