@@ -6,6 +6,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -32,6 +33,8 @@ import kotlin.math.roundToInt
 fun FloatingActionButton(
     visible: Boolean,
     onToggle: () -> Unit,
+    initialOffsetX: Float = 0f,
+    initialOffsetY: Float = 0f,
     onPositionChanged: (Float, Float) -> Unit = { _, _ -> },
     modifier: Modifier = Modifier,
 ) {
@@ -43,8 +46,8 @@ fun FloatingActionButton(
     val screenHeightPx = with(density) { configuration.screenHeightDp.dp.toPx() }
     val fabSizePx = with(density) { 36.dp.toPx() }
 
-    var dragOffsetX by remember { mutableFloatStateOf(0f) }
-    var dragOffsetY by remember { mutableFloatStateOf(0f) }
+    var dragOffsetX by remember { mutableFloatStateOf(initialOffsetX) }
+    var dragOffsetY by remember { mutableFloatStateOf(initialOffsetY) }
 
     LaunchedEffect(dragOffsetX, dragOffsetY) {
         onPositionChanged(dragOffsetX, dragOffsetY)
@@ -55,12 +58,11 @@ fun FloatingActionButton(
             .fillMaxSize(),
         contentAlignment = Alignment.TopEnd,
     ) {
+        // 可点击/拖拽区域（56dp 触控目标，36dp 显示按钮居中）
         Box(
             modifier = Modifier
                 .offset { IntOffset(dragOffsetX.roundToInt(), dragOffsetY.roundToInt()) }
-                .size(36.dp)
-                .shadow(6.dp, CircleShape)
-                .background(MaterialTheme.colorScheme.primary, CircleShape)
+                .size(56.dp)       // 触控目标 56dp
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
@@ -77,12 +79,21 @@ fun FloatingActionButton(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(
-                Icons.Default.Menu,
-                contentDescription = "菜单",
-                tint = MaterialTheme.colorScheme.onPrimary,
-                modifier = Modifier.size(20.dp),
-            )
+            // 实际显示的按钮（36dp）
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .shadow(6.dp, CircleShape)
+                    .background(MaterialTheme.colorScheme.primary, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.Menu,
+                    contentDescription = "菜单",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
         }
     }
 }

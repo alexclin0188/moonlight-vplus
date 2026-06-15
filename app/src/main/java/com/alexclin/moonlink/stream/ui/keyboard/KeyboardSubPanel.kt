@@ -77,6 +77,7 @@ import com.alexclin.moonlink.stream.ui.common.CustomKeyRepository
 @Composable
 fun KeyboardSubPanel(
     engine: StreamEngine,
+    initialTab: Int = 0,
     onClose: () -> Unit = {},
     onCloseToHidden: () -> Unit = onClose,
     onShowFloatingKeyboard: () -> Unit = {},
@@ -86,7 +87,7 @@ fun KeyboardSubPanel(
     val view = LocalView.current
 
     // ── Tab 状态 ──
-    var selectedTab by remember { mutableIntStateOf(0) }
+    var selectedTab by remember { mutableIntStateOf(initialTab) }
 
     // ── 缓存键盘高度（px） ──
     var cachedKeyboardHeightPx by remember { mutableIntStateOf(0) }

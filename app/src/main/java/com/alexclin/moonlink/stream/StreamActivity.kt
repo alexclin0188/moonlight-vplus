@@ -3,6 +3,7 @@ package com.alexclin.moonlink.stream
 import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
@@ -36,13 +37,19 @@ class StreamActivity : ComponentActivity() {
 
     private lateinit var engine: StreamEngine
     private var wasPaused = false
+    private var lastBackPressTime = 0L
+    private val backPressDebounceMs = 300L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         // 全屏（隐藏状态栏 + 导航栏）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.setDecorFitsSystemWindows(false)
+        if (Build.VERSION.SDK_INT >= 30) {
+            try {
+                window.setDecorFitsSystemWindows(false)
+            } catch (_: NoSuchMethodError) {
+                // 部分定制 ROM（如华为/小米早期版本）声称 >= R 但实际无此方法
+            }
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.decorView.systemUiVisibility = (
@@ -96,7 +103,16 @@ class StreamActivity : ComponentActivity() {
                         factory = { ctx ->
                             SurfaceView(ctx).also { sv ->
                                 engine.surfaceView = sv
+                                engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
+                                // 触控事件监听
+                                sv.setOnTouchListener { view, event ->
+                                    engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                                }
+                                // 鼠标/触控笔事件监听
+                                sv.setOnGenericMotionListener { view, event ->
+                                    engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                                }
                             }
                         },
                         modifier = Modifier.fillMaxSize()
@@ -147,7 +163,11 @@ class StreamActivity : ComponentActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        // 阶段 6 实现完整返回键逻辑，此阶段直接退出
+        // 防抖
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBackPressTime < backPressDebounceMs) return
+        lastBackPressTime = now
+        // 当所有面板都已隐藏时，退出串流
         engine.disconnect()
     }
 }

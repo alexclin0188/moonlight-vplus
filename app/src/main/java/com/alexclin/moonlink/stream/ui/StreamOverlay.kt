@@ -24,6 +24,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -42,6 +44,7 @@ import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.PanelAnimations
 import com.alexclin.moonlink.stream.ui.keyboard.KeyboardSubPanel
 import com.alexclin.moonlink.stream.ui.keyboard.VirtualKeyboardBridge
+import android.os.SystemClock
 import android.widget.FrameLayout
 import androidx.compose.ui.viewinterop.AndroidView
 import com.limelight.binding.input.advance_setting.KeyboardUIController
@@ -79,6 +82,7 @@ fun StreamOverlay(
 ) {
     var panelState by remember { mutableStateOf(PanelState.VERTICAL_BAR) }
     var activeEntry by remember { mutableStateOf<String?>(null) }
+    var keyboardInitialTab by remember { mutableIntStateOf(0) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFloatingKeyboard by remember { mutableStateOf(false) }
 
@@ -120,6 +124,27 @@ fun StreamOverlay(
                 panelState = PanelState.HIDDEN
                 activeEntry = null
             }
+        }
+    }
+
+    // ── 返回键多级处理（300ms防抖） ──
+    var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    val backPressDebounceMs = 300L
+    BackHandler(enabled = panelState != PanelState.HIDDEN && !showFloatingKeyboard) {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastBackPressTime < backPressDebounceMs) return@BackHandler
+        lastBackPressTime = now
+
+        when (panelState) {
+            PanelState.SUB_PANEL, PanelState.KEYBOARD_PANEL -> {
+                panelState = PanelState.VERTICAL_BAR
+                activeEntry = null
+            }
+            PanelState.VERTICAL_BAR -> {
+                panelState = PanelState.HIDDEN
+                activeEntry = null
+            }
+            PanelState.HIDDEN -> { /* 由 Activity 的 onBackPressed 处理退出 */ }
         }
     }
 
@@ -170,6 +195,8 @@ fun StreamOverlay(
         ) {
             FloatingActionButton(
                 visible = true,
+                initialOffsetX = fabOffset.x,
+                initialOffsetY = fabOffset.y,
                 onToggle = onToggle,
                 onPositionChanged = { x, y -> fabOffset = Offset(x, y) },
             )
@@ -261,7 +288,14 @@ fun StreamOverlay(
             exit = subPanelExit,
             modifier = Modifier.align(Alignment.CenterEnd),
         ) {
-            SubPanelContainer(engine = engine)
+            SubPanelContainer(
+                engine = engine,
+                onOpenKeyboardShortcuts = {
+                    panelState = PanelState.KEYBOARD_PANEL
+                    activeEntry = "keyboard"
+                    keyboardInitialTab = 1  // 跳转到"快捷键"标签
+                },
+            )
         }
 
         // ── 键盘面板（横向填满全屏底部 tabbar 模式，始终从底部滑入） ──
@@ -291,6 +325,7 @@ fun StreamOverlay(
             ) {
                 KeyboardSubPanel(
                     engine = engine,
+                    initialTab = keyboardInitialTab,
                     onClose = {
                         panelState = PanelState.VERTICAL_BAR
                         activeEntry = null

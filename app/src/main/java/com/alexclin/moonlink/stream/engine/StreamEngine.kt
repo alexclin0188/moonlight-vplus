@@ -7,11 +7,13 @@ import android.os.Handler
 import android.os.Looper
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.View
 import android.widget.Toast
 import com.limelight.Game
 import com.limelight.LimeLog
 import com.limelight.binding.PlatformBinding
 import com.limelight.binding.audio.SmartAudioRenderer
+import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.binding.video.CrashListener
 import com.limelight.binding.video.MediaCodecDecoderRenderer
 import com.limelight.binding.video.MediaCodecHelper
@@ -54,6 +56,13 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     /** 视频解码渲染器 */
     private var decoderRenderer: MediaCodecDecoderRenderer? = null
+
+    /** 触控处理器 */
+    var touchHandler: StreamTouchHandler? = null
+        private set
+
+    /** 缓存 SurfaceView（用于触控处理器初始化） */
+    private var cachedSurfaceView: SurfaceView? = null
 
     /** 音频渲染器 */
     private var audioRenderer: SmartAudioRenderer? = null
@@ -128,6 +137,13 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             prefConfig.enableEnhancedTouch = true
             prefConfig.touchscreenTrackpad = false
             prefConfig.enableNativeMousePointer = false
+
+            // 初始化 NativeTouchContext 静态参数
+            NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
+            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
+            NativeTouchContext.ENHANCED_TOUCH_ZONE_DIVIDER = prefConfig.enhanceTouchZoneDivider * 0.01f
+            NativeTouchContext.POINTER_VELOCITY_FACTOR = prefConfig.pointerVelocityFactor * 0.01f
+            NativeTouchContext.INTIAL_ZONE_PIXELS = prefConfig.longPressflatRegionPixels.toFloat()
 
             // 2. 应用"以最近一次配置启动"（若 Intent 中包含）
             AppSettingsManager(activity).applyLastSettingsFromIntent(intent, prefConfig)
@@ -404,6 +420,45 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         conn.start(audioRenderer, decoder, this)
 
         LimeLog.info("StreamEngine: conn.start() 已调用")
+
+        // 初始化触控处理器（需 conn 已就绪 + SurfaceView 已设置）
+        val sv = cachedSurfaceView
+        if (sv != null) {
+            initTouchHandler(sv)
+        }
+    }
+
+    /** 设置 SurfaceView 并延迟初始化触控处理器（若无连接则等 startStreaming 时初始化） */
+    fun attachSurfaceView(sv: SurfaceView) {
+        cachedSurfaceView = sv
+        val c = conn
+        if (c != null) {
+            initTouchHandler(sv)
+        }
+    }
+
+    private fun initTouchHandler(view: View) {
+        val c = conn ?: return
+        val handler = StreamTouchHandler(c, prefConfig, view)
+        handler.initTouchContexts()
+        touchHandler = handler
+        LimeLog.info("StreamEngine: 触控处理器已初始化")
+    }
+
+    /** 运行时切换触控模式（写入 prefConfig + 通知触控处理器） */
+    fun applyTouchMode(mode: Int) {
+        // mode: 0=ENHANCED, 1=CLASSIC, 2=TRACKPAD, 3=NATIVE_MOUSE
+        prefConfig.enableEnhancedTouch = (mode == 0)
+        prefConfig.enableNativeMousePointer = (mode == 3)
+        prefConfig.touchscreenTrackpad = (mode == 2)
+
+        NativeTouchContext.ENABLE_ENHANCED_TOUCH = (mode == 0)
+
+        touchHandler?.let { handler ->
+            handler.setTouchMode(mode == 2)       // 相对坐标（触控板）
+            handler.setEnhancedTouch(mode == 0)   // 增强触控
+            handler.cursorVisible = (mode == 3)   // 本地鼠标指针
+        }
     }
 
     fun disconnect() {
