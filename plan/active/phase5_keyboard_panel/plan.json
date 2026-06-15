@@ -1,7 +1,7 @@
 {
   "feature": "phase5_keyboard_panel",
   "title": "阶段 5：键盘子面板 + 按键发送 + 直接动作",
-  "state": "building",
+  "state": "finished",
   "version": "2.0",
   "created": "2026-06-15",
   "updated": "2026-06-15T18:30",
@@ -126,14 +126,14 @@
     {
       "id": "T4-1",
       "content": "手动验证 8 项功能（键盘面板/屏幕键盘/主机键盘/自定义按键列表/添加/删除/桌面/窗口）+ 横竖屏",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch4"
     },
     {
       "id": "T4-2",
       "content": "向后兼容验证：新代码保存 → 旧 GameMenu 读取；旧 GameMenu 保存 → 新 KeyboardSubPanel 读取",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batch4"
     }
