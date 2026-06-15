@@ -84,21 +84,21 @@
     {
       "id": "T2-1",
       "content": "实现 CustomKeyRepository.kt（完整 save/delete/loadAll，含输入验证 + 重复名称检查）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
     {
       "id": "T2-2",
       "content": "实现 AddCustomKeyDialog.kt（Compose AlertDialog + 名称 + 十六进制键码输入 + 格式验证）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
     {
       "id": "T2-3",
       "content": "实现 DeleteCustomKeyDialog.kt（Compose AlertDialog + 多选列表 + 删除确认）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
