@@ -533,6 +533,50 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     }
 
     // ========================================================================
+    // 虚拟键盘实时按键（逐个按下/释放，支持修饰键状态）
+    // ========================================================================
+
+    /**
+     * 发送单个按键事件（按下或释放），带修饰键状态。
+     *
+     * 与 [sendKeys] 不同：sendKeys 一次性按下所有键再释放（适合快捷键组合），
+     * 本方法逐个发送按下/释放事件（适合虚拟键盘实时输入）。
+     *
+     * @param keyCode Android KeyEvent 键码
+     * @param down true=按下，false=释放
+     * @param modifier 当前修饰键 bitmask（SHIFT=0x01, CTRL=0x02, ALT=0x04, META=0x08）
+     */
+    fun sendKeyboardInputWithModifier(keyCode: Short, down: Boolean, modifier: Byte) {
+        val c = conn ?: return
+        val action = if (down) com.limelight.nvstream.input.KeyboardPacket.KEY_DOWN
+                     else com.limelight.nvstream.input.KeyboardPacket.KEY_UP
+        c.sendKeyboardInput(keyCode, action, modifier, 0.toByte())
+    }
+
+    /**
+     * 振动反馈（供虚拟键盘按键使用）。
+     */
+    fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int) {
+        try {
+            @Suppress("DEPRECATION")
+            val vibrator = activity.getSystemService(android.content.Context.VIBRATOR_SERVICE)
+                as android.os.Vibrator
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                vibrator.vibrate(
+                    android.os.VibrationEffect.createOneShot(
+                        duration.toLong(),
+                        android.os.VibrationEffect.DEFAULT_AMPLITUDE
+                    )
+                )
+            } else {
+                vibrator.vibrate(duration.toLong())
+            }
+        } catch (_: Exception) {
+            // 部分设备可能没有振动器
+        }
+    }
+
+    // ========================================================================
     // 按键便捷方法
     // ========================================================================
 
