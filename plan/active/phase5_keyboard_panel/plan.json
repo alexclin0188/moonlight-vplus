@@ -4,7 +4,7 @@
   "state": "building",
   "version": "2.0",
   "created": "2026-06-15",
-  "updated": "2026-06-15",
+  "updated": "2026-06-15T18:30",
   "originalPlan": "design/streamplan/06_阶段5_键盘面板与按键发送.md",
   "reviewSummary": {
     "issuesFound": 10,
@@ -105,21 +105,21 @@
     {
       "id": "T3-1",
       "content": "实现 KeyboardSubPanel.kt（Compose 面板布局 + 自定义按键列表 + 弹窗调用）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch3"
     },
     {
       "id": "T3-2",
       "content": "集成到 StreamOverlay.kt（替换 TODO，添加横竖屏条件动画，连接 panelState KEYBOARD_PANEL）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch3"
     },
     {
       "id": "T3-3",
       "content": "横竖屏适配调试：横屏靠右滑入 ~280dp 窄面板，竖屏底部全宽弹出",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batch3"
     },
