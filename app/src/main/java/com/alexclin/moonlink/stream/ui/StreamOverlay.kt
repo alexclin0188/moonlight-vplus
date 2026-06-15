@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -40,6 +41,12 @@ import kotlin.math.roundToInt
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.PanelAnimations
 import com.alexclin.moonlink.stream.ui.keyboard.KeyboardSubPanel
+import com.alexclin.moonlink.stream.ui.keyboard.VirtualKeyboardBridge
+import android.widget.FrameLayout
+import androidx.compose.ui.viewinterop.AndroidView
+import com.limelight.binding.input.advance_setting.KeyboardUIController
+import androidx.activity.compose.BackHandler
+import android.view.View
 
 /** 面板展开状态 */
 enum class PanelState {
@@ -73,23 +80,13 @@ fun StreamOverlay(
     var panelState by remember { mutableStateOf(PanelState.VERTICAL_BAR) }
     var activeEntry by remember { mutableStateOf<String?>(null) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
-    var autoHideDone by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        delay(2000)
-        if (!autoHideDone) {
-            panelState = PanelState.HIDDEN
-            activeEntry = null
-            autoHideDone = true
-        }
-    }
+    var showFloatingKeyboard by remember { mutableStateOf(false) }
 
     val onToggle = {
         if (panelState == PanelState.HIDDEN) {
             panelState = PanelState.VERTICAL_BAR
         } else {
             panelState = PanelState.HIDDEN
-            autoHideDone = true
         }
     }
 
@@ -103,7 +100,6 @@ fun StreamOverlay(
                     panelState = PanelState.SUB_PANEL
                     activeEntry = "operations"
                 }
-                autoHideDone = true
             }
             "keyboard" -> {
                 if (panelState == PanelState.KEYBOARD_PANEL) {
@@ -113,19 +109,16 @@ fun StreamOverlay(
                     panelState = PanelState.KEYBOARD_PANEL
                     activeEntry = "keyboard"
                 }
-                autoHideDone = true
             }
             "show_desktop" -> {
                 engine.sendWinD()
                 panelState = PanelState.HIDDEN
                 activeEntry = null
-                autoHideDone = true
             }
             "show_windows" -> {
                 engine.sendWinTab()
                 panelState = PanelState.HIDDEN
                 activeEntry = null
-                autoHideDone = true
             }
         }
     }
@@ -165,14 +158,13 @@ fun StreamOverlay(
                     ) {
                         panelState = PanelState.HIDDEN
                         activeEntry = null
-                        autoHideDone = true
                     },
             )
         }
 
         // ── 悬浮按钮 ──
         AnimatedVisibility(
-            visible = panelState == PanelState.HIDDEN,
+            visible = panelState == PanelState.HIDDEN && !showFloatingKeyboard,
             enter = PanelAnimations.fabEnter,
             exit = PanelAnimations.fabExit,
         ) {
@@ -181,6 +173,49 @@ fun StreamOverlay(
                 onToggle = onToggle,
                 onPositionChanged = { x, y -> fabOffset = Offset(x, y) },
             )
+        }
+
+        // ── 浮动虚拟键盘覆盖层（兼容旧版 Game.toggleVirtualKeyboard 逻辑） ──
+        if (showFloatingKeyboard) {
+            BackHandler {
+                showFloatingKeyboard = false
+            }
+            val bridge = remember { VirtualKeyboardBridge(engine) }
+            val keyboardContainer = remember { mutableStateOf<FrameLayout?>(null) }
+
+            // 监听虚拟键盘隐藏状态，隐藏时恢复悬浮按钮
+            LaunchedEffect(showFloatingKeyboard) {
+                if (showFloatingKeyboard) {
+                    while (true) {
+                        delay(500)
+                        val container = keyboardContainer.value
+                        if (container != null && container.visibility != View.VISIBLE) {
+                            showFloatingKeyboard = false
+                            break
+                        }
+                    }
+                }
+            }
+
+            Box(
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                AndroidView(
+                    factory = { ctx ->
+                        val container = FrameLayout(ctx).apply {
+                            layoutParams = FrameLayout.LayoutParams(
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                                FrameLayout.LayoutParams.MATCH_PARENT,
+                            )
+                        }
+                        keyboardContainer.value = container
+                        val kUI = KeyboardUIController(container, bridge, ctx)
+                        kUI.show()
+                        container
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
 
         // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向） ──
@@ -263,7 +298,9 @@ fun StreamOverlay(
                     onCloseToHidden = {
                         panelState = PanelState.HIDDEN
                         activeEntry = null
-                        autoHideDone = true
+                    },
+                    onShowFloatingKeyboard = {
+                        showFloatingKeyboard = true
                     },
                 )
             }

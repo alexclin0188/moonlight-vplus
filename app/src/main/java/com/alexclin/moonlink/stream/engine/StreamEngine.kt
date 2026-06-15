@@ -124,6 +124,11 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             // 1. 读取全局串流偏好
             prefConfig = PreferenceConfiguration.readPreferences(activity)
 
+            // 默认触摸模式：增强式多点触控
+            prefConfig.enableEnhancedTouch = true
+            prefConfig.touchscreenTrackpad = false
+            prefConfig.enableNativeMousePointer = false
+
             // 2. 应用"以最近一次配置启动"（若 Intent 中包含）
             AppSettingsManager(activity).applyLastSettingsFromIntent(intent, prefConfig)
 

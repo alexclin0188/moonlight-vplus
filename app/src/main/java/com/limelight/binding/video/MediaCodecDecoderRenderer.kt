@@ -1179,12 +1179,13 @@ class MediaCodecDecoderRenderer(
         } else {
             // Direct render modes (MIN_LATENCY, MAX_SMOOTHNESS, CAP_FPS)
             try {
+                val decoder = videoDecoder ?: return
                 if (prefs.framePacing == PreferenceConfiguration.FRAME_PACING_MAX_SMOOTHNESS ||
                     prefs.framePacing == PreferenceConfiguration.FRAME_PACING_CAP_FPS
                 ) {
-                    videoDecoder!!.releaseOutputBuffer(bufferIndex, 0)
+                    decoder.releaseOutputBuffer(bufferIndex, 0)
                 } else {
-                    videoDecoder!!.releaseOutputBuffer(bufferIndex, System.nanoTime())
+                    decoder.releaseOutputBuffer(bufferIndex, System.nanoTime())
                 }
                 activeWindowVideoStats.totalFramesRendered++
                 frameIntervalTracker.recordFrame()
@@ -1391,7 +1392,8 @@ class MediaCodecDecoderRenderer(
             } else {
                 // Sync mode: poll the decoder directly
                 while (nextInputBufferIndex < 0 && !stopping) {
-                    nextInputBufferIndex = videoDecoder!!.dequeueInputBuffer(5000)
+                    val decoder = videoDecoder ?: return false
+                    nextInputBufferIndex = decoder.dequeueInputBuffer(5000)
                 }
             }
 
@@ -1399,7 +1401,11 @@ class MediaCodecDecoderRenderer(
             if (nextInputBufferIndex >= 0) {
                 // Using the new getInputBuffer() API on Lollipop allows
                 // the framework to do some performance optimizations for us
-                nextInputBuffer = videoDecoder!!.getInputBuffer(nextInputBufferIndex)
+                val decoder = videoDecoder ?: run {
+                    nextInputBufferIndex = -1
+                    return false
+                }
+                nextInputBuffer = decoder.getInputBuffer(nextInputBufferIndex)
                 if (nextInputBuffer == null) {
                     // According to the Android docs, getInputBuffer() can return null "if the
                     // index is not a dequeued input buffer". I don't think this ever should
@@ -1576,6 +1582,12 @@ class MediaCodecDecoderRenderer(
             // Record the enqueue time for this timestamp
             timestampToEnqueueTime[timestampUs] = SystemClock.uptimeMillis()
 
+            val decoder = videoDecoder ?: run {
+                nextInputBufferIndex = -1
+                nextInputBuffer = null
+                return false
+            }
+
             if (linearBlockEnabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 // Modern QueueRequest API with LinearBlock for potential copy-free path
                 try {
@@ -1588,7 +1600,7 @@ class MediaCodecDecoderRenderer(
                         nextInputBuffer!!.flip()
                         mapped.put(nextInputBuffer!!)
 
-                        videoDecoder!!.getQueueRequest(nextInputBufferIndex)
+                        decoder.getQueueRequest(nextInputBufferIndex)
                             .setLinearBlock(block, 0, dataSize)
                             .setPresentationTimeUs(timestampUs)
                             .setFlags(codecFlags)
@@ -1601,13 +1613,13 @@ class MediaCodecDecoderRenderer(
                     LimeLog.warning("LinearBlock failed, falling back: " + e.message)
                     linearBlockEnabled = false
                     nextInputBuffer!!.flip()
-                    videoDecoder!!.queueInputBuffer(
+                    decoder.queueInputBuffer(
                         nextInputBufferIndex,
                         0, nextInputBuffer!!.limit(), timestampUs, codecFlags
                     )
                 }
             } else {
-                videoDecoder!!.queueInputBuffer(
+                decoder.queueInputBuffer(
                     nextInputBufferIndex,
                     0, nextInputBuffer!!.position(),
                     timestampUs, codecFlags

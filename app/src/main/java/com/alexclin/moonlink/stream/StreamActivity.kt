@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.stream
 
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
 import android.view.SurfaceView
 import android.view.View
@@ -40,8 +41,9 @@ class StreamActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
 
         // 全屏（隐藏状态栏 + 导航栏）
-        @Suppress("DEPRECATION")
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            window.setDecorFitsSystemWindows(false)
+        }
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE

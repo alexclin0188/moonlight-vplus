@@ -3,7 +3,6 @@ package com.alexclin.moonlink.stream.ui.keyboard
 import android.graphics.Rect
 import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -48,13 +46,9 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
-import android.widget.FrameLayout
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.CustomKeyRepository
-import com.limelight.binding.input.advance_setting.KeyboardUIController
 
 /**
  * 键盘子面板 — 四标签页重构版。
@@ -78,12 +72,14 @@ import com.limelight.binding.input.advance_setting.KeyboardUIController
  * @param engine 串流引擎
  * @param onClose 关闭面板回调（回到竖条状态）
  * @param onCloseToHidden 关闭面板回调（回到悬浮按钮状态，用于主机键盘模式）
+ * @param onShowFloatingKeyboard 显示浮动虚拟键盘回调（关闭面板后显示浮动键盘覆盖层）
  */
 @Composable
 fun KeyboardSubPanel(
     engine: StreamEngine,
     onClose: () -> Unit = {},
     onCloseToHidden: () -> Unit = onClose,
+    onShowFloatingKeyboard: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -130,22 +126,28 @@ fun KeyboardSubPanel(
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // ── 主布局 ──
-    run {
-        // ── 正常模式：TabBar（顶部） + 内容区（高度 = 系统键盘高度） ──
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
+    // ── 主布局：TabBar（顶部） + 内容区（高度 = 系统键盘高度） ──
+    Column(
+        modifier = Modifier.fillMaxWidth()
+    ) {
             // ── TabBar（顶部固定） ──
             KeyboardTabBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
+                    // 从输入法标签切到任何其它标签时，都先隐藏系统输入法键盘
+                    if (tab != 0) {
+                        hideKeyboard()
+                    }
                     if (tab == 3) {
                         // 主机键盘：发送快捷键唤起远端屏幕键盘，然后关闭面板
                         // Windows: Win+Ctrl+O 唤起系统屏幕键盘
                         // macOS: Cmd+F5 唤起 VoiceOver（含屏幕键盘）
                         engine.sendToggleHostKeyboard()
                         onCloseToHidden()
+                    } else if (tab == 2) {
+                        // 虚拟键盘：关闭面板，然后显示浮动虚拟键盘覆盖层
+                        onCloseToHidden()
+                        onShowFloatingKeyboard()
                     } else {
                         selectedTab = tab
                     }
@@ -176,15 +178,10 @@ fun KeyboardSubPanel(
                         },
                         onHideKeyboard = { hideKeyboard() },
                     )
-                    2 -> VirtualKeyboardTabContent(
-                        engine = engine,
-                        cachedKeyboardHeightDp = effectiveHeightDp,
-                        onHideKeyboard = { hideKeyboard() },
-                    )
+
                 }
             }
         }
-    }
 
     // ── 弹窗 ──
     if (showAddDialog) {
@@ -541,42 +538,4 @@ private fun ShortcutActionButton(
     }
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Tab 2: 虚拟键盘
-// ────────────────────────────────────────────────────────────────────────────
 
-/**
- * 虚拟键盘标签内容。
- *
- * 使用 AndroidView 包裹旧 [KeyboardUIController]，高度 = 缓存的系统键盘高度。
- */
-@Composable
-private fun VirtualKeyboardTabContent(
-    engine: StreamEngine,
-    cachedKeyboardHeightDp: Dp,
-    onHideKeyboard: () -> Unit,
-) {
-    val context = LocalContext.current
-    val bridge = remember { VirtualKeyboardBridge(engine) }
-
-    LaunchedEffect(Unit) {
-        onHideKeyboard()
-    }
-
-    AndroidView(
-        factory = { ctx ->
-            val container = FrameLayout(ctx).apply {
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                )
-            }
-            KeyboardUIController(container, bridge, ctx)
-            container
-        },
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 120.dp, max = cachedKeyboardHeightDp),
-        update = { /* KeyboardUIController 内部管理视图状态 */ },
-    )
-}
