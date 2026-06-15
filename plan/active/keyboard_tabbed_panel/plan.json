@@ -1,10 +1,10 @@
 {
   "feature": "keyboard_tabbed_panel",
   "title": "键盘面板三标签页重构（输入法/快捷键/虚拟键盘）",
-  "state": "building",
+  "state": "finished",
   "version": "2.0",
   "created": "2026-06-15",
-  "updated": "2026-06-15T23:00",
+  "updated": "2026-06-15T23:50",
   "dependsOn": "phase5_keyboard_panel",
   "reference": "design/UURemote/键盘/",
   "batches": [
@@ -54,49 +54,49 @@
     {
       "id": "T2-1",
       "content": "KeyboardSubPanel TabBar + 缓存键盘高度 + 输入法标签（默认选中，弹出系统键盘）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
     {
       "id": "T2-2",
       "content": "快捷键标签：LazyVerticalGrid(6列) + 编辑模式(第一项) + 添加/删除/重置 + 可滚动",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
     {
       "id": "T2-3",
       "content": "虚拟键盘标签：AndroidView 包裹旧 KeyboardUIController + 高度 = 系统键盘高度",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch2"
     },
     {
       "id": "T3-1",
       "content": "StreamOverlay 键盘面板改为 BottomCenter 对齐 + 底部滑入动画",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batch3"
     },
     {
       "id": "T3-2",
       "content": "AndroidManifest.xml 加 adjustResize + 横竖屏适配调试",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batch3"
     },
     {
       "id": "T4-1",
       "content": "功能验证：三标签切换、输入法弹出、TabBar 位置固定、快捷键发送、编辑模式、虚拟键盘",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batch4"
     },
     {
       "id": "T4-2",
       "content": "回归验证：原有窄面板/操作面板/快捷操作等功能不受影响",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batch4"
     }

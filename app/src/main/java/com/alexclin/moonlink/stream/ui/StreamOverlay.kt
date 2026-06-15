@@ -13,12 +13,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -232,47 +229,28 @@ fun StreamOverlay(
             SubPanelContainer(engine = engine)
         }
 
-        // ── 键盘子面板（横屏→靠右滑入，竖屏→底部弹出） ──
-        val keyboardEnter = remember(isLandscape) {
-            if (isLandscape) {
-                slideInHorizontally(
-                    initialOffsetX = { it },
-                    animationSpec = tween(250, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(200))
-            } else {
-                slideInVertically(
-                    initialOffsetY = { it },
-                    animationSpec = tween(250, easing = FastOutSlowInEasing)
-                ) + fadeIn(animationSpec = tween(200))
-            }
+        // ── 键盘面板（横向填满全屏底部 tabbar 模式，始终从底部滑入） ──
+        val keyboardEnter = remember {
+            slideInVertically(
+                initialOffsetY = { it },
+                animationSpec = tween(250, easing = FastOutSlowInEasing)
+            ) + fadeIn(animationSpec = tween(200))
         }
-        val keyboardExit = remember(isLandscape) {
-            if (isLandscape) {
-                slideOutHorizontally(
-                    targetOffsetX = { it },
-                    animationSpec = tween(200, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(150))
-            } else {
-                slideOutVertically(
-                    targetOffsetY = { it },
-                    animationSpec = tween(200, easing = FastOutSlowInEasing)
-                ) + fadeOut(animationSpec = tween(150))
-            }
+        val keyboardExit = remember {
+            slideOutVertically(
+                targetOffsetY = { it },
+                animationSpec = tween(200, easing = FastOutSlowInEasing)
+            ) + fadeOut(animationSpec = tween(150))
         }
         AnimatedVisibility(
             visible = panelState == PanelState.KEYBOARD_PANEL,
             enter = keyboardEnter,
             exit = keyboardExit,
-            modifier = Modifier.align(if (isLandscape) Alignment.CenterEnd else Alignment.BottomCenter),
+            modifier = Modifier.align(Alignment.BottomCenter),
         ) {
             Surface(
-                modifier = if (isLandscape) {
-                    Modifier.width(280.dp).fillMaxHeight()
-                } else {
-                    Modifier.fillMaxWidth().heightIn(max = 420.dp)
-                },
-                shape = if (isLandscape) RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp)
-                else RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
                 color = MaterialTheme.colorScheme.surface,
                 shadowElevation = 8.dp,
             ) {
@@ -281,6 +259,11 @@ fun StreamOverlay(
                     onClose = {
                         panelState = PanelState.VERTICAL_BAR
                         activeEntry = null
+                    },
+                    onCloseToHidden = {
+                        panelState = PanelState.HIDDEN
+                        activeEntry = null
+                        autoHideDone = true
                     },
                 )
             }

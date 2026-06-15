@@ -604,6 +604,30 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         ))
     }
 
+    /** 判断远端主机是否为 macOS（基于主机名称推断） */
+    fun isMacHost(): Boolean {
+        val name = pcName?.lowercase() ?: return false
+        return name.contains("mac") || name.contains("darwin") || name.contains("macbook")
+    }
+
+    /**
+     * 唤起远端主机屏幕键盘。
+     * - Windows: Win+Ctrl+O 打开系统屏幕键盘 (osk.exe)
+     * - macOS: Cmd+F5 切换 VoiceOver（含屏幕键盘）
+     */
+    fun sendToggleHostKeyboard() {
+        if (isMacHost()) {
+            // macOS: Cmd+F5 切换 VoiceOver
+            sendKeys(shortArrayOf(
+                com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
+                0x74.toShort() // F5 = 0x74
+            ))
+        } else {
+            // Windows: Win+Ctrl+O
+            sendWinCtrlO()
+        }
+    }
+
     /** 主机键盘开关: Win+Ctrl+O */
     fun sendWinCtrlO() {
         sendKeys(shortArrayOf(
