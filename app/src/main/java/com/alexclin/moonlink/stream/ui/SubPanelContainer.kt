@@ -444,7 +444,9 @@ private fun TouchModeSection(engine: StreamEngine) {
                         applyTouchMode(engine, mode, context)
                     },
                     label = {
-                        AutoScaleLabel(text = mode.label)
+                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                            AutoScaleLabel(text = mode.label)
+                        }
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -653,26 +655,33 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
             item {
-                // 自动隐藏工具栏
-                var hideMode by remember { mutableIntStateOf(0) } // 0=开启按键映射时, 1=自动延迟, 2=不隐藏
-                Text("自动隐藏工具栏:", style = MaterialTheme.typography.bodyMedium)
+                // 操作面板自动隐藏
+                var hideMode by remember { mutableIntStateOf(engine.prefConfig.toolPanelAutoHideMode) }
+                Text("操作面板自动隐藏:", style = MaterialTheme.typography.bodyMedium)
                 Column {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = hideMode == 0, onClick = { hideMode = 0 })
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
+                        hideMode = 0
+                        engine.prefConfig.toolPanelAutoHideMode = 0
+                        engine.prefConfig.writePreferences(context)
+                    }) {
+                        RadioButton(selected = hideMode == 0, onClick = null)
                         Text("开启按键映射时隐藏", Modifier.padding(end = 8.dp))
                     }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = hideMode == 1, onClick = { hideMode = 1 })
-                        Text("自动隐藏")
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
+                        hideMode = 1
+                        engine.prefConfig.toolPanelAutoHideMode = 1
+                        engine.prefConfig.writePreferences(context)
+                    }) {
+                        RadioButton(selected = hideMode == 1, onClick = null)
+                        Text("2秒后自动隐藏")
                     }
-                    AnimatedVisibility(visible = hideMode == 1) {
-                        var delay by remember { mutableFloatStateOf(1000f) }
-                        Text("延时: ${delay.toInt()}ms")
-                        Slider(value = delay, onValueChange = { delay = it }, valueRange = 0f..5000f)
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        RadioButton(selected = hideMode == 2, onClick = { hideMode = 2 })
-                        Text("不隐藏")
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
+                        hideMode = 2
+                        engine.prefConfig.toolPanelAutoHideMode = 2
+                        engine.prefConfig.writePreferences(context)
+                    }) {
+                        RadioButton(selected = hideMode == 2, onClick = null)
+                        Text("不自动隐藏")
                     }
                 }
             }

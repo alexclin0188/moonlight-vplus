@@ -116,6 +116,7 @@ class PreferenceConfiguration {
     var perfOverlayPosition: PerfOverlayPosition = PerfOverlayPosition.TOP
     var enableSimplifyPerfOverlay = false
     var enableLatencyToast = false
+    var toolPanelAutoHideMode = 2 // 0=按键映射, 1=2秒, 2=不隐藏
     var enableStun = false
     var screenCombinationMode = 0
     var vddScreenCombinationMode = 0
@@ -274,6 +275,7 @@ class PreferenceConfiguration {
                 .putBoolean(ENABLE_START_KEY_MENU_PREF_STRING, enableStartKeyMenu)
                 .putBoolean(CONTROL_ONLY_PREF_STRING, controlOnly)
                 .putBoolean(ENABLE_NATIVE_MOUSE_POINTER_PREF_STRING, enableNativeMousePointer)
+                .putInt(TOOL_PANEL_AUTO_HIDE_MODE_PREF_STRING, toolPanelAutoHideMode)
                 .putBoolean(FORCE_MTK_MAX_OPERATING_RATE_PREF_STRING, forceMtkMaxOperatingRate)
                 .putBoolean(ENABLE_DOUBLE_CLICK_DRAG_PREF_STRING, enableDoubleClickDrag)
                 .putBoolean(ENABLE_LOCAL_CURSOR_RENDERING_PREF_STRING, enableLocalCursorRendering)
@@ -334,6 +336,7 @@ class PreferenceConfiguration {
         copy.gyroActivationKeyCode = this.gyroActivationKeyCode
         copy.gyroInvertXAxis = this.gyroInvertXAxis
         copy.gyroInvertYAxis = this.gyroInvertYAxis
+        copy.toolPanelAutoHideMode = this.toolPanelAutoHideMode
         copy.showBitrateCard = this.showBitrateCard
         copy.showGyroCard = this.showGyroCard
         copy.showQuickKeyCard = this.showQuickKeyCard
@@ -394,6 +397,7 @@ class PreferenceConfiguration {
         private const val AUDIO_VIBRATION_SCENE_PREF_STRING = "list_audio_vibration_scene"
         private const val FLIP_FACE_BUTTONS_PREF_STRING = "checkbox_flip_face_buttons"
         private const val LATENCY_TOAST_PREF_STRING = "checkbox_enable_post_stream_toast"
+        private const val TOOL_PANEL_AUTO_HIDE_MODE_PREF_STRING = "tool_panel_auto_hide_mode"
         private const val ENABLE_STUN_PREF_STRING = "checkbox_enable_stun"
         private const val LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING = "checkbox_lock_screen_after_disconnect"
         private const val SWAP_QUIT_AND_DISCONNECT_PERF_STRING = "checkbox_swap_quit_and_disconnect"
@@ -591,6 +595,7 @@ class PreferenceConfiguration {
         private const val DEFAULT_TOUCHSCREEN_TRACKPAD = true
         private const val DEFAULT_AUDIO_CONFIG = "2" // Stereo
         private const val DEFAULT_LATENCY_TOAST = false
+        private const val DEFAULT_TOOL_PANEL_AUTO_HIDE_MODE = 2
         private const val DEFAULT_ENABLE_STUN = false
         private const val DEFAULT_SCREEN_COMBINATION_MODE = "-1"
         private const val DEFAULT_FRAME_PACING = "latency"
@@ -1131,6 +1136,7 @@ class PreferenceConfiguration {
             config.flipFaceButtons = prefs.getBoolean(FLIP_FACE_BUTTONS_PREF_STRING, DEFAULT_FLIP_FACE_BUTTONS)
             config.touchscreenTrackpad = prefs.getBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, DEFAULT_TOUCHSCREEN_TRACKPAD)
             config.enableLatencyToast = prefs.getBoolean(LATENCY_TOAST_PREF_STRING, DEFAULT_LATENCY_TOAST)
+            config.toolPanelAutoHideMode = prefs.getInt(TOOL_PANEL_AUTO_HIDE_MODE_PREF_STRING, DEFAULT_TOOL_PANEL_AUTO_HIDE_MODE)
             config.enableStun = prefs.getBoolean(ENABLE_STUN_PREF_STRING, DEFAULT_ENABLE_STUN)
 
             val screenModeString = prefs.getString(SCREEN_COMBINATION_MODE_PREF_STRING, DEFAULT_SCREEN_COMBINATION_MODE) ?: DEFAULT_SCREEN_COMBINATION_MODE

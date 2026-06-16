@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import com.limelight.Game
 import com.limelight.LimeLog
@@ -832,12 +833,16 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     override fun connectionStarted() {
         LimeLog.info("StreamEngine: connectionStarted")
         connected = true
+        handler.post {
+            activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        }
     }
 
     override fun connectionTerminated(errorCode: Int) {
         LimeLog.info("StreamEngine: connectionTerminated code=$errorCode")
         connected = false
         handler.post {
+            activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (!activity.isFinishing) {
                 onStreamEnded?.invoke()
                 if (errorCode != 0) {

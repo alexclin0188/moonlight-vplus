@@ -109,6 +109,18 @@ fun StreamOverlay(
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFloatingKeyboard by remember { mutableStateOf(false) }
 
+    // 操作面板自动隐藏：窄面板开启且用户无操作时2秒自动隐藏
+    LaunchedEffect(panelState) {
+        val mode = engine.prefConfig.toolPanelAutoHideMode
+        if (mode == 1 && panelState == PanelState.VERTICAL_BAR) {
+            delay(2000)
+            if (panelState == PanelState.VERTICAL_BAR && engine.prefConfig.toolPanelAutoHideMode == 1) {
+                panelState = PanelState.HIDDEN
+                activeEntry = null
+            }
+        }
+    }
+
     val onToggle = {
         if (panelState == PanelState.HIDDEN) {
             panelState = PanelState.VERTICAL_BAR
@@ -283,7 +295,7 @@ fun StreamOverlay(
         // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向） ──
         val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
         AnimatedVisibility(
-            visible = panelState != PanelState.HIDDEN,
+            visible = panelState != PanelState.HIDDEN && panelState != PanelState.KEYBOARD_PANEL,
             enter = PanelAnimations.verticalBarEnter,
             exit = PanelAnimations.verticalBarExit,
             modifier = Modifier.align(if (isLandscape) Alignment.CenterEnd else Alignment.BottomCenter),
