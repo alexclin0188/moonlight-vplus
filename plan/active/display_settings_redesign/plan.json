@@ -1,0 +1,123 @@
+{
+  "feature": "display_settings_redesign",
+  "title": "显示设置子面板重构：帧率/码率/画面/显示器分组全新布局",
+  "state": "finished",
+  "version": "1.2",
+  "created": "2026-06-16",
+  "updated": "2026-06-16T16:00",
+  "dependsOn": ["stream_ui_completion"],
+  "description": "将现有 DisplaySection 完全重写为两分组布局。码率自动/智能码率参考旧AdaptiveBitrateService和BitrateCardController实现；分辨率参考旧StreamSettings的resolution list/custom_resolutions SP和Game.kt的changeResolution模式。",
+  "batches": [
+    {
+      "id": "batchA",
+      "name": "基础设施：BitrateUtils + NvHTTP扩展 + 新DisplaySettingsPanel框架",
+      "items": ["DA-1", "DA-2", "DA-3"]
+    },
+    {
+      "id": "batchB",
+      "name": "帧率与画面：帧率选择 + 码率选择行(含智能码率参考旧ABR) + HDR",
+      "items": ["DB-1", "DB-2", "DB-3"]
+    },
+    {
+      "id": "batchC",
+      "name": "帧率与画面：流量估算 + 输出缓冲区 + MTK + VDD/外接 + 画面设置开关",
+      "items": ["DC-1", "DC-2", "DC-3"]
+    },
+    {
+      "id": "batchD",
+      "name": "显示器分组：显示器列表 + 分辨率(参考旧resolution list/custom_resolutions/changeResolution) + DPI缩放",
+      "items": ["DD-1", "DD-2"]
+    },
+    {
+      "id": "batchE",
+      "name": "验证 + 清理旧DisplaySection代码",
+      "items": ["DE-1"]
+    }
+  ],
+  "todos": [
+    {
+      "id": "DA-1",
+      "content": "新建BitrateUtils.kt：码率预设枚举、流量估算(kbps/8/60)、自定义SeekBar线性映射(0~100→1M~800M)",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "DA-2",
+      "content": "NvHTTP添加显示器缩放API方法(getDisplayScaleOptions/setDisplayScale + DisplayInfo扩展) + 控制通道0x5506分辨率修改能力调研(MoonBridge不支持0x5506，降级为recreate)",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "DA-3",
+      "content": "新建DisplaySettingsPanel.kt两分组框架 + SubPanelContainer替换旧DisplaySection调用",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "DB-1",
+      "content": "帧率选择：折叠态(视频帧率 自动/帧率值)、展开RadioButton(自动/30/60/90/120/144/165) + 解锁帧率Switch。\"自动\"行为参考旧代码StreamSettings.addNativeFrameRateEntry(检测设备原生刷新率+动态添加)",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "DB-2",
+      "content": "码率选择行：5 Chip(自动/2M/8M/20M/自定义)。自动→智能码率模式RadioButton(参考旧AdaptiveBitrateService及prefConfig.abrMode/notifyManualOverride)；自定义→SeekBar 1M-800M(参考旧BitrateCardController.adjustBitrate和conn.setBitrate)。预设值(2M/8M/20M)直接setFixedBitrate。自动码率与手动码率切换逻辑参考旧代码(enableAdaptiveBitrate开关+notifyManualOverride)",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "DB-3",
+      "content": "HDR开关 + HDR高亮度(保留旧prefConfig.enableHdr/enableHdrHighBrightness逻辑)，放置在帧率与画面分组",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchB"
+    },
+    {
+      "id": "DC-1",
+      "content": "流量估算小字：kbps/8/60动态计算，响应码率变化实时更新",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchC"
+    },
+    {
+      "id": "DC-2",
+      "content": "输出缓冲区SeekBar(1~5帧,默认2,写seekbar_output_buffer_queue_limit) + MTK专属选项Switch + 拉伸视频/反转分辨率/可旋转画面 3 Switch",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchC"
+    },
+    {
+      "id": "DC-3",
+      "content": "VDD虚拟显示器 + 外接显示器开关(从旧DisplaySection迁移到帧率与画面分组)",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchC"
+    },
+    {
+      "id": "DD-1",
+      "content": "显示器列表：NvHTTP.getDisplays()获取 + RadioButton切换 + active标记 + 切换提示重启生效",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchD"
+    },
+    {
+      "id": "DD-2",
+      "content": "分辨率设置：参考旧代码实现。(1)预置分辨率列表：从旧arrays.xml(resolution_values: 640x360/854x480/1280x720/1920x1080/2560x1440/3840x2160)+Native动态获取+自定义分辨率从custom_resolutions SP读取。(2)选择分辨率后调用StreamEngine.changeResolution()→activity.recreate()(参考旧Game.kt changeResolution模式)。(3)首选通过控制通道0x5506运行时修改(需MoonBridge支持)，降级为recreate方式。(4)DPI缩放：运行时POST /display-scale调用，不持久化",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchD"
+    },
+    {
+      "id": "DE-1",
+      "content": "全量验证：删除旧DisplaySection + 旧bitrate映射函数；确认帧率/码率/显示器/HDR/开关组交互正常；回归旧Game.kt不受影响",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchE"
+    }
+  ]
+}

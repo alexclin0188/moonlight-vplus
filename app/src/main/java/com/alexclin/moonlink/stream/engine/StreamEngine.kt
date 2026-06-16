@@ -101,7 +101,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     private var serverCert: X509Certificate? = null
     private var displayName: String? = null
     private var forceResumeCurrentSession: Boolean = false
-    private var pcUseVdd: Boolean = false
+    var pcUseVdd: Boolean = false
     private var pcUuid: String? = null
     private var pcName: String? = null
     private var appId: Int = NvApp.DESKTOP_APP_ID

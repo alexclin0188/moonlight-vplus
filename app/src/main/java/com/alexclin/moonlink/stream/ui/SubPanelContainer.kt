@@ -88,6 +88,7 @@ import com.alexclin.moonlink.stream.ui.common.getActionLabel
 import com.alexclin.moonlink.stream.ui.panels.QuickActionRow
 import com.limelight.QuickActionRegistry
 import android.widget.Toast
+import com.alexclin.moonlink.stream.ui.display.DisplaySettingsPanel
 
 enum class DetailPage {
     MAIN_LIST,
@@ -161,7 +162,7 @@ fun SubPanelContainer(
                     )
                 }
                 DetailPage.DISPLAY -> {
-                    DisplaySection(
+                    DisplaySettingsPanel(
                         engine = engine,
                         onBack = { detailPage = DetailPage.MAIN_LIST },
                     )
@@ -726,164 +727,6 @@ private fun DetailScaffold(
 }
 
 @Composable
-private fun DisplaySection(engine: StreamEngine, onBack: () -> Unit) {
-    val context = LocalContext.current
-    val pref = engine.prefConfig
-
-    // 显示器列表状态
-    var displays by remember { mutableStateOf<List<com.limelight.nvstream.http.NvHTTP.DisplayInfo>>(emptyList()) }
-    var selectedDisplayIndex by remember { mutableIntStateOf(-1) }
-    var useVdd by remember { mutableStateOf(false) }
-
-    LaunchedEffect(Unit) {
-        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            try {
-                val conn = engine.conn ?: return@withContext
-                // 需要通过 NvHTTP 获取显示器列表 — conn 内部有 NvHTTP 引用
-                // 如果无法直接访问，暂用空列表
-            } catch (_: Exception) {}
-        }
-    }
-
-    DetailScaffold(title = "显示", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // ── 1. 帧率切换 ──
-            item { SectionTitle("帧率") }
-            item {
-                val fpsOptions = listOf(30, 60, 90, 120)
-                var selectedFps by remember { mutableIntStateOf(pref.fps) }
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    items(fpsOptions) { fps ->
-                        FilterChip(
-                            selected = selectedFps == fps,
-                            onClick = {
-                                selectedFps = fps
-                                pref.fps = fps
-                                pref.writePreferences(context)
-                                Toast.makeText(context, "帧率已设为${fps}fps，重启串流后生效", Toast.LENGTH_SHORT).show()
-                            },
-                            label = { Text("${fps}fps") },
-                        )
-                    }
-                }
-            }
-
-            // ── 2. 码率分段滑块 ──
-            item { SectionTitle("码率 (kbps)") }
-            item {
-                val currentKbps = pref.bitrate
-                val initialProgress = bitrateToProgress(currentKbps)
-                var sliderProgress by remember { mutableFloatStateOf(initialProgress.toFloat()) }
-                val currentKbpsDisplay = progressToBitrateKbps(sliderProgress.toInt())
-
-                Column {
-                    Text("${currentKbpsDisplay} kbps", style = MaterialTheme.typography.bodyMedium)
-                    Slider(
-                        value = sliderProgress,
-                        onValueChange = { sliderProgress = it },
-                        onValueChangeFinished = {
-                            val kbps = progressToBitrateKbps(sliderProgress.toInt())
-                            pref.bitrate = kbps
-                            pref.writePreferences(context)
-                            engine.conn?.setBitrate(kbps, object : com.limelight.nvstream.NvConnection.BitrateAdjustmentCallback {
-                                override fun onSuccess(newBitrate: Int) {}
-                                override fun onFailure(errorMessage: String) {}
-                            })
-                        },
-                        valueRange = 0f..59f,
-                        steps = 58,
-                    )
-                }
-            }
-
-            // ── 3. 多显示器管理 ──
-            item { SectionTitle("显示器") }
-            if (displays.isNotEmpty()) {
-                items(displays.size) { i ->
-                    val d = displays[i]
-                    Row(Modifier.fillMaxWidth().clickable { selectedDisplayIndex = i }.padding(vertical = 4.dp)) {
-                        RadioButton(selected = selectedDisplayIndex == i, onClick = { selectedDisplayIndex = i })
-                        Text(d.name, Modifier.padding(start = 8.dp))
-                    }
-                }
-            } else {
-                item { Text("无法获取显示器列表", color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            }
-            item {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("VDD 虚拟显示器", Modifier.weight(1f))
-                    Switch(checked = useVdd, onCheckedChange = { useVdd = it })
-                }
-            }
-            item {
-                var external by remember { mutableStateOf(pref.useExternalDisplay) }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("使用外接显示器", Modifier.weight(1f))
-                    Switch(checked = external, onCheckedChange = {
-                        external = it
-                        pref.useExternalDisplay = it
-                        pref.writePreferences(context)
-                    })
-                }
-            }
-            item {
-                Text("⚠ 显示器选择需重启串流生效", style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-
-            // ── 4. 自适应流畅度 ──
-            item { SectionTitle("自适应流畅度") }
-            item {
-                var adaptive by remember { mutableStateOf(false) }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("自适应码率", Modifier.weight(1f))
-                    Switch(checked = adaptive, onCheckedChange = { adaptive = it })
-                }
-            }
-
-            // ── 5. HDR ──
-            item { SectionTitle("HDR") }
-            item {
-                var hdr by remember { mutableStateOf(pref.enableHdr) }
-                var highBrightness by remember { mutableStateOf(pref.enableHdrHighBrightness) }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("启用 HDR", Modifier.weight(1f))
-                    Switch(checked = hdr, onCheckedChange = {
-                        hdr = it
-                        pref.enableHdr = it
-                        pref.writePreferences(context)
-                    })
-                }
-                AnimatedVisibility(visible = hdr) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("  HDR 高亮度", Modifier.weight(1f))
-                        Switch(checked = highBrightness, onCheckedChange = {
-                            highBrightness = it
-                            pref.enableHdrHighBrightness = it
-                            pref.writePreferences(context)
-                        })
-                    }
-                }
-            }
-
-            // ── 6. 画面设置 ──
-            item { SectionTitle("画面设置") }
-            item {
-                var stretch by remember { mutableStateOf(pref.stretchVideo) }
-                var reverse by remember { mutableStateOf(pref.reverseResolution) }
-                var rotable by remember { mutableStateOf(pref.rotableScreen) }
-                SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context) }
-                SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context) }
-                SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context) }
-            }
-        }
-    }
-}
-
-@Composable
 private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
     val context = LocalContext.current
     val pref = engine.prefConfig
@@ -1115,7 +958,7 @@ private fun QuickActionEditorPage(
     }
 }
 
-// ── Helper Composables (DisplaySection 等共用) ──
+// ── Helper Composables ──
 
 @Composable
 private fun SectionTitle(title: String) {
@@ -1132,20 +975,4 @@ private fun SettingSwitch(label: String, checked: Boolean, onToggle: (Boolean) -
     }
 }
 
-// ── 码率映射函数 (DisplaySection 使用) ──
 
-private fun progressToBitrateKbps(progress: Int): Int = when {
-    progress <= 9  -> 500 + progress * 500
-    progress <= 24 -> 5000 + (progress - 9) * 1000
-    progress <= 39 -> 20000 + (progress - 24) * 2000
-    progress <= 49 -> 50000 + (progress - 39) * 5000
-    else           -> 100000 + (progress - 49) * 10000
-}
-
-private fun bitrateToProgress(kbps: Int): Int = when {
-    kbps <= 5000   -> ((kbps - 500) / 500).coerceIn(0, 9)
-    kbps <= 20000  -> (9 + (kbps - 5000 + 500) / 1000).coerceIn(10, 24)
-    kbps <= 50000  -> (24 + (kbps - 20000 + 1000) / 2000).coerceIn(25, 39)
-    kbps <= 100000 -> (39 + (kbps - 50000 + 2500) / 5000).coerceIn(40, 49)
-    else           -> (49 + (kbps - 100000 + 5000) / 10000).coerceIn(50, 59)
-}

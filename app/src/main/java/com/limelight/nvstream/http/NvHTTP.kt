@@ -81,7 +81,11 @@ class NvHTTP(
     class DisplayInfo(
         val index: Int,
         val name: String,
-        val guid: String
+        val guid: String,
+        val isPrimary: Boolean = false,
+        val currentScalePercent: Int = 100,
+        val supportedScalePercents: List<Int> = emptyList(),
+        val scaleSetSupported: Boolean = false,
     )
 
     init {
@@ -545,14 +549,63 @@ class NvHTTP(
                 }
 
                 val guid = displayObj.optString("device_id", "")
+                val isPrimary = displayObj.optBoolean("is_primary", false)
+                val scaleSetSupported = displayObj.optBoolean("scale_set_supported", false)
+                val currentScalePercent = displayObj.optInt("current_scale_percent", 100)
+                val scalesArray = displayObj.optJSONArray("supported_scale_percents")
+                val supportedScales = if (scalesArray != null) {
+                    (0 until scalesArray.length()).map { scalesArray.optInt(it) }
+                } else emptyList()
 
-                displays.add(DisplayInfo(i, friendlyName, guid))
+                displays.add(DisplayInfo(i, friendlyName, guid, isPrimary, currentScalePercent, supportedScales, scaleSetSupported))
             }
 
             return displays
         } catch (e: org.json.JSONException) {
             throw IOException("Failed to parse displays response: ${e.message}", e)
         }
+    }
+
+    /**
+     * 查询指定显示器的 DPI 缩放选项。
+     * 对应 Sunshine API: GET /display-scale-options
+     */
+    @Throws(IOException::class, InterruptedException::class)
+    fun getDisplayScaleOptions(displayName: String? = null, deviceId: String? = null): JSONObject? {
+        try {
+            val query = StringBuilder()
+            if (!displayName.isNullOrEmpty()) {
+                query.append("display_name=").append(java.net.URLEncoder.encode(displayName, "UTF-8"))
+            }
+            if (!deviceId.isNullOrEmpty()) {
+                if (query.isNotEmpty()) query.append("&")
+                query.append("device_id=").append(java.net.URLEncoder.encode(deviceId, "UTF-8"))
+            }
+            val jsonStr = openHttpConnectionToString(
+                httpClientLongConnectTimeout, getHttpsUrl(true),
+                "display-scale-options", query.toString()
+            )
+            return JSONObject(jsonStr)
+        } catch (_: Exception) { return null }
+    }
+
+    /**
+     * 设置指定显示器的 DPI 缩放百分比。
+     * 对应 Sunshine API: POST /display-scale
+     */
+    @Throws(IOException::class, InterruptedException::class)
+    fun setDisplayScale(scalePercent: Int, displayName: String? = null): Boolean {
+        try {
+            val query = StringBuilder().append("scale_percent=").append(scalePercent)
+            if (!displayName.isNullOrEmpty()) {
+                query.append("&display_name=").append(java.net.URLEncoder.encode(displayName, "UTF-8"))
+            }
+            val jsonStr = openHttpConnectionToString(
+                httpClientLongConnectTimeout, getHttpsUrl(true),
+                "display-scale", query.toString()
+            )
+            return JSONObject(jsonStr).optBoolean("success", false)
+        } catch (_: Exception) { return false }
     }
 
     @Throws(IOException::class, InterruptedException::class)
