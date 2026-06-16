@@ -62,6 +62,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val FPS_AUTO_PREF = "fps_auto"
+private val STANDARD_RESOLUTIONS = listOf(
+    "640x360", "854x480", "1280x720",
+    "1920x1080", "2560x1440", "3840x2160",
+)
 
 /**
  * 显示设置子面板（两分组布局）
@@ -218,17 +222,18 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
     var selectedPreset by remember { mutableStateOf(BitrateUtils.getPresetByKbps(pref.bitrate)) }
     var abrMode by remember { mutableStateOf(pref.abrMode) }
     var sliderProgress by remember { mutableFloatStateOf(0f) }
-    var customKbps by remember {
-        mutableIntStateOf(pref.bitrate.coerceIn(
-            BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX,
-        ))
-    }
+    // 从持久化中恢复自定义码率，跨预设切换时仍保持（Bug 4 fix）
+    val savedCustomKbps = loadCustomKbps(context)
+    val initCustomKbps = if (pref.bitrate in BitrateUtils.BITRATE_CUSTOM_MIN..BitrateUtils.BITRATE_CUSTOM_MAX)
+        pref.bitrate else savedCustomKbps.coerceIn(BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)
+    var customKbps by remember { mutableIntStateOf(initCustomKbps) }
     // U4: 当前有效码率（跟随所有 preset/slider 变化）
     var effectiveBitrate by remember { mutableIntStateOf(pref.bitrate) }
 
+    // 首次加载时同步自定义滑块位置
     LaunchedEffect(Unit) {
         if (selectedPreset == BitrateUtils.BitratePreset.CUSTOM) {
-            sliderProgress = BitrateUtils.customKbpsToProgress(pref.bitrate).toFloat()
+            sliderProgress = BitrateUtils.customKbpsToProgress(customKbps).toFloat()
         }
     }
 
@@ -240,6 +245,12 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                     onClick = {
                         selectedPreset = preset
                         onBitratePresetSelected(engine, preset, context, customKbps)
+                        // 切换到 CUSTOM 时同步 SeekBar 位置
+                        if (preset == BitrateUtils.BitratePreset.CUSTOM) {
+                            val targetKbps = customKbps.coerceIn(
+                                BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)
+                            sliderProgress = BitrateUtils.customKbpsToProgress(targetKbps).toFloat()
+                        }
                         // 更新流量估算用码率
                         effectiveBitrate = when (preset) {
                             BitrateUtils.BitratePreset.AUTO -> 0
@@ -298,10 +309,9 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                         val kbps = BitrateUtils.customProgressToKbps(sliderProgress.toInt())
                         customKbps = kbps
                         effectiveBitrate = kbps
-                        pref.bitrate = kbps
-                        pref.enableAdaptiveBitrate = false
-                        pref.writePreferences(context)
-                        engine.conn?.setBitrate(kbps, null)
+                        saveCustomKbps(context, kbps)
+                        // 使用 setFixedBitrate 统一处理持久化 + 异步回调 + ABR 同步
+                        setFixedBitrate(engine, pref, kbps, context)
                     },
                     valueRange = 0f..100f,
                 )
@@ -329,6 +339,33 @@ private fun TrafficEstimateLine(bitrateKbps: Int) {
     }
 }
 
+/**
+ * 直接写入 [PreferenceConfiguration.writePreferences] 未覆盖的 SP 键。
+ *
+ * [writePreferences] 遗漏了多个字段（如 enableAdaptiveBitrate、abrMode、stretchVideo
+ * 等），因为它们原本由旧 PreferenceScreen 自动保存。新的 Compose UI 必须手动写入这些键。
+ */
+private fun writeDirectPrefs(pref: PreferenceConfiguration, context: android.content.Context) {
+    val sp = PreferenceManager.getDefaultSharedPreferences(context)
+    sp.edit()
+        .putBoolean("checkbox_adaptive_bitrate", pref.enableAdaptiveBitrate)
+        .putString("list_abr_mode", pref.abrMode)
+        .putBoolean("checkbox_stretch_video", pref.stretchVideo)
+        .putInt("seekbar_output_buffer_queue_limit", pref.outputBufferQueueLimit)
+        .apply()
+}
+
+private const val CUSTOM_KBPS_PREF = "custom_kbps"
+
+private fun loadCustomKbps(context: android.content.Context): Int =
+    context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+        .getInt(CUSTOM_KBPS_PREF, 50000)
+
+private fun saveCustomKbps(context: android.content.Context, kbps: Int) {
+    context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+        .edit().putInt(CUSTOM_KBPS_PREF, kbps).apply()
+}
+
 private fun onBitratePresetSelected(
     engine: StreamEngine, preset: BitrateUtils.BitratePreset,
     context: android.content.Context, customKbps: Int,
@@ -338,6 +375,7 @@ private fun onBitratePresetSelected(
         BitrateUtils.BitratePreset.AUTO -> {
             pref.enableAdaptiveBitrate = true
             pref.writePreferences(context)
+            writeDirectPrefs(pref, context)
         }
         BitrateUtils.BitratePreset.M2 -> setFixedBitrate(engine, pref, BitrateUtils.BITRATE_2M, context)
         BitrateUtils.BitratePreset.M8 -> setFixedBitrate(engine, pref, BitrateUtils.BITRATE_8M, context)
@@ -352,15 +390,33 @@ private fun setFixedBitrate(
 ) {
     pref.enableAdaptiveBitrate = false
     pref.bitrate = kbps
-    pref.writePreferences(context)
-    engine.conn?.setBitrate(kbps, null)
+    // writePreferences 不保存 enableAdaptiveBitrate，需直接写 SP
+    writeDirectPrefs(pref, context)
+
+    val conn = engine.conn
+    if (conn != null) {
+        conn.setBitrate(kbps, object : com.limelight.nvstream.NvConnection.BitrateAdjustmentCallback {
+            override fun onSuccess(newBitrate: Int) {
+                pref.bitrate = newBitrate
+                pref.writePreferences(context)
+                // 同步通知 ABR 服务，防止下一个 tick 覆盖手动设定值
+                engine.adaptiveBitrateService?.notifyManualOverride(newBitrate)
+            }
+            override fun onFailure(errorMessage: String) {
+                // 服务端拒绝，恢复之前的状态
+                Toast.makeText(context, "码率设置失败: $errorMessage", Toast.LENGTH_SHORT).show()
+            }
+        })
+    }
 }
 
 private fun onAbrModeSelected(
     engine: StreamEngine, mode: String, context: android.content.Context,
 ) {
-    engine.prefConfig.abrMode = mode
-    engine.prefConfig.writePreferences(context)
+    val pref = engine.prefConfig
+    pref.abrMode = mode
+    pref.writePreferences(context)
+    writeDirectPrefs(pref, context)
 }
 
 // ══════════════════════════════════════════
@@ -412,6 +468,7 @@ private fun OutputBufferSlider(engine: StreamEngine) {
             onValueChangeFinished = {
                 pref.outputBufferQueueLimit = sliderValue.toInt().coerceIn(1, 5)
                 pref.writePreferences(context)
+                writeDirectPrefs(pref, context)
             },
             valueRange = 1f..5f, steps = 3,
         )
@@ -442,26 +499,32 @@ private fun VideoSwitches(engine: StreamEngine) {
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context) }
+        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context) }
         SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context) }
         SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context) }
     }
 }
 
 // ══════════════════════════════════════════
-// DC-3: VddSection (B2 fix: read actual engine state)
+// DC-3: VddSection (持久化 + 反映引擎实时状态)
 // ══════════════════════════════════════════
+
+private const val VDD_ENABLED_PREF = "vdd_enabled"
 
 @Composable
 private fun VddSection(engine: StreamEngine) {
     val context = LocalContext.current
     val pref = engine.prefConfig
-    var useVdd by remember { mutableStateOf(engine.pcUseVdd) }
+    val vddPref = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+    val savedVdd = vddPref.getBoolean(VDD_ENABLED_PREF, engine.pcUseVdd)
+    var useVdd by remember { mutableStateOf(savedVdd) }
     var useExternal by remember { mutableStateOf(pref.useExternalDisplay) }
 
     Column {
         SettingSwitch("VDD虚拟显示器", useVdd) {
             useVdd = it
+            engine.pcUseVdd = it
+            vddPref.edit().putBoolean(VDD_ENABLED_PREF, it).apply()
             Toast.makeText(context,
                 if (it) "VDD开关已更改，重启串流后生效"
                 else "VDD开关已关闭，重启串流后生效",
@@ -482,6 +545,7 @@ private fun VddSection(engine: StreamEngine) {
 @Composable
 private fun MonitorList(engine: StreamEngine) {
     val context = LocalContext.current
+    val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
     var displays by remember { mutableStateOf<List<com.limelight.nvstream.http.NvHTTP.DisplayInfo>>(emptyList()) }
     var selectedIndex by remember { mutableIntStateOf(-1) }
     var loading by remember { mutableStateOf(true) }
@@ -493,7 +557,13 @@ private fun MonitorList(engine: StreamEngine) {
                 val list = conn.createNvHttp()?.getDisplays() ?: emptyList()
                 displays = list
                 if (list.isNotEmpty() && selectedIndex < 0) {
-                    selectedIndex = list.indexOfFirst { it.isPrimary }.coerceAtLeast(0)
+                    // 先尝试从持久化中恢复上次选择
+                    val savedGuid = displayPrefs.getString("display_guid", null)
+                    val savedIndex = if (savedGuid != null) {
+                        list.indexOfFirst { it.guid == savedGuid }.coerceAtLeast(-1)
+                    } else -1
+                    selectedIndex = if (savedIndex >= 0) savedIndex
+                    else list.indexOfFirst { it.isPrimary }.coerceAtLeast(0)
                 }
             } catch (_: Exception) {}
             loading = false
@@ -510,20 +580,23 @@ private fun MonitorList(engine: StreamEngine) {
         } else {
             displays.forEachIndexed { index, display ->
                 val isActive = index == selectedIndex
+                val onSelectDisplay = {
+                    selectedIndex = index
+                    // 持久化显示器 GUID 以供下次串流使用
+                    displayPrefs.edit()
+                        .putString("display_guid", display.guid)
+                        .putString("display_name", display.name)
+                        .apply()
+                    Toast.makeText(context, "显示器切换需重启串流生效", Toast.LENGTH_SHORT).show()
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth()
-                        .clickable {
-                            selectedIndex = index       // B1: update visual selection
-                            Toast.makeText(context, "显示器切换需重启串流生效", Toast.LENGTH_SHORT).show()
-                        }
+                        .clickable { onSelectDisplay() }
                         .padding(vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     RadioButton(selected = isActive,
-                        onClick = {
-                            selectedIndex = index       // B1: update visual selection
-                            Toast.makeText(context, "显示器切换需重启串流生效", Toast.LENGTH_SHORT).show()
-                        })
+                        onClick = { onSelectDisplay() })
                     Spacer(Modifier.width(8.dp))
                     Text(display.name, modifier = Modifier.weight(1f))
                     if (isActive) {
@@ -552,11 +625,6 @@ private fun MonitorSettings(engine: StreamEngine) {
     val pref = engine.prefConfig
     val scope = rememberCoroutineScope()   // U2
 
-    val standardResolutions = listOf(
-        "640x360", "854x480", "1280x720",
-        "1920x1080", "2560x1440", "3840x2160",
-    )
-
     val nativeRes by remember {
         mutableStateOf(run {
             val display = (context.getSystemService(Context.WINDOW_SERVICE)
@@ -567,7 +635,10 @@ private fun MonitorSettings(engine: StreamEngine) {
             } else {
                 display.getSize(size)
             }
-            "${size.x}x${size.y}"
+            // 归一化为横屏方向: max(w,h) x min(w,h)
+            val w = maxOf(size.x, size.y)
+            val h = minOf(size.x, size.y)
+            "${w}x${h}"
         })
     }
 
@@ -575,9 +646,10 @@ private fun MonitorSettings(engine: StreamEngine) {
     var customResSet by remember { mutableStateOf(loadCustomResolutions(context)) }
 
     val allResolutions = remember {
-        standardResolutions +
-            listOf("Native ($nativeRes)") +
-            customResSet.map { "$it (自定义)" }
+        val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
+            listOf("Native ($nativeRes)")
+        } else emptyList()
+        STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { "$it (自定义)" }
     }
 
     var selectedRes by remember { mutableStateOf("${pref.width}x${pref.height}") }
@@ -697,7 +769,8 @@ private fun onResolutionSelected(
     engine: StreamEngine, context: android.content.Context,
     res: String, nativeRes: String,
 ) {
-    val actualRes = if (res == nativeRes) "Native" else res
+    // 只有当用户点了 Native chip（即 res == nativeRes 且不是标准预置）时才存 "Native"
+    val actualRes = if (res == nativeRes && res !in STANDARD_RESOLUTIONS) "Native" else res
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     prefs.edit().putString(PreferenceConfiguration.RESOLUTION_PREF_STRING, actualRes).apply()
     engine.changeResolution()  // → activity.recreate()

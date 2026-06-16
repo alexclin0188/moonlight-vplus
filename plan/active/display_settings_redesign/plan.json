@@ -2,9 +2,9 @@
   "feature": "display_settings_redesign",
   "title": "显示设置子面板重构：帧率/码率/画面/显示器分组全新布局",
   "state": "finished",
-  "version": "1.2",
+  "version": "1.4",
   "created": "2026-06-16",
-  "updated": "2026-06-16T16:00",
+  "updated": "2026-06-16T18:00",
   "dependsOn": ["stream_ui_completion"],
   "description": "将现有 DisplaySection 完全重写为两分组布局。码率自动/智能码率参考旧AdaptiveBitrateService和BitrateCardController实现；分辨率参考旧StreamSettings的resolution list/custom_resolutions SP和Game.kt的changeResolution模式。",
   "batches": [
@@ -32,6 +32,16 @@
       "id": "batchE",
       "name": "验证 + 清理旧DisplaySection代码",
       "items": ["DE-1"]
+    },
+    {
+      "id": "batchF",
+      "name": "审查修复：码率滑块持久化 + VDD recreate 恢复 + Auto FPS 生效",
+      "items": ["FIX-1", "FIX-2", "FIX-3"]
+    },
+    {
+      "id": "batchG",
+      "name": "二次审查修复：PreferenceConfiguration.writePreferences 遗漏字段直接写 SP + Auto FPS launch 非零",
+      "items": ["FIX-4", "FIX-5", "FIX-6", "FIX-7", "FIX-8"]
     }
   ],
   "todos": [
@@ -118,6 +128,62 @@
       "status": "done",
       "priority": "high",
       "batch": "batchE"
+    },
+    {
+      "id": "FIX-1",
+      "content": "自定义码率滑块 onValueChangeFinished 改用 setFixedBitrate（修复缺失 pref.bitrate 持久化和 null 回调问题）",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchF"
+    },
+    {
+      "id": "FIX-2",
+      "content": "StreamEngine.initialize() 中从持久化 display_settings/vdd_enabled 覆盖 pcUseVdd，防止 activity.recreate() 后 VDD 状态丢失",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchF"
+    },
+    {
+      "id": "FIX-3",
+      "content": "StreamEngine.buildStreamConfiguration() 检查 fps_auto 偏好，选择自动帧率时使用设备原生刷新率",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchF"
+    },
+    {
+      "id": "FIX-4",
+      "content": "新增 writeDirectPrefs() 直接写入 writePreferences() 遗漏的 SP 键：checkbox_adaptive_bitrate / list_abr_mode / checkbox_stretch_video / seekbar_output_buffer_queue_limit",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchG"
+    },
+    {
+      "id": "FIX-5",
+      "content": "onBitratePresetSelected(AUTO) / onAbrModeSelected / setFixedBitrate 调用 writeDirectPrefs 确保 ABR 模式持久化",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchG"
+    },
+    {
+      "id": "FIX-6",
+      "content": "setFixedBitrate 在 async 回调前立即持久化 bitrate + enableAdaptiveBitrate，避免 conn=null 时丢失",
+      "status": "done",
+      "priority": "high",
+      "batch": "batchG"
+    },
+    {
+      "id": "FIX-7",
+      "content": "VideoSwitches(stretchVideo) + OutputBufferSlider 调用 writeDirectPrefs 确保持久化",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchG"
+    },
+    {
+      "id": "FIX-8",
+      "content": "Auto FPS 时 setLaunchRefreshRate 改为 roundedRefreshRate(非 0)，避免服务器拒绝 FPS=0",
+      "status": "done",
+      "priority": "medium",
+      "batch": "batchG"
     }
   ]
 }

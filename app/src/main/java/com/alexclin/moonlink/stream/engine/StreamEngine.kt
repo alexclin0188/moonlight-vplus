@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.stream.engine
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Handler
@@ -102,6 +103,10 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     private var displayName: String? = null
     private var forceResumeCurrentSession: Boolean = false
     var pcUseVdd: Boolean = false
+
+    /** 智能码率服务引用（由外部 Game/StreamActivity 注入，用于手动调码率时同步状态） */
+    var adaptiveBitrateService: com.limelight.nvstream.http.AdaptiveBitrateService? = null
+
     private var pcUuid: String? = null
     private var pcName: String? = null
     private var appId: Int = NvApp.DESKTOP_APP_ID
@@ -160,6 +165,11 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             displayName = intent.getStringExtra(Game.EXTRA_DISPLAY_NAME)
             forceResumeCurrentSession = intent.getBooleanExtra(Game.EXTRA_FORCE_RESUME_CURRENT_SESSION, false)
             pcUseVdd = intent.getBooleanExtra(Game.EXTRA_PC_USEVDD, false)
+            // 用持久化的 VDD 用户偏好覆盖 Intent 值（用户可能在面板中更改过 VDD）
+            val vddPref = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+            if (vddPref.contains("vdd_enabled")) {
+                pcUseVdd = vddPref.getBoolean("vdd_enabled", pcUseVdd)
+            }
             pcUuid = intent.getStringExtra(Game.EXTRA_PC_UUID)
             pcName = intent.getStringExtra(Game.EXTRA_PC_NAME)
 
@@ -347,10 +357,19 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         // 帧率调整（旧代码 line 784-799）
         val displayRefreshRate = activity.windowManager.defaultDisplay.refreshRate
         val roundedRefreshRate = displayRefreshRate.roundToInt()
-        var chosenFrameRate = prefConfig.fps
+
+        // 检查用户是否选择了"自动"帧率
+        val fpsAutoPref = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+        val fpsAuto = fpsAutoPref.getBoolean("fps_auto", false)
+
+        // 实际使用的帧率
+        var chosenFrameRate = if (fpsAuto) roundedRefreshRate else prefConfig.fps
+        // 自动帧率时用原生刷新率而非 0，避免服务器可能拒绝 mode=WxHxFPS 中 FPS=0
+        val effectiveLaunchFps = if (fpsAuto) roundedRefreshRate else prefConfig.fps
+
         if (prefConfig.framePacing == PreferenceConfiguration.FRAME_PACING_CAP_FPS) {
-            if (prefConfig.fps >= roundedRefreshRate) {
-                if (prefConfig.fps > roundedRefreshRate + 3) {
+            if (chosenFrameRate >= roundedRefreshRate) {
+                if (chosenFrameRate > roundedRefreshRate + 3) {
                     // 使用 drop 模式 → 不改帧率
                 } else if (roundedRefreshRate <= 49) {
                     // 刷新率太低
@@ -363,7 +382,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
         return StreamConfiguration.Builder()
             .setResolution(prefConfig.width, prefConfig.height)
-            .setLaunchRefreshRate(prefConfig.fps)
+            .setLaunchRefreshRate(effectiveLaunchFps)
             .setRefreshRate(chosenFrameRate)
             .setApp(app)
             .setBitrate(prefConfig.bitrate)
