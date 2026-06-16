@@ -29,6 +29,8 @@ import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.preferences.GlPreferences
 import com.limelight.utils.AppSettingsManager
+import com.limelight.utils.NetHelper
+import android.net.TrafficStats
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -240,9 +242,33 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             willStreamHdr,
             glRenderer,
             object : PerfOverlayListener {
-                override fun onPerfUpdateV(performanceInfo: PerformanceInfo) {}
-                override fun onPerfUpdateWG(performanceInfo: PerformanceInfo) {}
-                override fun isPerfOverlayVisible(): Boolean = false
+                override fun onPerfUpdateV(performanceInfo: PerformanceInfo) {
+                    // 带宽计算
+                    val currentRxBytes = TrafficStats.getTotalRxBytes()
+                    val timeMillis = System.currentTimeMillis()
+                    val interval = timeMillis - previousTimeMillis
+                    if (interval > 5000) {
+                        performanceInfo.bandWidth = lastValidBandwidth
+                    } else {
+                        val calc = NetHelper.calculateBandwidth(currentRxBytes, previousRxBytes, interval)
+                        if (calc != "0 K/s") {
+                            performanceInfo.bandWidth = calc
+                            lastValidBandwidth = calc
+                        } else {
+                            performanceInfo.bandWidth = lastValidBandwidth
+                        }
+                    }
+                    bandwidthInfo = performanceInfo.bandWidth ?: "N/A"
+                    previousRxBytes = currentRxBytes
+                    previousTimeMillis = timeMillis
+
+                    latestPerfInfo = performanceInfo
+                    onPerfInfoUpdate?.invoke(performanceInfo)
+                }
+                override fun onPerfUpdateWG(performanceInfo: PerformanceInfo) {
+                    latestPerfInfo = performanceInfo
+                }
+                override fun isPerfOverlayVisible(): Boolean = prefConfig.enablePerfOverlay
             }
         )
 
@@ -664,28 +690,9 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         ))
     }
 
-    /** 判断远端主机是否为 macOS（基于主机名称推断） */
-    fun isMacHost(): Boolean {
-        val name = pcName?.lowercase() ?: return false
-        return name.contains("mac") || name.contains("darwin") || name.contains("macbook")
-    }
-
-    /**
-     * 唤起远端主机屏幕键盘。
-     * - Windows: Win+Ctrl+O 打开系统屏幕键盘 (osk.exe)
-     * - macOS: Cmd+F5 切换 VoiceOver（含屏幕键盘）
-     */
+    /** 唤起远端主机屏幕键盘 (Win+Ctrl+O) */
     fun sendToggleHostKeyboard() {
-        if (isMacHost()) {
-            // macOS: Cmd+F5 切换 VoiceOver
-            sendKeys(shortArrayOf(
-                com.limelight.binding.input.KeyboardTranslator.VK_LWIN.toShort(),
-                0x74.toShort() // F5 = 0x74
-            ))
-        } else {
-            // Windows: Win+Ctrl+O
-            sendWinCtrlO()
-        }
+        sendWinCtrlO()
     }
 
     /** 主机键盘开关: Win+Ctrl+O */
@@ -749,6 +756,18 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             0x42.toShort()
         ))
     }
+
+    // 性能面板
+    @Volatile
+    var latestPerfInfo: PerformanceInfo? = null
+    var onPerfInfoUpdate: ((PerformanceInfo) -> Unit)? = null
+
+    // 带宽计算
+    private var previousRxBytes = 0L
+    private var previousTimeMillis = 0L
+    private var lastValidBandwidth = "N/A"
+    @Volatile
+    var bandwidthInfo: String = "N/A"
 
     /** 远程鼠标切换: Ctrl+Alt+Shift+N（与旧 GameMenu 一致） */
     fun sendRemoteMouseToggle() {
@@ -869,6 +888,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     fun release() {
         LimeLog.info("StreamEngine: release")
+        onPerfInfoUpdate = null
         if (connected) conn?.stop()
         audioRenderer = null
         decoderRenderer = null

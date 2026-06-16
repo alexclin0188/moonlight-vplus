@@ -35,7 +35,6 @@ import kotlinx.coroutines.delay
 import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
-import com.alexclin.moonlink.theme.macosGray
 import com.alexclin.moonlink.stream.StreamActivity
 import com.limelight.Game
 import com.google.zxing.integration.android.IntentIntegrator
@@ -686,16 +685,11 @@ private fun DeviceCard(
 
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         // OS type icon
-                        val isMac = computer.name?.lowercase()?.let {
-                            it.contains("mac") || it.contains("darwin")
-                        } ?: false
-                        val osIcon = if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows
-                        val osColor = if (isMac) macosGray else windowsBlue
                         Icon(
-                            imageVector = osIcon,
-                            contentDescription = if (isMac) "macOS" else "Windows",
+                            imageVector = Icons.Default.DesktopWindows,
+                            contentDescription = "Windows",
                             modifier = Modifier.size(16.dp),
-                            tint = osColor.copy(alpha = if (isOnline) 1f else 0.5f),
+                            tint = windowsBlue.copy(alpha = if (isOnline) 1f else 0.5f),
                         )
 
                         // Running game indicator
@@ -1064,4 +1058,3 @@ private fun doPair(
         }
     }
 }
-

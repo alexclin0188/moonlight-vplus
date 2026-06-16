@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.alexclin.moonlink.theme.macosGray
 import com.alexclin.moonlink.theme.windowsBlue
 import com.alexclin.moonlink.home.DeviceBoxArt
 import com.alexclin.moonlink.theme.statusOffline
@@ -215,14 +214,11 @@ fun DeviceOverviewScreen(
                                         .padding(top = 12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    val isMac = computer.name?.lowercase()?.let {
-                                        it.contains("mac") || it.contains("darwin")
-                                    } ?: false
                                     Icon(
-                                        if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows,
-                                        contentDescription = if (isMac) "macOS" else "Windows",
+                                        Icons.Default.DesktopWindows,
+                                        contentDescription = "Windows",
                                         modifier = Modifier.size(20.dp),
-                                        tint = if (isMac) macosGray else windowsBlue,
+                                        tint = windowsBlue,
                                     )
                                     computer.activeAddress?.let { addr ->
                                         Spacer(Modifier.width(4.dp))
@@ -483,14 +479,11 @@ fun DeviceOverviewScreen(
                                     .padding(top = 12.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                val isMac = computer.name?.lowercase()?.let {
-                                    it.contains("mac") || it.contains("darwin")
-                                } ?: false
                                 Icon(
-                                    if (isMac) Icons.Default.LaptopMac else Icons.Default.DesktopWindows,
-                                    contentDescription = if (isMac) "macOS" else "Windows",
+                                    Icons.Default.DesktopWindows,
+                                    contentDescription = "Windows",
                                     modifier = Modifier.size(20.dp),
-                                    tint = if (isMac) macosGray else windowsBlue,
+                                    tint = windowsBlue,
                                 )
                                 computer.activeAddress?.let { addr ->
                                     Spacer(Modifier.width(4.dp))

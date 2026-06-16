@@ -254,6 +254,92 @@ fun SeekBarPreference(
     }
 }
 
+// ── Multi-Select Preference ──────────────────────────────────────────
+
+@Composable
+fun MultiSelectPreference(
+    key: String,
+    title: String,
+    summary: String = "",
+    items: List<Pair<String, String>>, // (label, value)
+    defaultValues: Set<String> = emptySet(),
+    dependency: String? = null,
+    context: Context = LocalContext.current,
+) {
+    val prefs = remember { Prefs.of(context) }
+    var dependencyValue by remember { mutableStateOf(true) }
+    var selectedValues by remember { mutableStateOf(prefs.getStringSet(key, defaultValues) ?: defaultValues) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (dependency != null) {
+        LaunchedEffect(Unit) {
+            dependencyValue = prefs.getBoolean(dependency, false)
+        }
+        DisposableEffect(dependency) {
+            val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, k ->
+                if (k == dependency) dependencyValue = prefs.getBoolean(dependency, false)
+            }
+            prefs.registerOnSharedPreferenceChangeListener(listener)
+            onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+        }
+    }
+
+    val enabled = dependency == null || dependencyValue
+    val enabledCount = items.count { it.second in selectedValues }
+
+    ListItem(
+        headlineContent = {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+        },
+        supportingContent = if (summary.isNotEmpty()) {
+            { Text(if (enabled) "$summary（已选 $enabledCount 项）" else summary, style = MaterialTheme.typography.bodySmall) }
+        } else null,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(enabled = enabled) { showDialog = true },
+    )
+    HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(title) },
+            text = {
+                Column {
+                    items.forEach { (label, value) ->
+                        val isChecked = value in selectedValues
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val mutable = selectedValues.toMutableSet()
+                                    if (isChecked) mutable.remove(value)
+                                    else mutable.add(value)
+                                    selectedValues = mutable
+                                    prefs.edit().putStringSet(key, mutable).apply()
+                                }
+                                .padding(vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Checkbox(
+                                checked = isChecked,
+                                onCheckedChange = null,
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(label, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("确定")
+                }
+            },
+        )
+    }
+}
+
 // ── Category Header ──────────────────────────────────────────────────
 
 @Composable

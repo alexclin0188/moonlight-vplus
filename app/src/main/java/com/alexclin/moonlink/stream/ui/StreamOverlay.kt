@@ -11,19 +11,32 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -34,9 +47,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
@@ -44,6 +61,12 @@ import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.PanelAnimations
 import com.alexclin.moonlink.stream.ui.keyboard.KeyboardSubPanel
 import com.alexclin.moonlink.stream.ui.keyboard.VirtualKeyboardBridge
+import com.limelight.preferences.PerfOverlayDisplayItemsPreference
+import com.limelight.preferences.PreferenceConfiguration
+import com.limelight.utils.MoonPhaseUtils
+import com.limelight.utils.UiHelper
+import com.limelight.binding.video.PerformanceInfo
+import android.content.Context
 import android.os.SystemClock
 import android.widget.FrameLayout
 import androidx.compose.ui.viewinterop.AndroidView
@@ -170,6 +193,18 @@ fun StreamOverlay(
                 )
             }
         }
+
+        // ── 性能监控面板（置于面板层之下，不遮挡悬浮按钮/面板/键盘） ──
+        val perfPosition = engine.prefConfig.perfOverlayPosition
+        val perfAlign = when (perfPosition) {
+            PreferenceConfiguration.PerfOverlayPosition.TOP -> Alignment.TopCenter
+            PreferenceConfiguration.PerfOverlayPosition.BOTTOM -> Alignment.BottomCenter
+            PreferenceConfiguration.PerfOverlayPosition.TOP_LEFT -> Alignment.TopStart
+            PreferenceConfiguration.PerfOverlayPosition.TOP_RIGHT -> Alignment.TopEnd
+            PreferenceConfiguration.PerfOverlayPosition.BOTTOM_LEFT -> Alignment.BottomStart
+            PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
+        }
+        PerformanceOverlay(engine = engine, modifier = Modifier.align(perfAlign))
 
         // ── 面板外点击关闭层 ──
         if (panelState != PanelState.HIDDEN) {
@@ -340,5 +375,248 @@ fun StreamOverlay(
                 )
             }
         }
+    }
+}
+
+/** 性能监控面板 — 完整实现，与旧版 PerformanceOverlayManager 功能对齐 */
+@Composable
+private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var perfInfo by remember { mutableStateOf(engine.latestPerfInfo) }
+
+    // 使用回调驱动更新，替代轮询
+    LaunchedEffect(Unit) {
+        engine.onPerfInfoUpdate = { perfInfo = it }
+    }
+
+    val visible = engine.prefConfig.enablePerfOverlay
+            && perfInfo != null
+            && perfInfo!!.renderedFps > 0f
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(animationSpec = tween(300)),
+        exit = fadeOut(animationSpec = tween(300)),
+        modifier = modifier,
+    ) {
+        val info = perfInfo!!
+        val isHorizontal = engine.prefConfig.perfOverlayOrientation == PreferenceConfiguration.PerfOverlayOrientation.HORIZONTAL
+        val bgOpacity = (engine.prefConfig.perfOverlayBgOpacity.coerceIn(0, 100)) / 100f
+        val bgArgb = (bgOpacity * 255).toInt().coerceIn(0, 255) shl 24 or 0x161616
+        val bgColor = Color(bgArgb)
+        val isLocked = engine.prefConfig.perfOverlayLocked
+
+        // 月相
+        val moonIcon = remember { MoonPhaseUtils.getMoonPhaseIcon(MoonPhaseUtils.getCurrentMoonPhase()) }
+        // 带宽
+        val bandwidth = engine.bandwidthInfo
+
+        // 检测每个项目是否启用
+        val items = remember {
+            listOf<Pair<PerfItem, Boolean>>(
+                PerfItem.RESOLUTION to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "resolution"),
+                PerfItem.DECODER to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "decoder"),
+                PerfItem.FPS to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "render_fps"),
+                PerfItem.PACKET_LOSS to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "packet_loss"),
+                PerfItem.NETWORK to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "network_latency"),
+                PerfItem.DECODE to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "decode_latency"),
+                PerfItem.HOST to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "host_latency"),
+                PerfItem.BATTERY to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "battery"),
+                PerfItem.ONE_LOW to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "one_percent_low"),
+            )
+        }
+
+        // 拖拽状态
+        var dragOffset by remember { mutableStateOf(Offset.Zero) }
+
+        // 点击详情对话框
+        var detailTitle by remember { mutableStateOf<String?>(null) }
+        var detailMessage by remember { mutableStateOf<String?>(null) }
+
+        if (detailTitle != null) {
+            AlertDialog(
+                onDismissRequest = { detailTitle = null },
+                title = { Text(detailTitle!!) },
+                text = { Text(detailMessage ?: "") },
+                confirmButton = { TextButton(onClick = { detailTitle = null }) { Text("确定") } },
+            )
+        }
+
+        val textSize = 12.sp
+        val textColor = Color.White
+
+        @Composable
+        fun renderItem(item: PerfItem) {
+            val (valueText, itemColor) = buildItemText(item, info, bandwidth, moonIcon, context)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .clickable {
+                        detailTitle = item.name
+                        detailMessage = buildItemDetail(item, info, bandwidth, context)
+                    }
+                    .padding(vertical = 1.dp),
+            ) {
+                Text(item.iconEmoji ?: "", fontSize = textSize)
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    valueText,
+                    color = itemColor ?: textColor,
+                    fontSize = textSize,
+                    fontWeight = if (item == PerfItem.DECODER) FontWeight.Bold else FontWeight.Normal,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+
+        val panelContent = @Composable {
+            val container: @Composable (content: @Composable () -> Unit) -> Unit =
+                if (isHorizontal) { content -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() } }
+                else { content -> Column { content() } }
+            container {
+                for ((item, enabled) in items) {
+                    if (enabled) renderItem(item)
+                }
+            }
+        }
+
+        // 拖拽手势（仅非锁定态可拖拽）
+        val dragModifier = if (!isLocked)
+            Modifier.pointerInput(Unit) {
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    dragOffset = Offset(dragOffset.x + dragAmount.x, dragOffset.y + dragAmount.y)
+                }
+            }
+        else Modifier
+
+        val contentBox = @Composable {
+            Box(
+                modifier = dragModifier
+                    .background(bgColor, RoundedCornerShape(6.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            ) {
+                panelContent()
+            }
+        }
+
+        if (isLocked) {
+            contentBox()
+        } else {
+            Box(modifier = Modifier.offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }) {
+                contentBox()
+            }
+        }
+    }
+}
+
+private enum class PerfItem(
+    val iconEmoji: String? = null,
+    val color: Int? = null,
+) {
+    RESOLUTION(iconEmoji = "🎬", color = 0xFFBB86FC.toInt()),
+    DECODER(iconEmoji = "⚙️", color = 0xFF03DAC6.toInt()),
+    FPS(iconEmoji = "🖥️", color = 0xFF0DDAF4.toInt()),
+    PACKET_LOSS(iconEmoji = "📡"),
+    NETWORK(iconEmoji = "🌐", color = 0xFFBCEDD3.toInt()),
+    DECODE(iconEmoji = "⏱️", color = 0xFFD597E3.toInt()),
+    HOST(iconEmoji = "🖥️", color = 0xFF009688.toInt()),
+    BATTERY(iconEmoji = "🔋"),
+    ONE_LOW(iconEmoji = "📉", color = 0xFFFF7043.toInt()),
+}
+
+private fun buildItemText(
+    item: PerfItem, info: PerformanceInfo, bandwidth: String, moonIcon: String, context: Context
+): Pair<String, Color?> = when (item) {
+    PerfItem.RESOLUTION -> "${info.initialWidth}x${info.initialHeight}@${"%.0f".format(info.totalFps)} $moonIcon" to null
+    PerfItem.DECODER -> {
+        val shortName = info.decoder?.lowercase()?.let { name ->
+            when {
+                name.contains("av1") -> "AV1"
+                name.contains("avc") || name.contains("h264") -> "AVC"
+                name.contains("hevc") || name.contains("h265") -> "HEVC"
+                name.contains("vp9") -> "VP9"
+                name.contains("vp8") -> "VP8"
+                else -> name.substringAfterLast('.').uppercase()
+            }
+        } ?: "N/A"
+        (if (info.isHdrActive) "$shortName HDR" else shortName) to null
+    }
+    PerfItem.FPS -> "Rx ${"%.0f".format(info.receivedFps)} / Rd ${"%.0f".format(info.renderedFps)} FPS" to null
+    PerfItem.PACKET_LOSS -> {
+        val text = "${"%.2f".format(info.lostFrameRate)}%"
+        val color = if (info.lostFrameRate < 5.0f) Color(0xFF7D9D7D) else Color(0xFFB57D7D)
+        text to color
+    }
+    PerfItem.NETWORK -> {
+        val rtt = info.rttInfo.toInt()
+        val jitter = (info.rttInfo shr 32).toInt()
+        "$bandwidth\u00A0\u00A0\u00A0${jitter}±${rtt}ms" to null
+    }
+    PerfItem.DECODE -> {
+        val isHot = info.decodeTimeMs >= 15
+        val emoji = if (isHot) " 🥵" else ""
+        "${"%.2f".format(info.decodeTimeMs)}ms$emoji" to null
+    }
+    PerfItem.HOST -> {
+        if (info.framesWithHostProcessingLatency > 0)
+            "${"%.1f".format(info.aveHostProcessingLatency)}ms" to null
+        else
+            "Ver.V+ 🧋" to null
+    }
+    PerfItem.BATTERY -> {
+        val level = UiHelper.getBatteryLevel(context)
+        val color = when {
+            level > 50 -> Color(0xFF90EE90)
+            level > 20 -> Color(0xFFFFA500)
+            else -> Color(0xFFFF6B6B)
+        }
+        "${level}%" to color
+    }
+    PerfItem.ONE_LOW -> {
+        if (info.onePercentLowFps <= 0) {
+            "1%Low — FPS" to Color(0xFFFF7043)
+        } else {
+            val ratio = info.onePercentLowFps / info.renderedFps
+            val color = when {
+                ratio >= 0.9f -> Color(0xFF90EE90)
+                ratio >= 0.6f -> Color(0xFFFFD700)
+                else -> Color(0xFFFF6B6B)
+            }
+            "1%Low ${"%.1f".format(info.onePercentLowFps)} FPS" to color
+        }
+    }
+}
+
+private fun buildItemDetail(
+    item: PerfItem, info: PerformanceInfo, bandwidth: String, context: Context
+): String = when (item) {
+    PerfItem.RESOLUTION -> "Video stream: ${info.initialWidth}x${info.initialHeight} ${"%.2f".format(info.totalFps)} FPS"
+    PerfItem.DECODER -> "Decoder: ${info.decoder ?: "N/A"}"
+    PerfItem.FPS -> {
+        "Incoming frame rate: ${"%.2f".format(info.receivedFps)} FPS\nRendering frame rate: ${"%.2f".format(info.renderedFps)} FPS"
+    }
+    PerfItem.PACKET_LOSS -> "Packet loss: ${"%.2f".format(info.lostFrameRate)}%"
+    PerfItem.NETWORK -> {
+        val rtt = info.rttInfo.toInt()
+        val jitter = (info.rttInfo shr 32).toInt()
+        "Bandwidth: $bandwidth\nRTT: ${rtt}ms\nJitter: ${jitter}ms"
+    }
+    PerfItem.DECODE -> "Decode latency: ${"%.2f".format(info.decodeTimeMs)} ms"
+    PerfItem.HOST -> {
+        if (info.framesWithHostProcessingLatency > 0) {
+            "Min: ${"%.1f".format(info.minHostProcessingLatency)} ms\n" +
+            "Average: ${"%.1f".format(info.aveHostProcessingLatency)} ms\n" +
+            "Max: ${"%.1f".format(info.maxHostProcessingLatency)} ms"
+        } else "Host latency: N/A (requires V8+ host)"
+    }
+    PerfItem.BATTERY -> {
+        val level = UiHelper.getBatteryLevel(context)
+        val charging = UiHelper.isCharging(context)
+        "Battery: $level%${if (charging) " (charging)" else ""}"
+    }
+    PerfItem.ONE_LOW -> {
+        if (info.onePercentLowFps <= 0) "1% Low FPS: N/A (insufficient data)"
+        else "1% Low FPS: ${"%.2f".format(info.onePercentLowFps)} FPS"
     }
 }

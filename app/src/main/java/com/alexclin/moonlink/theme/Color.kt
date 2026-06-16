@@ -62,4 +62,3 @@ val md_onError_light           = Color(0xFFFFFFFF)
 val statusOnline   = md_primary_dark          // Cyan "online" badge
 val statusOffline  = Color(0xFF9E9E9E)        // Grey "offline" badge
 val windowsBlue    = Color(0xFF0078D4)
-val macosGray      = Color(0xFF8E8E93)

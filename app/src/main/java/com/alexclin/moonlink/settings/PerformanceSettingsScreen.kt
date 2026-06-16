@@ -1,13 +1,16 @@
 package com.alexclin.moonlink.settings
 
 import android.widget.Toast
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.limelight.preferences.PerfOverlayDisplayItemsPreference
 
 @Composable
 fun PerformanceSettingsScreen() {
@@ -60,7 +63,10 @@ fun PerformanceSettingsScreen() {
                     entries = listOf(
                         "顶部" to "top",
                         "底部" to "bottom",
-                        "居中" to "center",
+                        "左上角" to "top_left",
+                        "右上角" to "top_right",
+                        "左下角" to "bottom_left",
+                        "右下角" to "bottom_right",
                     ),
                     defaultValue = "top",
                     dependency = "checkbox_enable_perf_overlay",
@@ -68,17 +74,30 @@ fun PerformanceSettingsScreen() {
             }
             // 6. 性能图层显示项目
             item {
-                ClickablePreference(
+                MultiSelectPreference(
+                    key = "perf_overlay_display_items",
                     title = "性能图层显示项目",
                     summary = "选择要显示的性能指标",
-                    onClick = { Toast.makeText(context, "显示项目选择开发中", Toast.LENGTH_SHORT).show() },
+                    items = listOf(
+                        "🎬 Resolution & Target FPS" to "resolution",
+                        "Codec Decoder Info" to "decoder",
+                        "Rx/Rd Received & Rendered FPS" to "render_fps",
+                        "📶 Packet Loss" to "packet_loss",
+                        "🌐 Bitrate & Network Latency" to "network_latency",
+                        "⏱️/🥵 Decode Latency" to "decode_latency",
+                        "🖥 Host Latency" to "host_latency",
+                        "🔋 Battery Level" to "battery",
+                        "📉 1% Low FPS (Smoothness)" to "one_percent_low",
+                    ),
+                    defaultValues = PerfOverlayDisplayItemsPreference.getDefaultDisplayItems(),
+                    dependency = "checkbox_enable_perf_overlay",
                 )
             }
             // 7. 性能图层背景透明度
             item {
                 SeekBarPreference(
                     key = "seekbar_perf_overlay_bg_opacity",
-                    title = "性能图层背景透明度",
+                    title = "性能图层背景不透明度",
                     min = 0, max = 100, step = 5, defaultValue = 53,
                     unit = "%",
                     dependency = "checkbox_enable_perf_overlay",

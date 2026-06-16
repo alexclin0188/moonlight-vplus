@@ -140,9 +140,7 @@ fun KeyboardSubPanel(
                         hideKeyboard()
                     }
                     if (tab == 3) {
-                        // 主机键盘：发送快捷键唤起远端屏幕键盘，然后关闭面板
-                        // Windows: Win+Ctrl+O 唤起系统屏幕键盘
-                        // macOS: Cmd+F5 唤起 VoiceOver（含屏幕键盘）
+                        // 主机键盘：发送 Win+Ctrl+O 唤起远端系统屏幕键盘，然后关闭面板
                         engine.sendToggleHostKeyboard()
                         onCloseToHidden()
                     } else if (tab == 2) {

@@ -76,6 +76,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -95,6 +97,8 @@ enum class DetailPage {
     PERIPHERALS,
     KEY_MAPPING,
     QUICK_ACTION_EDITOR,
+    GYRO,
+    MORE,
 }
 
 @Composable
@@ -177,6 +181,18 @@ fun SubPanelContainer(
                     )
                 }
                 DetailPage.KEY_MAPPING -> {}
+                DetailPage.GYRO -> {
+                    GyroDetail(
+                        engine = engine,
+                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                    )
+                }
+                DetailPage.MORE -> {
+                    MoreDetail(
+                        engine = engine,
+                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                    )
+                }
                 DetailPage.QUICK_ACTION_EDITOR -> {
                     QuickActionEditorPage(
                         configIds = configIds,
@@ -253,10 +269,22 @@ private fun MainListView(
         }
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-        item { GyroSection(engine = engine) }
+        item {
+            SectionEntryRow(
+                icon = Icons.Default.Sensors,
+                label = "体感助手",
+                onClick = { onNavigate(DetailPage.GYRO) },
+            )
+        }
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-        item { MoreSection(engine = engine) }
+        item {
+            SectionEntryRow(
+                icon = Icons.Default.Extension,
+                label = "更多",
+                onClick = { onNavigate(DetailPage.MORE) },
+            )
+        }
 
         item { Spacer(modifier = Modifier.height(24.dp)) }
     }
@@ -376,10 +404,9 @@ private fun KeyMappingSection(engine: StreamEngine) {
 }
 
 private enum class TouchMode(val label: String) {
-    ENHANCED("增强式多点触控"),
-    CLASSIC("经典鼠标模式"),
-    TRACKPAD("触控板模式"),
-    NATIVE_MOUSE("本地鼠标指针"),
+    ENHANCED("增强式\n多点触控"),
+    TRACKPAD("触控板\n模式"),
+    MOUSE("鼠标模式"),
 }
 
 @Composable
@@ -389,10 +416,9 @@ private fun TouchModeSection(engine: StreamEngine) {
     // 从 prefConfig 读取当前模式
     val currentMode = remember(engine.prefConfig) {
         when {
-            engine.prefConfig.enableNativeMousePointer -> TouchMode.NATIVE_MOUSE
             engine.prefConfig.touchscreenTrackpad -> TouchMode.TRACKPAD
             engine.prefConfig.enableEnhancedTouch -> TouchMode.ENHANCED
-            else -> TouchMode.CLASSIC
+            else -> TouchMode.MOUSE  // CLASSIC 或 NATIVE_MOUSE 统一归入鼠标模式
         }
     }
     var selectedMode by remember { mutableStateOf(currentMode) }
@@ -405,26 +431,27 @@ private fun TouchModeSection(engine: StreamEngine) {
         }
         Spacer(Modifier.height(6.dp))
 
-        // 4 个 Chip 横向排列
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            items(TouchMode.entries.toList()) { mode ->
+        // 3 个 Chip 等宽等高三等分
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            TouchMode.entries.forEach { mode ->
                 FilterChip(
                     selected = selectedMode == mode,
                     onClick = {
                         selectedMode = mode
                         applyTouchMode(engine, mode, context)
                     },
-                    label = { Text(mode.label, style = MaterialTheme.typography.labelMedium) },
+                    label = {
+                        AutoScaleLabel(text = mode.label)
+                    },
+                    modifier = Modifier.weight(1f),
                 )
             }
         }
 
         // 关联子项
-        AnimatedVisibility(visible = selectedMode == TouchMode.CLASSIC) {
-            TextButton(onClick = { engine.sendRemoteMouseToggle() }) {
-                Text("显示/隐藏远程鼠标")
-            }
-        }
         AnimatedVisibility(visible = selectedMode == TouchMode.TRACKPAD) {
             Column {
                 var doubleClickDrag by remember { mutableStateOf(engine.prefConfig.enableDoubleClickDrag) }
@@ -447,25 +474,57 @@ private fun TouchModeSection(engine: StreamEngine) {
                 }
             }
         }
+        AnimatedVisibility(visible = selectedMode == TouchMode.MOUSE) {
+            Column {
+                var nativeMouse by remember { mutableStateOf(engine.prefConfig.enableNativeMousePointer) }
+                var remoteMouseVisible by remember { mutableStateOf(false) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("本地鼠标指针", Modifier.weight(1f))
+                    Switch(checked = nativeMouse, onCheckedChange = {
+                        nativeMouse = it
+                        // 同步切换底层模式
+                        engine.applyTouchMode(if (it) 3 else 1)
+                        engine.prefConfig.writePreferences(context)
+                    })
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("切换远程鼠标显示/隐藏", Modifier.weight(1f))
+                    Switch(checked = remoteMouseVisible, onCheckedChange = {
+                        remoteMouseVisible = it
+                        engine.sendRemoteMouseToggle()
+                    })
+                }
+            }
+        }
     }
 }
 
 private fun applyTouchMode(engine: StreamEngine, mode: TouchMode, context: android.content.Context) {
     val modeInt = when (mode) {
         TouchMode.ENHANCED -> 0
-        TouchMode.CLASSIC -> 1
         TouchMode.TRACKPAD -> 2
-        TouchMode.NATIVE_MOUSE -> 3
+        TouchMode.MOUSE -> if (engine.prefConfig.enableNativeMousePointer) 3 else 1
     }
     engine.applyTouchMode(modeInt)
     engine.prefConfig.writePreferences(context)
     val msg = when (mode) {
         TouchMode.ENHANCED -> "已切换为增强式多点触控"
-        TouchMode.CLASSIC -> "已切换为经典鼠标模式"
         TouchMode.TRACKPAD -> "已切换为触控板模式"
-        TouchMode.NATIVE_MOUSE -> "已切换为本地鼠标指针"
+        TouchMode.MOUSE -> "已切换为鼠标模式"
     }
     Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+}
+
+/** 自动换行居中标签 */
+@Composable
+private fun AutoScaleLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.labelMedium,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        textAlign = TextAlign.Center,
+    )
 }
 
 @Composable
@@ -502,30 +561,19 @@ private fun PeripheralsSection(
 }
 
 @Composable
-private fun GyroSection(engine: StreamEngine) {
-    var expanded by remember { mutableStateOf(false) }
-    val context = LocalContext.current
-
-    Column {
-        Row(
-            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
+    DetailScaffold(title = "体感助手", onBack = onBack) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            Icon(Icons.Default.Sensors, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(12.dp))
-            Text("体感助手", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 44.dp, end = 12.dp, bottom = 8.dp)) {
+            item {
                 // 总开关
                 var gyroEnabled by remember { mutableStateOf(false) }
                 SettingSwitch("体感开关", gyroEnabled) { gyroEnabled = it }
+            }
 
+            item {
                 // 模式 (简化：两个 RadioButton)
                 var gyroMode by remember { mutableIntStateOf(0) } // 0=右摇杆, 1=鼠标
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -534,18 +582,24 @@ private fun GyroSection(engine: StreamEngine) {
                     RadioButton(selected = gyroMode == 1, onClick = { gyroMode = 1 })
                     Text("鼠标")
                 }
+            }
 
+            item {
                 // 灵敏度 (0.5x~3.0x, 25 级)
                 var sensitivity by remember { mutableFloatStateOf(1.0f) }
                 Text("灵敏度: ${"%.1f".format(sensitivity)}x")
                 Slider(value = sensitivity, onValueChange = { sensitivity = it }, valueRange = 0.5f..3.0f)
+            }
 
+            item {
                 // X/Y 轴反转
                 var invertX by remember { mutableStateOf(false) }
                 var invertY by remember { mutableStateOf(false) }
                 SettingSwitch("X轴反转", invertX) { invertX = it }
                 SettingSwitch("Y轴反转", invertY) { invertY = it }
+            }
 
+            item {
                 // 激活按键
                 var activateKey by remember { mutableIntStateOf(0) } // 0=始终, 1=LT, 2=RT
                 Text("激活按键:", style = MaterialTheme.typography.bodyMedium)
@@ -560,38 +614,45 @@ private fun GyroSection(engine: StreamEngine) {
 }
 
 @Composable
-private fun MoreSection(engine: StreamEngine) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Column {
-        Row(
-            Modifier.fillMaxWidth().clickable { expanded = !expanded }.padding(horizontal = 12.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
+private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
+    val context = LocalContext.current
+    DetailScaffold(title = "更多", onBack = onBack) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            Icon(Icons.Default.Extension, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(12.dp))
-            Text("更多", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 44.dp, end = 12.dp, bottom = 8.dp)) {
+            item {
                 // 性能监控图层
-                var perfEnabled by remember { mutableStateOf(false) }
-                SettingSwitch("启用性能图层", perfEnabled) { perfEnabled = it }
+                var perfEnabled by remember { mutableStateOf(engine.prefConfig.enablePerfOverlay) }
+                SettingSwitch("启用性能图层", perfEnabled) {
+                    perfEnabled = it
+                    engine.prefConfig.enablePerfOverlay = it
+                    engine.prefConfig.writePreferences(context)
+                }
                 AnimatedVisibility(visible = perfEnabled) {
                     Column {
-                        var bgAlpha by remember { mutableFloatStateOf(0.5f) }
-                        Text("背景透明度: ${(bgAlpha * 100).toInt()}%")
-                        Slider(value = bgAlpha, onValueChange = { bgAlpha = it }, valueRange = 0f..1f)
+                        var bgAlpha by remember {
+                            mutableFloatStateOf(engine.prefConfig.perfOverlayBgOpacity / 100f)
+                        }
+                        Text("背景不透明度: ${(bgAlpha * 100).toInt()}%")
+                        Slider(value = bgAlpha, onValueChange = {
+                            bgAlpha = it
+                            engine.prefConfig.perfOverlayBgOpacity = (it * 100).toInt()
+                            engine.prefConfig.writePreferences(context)
+                        }, valueRange = 0f..1f)
+                        Text(
+                            "性能图层详细设置请到主页-设置-性能和统计分析中设置",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
                     }
                 }
+            }
 
-                HorizontalDivider(Modifier.padding(vertical = 4.dp))
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
+            item {
                 // 自动隐藏工具栏
                 var hideMode by remember { mutableIntStateOf(0) } // 0=开启按键映射时, 1=自动延迟, 2=不隐藏
                 Text("自动隐藏工具栏:", style = MaterialTheme.typography.bodyMedium)
