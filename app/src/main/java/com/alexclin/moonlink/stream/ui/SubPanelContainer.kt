@@ -224,23 +224,25 @@ private fun MainListView(
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
     ) {
         item { QuickActionRow(engine = engine, configIds = configIds, onEditClick = onEditActionClick) }
-        item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
         if (engine.prefConfig.enablePip) {
             item { PanZoomSection(engine = engine) }
-            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
         }
 
-        item { KeyMappingSection(engine = engine) }
+        // ── 分隔线：快捷操作区与按键映射的分隔 ──
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
+        item { KeyMappingSection(engine = engine) }
+
         item { TouchModeSection(engine = engine) }
+
+        // ── 分隔线：快捷操作区与设置区域的分隔 ──
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
         item {
             SectionEntryRow(
                 icon = Icons.Default.Tv,
-                label = "显示",
+                label = "显示设置",
                 onClick = { onNavigate(DetailPage.DISPLAY) },
             )
         }
@@ -255,34 +257,34 @@ private fun MainListView(
 
         item {
             SectionEntryRow(
-                icon = Icons.Default.Bolt,
-                label = "快捷操作",
-                onClick = onOpenKeyboardShortcuts,
+                icon = Icons.Default.Sensors,
+                label = "体感助手",
+                onClick = { onNavigate(DetailPage.GYRO) },
             )
         }
-        item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
         item {
             PeripheralsSection(
                 onNavigate = { onNavigate(DetailPage.PERIPHERALS) },
             )
         }
-        item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-        item {
-            SectionEntryRow(
-                icon = Icons.Default.Sensors,
-                label = "体感助手",
-                onClick = { onNavigate(DetailPage.GYRO) },
-            )
-        }
+        // ── 分隔线：外设与其它设置的分隔 ──
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
         item {
             SectionEntryRow(
                 icon = Icons.Default.Extension,
-                label = "更多",
+                label = "其它设置",
                 onClick = { onNavigate(DetailPage.MORE) },
+            )
+        }
+
+        item {
+            SectionEntryRow(
+                icon = Icons.Default.Bolt,
+                label = "快捷键",
+                onClick = onOpenKeyboardShortcuts,
             )
         }
 
