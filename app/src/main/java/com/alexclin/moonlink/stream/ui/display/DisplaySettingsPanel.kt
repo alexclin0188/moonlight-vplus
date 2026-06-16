@@ -92,11 +92,20 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // DB-2: 码率选择行(含智能码率 & 流量估算)
             item { BitrateSelector(context, engine) }
 
+            // DE-1: 视频编码格式
+            item { VideoFormatSelector(engine) }
+
             // DB-3: HDR
             item { HdrSection(engine) }
 
+            // DD-3: 分辨率缩放
+            item { ResolutionScaleSelector(engine) }
+
             // DC-2: 输出缓冲区滑块
             item { OutputBufferSlider(engine) }
+
+            // DE-2: 帧时序模式
+            item { FramePacingSelector(engine) }
 
             // DC-2: MTK
             item { MtkSwitch(engine) }
@@ -191,6 +200,8 @@ private fun FpsSelector(engine: StreamEngine) {
                         unlockFps = it
                         pref.unlockFps = it
                         pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putBoolean(PreferenceConfiguration.UNLOCK_FPS_STRING, it).apply()
                     })
                 }
             }
@@ -342,8 +353,9 @@ private fun TrafficEstimateLine(bitrateKbps: Int) {
 /**
  * 直接写入 [PreferenceConfiguration.writePreferences] 未覆盖的 SP 键。
  *
- * [writePreferences] 遗漏了多个字段（如 enableAdaptiveBitrate、abrMode、stretchVideo
- * 等），因为它们原本由旧 PreferenceScreen 自动保存。新的 Compose UI 必须手动写入这些键。
+ * [writePreferences] 遗漏了多个字段（如 enableAdaptiveBitrate、abrMode、stretchVideo、
+ * unlockFps、resolutionScale 等），因为它们原本由旧 PreferenceScreen 自动保存。
+ * 新的 Compose UI 必须手动写入这些键。
  */
 private fun writeDirectPrefs(pref: PreferenceConfiguration, context: android.content.Context) {
     val sp = PreferenceManager.getDefaultSharedPreferences(context)
@@ -352,6 +364,8 @@ private fun writeDirectPrefs(pref: PreferenceConfiguration, context: android.con
         .putString("list_abr_mode", pref.abrMode)
         .putBoolean("checkbox_stretch_video", pref.stretchVideo)
         .putInt("seekbar_output_buffer_queue_limit", pref.outputBufferQueueLimit)
+        .putBoolean("checkbox_unlock_fps", pref.unlockFps)
+        .putInt("seekbar_resolutions_scale", pref.resolutionScale)
         .apply()
 }
 
@@ -420,6 +434,41 @@ private fun onAbrModeSelected(
 }
 
 // ══════════════════════════════════════════
+// DE-1: VideoFormatSelector
+// ══════════════════════════════════════════
+
+@Composable
+private fun VideoFormatSelector(engine: StreamEngine) {
+    val context = LocalContext.current
+    val pref = engine.prefConfig
+    val formats = listOf(
+        Triple(PreferenceConfiguration.FormatOption.AUTO, "自动", "auto"),
+        Triple(PreferenceConfiguration.FormatOption.FORCE_AV1, "AV1", "forceav1"),
+        Triple(PreferenceConfiguration.FormatOption.FORCE_HEVC, "HEVC", "forceh265"),
+        Triple(PreferenceConfiguration.FormatOption.FORCE_H264, "H264", "neverh265"),
+    )
+
+    Column {
+        Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
+             modifier = Modifier.padding(vertical = 6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            formats.forEach { (option, label, spValue) ->
+                FilterChip(
+                    selected = pref.videoFormat == option,
+                    onClick = {
+                        pref.videoFormat = option
+                        pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putString("video_format", spValue).apply()
+                    },
+                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
+                )
+            }
+        }
+    }
+}
+
+// ══════════════════════════════════════════
 // DB-3: HdrSection
 // ══════════════════════════════════════════
 
@@ -429,16 +478,91 @@ private fun HdrSection(engine: StreamEngine) {
     val pref = engine.prefConfig
     var hdrEnabled by remember { mutableStateOf(pref.enableHdr) }
     var highBrightness by remember { mutableStateOf(pref.enableHdrHighBrightness) }
+    var hdrMode by remember { mutableIntStateOf(pref.hdrMode) }
 
     Column {
         SettingSwitch("HDR", hdrEnabled) {
             hdrEnabled = it; pref.enableHdr = it; pref.writePreferences(context)
         }
         AnimatedVisibility(visible = hdrEnabled) {
-            SettingSwitch("  HDR高亮度", highBrightness,
-                modifier = Modifier.padding(start = 24.dp)) {
-                highBrightness = it; pref.enableHdrHighBrightness = it; pref.writePreferences(context)
+            Column(modifier = Modifier.padding(start = 24.dp)) {
+                SettingSwitch("HDR高亮度", highBrightness) {
+                    highBrightness = it; pref.enableHdrHighBrightness = it; pref.writePreferences(context)
+                }
+                Spacer(Modifier.height(4.dp))
+                Text("HDR模式", style = MaterialTheme.typography.bodySmall,
+                     color = MaterialTheme.colorScheme.primary)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        hdrMode = 1; pref.hdrMode = 1; pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putString("list_hdr_mode", "1").apply()
+                    }.padding(vertical = 2.dp),
+                ) {
+                    RadioButton(selected = hdrMode == 1, onClick = {
+                        hdrMode = 1; pref.hdrMode = 1; pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putString("list_hdr_mode", "1").apply()
+                    })
+                    Spacer(Modifier.width(4.dp))
+                    Text("HDR10/PQ", style = MaterialTheme.typography.bodyMedium)
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().clickable {
+                        hdrMode = 2; pref.hdrMode = 2; pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putString("list_hdr_mode", "2").apply()
+                    }.padding(vertical = 2.dp),
+                ) {
+                    RadioButton(selected = hdrMode == 2, onClick = {
+                        hdrMode = 2; pref.hdrMode = 2; pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putString("list_hdr_mode", "2").apply()
+                    })
+                    Spacer(Modifier.width(4.dp))
+                    Text("HLG", style = MaterialTheme.typography.bodyMedium)
+                }
             }
+        }
+    }
+}
+
+// ══════════════════════════════════════════
+// DD-3: ResolutionScaleSelector (移入分组一)
+// ══════════════════════════════════════════
+
+@Composable
+private fun ResolutionScaleSelector(engine: StreamEngine) {
+    val context = LocalContext.current
+    val pref = engine.prefConfig
+    val defaultScale = 100
+    val initScale = if (pref.resolutionScale in 50..400) pref.resolutionScale else defaultScale
+    var resScaleSlider by remember { mutableFloatStateOf(initScale.toFloat()) }
+
+    Column {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("分辨率缩放", style = MaterialTheme.typography.bodyLarge)
+        }
+        Text("当前: ${resScaleSlider.toInt()}%",
+             style = MaterialTheme.typography.bodySmall,
+             color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Slider(
+            value = resScaleSlider,
+            onValueChange = { resScaleSlider = it },
+            onValueChangeFinished = {
+                pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
+                pref.writePreferences(context)
+                PreferenceManager.getDefaultSharedPreferences(context)
+                    .edit().putInt("seekbar_resolutions_scale", pref.resolutionScale).apply()
+            },
+            valueRange = 50f..400f, steps = 35,
+        )
+        Row(Modifier.fillMaxWidth()) {
+            Text("50%", style = MaterialTheme.typography.labelSmall)
+            Spacer(Modifier.weight(1f))
+            Text("400%", style = MaterialTheme.typography.labelSmall)
         }
     }
 }
@@ -502,6 +626,79 @@ private fun VideoSwitches(engine: StreamEngine) {
         SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context) }
         SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context) }
         SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context) }
+    }
+}
+
+// ══════════════════════════════════════════
+// DE-2: FramePacingSelector
+// ══════════════════════════════════════════
+
+@Composable
+private fun FramePacingSelector(engine: StreamEngine) {
+    val context = LocalContext.current
+    val pref = engine.prefConfig
+    var expanded by remember { mutableStateOf(false) }
+
+    data class PacingOption(val value: Int, val spKey: String, val label: String)
+    val options = listOf(
+        PacingOption(PreferenceConfiguration.FRAME_PACING_MIN_LATENCY, "latency", "最低延迟"),
+        PacingOption(PreferenceConfiguration.FRAME_PACING_BALANCED, "balanced", "均衡"),
+        PacingOption(PreferenceConfiguration.FRAME_PACING_CAP_FPS, "cap-fps", "均衡+FPS限制"),
+        PacingOption(PreferenceConfiguration.FRAME_PACING_MAX_SMOOTHNESS, "smoothness", "最高流畅度"),
+        PacingOption(PreferenceConfiguration.FRAME_PACING_EXPERIMENTAL_LOW_LATENCY, "experimental-low-latency", "超低延迟(实验)"),
+        PacingOption(PreferenceConfiguration.FRAME_PACING_PRECISE_SYNC, "precise-sync", "精确同步"),
+    )
+    val currentLabel = options.find { it.value == pref.framePacing }?.label ?: "最低延迟"
+
+    Column {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("帧时序模式", style = MaterialTheme.typography.bodyLarge,
+                 modifier = Modifier.weight(1f))
+            Text(currentLabel, style = MaterialTheme.typography.bodyMedium,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null, modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.padding(start = 8.dp)) {
+                options.forEach { option ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable {
+                                expanded = false
+                                pref.framePacing = option.value
+                                pref.writePreferences(context)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit().putString("frame_pacing", option.spKey).apply()
+                            }
+                            .padding(vertical = 3.dp),
+                    ) {
+                        RadioButton(
+                            selected = pref.framePacing == option.value,
+                            onClick = {
+                                pref.framePacing = option.value
+                                pref.writePreferences(context)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit().putString("frame_pacing", option.spKey).apply()
+                            },
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(option.label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -769,8 +966,8 @@ private fun onResolutionSelected(
     engine: StreamEngine, context: android.content.Context,
     res: String, nativeRes: String,
 ) {
-    // 只有当用户点了 Native chip（即 res == nativeRes 且不是标准预置）时才存 "Native"
-    val actualRes = if (res == nativeRes && res !in STANDARD_RESOLUTIONS) "Native" else res
+    // 始终存实际分辨率字符串（如 "2560x1600"），避免旧解析代码对 "Native" 字符串崩溃
+    val actualRes = res
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     prefs.edit().putString(PreferenceConfiguration.RESOLUTION_PREF_STRING, actualRes).apply()
     engine.changeResolution()  // → activity.recreate()
