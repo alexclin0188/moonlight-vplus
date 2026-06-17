@@ -121,9 +121,6 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
     /** 是否已尝试过连接（防止 surfaceChanged 重复启动） */
     private var attemptedConnection = false
 
-    /** 是否使用极速恢复（surface 重建时不中断串流，仅暂停渲染） */
-    private var extremeResumeEnabled = false
-
     /** 缓存的 SurfaceHolder（用于 setRenderTarget） */
     private var cachedSurfaceHolder: SurfaceHolder? = null
 
@@ -272,6 +269,9 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
                 prefConfig.screenCombinationMode = -1
                 prefConfig.vddScreenCombinationMode = -1
                 applyDisplaySettings = false
+            } else {
+                // 有显示器配置：应用用户的分辨率/缩放等显示设置到 Sunshine
+                applyDisplaySettings = true
             }
 
             // 4. 构建 NvApp 对象
@@ -425,8 +425,6 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
 
         // 7) 初始化手柄控制器
         initControllerHandler()
-        // 8) 初始化输入捕获（光标隐藏/鼠标捕获）
-        initInputCapture()
 
         LimeLog.info("StreamEngine: NvConnection 已创建")
         StreamLogger.logParams(activity, "CONFIG", mapOf(
@@ -496,10 +494,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         val clientRefreshRateX100 = (displayRefreshRate * 100).roundToInt()
 
         return StreamConfiguration.Builder()
-            .setResolution(
-                if (applyDisplaySettings) prefConfig.width else 0,
-                if (applyDisplaySettings) prefConfig.height else 0
-            )
+            .setResolution(prefConfig.width, prefConfig.height)
             .setLaunchRefreshRate(effectiveLaunchFps)
             .setRefreshRate(chosenFrameRate)
             .setApp(app)
@@ -553,12 +548,12 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
             return
         }
 
-        if (extremeResumeEnabled && connected) {
+        if (isExtremeResumeEnabled && connected) {
             LimeLog.info("StreamEngine: 极速恢复，重新设置渲染目标并恢复")
             decoder.setRenderTarget(holder)
             audioRenderer?.resumeProcessing()
             decoder.resumeProcessing()
-            extremeResumeEnabled = false
+            isExtremeResumeEnabled = false
             return
         }
 
@@ -601,6 +596,9 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         val c = conn
         if (c != null) {
             initTouchHandler(sv)
+            // InputCaptureManager 内部通过 activity.findViewById(R.id.surfaceView) 查找视图，
+            // 此时 SV 虽已创建但尚未附加到窗口，defer 到下一帧以确保 findViewById 能找到
+            handler.post { initInputCapture() }
         }
     }
 
@@ -667,7 +665,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
             .onSuccess { clipboardSyncManager = mgr }
     }
 
-    /** 初始化输入捕获 — 在 createConnection() 后调用 */
+    /** 初始化输入捕获 — SurfaceView 就绪后（已设 R.id.surfaceView）调用 */
     private fun initInputCapture() {
         inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(
             activity, this
@@ -1125,7 +1123,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
             LimeLog.info("StreamEngine: surfaceDestroyed")
             if (attemptedConnection && connected && !activity.isFinishing) {
                 // 极速恢复：暂停渲染但不中断串流，surface 重建后 resume
-                extremeResumeEnabled = true
+                isExtremeResumeEnabled = true
                 audioRenderer?.pauseProcessing()
                 decoderRenderer?.pauseProcessing()
             }
@@ -1156,6 +1154,9 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
             if (activity.isFinishing) return@post
             onStageUpdate?.invoke(stage, false, true)
             var msg = "连接失败: $stage (错误码 $errorCode)"
+            if (errorCode == 503) {
+                msg = "连接失败: Sunshine 拒绝显示模式设置\n请尝试将分辨率和帧率设为「自动」，或在 Sunshine 面板中检查虚拟显示器 (VDD) 配置。"
+            }
             if (portFlags != 0) {
                 msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
             }
@@ -1202,8 +1203,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         handler.post {
             activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (!activity.isFinishing) {
-                onStreamEnded?.invoke()
-                // 延迟统计信息 Toast
+                // 延迟统计信息 Toast（在 finish 之前显示）
                 if (prefConfig.enableLatencyToast) {
                     try {
                         val avgLat = decoderRenderer?.getAverageEndToEndLatency() ?: 0
@@ -1247,7 +1247,11 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
                         activeDialog?.setOnDismissListener { activeDialog = null }
                     }
                 } else {
-                    activity.finish()
+                    // 正常断开，调用 onStreamEnded（可能触发 finish）
+                    onStreamEnded?.invoke()
+                    if (!activity.isFinishing) {
+                        activity.finish()
+                    }
                 }
             }
         }
@@ -1282,9 +1286,8 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
     }
     override fun onResolutionChanged(width: Int, height: Int) {
         LimeLog.info("StreamEngine: 分辨率变化 ${width}x${height}")
-        if (prefConfig.width == width && prefConfig.height == height) return
-        prefConfig.width = width
-        prefConfig.height = height
+        // 不要覆写 prefConfig.width/height —— 那是用户的偏好设置，
+        // 在 prepareConnection()/createConnection() 中需要保持原始值发送给 Sunshine。
         decoderRenderer?.onResolutionChanged(width, height)
         handler.post {
             val orientation = if (width > height) "横屏" else "竖屏"

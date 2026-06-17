@@ -92,17 +92,14 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // ── 分组一：帧率与画面 ──
             item { SectionTitle("帧率与画面") }
 
+            // DB-1: 码率选择行(含智能码率 & 流量估算)
+            item { BitrateSelector(context, engine) }
+
             // DB-1: 帧率选择
             item { FpsSelector(engine) }
 
-            // DB-2: 码率选择行(含智能码率 & 流量估算)
-            item { BitrateSelector(context, engine) }
-
             // DE-1: 视频编码格式
             item { VideoFormatSelector(engine) }
-
-            // DB-3: HDR
-            item { HdrSection(engine) }
 
             // DD-3: 分辨率缩放
             item { ResolutionScaleSelector(engine) }
@@ -113,11 +110,14 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // DE-2: 帧时序模式
             item { FramePacingSelector(engine) }
 
-            // DC-2: MTK
-            item { MtkSwitch(engine) }
+            // DB-3: HDR
+            item { HdrSection(engine) }
 
             // DC-2: 画面设置开关组
             item { VideoSwitches(engine) }
+
+            // DC-2: MTK
+            item { MtkSwitch(engine) }
 
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
@@ -277,10 +277,9 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
     }
 
     Column {
-        // 码率选择小标题
-        Text("码率选择", style = MaterialTheme.typography.bodySmall,
-             color = MaterialTheme.colorScheme.onSurfaceVariant,
-             modifier = Modifier.padding(bottom = 4.dp))
+        // 码率设置小标题
+        Text("码率设置", style = MaterialTheme.typography.bodyLarge,
+             modifier = Modifier.padding(vertical = 6.dp))
         // 自定义标签映射
         val customLabels = mapOf(
             BitrateUtils.BitratePreset.AUTO to "自动",
@@ -577,21 +576,64 @@ private fun VideoFormatSelector(engine: StreamEngine) {
         Triple(PreferenceConfiguration.FormatOption.FORCE_H264, "H264", "neverh265"),
     )
 
+    val currentLabel = formats.find { it.first == pref.videoFormat }?.second ?: "自动"
+    var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            kotlinx.coroutines.delay(5000)
+            expanded = false
+        }
+    }
+
     Column {
-        Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
-             modifier = Modifier.padding(vertical = 6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            formats.forEach { (option, label, spValue) ->
-                FilterChip(
-                    selected = pref.videoFormat == option,
-                    onClick = {
-                        pref.videoFormat = option
-                        pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putString("video_format", spValue).apply()
-                    },
-                    label = { Text(label, style = MaterialTheme.typography.labelSmall) },
-                )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
+                 modifier = Modifier.weight(1f))
+            Text(currentLabel, style = MaterialTheme.typography.bodyMedium,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null, modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        AnimatedVisibility(visible = expanded) {
+            Column(Modifier.padding(start = 8.dp)) {
+                formats.forEach { (option, label, spValue) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable {
+                                pref.videoFormat = option
+                                pref.writePreferences(context)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit().putString("video_format", spValue).apply()
+                                expanded = false
+                            }
+                            .padding(vertical = 2.dp),
+                    ) {
+                        RadioButton(
+                            selected = pref.videoFormat == option,
+                            onClick = {
+                                pref.videoFormat = option
+                                pref.writePreferences(context)
+                                PreferenceManager.getDefaultSharedPreferences(context)
+                                    .edit().putString("video_format", spValue).apply()
+                                expanded = false
+                            }
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
             }
         }
     }
@@ -776,9 +818,17 @@ private fun OutputBufferSlider(engine: StreamEngine) {
 private fun MtkSwitch(engine: StreamEngine) {
     val context = LocalContext.current
     val pref = engine.prefConfig
-    var checked by remember { mutableStateOf(pref.forceMtkMaxOperatingRate) }
-    SettingSwitch("MTK专属选项", checked) {
-        checked = it; pref.forceMtkMaxOperatingRate = it; pref.writePreferences(context)
+    Column {
+        var checked by remember { mutableStateOf(pref.forceMtkMaxOperatingRate) }
+        SettingSwitch("MTK专属选项", checked) {
+            checked = it; pref.forceMtkMaxOperatingRate = it; pref.writePreferences(context)
+        }
+        Text(
+            "强制MTK解码器高频运行以降低延迟，其它设备可能异常，默认关闭。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
+        )
     }
 }
 
@@ -901,20 +951,16 @@ private fun DisplaySection(engine: StreamEngine) {
 
     Column {
         // ── 当前显示器信息 ──
-        Text("当前显示器", style = MaterialTheme.typography.labelLarge,
-             color = MaterialTheme.colorScheme.primary,
-             modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
-
         if (currentName != null) {
-            Text("display_name: $currentName",
-                 style = MaterialTheme.typography.bodySmall,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        if (currentDeviceId != null) {
-            Text("device_id: $currentDeviceId",
-                 style = MaterialTheme.typography.bodySmall,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                 modifier = Modifier.padding(bottom = 6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text("当前显示器", style = MaterialTheme.typography.bodyLarge)
+                Text(currentName, style = MaterialTheme.typography.bodyMedium,
+                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
 
         // ── 分辨率 ──

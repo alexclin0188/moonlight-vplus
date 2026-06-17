@@ -653,6 +653,9 @@ class NvHTTP(
 
     @Throws(IOException::class, XmlPullParserException::class, InterruptedException::class)
     fun launchApp(context: ConnectionContext, verb: String, appId: Int, enableHdr: Boolean): Boolean {
+        LimeLog.info("launchApp 被调用: verb=$verb, appId=$appId, enableHdr=$enableHdr, " +
+                "negotiated=${context.negotiatedWidth}x${context.negotiatedHeight}")
+
         if (appId == NvApp.DESKTOP_APP_ID && !context.supportsDesktopSpecialApp) {
             LimeLog.warning("Refusing Desktop special app launch without DesktopSpecialAppSupport")
             return false
@@ -706,6 +709,9 @@ class NvHTTP(
         }
 
         queryParams += MoonBridge.getLaunchUrlQueryParameters()
+
+        LimeLog.info("launchApp 请求参数: verb=$verb, queryParams=$queryParams")
+        LimeLog.info("launchApp URL: ${getHttpsUrl(true)}?$queryParams")
 
         val xmlStr = openHttpConnectionToString(httpClientLongConnectNoReadTimeout, getHttpsUrl(true), verb, queryParams)
         return if ((verb == "launch" && getXmlString(xmlStr, "gamesession", true) != "0") ||

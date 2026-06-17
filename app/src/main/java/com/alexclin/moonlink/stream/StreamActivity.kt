@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
+import com.limelight.R
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.StreamOverlay
 import com.alexclin.moonlink.theme.MoonLinkTheme
@@ -46,9 +47,6 @@ class StreamActivity : ComponentActivity() {
 
     /** PiP 抑制引用计数（对话框打开时 +1，关闭时 -1，>0 时不进入 PiP） */
     private var suppressPipRefCount = 0
-
-    /** 自动 PiP 模式（由 preferences 控制） */
-    private var autoEnterPip = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,6 +110,7 @@ class StreamActivity : ComponentActivity() {
                     AndroidView(
                         factory = { ctx ->
                             SurfaceView(ctx).also { sv ->
+                                sv.id = R.id.surfaceView
                                 engine.surfaceView = sv
                                 engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
@@ -141,6 +140,8 @@ class StreamActivity : ComponentActivity() {
             wasPaused = false
             if (wasBackgrounded) {
                 wasBackgrounded = false
+                // 恢复流时长计时
+                engine.onStartStreaming()
                 // 从后台返回 → 如已断连则优雅重连
                 if (!engine.connected && engine.shouldResumeSession) {
                     engine.shouldResumeSession = false
@@ -176,7 +177,8 @@ class StreamActivity : ComponentActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        if (autoEnterPip && engine.connected) {
+        // 实时评估 PiP 条件，而非依赖缓存状态
+        if (engine.connected && engine.prefConfig.enablePip) {
             enterPip()
         }
     }
@@ -229,8 +231,8 @@ class StreamActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
+        @Suppress("DEPRECATION")
         if (hasFocus) {
-            @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -239,8 +241,8 @@ class StreamActivity : ComponentActivity() {
                 or View.SYSTEM_UI_FLAG_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             )
-            engine.onWindowFocusChanged(hasFocus)
         }
+        engine.onWindowFocusChanged(hasFocus)
     }
 
     override fun onDestroy() {

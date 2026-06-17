@@ -109,8 +109,32 @@ class StreamTouchHandler(
     private fun handleNativeMousePointer(event: MotionEvent): Boolean {
         when (event.actionMasked) {
             MotionEvent.ACTION_MOVE -> conn.sendMouseMove(event.rawX.toInt().toShort(), event.rawY.toInt().toShort())
-            MotionEvent.ACTION_DOWN, MotionEvent.ACTION_BUTTON_PRESS -> conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT)
-            MotionEvent.ACTION_UP, MotionEvent.ACTION_BUTTON_RELEASE -> conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_LEFT)
+            MotionEvent.ACTION_SCROLL -> {
+                conn.sendMouseHighResScroll((event.getAxisValue(MotionEvent.AXIS_VSCROLL) * 120).toInt().toShort())
+                conn.sendMouseHighResHScroll((event.getAxisValue(MotionEvent.AXIS_HSCROLL) * 120).toInt().toShort())
+            }
+            else -> {
+                val changed = event.buttonState xor lastButtonState
+                if (changed and MotionEvent.BUTTON_PRIMARY != 0) {
+                    if (event.buttonState and MotionEvent.BUTTON_PRIMARY != 0)
+                        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT)
+                    else
+                        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_LEFT)
+                }
+                if (changed and MotionEvent.BUTTON_SECONDARY != 0) {
+                    if (event.buttonState and MotionEvent.BUTTON_SECONDARY != 0)
+                        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_RIGHT)
+                    else
+                        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_RIGHT)
+                }
+                if (changed and MotionEvent.BUTTON_TERTIARY != 0) {
+                    if (event.buttonState and MotionEvent.BUTTON_TERTIARY != 0)
+                        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_MIDDLE)
+                    else
+                        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_MIDDLE)
+                }
+                lastButtonState = event.buttonState
+            }
         }
         return true
     }
