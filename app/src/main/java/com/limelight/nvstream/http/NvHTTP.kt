@@ -674,9 +674,10 @@ class NvHTTP(
         }
 
         var queryParams = "appid=$appId" +
-            "&mode=${streamConfig.reqWidth}x${streamConfig.reqHeight}x$fps" +
+            (if (streamConfig.reqWidth > 0 && streamConfig.reqHeight > 0)
+                "&mode=${streamConfig.reqWidth}x${streamConfig.reqHeight}x$fps" else "") +
             "&additionalStates=1&sops=${if (enableSops) 1 else 0}" +
-            "&resolutionScale=${streamConfig.resolutionScale}" +
+            (if (streamConfig.reqWidth > 0) "&resolutionScale=${streamConfig.resolutionScale}" else "") +
             "&rikey=${bytesToHex(context.riKey.encoded)}" +
             "&rikeyid=${context.riKeyId}" +
             (if (!enableHdr) "" else "&hdrMode=1&clientHdrCapVersion=0&clientHdrCapSupportedFlagsInUint32=0&clientHdrCapMetaDataId=NV_STATIC_METADATA_TYPE_1&clientHdrCapDisplayData=0x0x0x0x0x0x0x0x0x0x0") +
@@ -1186,4 +1187,3 @@ data class ClipboardBlobUploadResult(
     val mime: String,
     val size: Long,
 )
-

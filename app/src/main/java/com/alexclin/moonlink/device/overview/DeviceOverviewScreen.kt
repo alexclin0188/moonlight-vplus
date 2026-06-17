@@ -963,12 +963,6 @@ private fun MoreActionsDialog(
                         onDismiss()
                     }
                 }
-                DialogActionRow("作为副屏串流（基地适用）") {
-                    computer.useVdd = true
-                    launchStreamFromOverview(context, computer, managerBinder, false, appSettingsManager)
-                    computer.useVdd = false
-                    onDismiss()
-                }
                 DialogActionRow("网络带宽测试 (iPerf3)") {
                     val activity = context as? android.app.Activity
                     if (activity != null) {

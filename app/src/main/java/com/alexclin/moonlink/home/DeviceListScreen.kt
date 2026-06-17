@@ -71,7 +71,6 @@ private val ALL_MENU_ACTIONS = listOf(
     DeviceMenuAction("applist",        "浏览游戏列表")           { true },
     DeviceMenuAction("detail",         "查看详情")              { true },
     DeviceMenuAction("sleep",          "发送睡眠指令")           { it.state == ComputerDetails.State.ONLINE },
-    DeviceMenuAction("vdd",            "作为副屏串流（基地适用）") { true },
     DeviceMenuAction("iperf",          "网络带宽测试 (iPerf3)")  { true },
     DeviceMenuAction("webui",          "打开 Web 管理（Sunshine）") { true },
     DeviceMenuAction("disable_ipv6",   "禁用 IPv6")             { true },
@@ -842,11 +841,6 @@ private fun handleMenuAction(
                 putExtra(com.limelight.AppView.UUID_EXTRA, computer.uuid)
             }
             context.startActivity(intent)
-        }
-        "vdd" -> {
-            computer.useVdd = true
-            launchStream(context, computer, managerBinder)
-            computer.useVdd = false
         }
         "webui" -> {
             val addr = computer.activeAddress?.address ?: return

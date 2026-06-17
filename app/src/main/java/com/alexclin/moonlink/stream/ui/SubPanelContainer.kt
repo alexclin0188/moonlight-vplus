@@ -737,18 +737,36 @@ private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
             // 7个Switch配置项
-            item { SettingSwitch("断开串流时锁定屏幕", false) { /* checkbox_lock_screen_after_disconnect */ } }
-            item { SettingSwitch("自动优化主机设置", false) { /* checkbox_enable_sops */ } }
-            item { SettingSwitch("在电脑上播放声音", false) { /* checkbox_host_audio */ } }
-            item { SettingSwitch("交换退出/断开按钮功能", false) { /* checkbox_swap_quit_and_disconnect */ } }
+            item {
+                var v by remember { mutableStateOf(pref.lockScreenAfterDisconnect) }
+                SettingSwitch("断开串流时锁定屏幕", v) { v = it; pref.lockScreenAfterDisconnect = it; pref.writePreferences(context) }
+            }
+            item {
+                var v by remember { mutableStateOf(pref.enableSops) }
+                SettingSwitch("自动优化主机设置", v) { v = it; pref.enableSops = it; pref.writePreferences(context) }
+            }
+            item {
+                var v by remember { mutableStateOf(pref.playHostAudio) }
+                SettingSwitch("在电脑上播放声音", v) { v = it; pref.playHostAudio = it; pref.writePreferences(context) }
+            }
+            item {
+                var v by remember { mutableStateOf(pref.swapQuitAndDisconnect) }
+                SettingSwitch("交换退出/断开按钮功能", v) { v = it; pref.swapQuitAndDisconnect = it; pref.writePreferences(context) }
+            }
             item {
                 var controlOnly by remember { mutableStateOf(pref.controlOnly) }
                 SettingSwitch("仅控制模式", controlOnly) {
                     controlOnly = it; pref.controlOnly = it; pref.writePreferences(context)
                 }
             }
-            item { SettingSwitch("同步剪贴板文本", false) { /* checkbox_clipboard_sync_text */ } }
-            item { SettingSwitch("同步剪贴板图片", false) { /* checkbox_clipboard_sync_image */ } }
+            item {
+                var v by remember { mutableStateOf(pref.enableClipboardSyncText) }
+                SettingSwitch("同步剪贴板文本", v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context) }
+            }
+            item {
+                var v by remember { mutableStateOf(pref.enableClipboardSyncImage) }
+                SettingSwitch("同步剪贴板图片", v) { v = it; pref.enableClipboardSyncImage = it; pref.writePreferences(context) }
+            }
         }
     }
 }

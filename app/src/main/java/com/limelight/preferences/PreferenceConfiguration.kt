@@ -283,6 +283,15 @@ class PreferenceConfiguration {
                 .putBoolean(GYRO_INVERT_X_AXIS_PREF_STRING, gyroInvertXAxis)
                 .putBoolean(GYRO_INVERT_Y_AXIS_PREF_STRING, gyroInvertYAxis)
                 .putInt(GYRO_ACTIVATION_KEY_CODE_PREF_STRING, gyroActivationKeyCode)
+                .putBoolean(HOST_AUDIO_PREF_STRING, playHostAudio)
+                .putBoolean(SOPS_PREF_STRING, enableSops)
+                .putBoolean(STRETCH_PREF_STRING, stretchVideo)
+                .putBoolean(LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING, lockScreenAfterDisconnect)
+                .putBoolean(SWAP_QUIT_AND_DISCONNECT_PERF_STRING, swapQuitAndDisconnect)
+                .putBoolean(CLIPBOARD_SYNC_TEXT_PREF_STRING, enableClipboardSyncText)
+                .putBoolean(CLIPBOARD_SYNC_IMAGE_PREF_STRING, enableClipboardSyncImage)
+                .putBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, touchscreenTrackpad)
+                .putBoolean(ENABLE_ENHANCED_TOUCH_PREF_STRING, enableEnhancedTouch)
 
             if (synchronous) {
                 editor.commit()

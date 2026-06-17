@@ -2,6 +2,7 @@ package com.alexclin.moonlink.stream.ui.display
 
 import android.content.Context
 import android.graphics.Point
+import android.os.Build
 import android.preference.PreferenceManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -36,12 +38,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -57,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.limelight.preferences.CustomResolutionsConsts
 import com.limelight.preferences.PreferenceConfiguration
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -110,20 +116,16 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // DC-2: MTK
             item { MtkSwitch(engine) }
 
-            // DC-3: VDD + 外接
-            item { VddSection(engine) }
-
             // DC-2: 画面设置开关组
             item { VideoSwitches(engine) }
+
+            item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
             // ── 分组二：显示器 ──
             item { SectionTitle("显示器") }
 
-            // DD-1: 显示器列表
-            item { MonitorList(engine) }
-
-            // DD-2: 分辨率 + DPI缩放
-            item { MonitorSettings(engine) }
+            // DD-1: 显示器信息 + 分辨率 + DPI缩放 + 切换
+            item { DisplaySection(engine) }
         }
     }
 }
@@ -137,6 +139,7 @@ private fun FpsSelector(engine: StreamEngine) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     val fpsAutoPref = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+    val scope = rememberCoroutineScope()
 
     var expanded by remember { mutableStateOf(false) }
     var unlockFps by remember { mutableStateOf(pref.unlockFps) }
@@ -145,7 +148,15 @@ private fun FpsSelector(engine: StreamEngine) {
 
     val baseFpsOptions = listOf(0, 30, 60, 90, 120)  // 0 = 自动
     val extraFpsOptions = listOf(144, 165)
-    val currentFpsText = if (selectedFps == 0) "自动" else "${selectedFps}"
+    val currentFpsText = if (selectedFps == 0) "自动" else "${selectedFps}FPS"
+
+    // 5秒无操作自动收起
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            kotlinx.coroutines.delay(5000)
+            expanded = false
+        }
+    }
 
     Column {
         Row(
@@ -157,7 +168,7 @@ private fun FpsSelector(engine: StreamEngine) {
         ) {
             Text("视频帧率", style = MaterialTheme.typography.bodyLarge,
                  modifier = Modifier.weight(1f))
-            Text("自动/$currentFpsText", style = MaterialTheme.typography.bodyMedium,
+            Text(currentFpsText, style = MaterialTheme.typography.bodyMedium,
                  color = MaterialTheme.colorScheme.onSurfaceVariant)
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -168,6 +179,18 @@ private fun FpsSelector(engine: StreamEngine) {
 
         AnimatedVisibility(visible = expanded) {
             Column(Modifier.padding(start = 8.dp)) {
+                // 解锁帧率 — 放在RadioButton上面
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("解锁帧率", Modifier.weight(1f),
+                         style = MaterialTheme.typography.bodySmall)
+                    Switch(checked = unlockFps, onCheckedChange = {
+                        unlockFps = it
+                        pref.unlockFps = it
+                        pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putBoolean(PreferenceConfiguration.UNLOCK_FPS_STRING, it).apply()
+                    }, modifier = Modifier.height(24.dp))  // 调小Switch
+                }
                 baseFpsOptions.forEach { fps ->
                     val label = if (fps == 0) "自动" else "${fps} FPS"
                     FpsRadioItem(fps, label, selectedFps == fps) {
@@ -180,6 +203,7 @@ private fun FpsSelector(engine: StreamEngine) {
                             fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, true).apply()
                             // 自动模式下保留 pref.fps 原值，不覆盖
                         }
+                        expanded = false
                     }
                 }
                 if (unlockFps) {
@@ -189,20 +213,9 @@ private fun FpsSelector(engine: StreamEngine) {
                             fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, false).apply()
                             pref.fps = it
                             pref.writePreferences(context)
+                            expanded = false
                         }
                     }
-                }
-                HorizontalDivider(Modifier.padding(vertical = 4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("解锁帧率", Modifier.weight(1f),
-                         style = MaterialTheme.typography.bodySmall)
-                    Switch(checked = unlockFps, onCheckedChange = {
-                        unlockFps = it
-                        pref.unlockFps = it
-                        pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putBoolean(PreferenceConfiguration.UNLOCK_FPS_STRING, it).apply()
-                    })
                 }
             }
         }
@@ -232,73 +245,139 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
 
     var selectedPreset by remember { mutableStateOf(BitrateUtils.getPresetByKbps(pref.bitrate)) }
     var abrMode by remember { mutableStateOf(pref.abrMode) }
-    var sliderProgress by remember { mutableFloatStateOf(0f) }
     // 从持久化中恢复自定义码率，跨预设切换时仍保持（Bug 4 fix）
     val savedCustomKbps = loadCustomKbps(context)
     val initCustomKbps = if (pref.bitrate in BitrateUtils.BITRATE_CUSTOM_MIN..BitrateUtils.BITRATE_CUSTOM_MAX)
         pref.bitrate else savedCustomKbps.coerceIn(BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)
     var customKbps by remember { mutableIntStateOf(initCustomKbps) }
-    // U4: 当前有效码率（跟随所有 preset/slider 变化）
-    var effectiveBitrate by remember { mutableIntStateOf(pref.bitrate) }
+    var sliderProgress by remember {
+        val initProgress = if (selectedPreset == BitrateUtils.BitratePreset.CUSTOM)
+            BitrateUtils.customKbpsToProgress(initCustomKbps).toFloat() else 0f
+        mutableFloatStateOf(initProgress)
+    }
+    // U6: 配置的 fallback 码率（预设/滑块值，ABR 不可用时的回退）
+    var configuredBitrate by remember { mutableIntStateOf(pref.bitrate) }
+    // U6: 实际用于流量估算的码率 — 优先 ABR 实时值，否则用 configuredBitrate
+    var displayBitrate by remember { mutableIntStateOf(
+        engine.adaptiveBitrateService?.currentBitrate?.takeIf { it > 0 } ?: pref.bitrate
+    ) }
 
-    // 首次加载时同步自定义滑块位置
-    LaunchedEffect(Unit) {
-        if (selectedPreset == BitrateUtils.BitratePreset.CUSTOM) {
-            sliderProgress = BitrateUtils.customKbpsToProgress(customKbps).toFloat()
+    // U6: 始终跟随 ABR 实时码率（当 ABR 服务存在时，不限 AUTO/固定模式）
+    DisposableEffect(engine.adaptiveBitrateService) {
+        val service = engine.adaptiveBitrateService
+        if (service != null) {
+            displayBitrate = service.currentBitrate.takeIf { it > 0 } ?: configuredBitrate
+            service.bitrateListener = { kbps, _ -> displayBitrate = kbps }
+            onDispose {
+                service.bitrateListener = null
+            }
+        } else {
+            onDispose { }
         }
     }
 
     Column {
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        // 码率选择小标题
+        Text("码率选择", style = MaterialTheme.typography.bodySmall,
+             color = MaterialTheme.colorScheme.onSurfaceVariant,
+             modifier = Modifier.padding(bottom = 4.dp))
+        // 自定义标签映射
+        val customLabels = mapOf(
+            BitrateUtils.BitratePreset.AUTO to "自动",
+            BitrateUtils.BitratePreset.M2 to "清晰\n2M",
+            BitrateUtils.BitratePreset.M8 to "高清\n8M",
+            BitrateUtils.BitratePreset.M20 to "原画\n20M",
+            BitrateUtils.BitratePreset.CUSTOM to "自定义",
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(2.dp),
+             modifier = Modifier.fillMaxWidth()) {
             presets.forEach { preset ->
-                FilterChip(
+                BitrateChip(
+                    label = customLabels[preset] ?: preset.label,
                     selected = selectedPreset == preset,
                     onClick = {
                         selectedPreset = preset
                         onBitratePresetSelected(engine, preset, context, customKbps)
+                        // 切换到 AUTO 时同步 ABR 服务的当前码率
+                        if (preset == BitrateUtils.BitratePreset.AUTO) {
+                            configuredBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { it > 0 } ?: 0
+                        }
                         // 切换到 CUSTOM 时同步 SeekBar 位置
                         if (preset == BitrateUtils.BitratePreset.CUSTOM) {
                             val targetKbps = customKbps.coerceIn(
                                 BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)
                             sliderProgress = BitrateUtils.customKbpsToProgress(targetKbps).toFloat()
                         }
-                        // 更新流量估算用码率
-                        effectiveBitrate = when (preset) {
+                        // U6: 更新流量估算用码率 fallback + 优先尝试 ABR 实时值
+                        configuredBitrate = when (preset) {
                             BitrateUtils.BitratePreset.AUTO -> 0
                             BitrateUtils.BitratePreset.M2 -> BitrateUtils.BITRATE_2M
                             BitrateUtils.BitratePreset.M8 -> BitrateUtils.BITRATE_8M
                             BitrateUtils.BitratePreset.M20 -> BitrateUtils.BITRATE_20M
                             BitrateUtils.BitratePreset.CUSTOM -> customKbps
                         }
+                        displayBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { it > 0 }
+                            ?: configuredBitrate
                     },
-                    label = { Text(preset.label, style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
 
-        // U4: 流量估算（始终跟随 effectiveBitrate 变化）
-        TrafficEstimateLine(effectiveBitrate)
-
-        // 自动 → 智能码率模式
+        // 自动 → 智能码率模式（可展开收起）
         AnimatedVisibility(visible = selectedPreset == BitrateUtils.BitratePreset.AUTO) {
-            Column(Modifier.padding(top = 8.dp, start = 4.dp)) {
-                Text("智能码率模式", style = MaterialTheme.typography.labelLarge,
-                     color = MaterialTheme.colorScheme.primary)
-                listOf(
-                    "quality" to "画质优先",
-                    "balanced" to "均衡",
-                    "lowLatency" to "低延迟",
-                ).forEach { (value, label) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                            .clickable { onAbrModeSelected(engine, value, context) }
-                            .padding(vertical = 2.dp),
-                    ) {
-                        RadioButton(selected = abrMode == value,
-                             onClick = { onAbrModeSelected(engine, value, context) })
-                        Spacer(Modifier.width(4.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
+            val abrLabels = mapOf(
+                "quality" to "画质优先",
+                "balanced" to "均衡",
+                "lowLatency" to "低延迟",
+            )
+            var abrExpanded by remember { mutableStateOf(false) }
+            LaunchedEffect(abrExpanded) {
+                if (abrExpanded) {
+                    kotlinx.coroutines.delay(5000)
+                    abrExpanded = false
+                }
+            }
+            Column(Modifier.padding(top = 4.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { abrExpanded = !abrExpanded }
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("智能码率模式", style = MaterialTheme.typography.bodyLarge,
+                         modifier = Modifier.weight(1f))
+                    Text(abrLabels[abrMode] ?: "均衡",
+                         style = MaterialTheme.typography.bodyMedium,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(
+                        if (abrExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null, modifier = Modifier.size(18.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                AnimatedVisibility(visible = abrExpanded) {
+                    Column(Modifier.padding(start = 8.dp)) {
+                        abrLabels.forEach { (value, label) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.fillMaxWidth()
+                                    .clickable {
+                                        onAbrModeSelected(engine, value, context)
+                                        abrExpanded = false
+                                    }
+                                    .padding(vertical = 2.dp),
+                            ) {
+                                RadioButton(selected = abrMode == value,
+                                     onClick = {
+                                         onAbrModeSelected(engine, value, context)
+                                         abrExpanded = false
+                                     })
+                                Spacer(Modifier.width(4.dp))
+                                Text(label, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
                     }
                 }
             }
@@ -307,19 +386,23 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
         // 自定义 → SeekBar
         AnimatedVisibility(visible = selectedPreset == BitrateUtils.BitratePreset.CUSTOM) {
             Column(Modifier.padding(top = 8.dp)) {
-                val displayKbps = BitrateUtils.customProgressToKbps(sliderProgress.toInt())
+                val displayKbps = BitrateUtils.customProgressToKbps(sliderProgress.roundToInt())
                 Text("码率: ${displayKbps / 1000} Mbps ($displayKbps kbps)",
                      style = MaterialTheme.typography.bodyMedium)
                 Slider(
                     value = sliderProgress,
                     onValueChange = { sliderProgress = it
-                        // U4: 拖动过程中实时更新估算
-                        effectiveBitrate = BitrateUtils.customProgressToKbps(it.toInt())
+                        // U6: 拖动过程中实时更新估算（ABR 存在时优先 ABR 值）
+                        configuredBitrate = BitrateUtils.customProgressToKbps(it.roundToInt())
+                        displayBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { v -> v > 0 }
+                            ?: configuredBitrate
                     },
                     onValueChangeFinished = {
-                        val kbps = BitrateUtils.customProgressToKbps(sliderProgress.toInt())
+                        val kbps = BitrateUtils.customProgressToKbps(sliderProgress.roundToInt())
                         customKbps = kbps
-                        effectiveBitrate = kbps
+                        configuredBitrate = kbps
+                        displayBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { v -> v > 0 }
+                            ?: configuredBitrate
                         saveCustomKbps(context, kbps)
                         // 使用 setFixedBitrate 统一处理持久化 + 异步回调 + ABR 同步
                         setFixedBitrate(engine, pref, kbps, context)
@@ -335,19 +418,61 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                 }
             }
         }
+
+        // U7: 流量估算 — 放在自定义拖动控件下方，不受码率选项影响始终展示
+        TrafficEstimateLine(displayBitrate)
+    }
+}
+
+// ══════════════════════════════════════════
+// BitrateChip: 自定义轻量芯片（替代 FilterChip，零内边距可控）
+// ══════════════════════════════════════════
+
+@Composable
+private fun BitrateChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
+                else MaterialTheme.colorScheme.surfaceVariant,
+        contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
+        border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                 else null,
+        modifier = modifier.heightIn(min = 48.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp)
+        ) {
+            Text(
+                text = label,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                maxLines = 2,
+            )
+        }
     }
 }
 
 @Composable
 private fun TrafficEstimateLine(bitrateKbps: Int) {
-    if (bitrateKbps > 0) {
-        Text(
-            text = BitrateUtils.formatTrafficEstimate(bitrateKbps),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(vertical = 4.dp),
-        )
+    val text = if (bitrateKbps > 0) {
+        BitrateUtils.formatTrafficEstimate(bitrateKbps)
+    } else {
+        "码率自适应中…"
     }
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(vertical = 4.dp),
+    )
 }
 
 /**
@@ -390,6 +515,8 @@ private fun onBitratePresetSelected(
             pref.enableAdaptiveBitrate = true
             pref.writePreferences(context)
             writeDirectPrefs(pref, context)
+            // 运行时切换 AUTO：如果连接已建立但服务未创建，立即启动
+            engine.startAdaptiveBitrateIfEnabled()
         }
         BitrateUtils.BitratePreset.M2 -> setFixedBitrate(engine, pref, BitrateUtils.BITRATE_2M, context)
         BitrateUtils.BitratePreset.M8 -> setFixedBitrate(engine, pref, BitrateUtils.BITRATE_8M, context)
@@ -407,14 +534,16 @@ private fun setFixedBitrate(
     // writePreferences 不保存 enableAdaptiveBitrate，需直接写 SP
     writeDirectPrefs(pref, context)
 
+    // 切换到固定预设时停止 ABR 服务，防止后台 tick 覆盖手动设定值
+    engine.adaptiveBitrateService?.stop()
+    engine.adaptiveBitrateService = null
+
     val conn = engine.conn
     if (conn != null) {
         conn.setBitrate(kbps, object : com.limelight.nvstream.NvConnection.BitrateAdjustmentCallback {
             override fun onSuccess(newBitrate: Int) {
                 pref.bitrate = newBitrate
                 pref.writePreferences(context)
-                // 同步通知 ABR 服务，防止下一个 tick 覆盖手动设定值
-                engine.adaptiveBitrateService?.notifyManualOverride(newBitrate)
             }
             override fun onFailure(errorMessage: String) {
                 // 服务端拒绝，恢复之前的状态
@@ -539,30 +668,51 @@ private fun ResolutionScaleSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
     val defaultScale = 100
     val initScale = if (pref.resolutionScale in 50..400) pref.resolutionScale else defaultScale
+    var expanded by remember { mutableStateOf(false) }
     var resScaleSlider by remember { mutableFloatStateOf(initScale.toFloat()) }
+    val scope = rememberCoroutineScope()
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("分辨率缩放", style = MaterialTheme.typography.bodyLarge)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("分辨率缩放", style = MaterialTheme.typography.bodyLarge,
+                 modifier = Modifier.weight(1f))
+            Text("${resScaleSlider.toInt()}%", style = MaterialTheme.typography.bodyMedium,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null, modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        Text("当前: ${resScaleSlider.toInt()}%",
-             style = MaterialTheme.typography.bodySmall,
-             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Slider(
-            value = resScaleSlider,
-            onValueChange = { resScaleSlider = it },
-            onValueChangeFinished = {
-                pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
-                pref.writePreferences(context)
-                PreferenceManager.getDefaultSharedPreferences(context)
-                    .edit().putInt("seekbar_resolutions_scale", pref.resolutionScale).apply()
-            },
-            valueRange = 50f..400f, steps = 35,
-        )
-        Row(Modifier.fillMaxWidth()) {
-            Text("50%", style = MaterialTheme.typography.labelSmall)
-            Spacer(Modifier.weight(1f))
-            Text("400%", style = MaterialTheme.typography.labelSmall)
+
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Slider(
+                    value = resScaleSlider,
+                    onValueChange = { resScaleSlider = it },
+                    onValueChangeFinished = {
+                        engine.applyDisplaySettings = true
+                        pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
+                        pref.writePreferences(context)
+                        PreferenceManager.getDefaultSharedPreferences(context)
+                            .edit().putInt("seekbar_resolutions_scale", pref.resolutionScale).apply()
+                        // 调整完毕自动收起
+                        expanded = false
+                    },
+                    valueRange = 50f..400f, steps = 35,
+                )
+                Row(Modifier.fillMaxWidth()) {
+                    Text("50%", style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.weight(1f))
+                    Text("400%", style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
     }
 }
@@ -577,29 +727,47 @@ private fun OutputBufferSlider(engine: StreamEngine) {
     val pref = engine.prefConfig
     val defaultBuf = 2  // PreferenceConfiguration.DEFAULT_OUTPUT_BUFFER_QUEUE_LIMIT
     val initVal = if (pref.outputBufferQueueLimit in 1..5) pref.outputBufferQueueLimit else defaultBuf
+    var expanded by remember { mutableStateOf(false) }
     var sliderValue by remember { mutableFloatStateOf(initVal.toFloat()) }
 
     Column {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("输出缓冲区大小", style = MaterialTheme.typography.bodyLarge)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded }
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("输出缓冲区大小", style = MaterialTheme.typography.bodyLarge,
+                 modifier = Modifier.weight(1f))
+            Text("${sliderValue.toInt()} 帧", style = MaterialTheme.typography.bodyMedium,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                contentDescription = null, modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
-        Text("当前: ${sliderValue.toInt()} 帧",
-             style = MaterialTheme.typography.bodySmall,
-             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Slider(
-            value = sliderValue,
-            onValueChange = { sliderValue = it },
-            onValueChangeFinished = {
-                pref.outputBufferQueueLimit = sliderValue.toInt().coerceIn(1, 5)
-                pref.writePreferences(context)
-                writeDirectPrefs(pref, context)
-            },
-            valueRange = 1f..5f, steps = 3,
-        )
-        Row(Modifier.fillMaxWidth()) {
-            Text("1帧", style = MaterialTheme.typography.labelSmall)
-            Spacer(Modifier.weight(1f))
-            Text("5帧", style = MaterialTheme.typography.labelSmall)
+
+        AnimatedVisibility(visible = expanded) {
+            Column(modifier = Modifier.padding(start = 8.dp)) {
+                Slider(
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    onValueChangeFinished = {
+                        pref.outputBufferQueueLimit = sliderValue.toInt().coerceIn(1, 5)
+                        pref.writePreferences(context)
+                        writeDirectPrefs(pref, context)
+                        expanded = false
+                    },
+                    valueRange = 1f..5f, steps = 3,
+                )
+                Row(Modifier.fillMaxWidth()) {
+                    Text("1帧", style = MaterialTheme.typography.labelSmall)
+                    Spacer(Modifier.weight(1f))
+                    Text("5帧", style = MaterialTheme.typography.labelSmall)
+                }
+            }
         }
     }
 }
@@ -703,49 +871,22 @@ private fun FramePacingSelector(engine: StreamEngine) {
 }
 
 // ══════════════════════════════════════════
-// DC-3: VddSection (持久化 + 反映引擎实时状态)
+// DD-1: DisplaySection — 显示器信息 + 分辨率 + DPI缩放 + 切换
 // ══════════════════════════════════════════
 
-private const val VDD_ENABLED_PREF = "vdd_enabled"
-
 @Composable
-private fun VddSection(engine: StreamEngine) {
+private fun DisplaySection(engine: StreamEngine) {
     val context = LocalContext.current
     val pref = engine.prefConfig
-    val vddPref = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-    val savedVdd = vddPref.getBoolean(VDD_ENABLED_PREF, engine.pcUseVdd)
-    var useVdd by remember { mutableStateOf(savedVdd) }
-    var useExternal by remember { mutableStateOf(pref.useExternalDisplay) }
-
-    Column {
-        SettingSwitch("VDD虚拟显示器", useVdd) {
-            useVdd = it
-            engine.pcUseVdd = it
-            vddPref.edit().putBoolean(VDD_ENABLED_PREF, it).apply()
-            Toast.makeText(context,
-                if (it) "VDD开关已更改，重启串流后生效"
-                else "VDD开关已关闭，重启串流后生效",
-                Toast.LENGTH_SHORT).show()
-        }
-        SettingSwitch("使用外接显示器", useExternal) {
-            useExternal = it
-            pref.useExternalDisplay = it
-            pref.writePreferences(context)
-        }
-    }
-}
-
-// ══════════════════════════════════════════
-// DD-1: MonitorList  (B1 fix: update selectedIndex on click)
-// ══════════════════════════════════════════
-
-@Composable
-private fun MonitorList(engine: StreamEngine) {
-    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+
     var displays by remember { mutableStateOf<List<com.limelight.nvstream.http.NvHTTP.DisplayInfo>>(emptyList()) }
-    var selectedIndex by remember { mutableIntStateOf(-1) }
     var loading by remember { mutableStateOf(true) }
+
+    // 当前显示器信息
+    val currentName = engine.currentDisplayName
+    val currentDeviceId = engine.currentDeviceId
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
@@ -753,112 +894,57 @@ private fun MonitorList(engine: StreamEngine) {
                 val conn = engine.conn ?: return@withContext
                 val list = conn.createNvHttp()?.getDisplays() ?: emptyList()
                 displays = list
-                if (list.isNotEmpty() && selectedIndex < 0) {
-                    // 先尝试从持久化中恢复上次选择
-                    val savedGuid = displayPrefs.getString("display_guid", null)
-                    val savedIndex = if (savedGuid != null) {
-                        list.indexOfFirst { it.guid == savedGuid }.coerceAtLeast(-1)
-                    } else -1
-                    selectedIndex = if (savedIndex >= 0) savedIndex
-                    else list.indexOfFirst { it.isPrimary }.coerceAtLeast(0)
-                }
             } catch (_: Exception) {}
             loading = false
         }
     }
 
     Column {
-        if (loading) {
-            Text("正在获取显示器列表...", style = MaterialTheme.typography.bodySmall,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else if (displays.isEmpty()) {
-            Text("无法获取显示器列表", style = MaterialTheme.typography.bodySmall,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-        } else {
-            displays.forEachIndexed { index, display ->
-                val isActive = index == selectedIndex
-                val onSelectDisplay = {
-                    selectedIndex = index
-                    // 持久化显示器 GUID 以供下次串流使用
-                    displayPrefs.edit()
-                        .putString("display_guid", display.guid)
-                        .putString("display_name", display.name)
-                        .apply()
-                    Toast.makeText(context, "显示器切换需重启串流生效", Toast.LENGTH_SHORT).show()
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth()
-                        .clickable { onSelectDisplay() }
-                        .padding(vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    RadioButton(selected = isActive,
-                        onClick = { onSelectDisplay() })
-                    Spacer(Modifier.width(8.dp))
-                    Text(display.name, modifier = Modifier.weight(1f))
-                    if (isActive) {
-                        Text("[active]", style = MaterialTheme.typography.labelSmall,
-                             color = MaterialTheme.colorScheme.primary)
-                    }
-                    if (display.isPrimary) {
-                        Text("[主]", style = MaterialTheme.typography.labelSmall,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            }
-        }
-    }
-}
-
-// ══════════════════════════════════════════
-// DD-2: MonitorSettings (分辨率 + DPI缩放)
-//         U2: rememberCoroutineScope + Toast on DPI failure
-//         U3: mutable customResSet, refresh after save
-// ══════════════════════════════════════════
-
-@Composable
-private fun MonitorSettings(engine: StreamEngine) {
-    val context = LocalContext.current
-    val pref = engine.prefConfig
-    val scope = rememberCoroutineScope()   // U2
-
-    val nativeRes by remember {
-        mutableStateOf(run {
-            val display = (context.getSystemService(Context.WINDOW_SERVICE)
-                    as android.view.WindowManager).defaultDisplay
-            val size = Point()
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                display.getRealSize(size)
-            } else {
-                display.getSize(size)
-            }
-            // 归一化为横屏方向: max(w,h) x min(w,h)
-            val w = maxOf(size.x, size.y)
-            val h = minOf(size.x, size.y)
-            "${w}x${h}"
-        })
-    }
-
-    // U3: mutable state — refreshable after adding custom resolution
-    var customResSet by remember { mutableStateOf(loadCustomResolutions(context)) }
-
-    val allResolutions = remember {
-        val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
-            listOf("Native ($nativeRes)")
-        } else emptyList()
-        STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { "$it (自定义)" }
-    }
-
-    var selectedRes by remember { mutableStateOf("${pref.width}x${pref.height}") }
-    var showCustomDialog by remember { mutableStateOf(false) }
-
-    Column {
-        Text("当前分辨率", style = MaterialTheme.typography.labelLarge,
+        // ── 当前显示器信息 ──
+        Text("当前显示器", style = MaterialTheme.typography.labelLarge,
              color = MaterialTheme.colorScheme.primary,
-             modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
-        Text("${pref.width} × ${pref.height}",
-             style = MaterialTheme.typography.bodyMedium,
-             modifier = Modifier.padding(bottom = 8.dp))
+             modifier = Modifier.padding(top = 4.dp, bottom = 2.dp))
+
+        if (currentName != null) {
+            Text("display_name: $currentName",
+                 style = MaterialTheme.typography.bodySmall,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (currentDeviceId != null) {
+            Text("device_id: $currentDeviceId",
+                 style = MaterialTheme.typography.bodySmall,
+                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                 modifier = Modifier.padding(bottom = 6.dp))
+        }
+
+        // ── 分辨率 ──
+        val nativeRes by remember {
+            mutableStateOf(run {
+                val display = (context.getSystemService(Context.WINDOW_SERVICE)
+                        as android.view.WindowManager).defaultDisplay
+                val size = Point()
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                    display.getRealSize(size)
+                } else {
+                    display.getSize(size)
+                }
+                val w = maxOf(size.x, size.y)
+                val h = minOf(size.x, size.y)
+                "${w}x${h}"
+            })
+        }
+
+        var customResSet by remember { mutableStateOf(loadCustomResolutions(context)) }
+
+        val allResolutions = remember {
+            val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
+                listOf("Native ($nativeRes)")
+            } else emptyList()
+            STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { "$it (自定义)" }
+        }
+
+        var selectedRes by remember { mutableStateOf("${pref.width}x${pref.height}") }
+        var showCustomDialog by remember { mutableStateOf(false) }
 
         Text("切换分辨率", style = MaterialTheme.typography.labelLarge,
              color = MaterialTheme.colorScheme.primary,
@@ -887,7 +973,7 @@ private fun MonitorSettings(engine: StreamEngine) {
                 onDismiss = { showCustomDialog = false },
                 onConfirm = { width, height ->
                     saveCustomResolution(context, width, height)
-                    customResSet = loadCustomResolutions(context)   // U3: refresh list
+                    customResSet = loadCustomResolutions(context)
                     showCustomDialog = false
                 },
             )
@@ -895,7 +981,7 @@ private fun MonitorSettings(engine: StreamEngine) {
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
 
-        // ── DPI 缩放 (U2: rememberCoroutineScope + Toast) ──
+        // ── DPI 缩放 (针对当前显示器) ──
         var scalePercent by remember { mutableIntStateOf(100) }
         var scaleSupported by remember { mutableStateOf(false) }
         var supportedScales by remember { mutableStateOf(listOf(100)) }
@@ -904,12 +990,15 @@ private fun MonitorSettings(engine: StreamEngine) {
             withContext(Dispatchers.IO) {
                 try {
                     val conn = engine.conn ?: return@withContext
-                    val displays = conn.createNvHttp()?.getDisplays() ?: emptyList()
-                    val primaryDisplay = displays.find { it.isPrimary } ?: displays.firstOrNull()
-                    if (primaryDisplay != null && primaryDisplay.scaleSetSupported) {
+                    val list = conn.createNvHttp()?.getDisplays() ?: emptyList()
+                    val target = if (currentName != null) {
+                        list.find { it.name == currentName || it.guid == currentDeviceId }
+                    } else null
+                    val display = target ?: list.find { it.isPrimary } ?: list.firstOrNull()
+                    if (display != null && display.scaleSetSupported) {
                         scaleSupported = true
-                        scalePercent = primaryDisplay.currentScalePercent
-                        supportedScales = primaryDisplay.supportedScalePercents
+                        scalePercent = display.currentScalePercent
+                        supportedScales = display.supportedScalePercents
                     }
                 } catch (_: Exception) {}
             }
@@ -933,12 +1022,12 @@ private fun MonitorSettings(engine: StreamEngine) {
                                 onClick = {
                                     expanded = false
                                     scalePercent = scale
-                                    // U2: lifecycle-aware scope + failure Toast
                                     scope.launch {
                                         val ok = withContext(Dispatchers.IO) {
                                             try {
-                                                val conn = engine.conn ?: return@withContext false
-                                                conn.createNvHttp()?.setDisplayScale(scale) == true
+                                                val c = engine.conn ?: return@withContext false
+                                                // 对当前显示器设置 DPI 缩放
+                                                c.createNvHttp()?.setDisplayScale(scale, displayName = currentName) == true
                                             } catch (_: Exception) { false }
                                         }
                                         if (!ok) {
@@ -950,6 +1039,74 @@ private fun MonitorSettings(engine: StreamEngine) {
                         }
                     }
                 }
+            }
+        }
+
+        // ── 其它显示器选择 ──
+        if (!loading && displays.isNotEmpty()) {
+            val otherDisplays = if (currentName != null || currentDeviceId != null) {
+                displays.filter { d ->
+                    (currentName != null && d.name == currentName) ||
+                    (currentDeviceId != null && d.guid == currentDeviceId)
+                }.let { current ->
+                    displays.filterNot { it in current }
+                }
+            } else displays
+
+            if (otherDisplays.isNotEmpty()) {
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                Text("其它显示器", style = MaterialTheme.typography.labelLarge,
+                     color = MaterialTheme.colorScheme.primary,
+                     modifier = Modifier.padding(bottom = 4.dp))
+
+                otherDisplays.forEach { display ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .clickable {
+                                engine.changeDisplay(display.name, display.guid)
+                            }
+                            .padding(vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = false,
+                            onClick = {
+                                engine.changeDisplay(display.name, display.guid)
+                            })
+                        Spacer(Modifier.width(8.dp))
+                        Text(display.name, modifier = Modifier.weight(1f))
+                        if (display.isPrimary) {
+                            Text("[主]", style = MaterialTheme.typography.labelSmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = {
+                            engine.changeDisplay(display.name, display.guid)
+                        }) {
+                            Text("切换")
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── PiP（画中画） ──
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth()
+                    .clickable { pref.enablePip = !pref.enablePip }
+                    .padding(vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(
+                    checked = pref.enablePip,
+                    onCheckedChange = { pref.enablePip = it },
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "画中画 (PiP)",
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
             }
         }
     }

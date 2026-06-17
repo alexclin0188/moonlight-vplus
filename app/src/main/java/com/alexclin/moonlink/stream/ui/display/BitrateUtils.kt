@@ -1,5 +1,8 @@
 package com.alexclin.moonlink.stream.ui.display
 
+import kotlin.math.pow
+import kotlin.math.roundToInt
+
 object BitrateUtils {
     // 码率预设值 (kbps)
     const val BITRATE_AUTO = 0
@@ -47,20 +50,25 @@ object BitrateUtils {
     }
 
     /**
-     * 自定义SeekBar线性映射: progress(0~100) → kbps(1M~800M)
+     * 自定义SeekBar指数映射: progress(0~100) → kbps(1M~800M)
+     * 前段变化慢（低码率精细调节），后段变化快（高码率快速跨越）。
+     * 公式: kbps = min * (max/min)^(progress/100)
      */
     fun customProgressToKbps(progress: Int): Int {
-        val ratio = progress / 100f
-        return (BITRATE_CUSTOM_MIN + (BITRATE_CUSTOM_MAX - BITRATE_CUSTOM_MIN) * ratio).toInt()
-            .coerceIn(BITRATE_CUSTOM_MIN, BITRATE_CUSTOM_MAX)
+        val ratio = progress.coerceIn(0, 100) / 100f
+        val result = BITRATE_CUSTOM_MIN * (BITRATE_CUSTOM_MAX.toFloat() / BITRATE_CUSTOM_MIN).pow(ratio)
+        return result.roundToInt().coerceIn(BITRATE_CUSTOM_MIN, BITRATE_CUSTOM_MAX)
     }
 
     /**
-     * 自定义SeekBar线性映射: kbps(1M~800M) → progress(0~100)
+     * 自定义SeekBar指数映射反向: kbps(1M~800M) → progress(0~100)
+     * 公式: progress = ln(kbps/min) / ln(max/min) * 100
      */
     fun customKbpsToProgress(kbps: Int): Int {
-        val ratio = (kbps - BITRATE_CUSTOM_MIN).toFloat() / (BITRATE_CUSTOM_MAX - BITRATE_CUSTOM_MIN)
-        return (ratio.coerceIn(0f, 1f) * 100f).toInt()
+        val clamped = kbps.coerceIn(BITRATE_CUSTOM_MIN, BITRATE_CUSTOM_MAX).toFloat()
+        val ratio = (kotlin.math.ln(clamped / BITRATE_CUSTOM_MIN)
+            / kotlin.math.ln(BITRATE_CUSTOM_MAX.toFloat() / BITRATE_CUSTOM_MIN))
+        return (ratio * 100f).roundToInt().coerceIn(0, 100)
     }
 
     /**

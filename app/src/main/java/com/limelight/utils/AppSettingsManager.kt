@@ -229,6 +229,13 @@ class AppSettingsManager(private val context: Context) {
             put("showBitrateCard", settings.showBitrateCard)
             put("showGyroCard", settings.showGyroCard)
             put("showQuickKeyCard", settings.showQuickKeyCard)
+            // 声音
+            put("playHostAudio", settings.playHostAudio)
+            put("enableSops", settings.enableSops)
+            put("stretchVideo", settings.stretchVideo)
+            // 触摸板模式
+            put("touchscreenTrackpad", settings.touchscreenTrackpad)
+            put("enableEnhancedTouch", settings.enableEnhancedTouch)
             put("timestamp", System.currentTimeMillis())
         }
     }
@@ -277,6 +284,13 @@ class AppSettingsManager(private val context: Context) {
         settings.showBitrateCard = settingsJson.optBoolean("showBitrateCard", true)
         settings.showGyroCard = settingsJson.optBoolean("showGyroCard", true)
         settings.showQuickKeyCard = settingsJson.optBoolean("showQuickKeyCard", true)
+        // 声音
+        settings.playHostAudio = settingsJson.optBoolean("playHostAudio", false)
+        settings.enableSops = settingsJson.optBoolean("enableSops", true)
+        settings.stretchVideo = settingsJson.optBoolean("stretchVideo", false)
+        // 触摸板模式
+        settings.touchscreenTrackpad = settingsJson.optBoolean("touchscreenTrackpad", false)
+        settings.enableEnhancedTouch = settingsJson.optBoolean("enableEnhancedTouch", false)
 
         return settings
     }
@@ -345,6 +359,14 @@ class AppSettingsManager(private val context: Context) {
 
             prefConfig.videoFormat = parseVideoFormat(intent.getStringExtra(INTENT_LAST_SETTINGS_VIDEO_FORMAT))
 
+            // 声音
+            prefConfig.playHostAudio = intent.getBooleanExtra(INTENT_LAST_SETTINGS_PLAY_HOST_AUDIO, prefConfig.playHostAudio)
+            prefConfig.enableSops = intent.getBooleanExtra(INTENT_LAST_SETTINGS_ENABLE_SOPS, prefConfig.enableSops)
+            prefConfig.stretchVideo = intent.getBooleanExtra(INTENT_LAST_SETTINGS_STRETCH_VIDEO, prefConfig.stretchVideo)
+            // 触摸板模式
+            prefConfig.touchscreenTrackpad = intent.getBooleanExtra(INTENT_LAST_SETTINGS_TOUCHSCREEN_TRACKPAD, prefConfig.touchscreenTrackpad)
+            prefConfig.enableEnhancedTouch = intent.getBooleanExtra(INTENT_LAST_SETTINGS_ENABLE_ENHANCED_TOUCH, prefConfig.enableEnhancedTouch)
+
             true
         } catch (e: Exception) {
             e.printStackTrace()
@@ -388,6 +410,13 @@ class AppSettingsManager(private val context: Context) {
         private const val INTENT_LAST_SETTINGS_SHOW_BITRATE_CARD = "LastSettingsShowBitrateCard"
         private const val INTENT_LAST_SETTINGS_SHOW_GYRO_CARD = "LastSettingsShowGyroCard"
         private const val INTENT_LAST_SETTINGS_SHOW_QuickKeyCard = "LastSettingsshowQuickKeyCard"
+        // 声音相关
+        private const val INTENT_LAST_SETTINGS_PLAY_HOST_AUDIO = "LastSettingsPlayHostAudio"
+        private const val INTENT_LAST_SETTINGS_ENABLE_SOPS = "LastSettingsEnableSops"
+        private const val INTENT_LAST_SETTINGS_STRETCH_VIDEO = "LastSettingsStretchVideo"
+        // 触摸板模式相关
+        private const val INTENT_LAST_SETTINGS_TOUCHSCREEN_TRACKPAD = "LastSettingsTouchscreenTrackpad"
+        private const val INTENT_LAST_SETTINGS_ENABLE_ENHANCED_TOUCH = "LastSettingsEnableEnhancedTouch"
 
         /**
          * Add last settings to Intent
@@ -414,6 +443,13 @@ class AppSettingsManager(private val context: Context) {
             intent.putExtra(INTENT_LAST_SETTINGS_SHOW_BITRATE_CARD, lastSettings.showBitrateCard)
             intent.putExtra(INTENT_LAST_SETTINGS_SHOW_GYRO_CARD, lastSettings.showGyroCard)
             intent.putExtra(INTENT_LAST_SETTINGS_SHOW_QuickKeyCard, lastSettings.showQuickKeyCard)
+            // 声音
+            intent.putExtra(INTENT_LAST_SETTINGS_PLAY_HOST_AUDIO, lastSettings.playHostAudio)
+            intent.putExtra(INTENT_LAST_SETTINGS_ENABLE_SOPS, lastSettings.enableSops)
+            intent.putExtra(INTENT_LAST_SETTINGS_STRETCH_VIDEO, lastSettings.stretchVideo)
+            // 触摸板模式
+            intent.putExtra(INTENT_LAST_SETTINGS_TOUCHSCREEN_TRACKPAD, lastSettings.touchscreenTrackpad)
+            intent.putExtra(INTENT_LAST_SETTINGS_ENABLE_ENHANCED_TOUCH, lastSettings.enableEnhancedTouch)
         }
     }
 }

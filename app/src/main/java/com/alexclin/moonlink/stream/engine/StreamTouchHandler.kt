@@ -24,6 +24,10 @@ class StreamTouchHandler(
     private val conn: NvConnection,
     private val prefConfig: PreferenceConfiguration,
     private val targetView: View,
+    /** 三指/空格键弹出键盘的回调 */
+    var onToggleKeyboard: (() -> Unit)? = null,
+    /** 光标可见性变化回调（用于与 InputCaptureProvider 联动） */
+    var onCursorVisibilityChanged: ((visible: Boolean) -> Unit)? = null,
 ) {
 
     companion object {
@@ -38,6 +42,12 @@ class StreamTouchHandler(
     var touchContextMap: Array<TouchContext?> = absoluteTouchContextMap
 
     var cursorVisible = false
+        set(value) {
+            if (field != value) {
+                field = value
+                onCursorVisibilityChanged?.invoke(value)
+            }
+        }
 
     // 双指右键检测
     private var twoFingerDownTime = 0L
@@ -214,7 +224,11 @@ class StreamTouchHandler(
                         }
                     }
                     twoFingerTapPending = false
-                    if (event.eventTime - multiFingerDownTime < MULTI_FINGER_TAP_THRESHOLD) return true
+                    if (event.eventTime - multiFingerDownTime < MULTI_FINGER_TAP_THRESHOLD) {
+                        // 多指（三指）点击 → 弹出键盘
+                        onToggleKeyboard?.invoke()
+                        return true
+                    }
                 }
                 val ctx = ctxOf(actionIdx) ?: return false
                 if (Build.VERSION.SDK_INT >= 33 && (event.flags and MotionEvent.FLAG_CANCELED) != 0) ctx.cancelTouch()

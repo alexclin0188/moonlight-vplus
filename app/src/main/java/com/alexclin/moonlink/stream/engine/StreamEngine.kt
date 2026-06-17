@@ -15,7 +15,18 @@ import com.limelight.Game
 import com.limelight.LimeLog
 import com.limelight.binding.PlatformBinding
 import com.limelight.binding.audio.SmartAudioRenderer
+import com.limelight.binding.input.ControllerHandler
+import com.limelight.binding.input.GameInputDevice
+import com.limelight.binding.input.capture.InputCaptureManager
+import com.limelight.binding.input.capture.InputCaptureProvider
+import com.limelight.binding.input.evdev.EvdevListener
 import com.limelight.binding.input.touch.NativeTouchContext
+import com.limelight.nvstream.input.ClipboardSyncManager
+import com.limelight.nvstream.input.MouseButtonPacket
+import com.limelight.ui.GameGestures
+import com.limelight.ui.StreamView
+import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import com.limelight.binding.video.CrashListener
 import com.limelight.binding.video.MediaCodecDecoderRenderer
 import com.limelight.binding.video.MediaCodecHelper
@@ -24,6 +35,7 @@ import com.limelight.binding.video.PerformanceInfo
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.NvConnectionListener
 import com.limelight.nvstream.StreamConfiguration
+import com.limelight.nvstream.http.AdaptiveBitrateService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
@@ -46,7 +58,7 @@ import java.security.cert.X509Certificate
  *
  * 引用 [com.limelight] 包中的底层类，不修改任何旧代码。
  */
-class StreamEngine(private val activity: Activity) : NvConnectionListener {
+class StreamEngine(private val activity: Activity) : NvConnectionListener, GameGestures, EvdevListener {
 
     /** 从 SharedPreferences 读取的全部串流配置 */
     lateinit var prefConfig: PreferenceConfiguration
@@ -65,8 +77,33 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     var touchHandler: StreamTouchHandler? = null
         private set
 
+    /** 手柄控制器处理器 */
+    var controllerHandler: ControllerHandler? = null
+        private set
+
+    /** 输入捕获提供者（光标隐藏/鼠标捕获） */
+    var inputCaptureProvider: InputCaptureProvider? = null
+        private set
+
+    /** 剪贴板同步管理器 */
+    private var clipboardSyncManager: ClipboardSyncManager? = null
+
+    /** 光标服务管理器（网络光标 + 本地渲染器），Compose 模式下暂为空 */
+    @Suppress("unused")
+    private var cursorServiceManager: Any? = null
+
+    /** PiP 模式标志 */
+    var isInPipMode = false
+        private set
+
     /** 缓存 SurfaceView（用于触控处理器初始化） */
     private var cachedSurfaceView: SurfaceView? = null
+
+    // ── 流时长统计 ──
+    private var accumulatedStreamTime: Long = 0
+    private var streamStartTime: Long = 0
+    private var lastActiveTime: Long = 0
+    var isStreamingActive = false
 
     /** 音频渲染器 */
     private var audioRenderer: SmartAudioRenderer? = null
@@ -74,6 +111,12 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     /** 是否已连接 */
     var connected = false
         private set
+
+    /** 是否应恢复串流会话（从后台返回时重连） */
+    var shouldResumeSession = false
+
+    /** 是否启用极速恢复（surface 重建时不中断串流） */
+    var isExtremeResumeEnabled = false
 
     /** 是否已尝试过连接（防止 surfaceChanged 重复启动） */
     private var attemptedConnection = false
@@ -89,6 +132,10 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     /** 串流结束回调 */
     var onStreamEnded: (() -> Unit)? = null
+
+    // ── WiFi Lock ──
+    private var highPerfWifiLock: WifiManager.WifiLock? = null
+    private var lowLatencyWifiLock: WifiManager.WifiLock? = null
 
     /** 连接阶段状态回调 */
     var onStageUpdate: ((stage: String, complete: Boolean, failed: Boolean) -> Unit)? = null
@@ -107,6 +154,23 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     /** 智能码率服务引用（由外部 Game/StreamActivity 注入，用于手动调码率时同步状态） */
     var adaptiveBitrateService: com.limelight.nvstream.http.AdaptiveBitrateService? = null
 
+    /** 正在切换分辨率，阻止 onPause 断连（远端流需保持，供新 Activity 复用） */
+    @Volatile
+    var isChangingResolution = false
+
+    /** 当前串流使用的显示器 display_name（直接影响 launch?display_name= 参数） */
+    @Volatile
+    var currentDisplayName: String? = null
+    /** 当前串流使用的显示器 device_id */
+    @Volatile
+    var currentDeviceId: String? = null
+
+    /** 用户是否在面板中主动设置过分辨率/缩放，为 false 时不发送 mode/resolutionScale 到 Sunshine */
+    @Volatile
+    var applyDisplaySettings: Boolean = false
+
+    /** 当前显示的对话框引用，release 时需关闭防止 WindowLeaked */
+    private var activeDialog: android.app.AlertDialog? = null
     private var pcUuid: String? = null
     private var pcName: String? = null
     private var appId: Int = NvApp.DESKTOP_APP_ID
@@ -156,6 +220,10 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             // 2. 应用"以最近一次配置启动"（若 Intent 中包含）
             AppSettingsManager(activity).applyLastSettingsFromIntent(intent, prefConfig)
 
+            // 2b. 用 Intent 覆盖后的值重新同步 NativeTouchContext（触摸板模式）
+            NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
+            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
+
             // 3. 从 Intent 提取参数
             host = intent.getStringExtra(Game.EXTRA_HOST) ?: return fail("缺少 host")
             port = intent.getIntExtra(Game.EXTRA_PORT, NvHTTP.DEFAULT_HTTP_PORT)
@@ -173,6 +241,14 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             pcUuid = intent.getStringExtra(Game.EXTRA_PC_UUID)
             pcName = intent.getStringExtra(Game.EXTRA_PC_NAME)
 
+            // 从持久化中恢复用户选择的显示器（用户在串流面板中可能切换过）
+            val displayPrefs = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+            val savedDisplayName = displayPrefs.getString("display_name", null)
+            if (savedDisplayName != null) {
+                currentDisplayName = savedDisplayName
+                currentDeviceId = displayPrefs.getString("display_guid", null)
+            }
+
             // 解析服务器证书
             val certBytes = intent.getByteArrayExtra(Game.EXTRA_SERVER_CERT)
             if (certBytes != null) {
@@ -187,6 +263,16 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             prefConfig.screenCombinationMode = intent.getIntExtra(
                 Game.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
             )
+
+            // 如果没有指定显示器（Intent 未传、SP 也未恢复），强制关闭 VDD、分辨率缩放和屏幕组合模式
+            // 防止 Sunshine 尝试变更显示拓扑失败 (HTTP 503)
+            if (currentDisplayName == null && displayName == null) {
+                pcUseVdd = false
+                prefConfig.resolutionScale = 100
+                prefConfig.screenCombinationMode = -1
+                prefConfig.vddScreenCombinationMode = -1
+                applyDisplaySettings = false
+            }
 
             // 4. 构建 NvApp 对象
             val appName = intent.getStringExtra(Game.EXTRA_APP_NAME) ?: "Desktop"
@@ -212,8 +298,14 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             glRenderer = GlPreferences.readPreferences(activity).glRenderer
             MediaCodecHelper.initialize(activity, glRenderer)
 
+            StreamLogger.log(activity, "INIT", "初始化完成 host=$host app=${app.appName}")
+
             // 7. 创建 NvConnection（延迟到 surface 可用时 start）
             createConnection()
+
+            // 8. 网络能力初始化
+            acquireWifiLocks()
+            checkMeteredNetwork()
 
             LimeLog.info("StreamEngine: 初始化完成 host=$host port=$port app=${app.appName}")
             true
@@ -327,11 +419,34 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             config,
             PlatformBinding.getCryptoProvider(activity),
             serverCert,
-            displayName,
+            displayName = currentDisplayName ?: displayName,
             forceResumeCurrentSession
         )
 
+        // 7) 初始化手柄控制器
+        initControllerHandler()
+        // 8) 初始化输入捕获（光标隐藏/鼠标捕获）
+        initInputCapture()
+
         LimeLog.info("StreamEngine: NvConnection 已创建")
+        StreamLogger.logParams(activity, "CONFIG", mapOf(
+            "width" to config.width, "height" to config.height,
+            "launchRefreshRate" to config.launchRefreshRate,
+            "refreshRate" to config.refreshRate,
+            "bitrate" to config.bitrate,
+            "resolutionScale" to config.resolutionScale,
+            "sops" to config.sops,
+            "appId" to app.appId,
+            "attachedGamepadMask" to config.attachedGamepadMask,
+            "remoteConfig" to config.remote,
+            "audioCodec" to config.audioCodec,
+            "hdrMode" to config.hdrMode,
+            "useVdd" to pcUseVdd,
+            "screenCombinationMode" to prefConfig.screenCombinationMode,
+            "vddScreenCombinationMode" to prefConfig.vddScreenCombinationMode,
+            "displayName" to (currentDisplayName ?: displayName),
+            "forceResume" to forceResumeCurrentSession,
+        ))
     }
 
     /**
@@ -381,12 +496,15 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         val clientRefreshRateX100 = (displayRefreshRate * 100).roundToInt()
 
         return StreamConfiguration.Builder()
-            .setResolution(prefConfig.width, prefConfig.height)
+            .setResolution(
+                if (applyDisplaySettings) prefConfig.width else 0,
+                if (applyDisplaySettings) prefConfig.height else 0
+            )
             .setLaunchRefreshRate(effectiveLaunchFps)
             .setRefreshRate(chosenFrameRate)
             .setApp(app)
             .setBitrate(prefConfig.bitrate)
-            .setResolutionScale(prefConfig.resolutionScale)
+            .setResolutionScale(if (applyDisplaySettings) prefConfig.resolutionScale else 100)
             .setEnableSops(prefConfig.enableSops)
             .enableLocalAudioPlayback(prefConfig.playHostAudio)
             .setMaxPacketSize(1392)
@@ -412,6 +530,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             .setUseVdd(pcUseVdd)
             .setCustomScreenMode(prefConfig.screenCombinationMode)
             .setCustomVddScreenMode(prefConfig.vddScreenCombinationMode)
+            .setAttachedGamepadMask(computeGamepadMask())
             .build()
     }
 
@@ -450,6 +569,8 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
         attemptedConnection = true
 
+        StreamLogger.log(activity, "STREAM", "开始启动串流 width=${prefConfig.width} height=${prefConfig.height} fps=${prefConfig.fps}")
+
         // 设置渲染目标（需要 SurfaceHolder）
         decoder.setRenderTarget(holder)
 
@@ -485,7 +606,15 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     private fun initTouchHandler(view: View) {
         val c = conn ?: return
-        val handler = StreamTouchHandler(c, prefConfig, view)
+        val handler = StreamTouchHandler(
+            conn = c,
+            prefConfig = prefConfig,
+            targetView = view,
+            onToggleKeyboard = { this.toggleKeyboard() },
+            onCursorVisibilityChanged = { visible ->
+                if (connected) setInputGrabState(!visible)
+            },
+        )
         handler.initTouchContexts()
         touchHandler = handler
         LimeLog.info("StreamEngine: 触控处理器已初始化")
@@ -507,6 +636,63 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         }
     }
 
+    /** 初始化手柄控制器处理器 — 在 createConnection() 后调用 */
+    private fun initControllerHandler() {
+        val c = conn ?: return
+        controllerHandler = ControllerHandler(activity, c, this, prefConfig)
+        LimeLog.info("StreamEngine: ControllerHandler 已初始化")
+    }
+
+    /** 初始化光标服务管理器 — 在连接后调用 */
+    private fun initCursorService(hostAddress: String?) {
+        // CursorServiceManager 需要 StreamView/CursorView（旧 View 架构），
+        // 新版 Compose 架构使用原生 PointerIcon API 替代。此处保留结构占位。
+        LimeLog.info("StreamEngine: CursorServiceManager 暂不初始化（Compose 下无 StreamView）")
+    }
+
+    /** 初始化剪贴板同步管理器 — 在连接建立后（onStageStarting）调用 */
+    private fun initClipboardSync() {
+        val wantText = prefConfig.enableClipboardSyncText
+        val wantImage = prefConfig.enableClipboardSyncImage
+        if (!wantText && !wantImage) return
+        val mgr = ClipboardSyncManager(
+            context = activity.applicationContext,
+            syncText = wantText,
+            syncImage = wantImage,
+            fileProviderAuthority = "${activity.packageName}.clipboard_fileprovider",
+            nvHttpProvider = { conn?.createNvHttp() },
+        )
+        runCatching { mgr.start() }
+            .onFailure { LimeLog.warning("StreamEngine: 剪贴板同步启动失败 ${it.message}") }
+            .onSuccess { clipboardSyncManager = mgr }
+    }
+
+    /** 初始化输入捕获 — 在 createConnection() 后调用 */
+    private fun initInputCapture() {
+        inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(
+            activity, this
+        )
+        LimeLog.info("StreamEngine: InputCaptureProvider 已初始化")
+    }
+
+    /** 设置输入捕获光标抓取状态 */
+    fun setInputGrabState(isGrabbing: Boolean) {
+        val cap = inputCaptureProvider ?: return
+        if (isGrabbing) cap.enableCapture() else cap.disableCapture()
+    }
+
+    // ── GameGestures 实现 ──
+
+    override fun toggleKeyboard() {
+        val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE)
+            as android.view.inputmethod.InputMethodManager
+        imm.toggleSoftInput(0, 0)
+    }
+
+    override fun showGameMenu(device: GameInputDevice?) {
+        LimeLog.info("StreamEngine: showGameMenu 暂空实现")
+    }
+
     fun disconnect() {
         try {
             conn?.stop()
@@ -514,6 +700,35 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
             LimeLog.warning("StreamEngine: disconnect stop 失败 ${e.message}")
         }
         activity.finish()
+    }
+
+    /**
+     * 从后台恢复时的重连准备。对标旧版 Game.prepareConnection()。
+     * 销毁旧解码器音频渲染器 → 重新创建 NvConnection → 重置连接状态。
+     * Surface 就绪后 surfaceChanged 会重新触发 startStreaming()。
+     */
+    fun prepareConnection() {
+        LimeLog.info("StreamEngine: prepareConnection 开始")
+        StreamLogger.log(activity, "RECONNECT", "重连准备开始")
+
+        // 1. 销毁旧解码器和音频渲染器
+        try { decoderRenderer?.prepareForStop() } catch (_: Exception) {}
+        decoderRenderer = null
+        audioRenderer = null
+
+        // 2. 重新创建 NvConnection
+        createConnection()
+
+        // 3. 触控重新初始化
+        cachedSurfaceView?.let { initTouchHandler(it) }
+
+        // 4. 重置连接状态，允许 surfaceChanged 重新触发 startStreaming()
+        attemptedConnection = false
+        connected = false
+        isChangingResolution = false
+
+        StreamLogger.log(activity, "RECONNECT", "重连准备完成")
+        LimeLog.info("StreamEngine: 重连准备完成")
     }
 
     fun disconnectAndQuit() {
@@ -525,8 +740,78 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         activity.finish()
     }
 
+    // ── WiFi Lock 管理 ──
+
+    /** 获取高功耗 WiFi Lock 和低延迟 WiFi Lock，防止串流中断 */
+    fun acquireWifiLocks() {
+        val wifiMgr = activity.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as WifiManager
+        try {
+            highPerfWifiLock = wifiMgr.createWifiLock(
+                WifiManager.WIFI_MODE_FULL_HIGH_PERF, "MoonLink High Perf")
+            highPerfWifiLock?.setReferenceCounted(false)
+            highPerfWifiLock?.acquire()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                lowLatencyWifiLock = wifiMgr.createWifiLock(
+                    WifiManager.WIFI_MODE_FULL_LOW_LATENCY, "MoonLink Low Latency")
+                lowLatencyWifiLock?.setReferenceCounted(false)
+                lowLatencyWifiLock?.acquire()
+            }
+        } catch (_: SecurityException) {
+            LimeLog.warning("StreamEngine: 获取 WiFi Lock 失败（无权限）")
+        }
+    }
+
+    /** 释放 WiFi Lock */
+    fun releaseWifiLocks() {
+        try {
+            lowLatencyWifiLock?.release()
+            lowLatencyWifiLock = null
+            highPerfWifiLock?.release()
+            highPerfWifiLock = null
+        } catch (_: Exception) {}
+    }
+
+    /** 检查是否为计费网络，提示用户 */
+    fun checkMeteredNetwork() {
+        try {
+            val connMgr = activity.getSystemService(Context.CONNECTIVITY_SERVICE)
+                as ConnectivityManager
+            if (connMgr.isActiveNetworkMetered) {
+                displayTransientMessage("当前为计费网络，请注意流量消耗")
+            }
+        } catch (_: Exception) {}
+    }
+
+    /** 计算已连接的控制器掩码（与旧 Game.kt 逻辑一致） */
+    private fun computeGamepadMask(): Int {
+        var mask = ControllerHandler.getAttachedControllerMask(activity).toInt()
+        if (!prefConfig.multiController) {
+            mask = 1
+        }
+        if (prefConfig.onscreenController) {
+            mask = mask or 1
+        }
+        return mask
+    }
+
     fun changeResolution() {
+        applyDisplaySettings = true
+        isChangingResolution = true
         handler.post { activity.recreate() }
+    }
+
+    /** 切换串流目标显示器，保存选择并重启串流。*/
+    fun changeDisplay(displayName: String, deviceId: String) {
+        currentDisplayName = displayName
+        currentDeviceId = deviceId
+        val prefs = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("display_name", displayName)
+            .putString("display_guid", deviceId)
+            .apply()
+        // 切换显示器需要重启串流
+        changeResolution()
     }
 
     // ========================================================================
@@ -545,11 +830,6 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     fun toggleMicrophoneButton() {
         prefConfig.enableMic = !prefConfig.enableMic
         displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
-    }
-
-    fun toggleKeyboard() {
-        val imm = activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as android.view.inputmethod.InputMethodManager
-        imm.toggleSoftInput(0, 0)
     }
 
     fun toggleVirtualController() {
@@ -592,6 +872,32 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
     fun toggleAdaptiveBitrate() {
         prefConfig.enableAdaptiveBitrate = !prefConfig.enableAdaptiveBitrate
         displayTransientMessage(if (prefConfig.enableAdaptiveBitrate) "自适应码率已开启" else "自适应码率已关闭")
+    }
+
+    /** 启动智能码率（如设置已开启）。在连接建立后调用，也供外部切换 AUTO 时调用。*/
+    fun startAdaptiveBitrateIfEnabled() {
+        if (!prefConfig.enableAdaptiveBitrate) return
+        if (adaptiveBitrateService != null) return
+        val c = conn ?: return
+        val service = AdaptiveBitrateService(
+            nvHttpFactory = { c.createNvHttp() },
+            statsProvider = {
+                latestPerfInfo?.let { p ->
+                    AdaptiveBitrateService.AbrStats(
+                        packetLoss = p.lostFrameRate,
+                        rttMs = (p.rttInfo shr 32).toInt(),
+                        decodeFps = p.totalFps,
+                        droppedFrames = 0
+                    )
+                }
+            },
+            onBitrateChanged = { kbps, _ ->
+                c.applyBitrateLocally(kbps)
+            }
+        )
+        service.start(prefConfig.bitrate, prefConfig.abrMode)
+        adaptiveBitrateService = service
+        LimeLog.info("StreamEngine: AdaptiveBitrateService 已启动，初始码率=${prefConfig.bitrate}kbps")
     }
 
     fun toggleControlOnly() {
@@ -833,41 +1139,116 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     override fun stageStarting(stage: String) {
         LimeLog.info("StreamEngine: stageStarting $stage")
+        StreamLogger.log(activity, "STAGE", "开始: $stage")
         handler.post { onStageUpdate?.invoke(stage, false, false) }
     }
 
     override fun stageComplete(stage: String) {
         LimeLog.info("StreamEngine: stageComplete $stage")
+        StreamLogger.log(activity, "STAGE", "完成: $stage")
         handler.post { onStageUpdate?.invoke(stage, true, false) }
     }
 
     override fun stageFailed(stage: String, portFlags: Int, errorCode: Int) {
         LimeLog.severe("StreamEngine: stageFailed $stage port=$portFlags err=$errorCode")
+        StreamLogger.log(activity, "STAGE", "失败: $stage errorCode=$errorCode portFlags=$portFlags")
         handler.post {
+            if (activity.isFinishing) return@post
             onStageUpdate?.invoke(stage, false, true)
-            Toast.makeText(activity, "连接失败: $stage ($errorCode)", Toast.LENGTH_LONG).show()
+            var msg = "连接失败: $stage (错误码 $errorCode)"
+            if (portFlags != 0) {
+                msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
+            }
+            activeDialog = android.app.AlertDialog.Builder(activity)
+                .setTitle("连接失败")
+                .setMessage(msg)
+                .setCancelable(false)
+                .setPositiveButton("确定") { _, _ ->
+                    activeDialog = null
+                    activity.finish()
+                }
+                .show()
+            activeDialog?.setOnDismissListener { activeDialog = null }
         }
     }
 
     override fun connectionStarted() {
         LimeLog.info("StreamEngine: connectionStarted")
+        StreamLogger.log(activity, "CONN", "连接成功")
         connected = true
+        isChangingResolution = false  // 新流已建立，清除分辨率切换标记
+
+        // 流时长统计初始化
+        streamStartTime = System.currentTimeMillis()
+        lastActiveTime = System.currentTimeMillis()
+        isStreamingActive = true
+
         handler.post {
             activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
+        // 连接建立后启动智能码率（如设置已开启）
+        startAdaptiveBitrateIfEnabled()
+        // 剪贴板同步
+        initClipboardSync()
     }
 
     override fun connectionTerminated(errorCode: Int) {
         LimeLog.info("StreamEngine: connectionTerminated code=$errorCode")
+        StreamLogger.log(activity, "CONN", "断开 errorCode=$errorCode")
         connected = false
+        // 停止智能码率
+        adaptiveBitrateService?.stop()
+        adaptiveBitrateService = null
         handler.post {
             activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (!activity.isFinishing) {
                 onStreamEnded?.invoke()
-                if (errorCode != 0) {
-                    Toast.makeText(activity, "串流已断开 (code=$errorCode)", Toast.LENGTH_SHORT).show()
+                // 延迟统计信息 Toast
+                if (prefConfig.enableLatencyToast) {
+                    try {
+                        val avgLat = decoderRenderer?.getAverageEndToEndLatency() ?: 0
+                        val avgDecLat = decoderRenderer?.getAverageDecoderLatency() ?: 0
+                        val latencyText = buildString {
+                            if (avgLat > 0) append("端到端延迟: ${avgLat}ms")
+                            if (avgDecLat > 0) {
+                                if (isNotEmpty()) append(" | ")
+                                append("解码延迟: ${avgDecLat}ms")
+                            }
+                        }
+                        if (latencyText.isNotEmpty()) {
+                            Toast.makeText(activity, latencyText, Toast.LENGTH_LONG).show()
+                        }
+                    } catch (_: Exception) {}
                 }
-                activity.finish()
+                if (errorCode != 0 && errorCode != MoonBridge.ML_ERROR_GRACEFUL_TERMINATION) {
+                    val portFlags = MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode)
+                    var msg = when (errorCode) {
+                        MoonBridge.ML_ERROR_NO_VIDEO_TRAFFIC -> "未收到视频数据，请检查网络连接"
+                        MoonBridge.ML_ERROR_NO_VIDEO_FRAME -> "未收到视频帧，请检查网络连接"
+                        MoonBridge.ML_ERROR_UNEXPECTED_EARLY_TERMINATION,
+                        MoonBridge.ML_ERROR_PROTECTED_CONTENT -> "串流被意外中断"
+                        MoonBridge.ML_ERROR_FRAME_CONVERSION -> "视频格式转换失败"
+                        else -> "串流已断开 (${if (kotlin.math.abs(errorCode) > 1000)
+                            "0x${Integer.toHexString(errorCode)}" else errorCode.toString()})"
+                    }
+                    if (portFlags != 0) {
+                        msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
+                    }
+                    if (!activity.isFinishing) {
+                        activeDialog = android.app.AlertDialog.Builder(activity)
+                        .setTitle("串流已断开")
+                        .setMessage(msg)
+                        .setCancelable(false)
+                        .setPositiveButton("确定") { _, _ ->
+                            activeDialog = null
+                            activity.finish()
+                        }
+                        .show()
+                        activeDialog?.setOnDismissListener { activeDialog = null }
+                    }
+                } else {
+                    activity.finish()
+                }
             }
         }
     }
@@ -876,6 +1257,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     override fun displayMessage(message: String) {
         LimeLog.info("StreamEngine: displayMessage $message")
+        StreamLogger.log(activity, "SRV_MSG", message)
         handler.post { Toast.makeText(activity, message, Toast.LENGTH_LONG).show() }
     }
 
@@ -883,22 +1265,135 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
         handler.post { Toast.makeText(activity, message, Toast.LENGTH_SHORT).show() }
     }
 
-    override fun rumble(controllerNumber: Short, lowFreqMotor: Short, highFreqMotor: Short) {}
-    override fun rumbleTriggers(controllerNumber: Short, leftTrigger: Short, rightTrigger: Short) {}
+    override fun rumble(controllerNumber: Short, lowFreqMotor: Short, highFreqMotor: Short) {
+        controllerHandler?.handleRumble(controllerNumber, lowFreqMotor, highFreqMotor)
+    }
+    override fun rumbleTriggers(controllerNumber: Short, leftTrigger: Short, rightTrigger: Short) {
+        controllerHandler?.handleRumbleTriggers(controllerNumber, leftTrigger, rightTrigger)
+    }
     override fun setHdrMode(enabled: Boolean, hdrMetadata: ByteArray?) {
         isHdrEnabled = enabled
     }
-    override fun setMotionEventState(controllerNumber: Short, motionType: Byte, reportRateHz: Short) {}
-    override fun setControllerLED(controllerNumber: Short, r: Byte, g: Byte, b: Byte) {}
-    override fun onResolutionChanged(width: Int, height: Int) {}
+    override fun setMotionEventState(controllerNumber: Short, motionType: Byte, reportRateHz: Short) {
+        controllerHandler?.handleSetMotionEventState(controllerNumber, motionType, reportRateHz)
+    }
+    override fun setControllerLED(controllerNumber: Short, r: Byte, g: Byte, b: Byte) {
+        controllerHandler?.handleSetControllerLED(controllerNumber, r, g, b)
+    }
+    override fun onResolutionChanged(width: Int, height: Int) {
+        LimeLog.info("StreamEngine: 分辨率变化 ${width}x${height}")
+        if (prefConfig.width == width && prefConfig.height == height) return
+        prefConfig.width = width
+        prefConfig.height = height
+        decoderRenderer?.onResolutionChanged(width, height)
+        handler.post {
+            val orientation = if (width > height) "横屏" else "竖屏"
+            LimeLog.info("StreamEngine: 方向 $orientation")
+        }
+    }
+
+    // ── EvdevListener 实现 ──
+
+    override fun mouseMove(deltaX: Int, deltaY: Int) {
+        conn?.sendMouseMove(deltaX.toShort(), deltaY.toShort())
+    }
+
+    override fun mouseButtonEvent(buttonId: Int, down: Boolean) {
+        val buttonIndex: Byte = when (buttonId) {
+            EvdevListener.BUTTON_LEFT -> MouseButtonPacket.BUTTON_LEFT
+            EvdevListener.BUTTON_MIDDLE -> MouseButtonPacket.BUTTON_MIDDLE
+            EvdevListener.BUTTON_RIGHT -> MouseButtonPacket.BUTTON_RIGHT
+            EvdevListener.BUTTON_X1 -> MouseButtonPacket.BUTTON_X1
+            EvdevListener.BUTTON_X2 -> MouseButtonPacket.BUTTON_X2
+            else -> {
+                LimeLog.warning("StreamEngine: 未处理的鼠标按钮 $buttonId")
+                return
+            }
+        }
+        if (down) conn?.sendMouseButtonDown(buttonIndex)
+        else conn?.sendMouseButtonUp(buttonIndex)
+    }
+
+    override fun mouseVScroll(amount: Byte) {
+        conn?.sendMouseScroll(amount)
+    }
+
+    override fun mouseHScroll(amount: Byte) {
+        conn?.sendMouseHScroll(amount)
+    }
+
+    override fun keyboardEvent(buttonDown: Boolean, keyCode: Short) {
+        // 鼠标/键盘事件走 conn 直接发送键盘码（基础支持）
+        conn?.sendKeyboardInput(keyCode, if (buttonDown) 0x01 else 0x00, 0x00, 0x00)
+    }
 
     // ========================================================================
     // 生命周期
     // ========================================================================
 
-    fun onResume() {}
+    /** 进入 PiP 时暂停非必要资源 */
+    fun pauseForPip() {
+        if (connected) {
+            LimeLog.info("StreamEngine: PiP 保持连接中")
+        }
+    }
+
+    /** 退出 PiP 时恢复全量资源 */
+    fun restoreFullStreaming() {
+        LimeLog.info("StreamEngine: 恢复全量串流资源")
+    }
+
+    fun onResume() {
+        if (isInPipMode) {
+            isInPipMode = false
+            restoreFullStreaming()
+        }
+    }
+
+    /** PiP 模式变化 — 由 Activity.onPictureInPictureModeChanged 调用 */
+    fun onPiPModeChanged(isInPictureInPictureMode: Boolean) {
+        isInPipMode = isInPictureInPictureMode
+        if (isInPictureInPictureMode) {
+            LimeLog.info("StreamEngine: 进入 PiP 模式，暂停音频/渲染优化")
+            pauseForPip()
+        } else {
+            LimeLog.info("StreamEngine: 退出 PiP 模式，恢复全量串流")
+            restoreFullStreaming()
+        }
+    }
+
+    /** 窗口焦点变化 — 恢复剪贴板同步和输入捕获 */
+    fun onWindowFocusChanged(hasFocus: Boolean) {
+        if (hasFocus) {
+            clipboardSyncManager?.onFocusGained()
+        }
+        inputCaptureProvider?.onWindowFocusChanged(hasFocus)
+    }
+
+    /** 停止流时长计时（Activity onStop 时调用） */
+    fun onStopStreaming() {
+        if (isStreamingActive && lastActiveTime > 0) {
+            accumulatedStreamTime += System.currentTimeMillis() - lastActiveTime
+            isStreamingActive = false
+            LimeLog.info("串流时长暂停，已累计: ${accumulatedStreamTime / 1000}秒")
+        }
+    }
+
+    /** 恢复流时长计时（Activity onStart 时调用） */
+    fun onStartStreaming() {
+        if (!isStreamingActive && streamStartTime > 0) {
+            lastActiveTime = System.currentTimeMillis()
+            isStreamingActive = true
+            LimeLog.info("串流时长恢复")
+        }
+    }
 
     fun onPause() {
+        // 切换分辨率时不能断连远端，新 Activity 会接管串流
+        if (isChangingResolution) return
+        // 关闭对话框（Activity 即将不可见，防止 WindowLeaked）
+        activeDialog?.dismiss()
+        activeDialog = null
         if (connected) {
             try {
                 conn?.stop()
@@ -912,8 +1407,20 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener {
 
     fun release() {
         LimeLog.info("StreamEngine: release")
+        // 关闭所有显示的对话框，防止 WindowLeaked
+        activeDialog?.dismiss()
+        activeDialog = null
         onPerfInfoUpdate = null
-        if (connected) conn?.stop()
+        adaptiveBitrateService?.stop()
+        adaptiveBitrateService = null
+        // 切换分辨率时由新 Activity 接管串流，不在这里 stop
+        if (!isChangingResolution && connected) conn?.stop()
+        releaseWifiLocks()
+        clipboardSyncManager?.stop()
+        clipboardSyncManager = null
+        controllerHandler = null
+        inputCaptureProvider?.destroy()
+        inputCaptureProvider = null
         audioRenderer = null
         decoderRenderer = null
         conn = null
