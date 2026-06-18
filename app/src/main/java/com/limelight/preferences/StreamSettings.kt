@@ -126,7 +126,6 @@ class StreamSettings : AppCompatActivity() {
                 "category_enhanced_touch" -> R.drawable.phc_touch
                 "category_onscreen_controls" -> R.drawable.phc_game_controller
                 "category_float_ball" -> R.drawable.phc_eye
-                "category_crown_features" -> R.drawable.phc_crown
                 "category_host_settings" -> R.drawable.phc_host
                 "category_connection_settings" -> R.drawable.phc_plug
                 "category_ui_settings" -> R.drawable.phc_lightbulb

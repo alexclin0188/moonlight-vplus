@@ -1,7 +1,7 @@
 {
   "feature": "key_mapping_scheme",
   "title": "按键映射方案（Key Mapping Scheme）：Crown 迁移全流程",
-  "state": "building",
+  "state": "completed",
   "version": "1.1",
   "created": "2026-06-18",
   "updated": "2026-06-18",
@@ -136,28 +136,28 @@
     {
       "id": "T-15",
       "content": ".mkmp 导入入口：SAF 选 .mkmp → 解析 → 导入确认窗口（命名 + 覆盖选择）→ 写入数据库",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchE"
     },
     {
       "id": "T-16",
       "content": "虚拟手柄方案配置项与旧 VirtualController Preference 互通：oscOpacity/vibrateOsc/onlyL3R3/showGuideButton/halfHeightOscPortrait 读写同一个 SP",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchE"
     },
     {
       "id": "T-17",
       "content": "旧代码清理：StreamSettings.kt 中删除 category_crown_features 分类的全部条目",
-      "status": "pending",
+      "status": "completed",
       "priority": "low",
       "batch": "batchE"
     },
     {
       "id": "T-18",
       "content": "全量验证：.mkmp 文件导入导出往返测试 + 方案选择/编辑/切换 + 开关联动",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batchE"
     }

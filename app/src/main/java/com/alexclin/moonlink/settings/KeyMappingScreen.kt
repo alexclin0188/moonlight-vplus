@@ -146,6 +146,7 @@ fun KeyMappingScreen() {
     // ── .mkmp 导入 ──
     var showImportMkmpDialog by remember { mutableStateOf(false) }
     var importMkmpJson by remember { mutableStateOf("") }
+    var importMkmpOverwriteTarget by remember { mutableLongStateOf(-1L) } // -1 = 不覆盖
 
     val mkmpOpenLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
@@ -301,9 +302,10 @@ fun KeyMappingScreen() {
     if (showImportMkmpDialog) {
         ImportMkmpDialog(
             json = importMkmpJson,
-            onConfirm = { name ->
+            schemes = schemes,
+            onConfirm = { name, overrideTargetId ->
                 try {
-                    importMkmpFromJson(context, importMkmpJson, name)
+                    importMkmpFromJson(context, importMkmpJson, name, overrideTargetId)
                     refreshSchemes()
                     Toast.makeText(context, "方案「$name」已导入", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
@@ -445,7 +447,8 @@ private fun ImportMdatDialog(
 @Composable
 private fun ImportMkmpDialog(
     json: String,
-    onConfirm: (name: String) -> Unit,
+    schemes: List<ConfigScheme>,
+    onConfirm: (name: String, overrideTargetId: Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
     // 尝试从 JSON 中提取 name
@@ -455,24 +458,60 @@ private fun ImportMkmpDialog(
         } catch (_: Exception) { "导入方案" }
     }
     var name by remember { mutableStateOf(parsedName) }
+    var selectedId by remember { mutableLongStateOf(0L) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("导入按键方案") },
         text = {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { if (it.length <= 10) name = it },
-                label = { Text("方案名称（1-10 字符）") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { if (it.length <= 10) name = it },
+                    label = { Text("方案名称（1-10 字符）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(Modifier.height(12.dp))
+                Text("覆盖已有方案", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+
+                // 不覆盖，作为新方案导入
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { selectedId = 0L }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = selectedId == 0L, onClick = { selectedId = 0L })
+                    Spacer(Modifier.width(8.dp))
+                    Text("不覆盖，作为新方案导入", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                // 已有方案列表
+                schemes.forEach { scheme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedId = scheme.configId }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = selectedId == scheme.configId,
+                                    onClick = { selectedId = scheme.configId })
+                        Spacer(Modifier.width(8.dp))
+                        Text(scheme.name, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
         },
         confirmButton = {
             TextButton(
                 onClick = {
                     val n = name.trim()
-                    if (n.isNotEmpty()) onConfirm(n)
+                    if (n.isNotEmpty()) onConfirm(n, selectedId)
                 },
                 enabled = name.trim().isNotEmpty(),
             ) { Text("导入") }
@@ -532,14 +571,21 @@ private fun buildMkmpJson(db: SuperConfigDatabaseHelper, scheme: ConfigScheme): 
 
 /**
  * 从 .mkmp JSON 导入方案到数据库。
+ * @param overrideTargetId 不为 0L 时覆盖该已有方案，否则创建新方案。
  */
-private fun importMkmpFromJson(context: android.content.Context, json: String, newName: String) {
+private fun importMkmpFromJson(context: android.content.Context, json: String, newName: String, overrideTargetId: Long = 0L) {
     val root = JSONObject(json)
     val configObj = root.optJSONObject("config") ?: JSONObject()
     val elementsArray = root.optJSONArray("elements") ?: JSONArray()
 
-    val newConfigId = System.currentTimeMillis()
     val db = SuperConfigDatabaseHelper(context)
+
+    // 覆盖模式：先删除旧数据，复用原有 config_id
+    if (overrideTargetId != 0L) {
+        db.deleteConfig(overrideTargetId)
+    }
+
+    val newConfigId = if (overrideTargetId != 0L) overrideTargetId else System.currentTimeMillis()
 
     // 写入 config
     val configValues = ContentValues().apply {
