@@ -455,9 +455,9 @@
     <string name="title_screen_offset_y">Deslocamento vertical</string>
     <string name="summary_screen_offset_y">Deslocamento vertical da tela</string>
     
-    <!-- Crown features -->
-    <string name="category_crown_features">Área de recursos Crown</string>
-    <string name="title_crown_super_features">Super recursos Crown</string>
+    <!-- Key Mapping features (renamed from Crown) -->
+    <string name="category_crown_features">Área de Mapeamento de Teclas</string>
+    <string name="title_crown_super_features">Mapeamento de Teclas</string>
     <string name="summary_crown_super_features">Botões personalizados e configurações durante streaming, salvos em configurações personalizadas para troca rápida</string>
     <string name="title_export_super_config">Exportar configuração</string>
     <string name="summary_export_super_config">Exportar arquivo de configuração de botões personalizados e configurações de streaming</string>
@@ -467,14 +467,14 @@
     <string name="summary_merge_super_config">Mesclar novos botões de configuração na configuração existente</string>
     <string name="title_about_author">Este é V+ X Royal Edition</string>
     <string name="summary_about_author">Bilibili do Crown: XiguaHub, por favor siga-os. GitHub: https://github.com/WACrown/moonlight-android</string>
-    <string name="crown_toggle_button">Crown</string>
+    <string name="crown_toggle_button">Mapeamento de Teclas</string>
     <string name="crown_mode_normal">Modo normal</string>
-    <string name="crown_mode_crown">Modo Crown</string>
-    <string name="crown_switch_to_normal">Mudar para modo normal</string>
-    <string name="crown_switch_to_crown">Mudar para modo Crown</string>
-    <string name="game_menu_crown_function">Função Crown</string>
+    <string name="crown_mode_crown">Modo Mapeamento de Teclas</string>
+    <string name="crown_switch_to_normal">Sair do Mapeamento de Teclas</string>
+    <string name="crown_switch_to_crown">Ativar Mapeamento de Teclas</string>
+    <string name="game_menu_crown_function">Mapeamento de Teclas</string>
     <string name="game_menu_toggle_elements_visibility">Mostrar/Ocultar teclas virtuais</string>
-    <string name="game_menu_configure_crown_function">Configurar função Crown</string>
+    <string name="game_menu_configure_crown_function">Configurar Mapeamento de Teclas</string>
     <string name="toast_elements_visible">Botão virtual exibido</string>
     <string name="toast_elements_hidden">Botão virtual oculto</string>
     <string name="toast_back_key_menu_switch_1">A configuração da função crown foi encerrada</string>

@@ -102,6 +102,8 @@ class PreferenceConfiguration {
     @JvmField var flipFaceButtons = false
     var onscreenController = false
     var onscreenKeyboard = false
+    // 按键映射开关（替代旧 onscreenKeyboard 在按键映射中的角色）
+    var keyMappingEnabled = false
     @JvmField var onlyL3R3 = false
     @JvmField var showGuideButton = false
     @JvmField var halfHeightOscPortrait = false
@@ -290,6 +292,7 @@ class PreferenceConfiguration {
                 .putBoolean(CLIPBOARD_SYNC_IMAGE_PREF_STRING, enableClipboardSyncImage)
                 .putBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, touchscreenTrackpad)
                 .putBoolean(ENABLE_ENHANCED_TOUCH_PREF_STRING, enableEnhancedTouch)
+                .putBoolean(KEY_MAPPING_ENABLED_PREF_STRING, keyMappingEnabled)
 
             if (synchronous) {
                 editor.commit()
@@ -347,6 +350,7 @@ class PreferenceConfiguration {
         copy.showBitrateCard = this.showBitrateCard
         copy.showGyroCard = this.showGyroCard
         copy.showQuickKeyCard = this.showQuickKeyCard
+        copy.keyMappingEnabled = this.keyMappingEnabled
         return copy
     }
 
@@ -376,6 +380,7 @@ class PreferenceConfiguration {
         private const val USB_DRIVER_PREF_SRING = "checkbox_usb_driver"
         private const val VIDEO_FORMAT_PREF_STRING = "video_format"
         private const val ONSCREEN_KEYBOARD_PREF_STRING = "checkbox_show_onscreen_keyboard"
+        const val KEY_MAPPING_ENABLED_PREF_STRING = "checkbox_enable_key_mapping"
         private const val ONLY_L3_R3_PREF_STRING = "checkbox_only_show_L3R3"
         private const val SHOW_GUIDE_BUTTON_PREF_STRING = "checkbox_show_guide_button"
         private const val HALF_HEIGHT_OSC_PORTRAIT_PREF_STRING = "checkbox_half_height_osc_portrait"
@@ -1092,6 +1097,7 @@ class PreferenceConfiguration {
             config.usbDriver = prefs.getBoolean(USB_DRIVER_PREF_SRING, DEFAULT_USB_DRIVER)
             config.onscreenController = prefs.getBoolean(ONSCREEN_CONTROLLER_PREF_STRING, ONSCREEN_CONTROLLER_DEFAULT)
             config.onscreenKeyboard = prefs.getBoolean(ONSCREEN_KEYBOARD_PREF_STRING, ONSCREEN_KEYBOARD_DEFAULT)
+            config.keyMappingEnabled = prefs.getBoolean(KEY_MAPPING_ENABLED_PREF_STRING, false)
             config.onlyL3R3 = prefs.getBoolean(ONLY_L3_R3_PREF_STRING, ONLY_L3_R3_DEFAULT)
             config.showGuideButton = prefs.getBoolean(SHOW_GUIDE_BUTTON_PREF_STRING, SHOW_GUIDE_BUTTON_DEFAULT)
             config.halfHeightOscPortrait = prefs.getBoolean(HALF_HEIGHT_OSC_PORTRAIT_PREF_STRING, HALF_HEIGHT_OSC_PORTRAIT_DEFAULT)

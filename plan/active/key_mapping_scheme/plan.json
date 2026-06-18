@@ -1,0 +1,165 @@
+{
+  "feature": "key_mapping_scheme",
+  "title": "按键映射方案（Key Mapping Scheme）：Crown 迁移全流程",
+  "state": "building",
+  "version": "1.1",
+  "created": "2026-06-18",
+  "updated": "2026-06-18",
+  "dependsOn": ["stream_ui_completion"],
+  "description": "将旧 Crown（王冠）按键映射体系迁移至 MoonLink 新 UI：独立 Preference key、全屏方案选择页面、全屏编辑器入口、虚拟手柄方案合并、Settings Tab 按键配置管理、.mkmp 导入导出格式。旧 key/旧入口不做向后兼容。",
+  "batchGroups": [
+    {
+      "id": "batchA",
+      "name": "基础重构：Preference + 命名空间 + 字符串",
+      "items": ["T-01", "T-02", "T-03"]
+    },
+    {
+      "id": "batchB",
+      "name": "KeyMappingSection 连接 + 全屏方案选择页面",
+      "items": ["T-04", "T-05", "T-06", "T-07"]
+    },
+    {
+      "id": "batchC",
+      "name": "全屏编辑器 + 虚拟手柄方案",
+      "items": ["T-08", "T-09", "T-10"]
+    },
+    {
+      "id": "batchD",
+      "name": "Settings Tab：按键配置管理",
+      "items": ["T-11", "T-12", "T-13", "T-14"]
+    },
+    {
+      "id": "batchE",
+      "name": ".mkmp 格式 + 导入导出 + 收尾",
+      "items": ["T-15", "T-16", "T-17", "T-18"]
+    }
+  ],
+  "todos": [
+    {
+      "id": "T-01",
+      "content": "新增 Preference key `checkbox_enable_key_mapping`，独立于旧 key，不做向后兼容",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "T-02",
+      "content": "StreamEngine.isCrownFeatureEnabled → 读取新 Pref key",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "T-03",
+      "content": "字符串资源全面改名：王冠 → 按键映射方案 / 操控方案",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchA"
+    },
+    {
+      "id": "T-04",
+      "content": "KeyMappingSection 连接 engine.isCrownFeatureEnabled，加开启自动切换触控板模式",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "T-05",
+      "content": "全屏方案选择页面 Compose：标题栏+搜索栏+导入/新建按钮+方案列表（SuperConfigDatabaseHelper 读取）",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "T-06",
+      "content": "方案选择页面逻辑：新建方案 Dialog（1-10字符）+ 重命名 + 删除（default 不可删）+ 单选切换 current_config_id",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "T-07",
+      "content": "方案选择页面：虚拟手柄方案作为内置方案展示，展开其配置项（震动/透明度/L3R3/Guide按钮/竖屏半高/重置布局）",
+      "status": "completed",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "T-08",
+      "content": "全屏编辑器 Compose 壳：全屏 overlay + 顶部工具栏（方案名可编辑+添加按键/组合键按钮+退出保存）",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batchC"
+    },
+    {
+      "id": "T-09",
+      "content": "编辑器集成旧 ElementController：Compose AndroidView 嵌入 element_touch_view + 编辑模式切换，选中态展示属性编辑面板",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batchC"
+    },
+    {
+      "id": "T-10",
+      "content": "编辑器网格宽度滑块 + 工具栏位置自适应（双指滑动切换左右吸附）",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchC"
+    },
+    {
+      "id": "T-11",
+      "content": "Settings Tab 新建 Compose 页面「按键配置管理」，设置 Tab 分类入口",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batchD"
+    },
+    {
+      "id": "T-12",
+      "content": "旧 export_super_config 迁移为 Compose：方案选择弹窗 → SAF 导出 .mdat",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchD"
+    },
+    {
+      "id": "T-13",
+      "content": "旧 import_super_config 迁移为 Compose：SAF 选 .mdat → 解析 + 合并确认弹窗（新建方案/合并到所选）",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchD"
+    },
+    {
+      "id": "T-14",
+      "content": ".mkmp 导出入口：方案选择 → SAF 导出简化的 JSON（不含内部版本/MD5）",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchD"
+    },
+    {
+      "id": "T-15",
+      "content": ".mkmp 导入入口：SAF 选 .mkmp → 解析 → 导入确认窗口（命名 + 覆盖选择）→ 写入数据库",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchE"
+    },
+    {
+      "id": "T-16",
+      "content": "虚拟手柄方案配置项与旧 VirtualController Preference 互通：oscOpacity/vibrateOsc/onlyL3R3/showGuideButton/halfHeightOscPortrait 读写同一个 SP",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchE"
+    },
+    {
+      "id": "T-17",
+      "content": "旧代码清理：StreamSettings.kt 中删除 category_crown_features 分类的全部条目",
+      "status": "pending",
+      "priority": "low",
+      "batch": "batchE"
+    },
+    {
+      "id": "T-18",
+      "content": "全量验证：.mkmp 文件导入导出往返测试 + 方案选择/编辑/切换 + 开关联动",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batchE"
+    }
+  ]
+}

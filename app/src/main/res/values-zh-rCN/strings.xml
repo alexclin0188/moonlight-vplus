@@ -507,9 +507,9 @@
     <string name="title_screen_offset_y">垂直偏移</string>
     <string name="summary_screen_offset_y">画面垂直方向的偏移量。</string>
 
-    <!-- Crown feature area -->
-    <string name="category_crown_features">王冠的功能区</string>
-    <string name="title_crown_super_features">王冠的超级功能</string>
+    <!-- Key Mapping feature area (from Crown) -->
+    <string name="category_crown_features">按键映射功能</string>
+    <string name="title_crown_super_features">启用按键映射</string>
     <string name="summary_crown_super_features">串流中自定义按键和一些设置，并将这些保存到自定义可快速切换的配置中。</string>
     <string name="title_export_super_config">导出配置</string>
     <string name="summary_export_super_config">导出自定义按钮的和串流内设置的配置文件。</string>
@@ -520,21 +520,21 @@
     <string name="title_about_author">这是 V+ X 皇家版本</string>
     <string name="summary_about_author">王冠的B站：西瓜hub，请关注TA。\ngithub： https://github.com/WACrown/moonlight-android</string>
 
-    <!-- 王冠功能切换 -->
-    <string name="crown_toggle_button">王冠</string>
+    <!-- 按键映射切换（原王冠功能） -->
+    <string name="crown_toggle_button">按键映射</string>
     <string name="crown_mode_normal">普通模式</string>
-    <string name="crown_mode_crown">王冠模式</string>
-    <string name="crown_switch_to_normal">退出王冠配置</string>
-    <string name="crown_switch_to_crown">启用王冠模式</string>
-    <string name="game_menu_crown_function">王冠功能</string>
+    <string name="crown_mode_crown">按键映射模式</string>
+    <string name="crown_switch_to_normal">退出按键映射</string>
+    <string name="crown_switch_to_crown">启用按键映射</string>
+    <string name="game_menu_crown_function">按键映射</string>
     <string name="game_menu_toggle_elements_visibility">显示/隐藏虚拟按键</string>
-    <string name="game_menu_configure_crown_function">配置王冠功能</string>
+    <string name="game_menu_configure_crown_function">配置按键映射</string>
     <string name="toast_elements_visible">虚拟按键已显示</string>
     <string name="toast_elements_hidden">虚拟按键已隐藏</string>
-    <string name="toast_back_key_menu_switch_1">已退出王冠功能配置</string>
-    <string name="toast_back_key_menu_switch_2">已进入王冠功能配置</string>
-    <string name="game_menu_edit_mode">王冠按键编辑模式</string>
-    <string name="game_menu_configure_settings">王冠按键配置模式</string>
+    <string name="toast_back_key_menu_switch_1">已退出按键映射配置</string>
+    <string name="toast_back_key_menu_switch_2">已进入按键映射配置</string>
+    <string name="game_menu_edit_mode">按键映射编辑模式</string>
+    <string name="game_menu_configure_settings">按键映射配置模式</string>
 
     <!-- External display -->
     <string name="title_use_external_display">使用外接显示器</string>
@@ -872,7 +872,7 @@
     <string name="layout_address_list_item_cd_30f7d">连接</string>
     <string name="layout_config_item_text_c8ce4">重命名</string>
     <string name="layout_config_item_text_2f4aa">删除</string>
-    <string name="layout_custom_dialog_text_c9831">启用王冠菜单</string>
+    <string name="layout_custom_dialog_text_c9831">启用按键映射菜单</string>
     <string name="layout_custom_dialog_text_6d521">睡眠</string>
     <string name="layout_custom_dialog_text_c3992">退出</string>
     <string name="layout_custom_dialog_text_f090a">特殊按键 Shortcuht</string>
@@ -950,7 +950,7 @@
     <string name="layout_page_config_text_cd2c1">游戏震动</string>
     <string name="layout_page_config_text_f4651">按键震动</string>
     <string name="layout_page_config_text_66ab5">新增</string>
-    <string name="layout_page_config_text_df603">退出王冠配置</string>
+    <string name="layout_page_config_text_df603">退出按键映射配置</string>
     <string name="layout_page_config_text_global_style">全局按键样式</string>
     <string name="layout_page_config_text_global_border_color">边框颜色</string>
     <string name="layout_page_config_text_global_text_color">文字颜色</string>
@@ -1125,7 +1125,7 @@
     <string name="game_menu_off">关闭</string>
     <string name="toast_local_cursor_enabled">本地光标渲染已开启</string>
     <string name="toast_local_cursor_disabled">本地光标渲染已关闭</string>
-    <string name="toast_crown_not_enabled">王冠功能未启用</string>
+    <string name="toast_crown_not_enabled">按键映射功能未启用</string>
     <string name="game_menu_toggle_touch">开启/关闭触控</string>
     <string name="toast_touch_enabled">触控已开启</string>
     <string name="toast_touch_disabled">触控已关闭</string>

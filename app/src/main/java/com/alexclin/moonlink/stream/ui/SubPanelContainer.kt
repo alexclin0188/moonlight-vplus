@@ -109,6 +109,7 @@ fun SubPanelContainer(
     detailPage: DetailPage,
     onDetailPageChange: (DetailPage) -> Unit,
     onOpenKeyboardShortcuts: () -> Unit = {},
+    onOpenFullScreenPage: (FullScreenPage) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -160,6 +161,7 @@ fun SubPanelContainer(
                         onOpenKeyboardShortcuts = onOpenKeyboardShortcuts,
                         onEditActionClick = { onDetailPageChange(DetailPage.QUICK_ACTION_EDITOR) },
                         onNavigate = { onDetailPageChange(it) },
+                        onOpenFullScreenPage = onOpenFullScreenPage,
                     )
                 }
                 DetailPage.DISPLAY -> {
@@ -217,6 +219,7 @@ private fun MainListView(
     onOpenKeyboardShortcuts: () -> Unit = {},
     onEditActionClick: () -> Unit,
     onNavigate: (DetailPage) -> Unit,
+    onOpenFullScreenPage: (FullScreenPage) -> Unit = {},
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -231,7 +234,7 @@ private fun MainListView(
         // ── 分隔线：快捷操作区与按键映射的分隔 ──
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-        item { KeyMappingSection(engine = engine) }
+        item { KeyMappingSection(engine = engine, onOpenFullScreenPage = onOpenFullScreenPage) }
 
         item { TouchModeSection(engine = engine) }
 
@@ -350,10 +353,13 @@ private fun PanZoomSection(engine: StreamEngine) {
 }
 
 @Composable
-private fun KeyMappingSection(engine: StreamEngine) {
+private fun KeyMappingSection(
+    engine: StreamEngine,
+    onOpenFullScreenPage: (FullScreenPage) -> Unit = {},
+) {
     val context = LocalContext.current
-    var enabled by remember { mutableStateOf(false) }
-    var expanded by remember { mutableStateOf(false) }
+    var enabled by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
+    var expanded by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
 
     Column {
         Row(
@@ -366,8 +372,12 @@ private fun KeyMappingSection(engine: StreamEngine) {
                  color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Switch(checked = enabled, onCheckedChange = { newValue ->
                 enabled = newValue
+                engine.setCrownFeatureEnabled(newValue)
                 if (newValue) {
-                    engine.applyTouchMode(2) // 切换为触控板模式
+                    // 自动切换触控板模式
+                    engine.prefConfig.enableEnhancedTouch = false
+                    engine.prefConfig.enableNativeMousePointer = false
+                    engine.prefConfig.touchscreenTrackpad = true
                     engine.prefConfig.writePreferences(context)
                     Toast.makeText(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT).show()
                 }
@@ -377,31 +387,41 @@ private fun KeyMappingSection(engine: StreamEngine) {
 
         AnimatedVisibility(visible = expanded) {
             Column(Modifier.padding(start = 44.dp, end = 12.dp, bottom = 8.dp)) {
+                // 1. 切换按键映射方案 → 全屏方案选择页
                 TextButton(onClick = {
-                    Toast.makeText(context, "方案选择（待对接旧编辑器）", Toast.LENGTH_SHORT).show()
+                    onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
                 }, modifier = Modifier.fillMaxWidth()) {
                     Text("切换按键映射方案 >")
                 }
 
+                // 2. 编辑当前方案 → 全屏编辑器
                 TextButton(onClick = {
-                    Toast.makeText(context, "编辑方案（待对接旧编辑器）", Toast.LENGTH_SHORT).show()
+                    onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_EDITOR)
                 }, modifier = Modifier.fillMaxWidth()) {
                     Text("编辑当前方案 >")
                 }
 
+                // 3. 其它设置 → 展开
                 var showOther by remember { mutableStateOf(false) }
                 TextButton(onClick = { showOther = !showOther }, modifier = Modifier.fillMaxWidth()) {
                     Text("其它设置 ${if (showOther) "▲" else "▼"}")
                 }
                 AnimatedVisibility(visible = showOther) {
-                    Column {
-                        Text("其它设置项（待完善）", style = MaterialTheme.typography.bodySmall,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Column(Modifier.padding(start = 12.dp)) {
+                        ExpandableOtherSettings(engine = engine)
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ExpandableOtherSettings(engine: StreamEngine) {
+    val context = LocalContext.current
+    Text("触控开关、灵敏度、滚轮、震动等设置（待完善）",
+         style = MaterialTheme.typography.bodySmall,
+         color = MaterialTheme.colorScheme.onSurfaceVariant)
 }
 
 private enum class TouchMode(val label: String) {

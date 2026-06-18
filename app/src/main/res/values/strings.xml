@@ -575,9 +575,9 @@
     <string name="title_screen_offset_y">Vertical Offset</string>
     <string name="summary_screen_offset_y">Vertical offset of the screen</string>
     
-    <!-- Crown feature area -->
-    <string name="category_crown_features">Crown Feature Area</string>
-    <string name="title_crown_super_features">Crown Super Features</string>
+    <!-- Key Mapping feature area (renamed from Crown) -->
+    <string name="category_crown_features">Key Mapping Features</string>
+    <string name="title_crown_super_features">Key Mapping</string>
     <string name="summary_crown_super_features">Custom buttons and settings during streaming, saved to custom configurations for quick switching</string>
     <string name="title_export_super_config">Export Configuration</string>
     <string name="summary_export_super_config">Export custom button and streaming settings configuration file</string>
@@ -588,21 +588,21 @@
     <string name="title_about_author">This is V+ X Royal Edition</string>
     <string name="summary_about_author">Crown\'s Bilibili: XiguaHub, please follow them. GitHub: https://github.com/WACrown/moonlight-android</string>
     
-    <!-- Crown feature toggle -->
-    <string name="crown_toggle_button">Crown</string>
+    <!-- Key Mapping toggle (renamed from Crown) -->
+    <string name="crown_toggle_button">Key Mapping</string>
     <string name="crown_mode_normal">Normal Mode</string>
-    <string name="crown_mode_crown">Crown Mode</string>
-    <string name="crown_switch_to_normal">Switch to Normal Mode</string>
-    <string name="crown_switch_to_crown">Switch to Crown Mode</string>
-    <string name="game_menu_crown_function">Crown Function</string>
+    <string name="crown_mode_crown">Key Mapping Mode</string>
+    <string name="crown_switch_to_normal">Exit Key Mapping</string>
+    <string name="crown_switch_to_crown">Enable Key Mapping</string>
+    <string name="game_menu_crown_function">Key Mapping</string>
     <string name="game_menu_toggle_elements_visibility">Show/Hide Virtual Keys</string>
-    <string name="game_menu_configure_crown_function">Configure Crown Function</string>
+    <string name="game_menu_configure_crown_function">Configure Key Mapping</string>
     <string name="toast_elements_visible">Virtual button displayed</string>
     <string name="toast_elements_hidden">Virtual button hidden</string>
-    <string name="toast_back_key_menu_switch_1">The crown function configuration has been exited</string>
-    <string name="toast_back_key_menu_switch_2">Entered the crown function configuration</string>
-    <string name="game_menu_edit_mode">Crown button editing mode</string>
-    <string name="game_menu_configure_settings">Crown button configuration mode</string>
+    <string name="toast_back_key_menu_switch_1">Exited key mapping configuration</string>
+    <string name="toast_back_key_menu_switch_2">Entered key mapping configuration</string>
+    <string name="game_menu_edit_mode">Key mapping editing mode</string>
+    <string name="game_menu_configure_settings">Key mapping configuration mode</string>
     
     <!-- External display -->
     <string name="title_use_external_display">Use External Display</string>

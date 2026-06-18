@@ -78,6 +78,7 @@ import android.widget.FrameLayout
 import androidx.compose.ui.viewinterop.AndroidView
 import com.limelight.binding.input.advance_setting.KeyboardUIController
 import androidx.activity.compose.BackHandler
+import com.alexclin.moonlink.stream.ui.panels.KeyMappingSchemeSelector
 import android.view.View
 
 /** 面板展开状态 */
@@ -90,6 +91,14 @@ enum class PanelState {
     SUB_PANEL,
     /** 竖向窄条 + 键盘子面板可见 */
     KEYBOARD_PANEL,
+}
+
+/** 全屏覆盖页面状态 */
+enum class FullScreenPage {
+    /** 按键映射方案选择器 */
+    KEY_MAPPING_SCHEME_SELECTOR,
+    /** 按键映射方案编辑器 */
+    KEY_MAPPING_EDITOR,
 }
 
 /**
@@ -115,6 +124,14 @@ fun StreamOverlay(
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFloatingKeyboard by remember { mutableStateOf(false) }
     var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
+    var fullScreenPage by remember { mutableStateOf<FullScreenPage?>(null) }
+
+    // ── 全屏页面 BackHandler ──
+    if (fullScreenPage != null) {
+        BackHandler {
+            fullScreenPage = null
+        }
+    }
 
     // 操作面板自动隐藏：窄面板开启且用户无操作时2秒自动隐藏
     LaunchedEffect(panelState) {
@@ -359,8 +376,42 @@ fun StreamOverlay(
                     activeEntry = "keyboard"
                     keyboardInitialTab = 1  // 跳转到"快捷键"标签
                 },
+                onOpenFullScreenPage = { fullScreenPage = it },
                 modifier = Modifier.offset(x = (-60).dp),
             )
+        }
+
+        // ── 全屏覆盖页面（方案选择/编辑器） ──
+        fullScreenPage?.let { page ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color(0xCC000000))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = { /* 不关闭，由内部返回按钮或 BackHandler 处理 */ }
+                    ),
+            ) {
+                when (page) {
+                    FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR -> {
+                        KeyMappingSchemeSelector(
+                            engine = engine,
+                            onClose = { fullScreenPage = null },
+                            onOpenEditor = { fullScreenPage = FullScreenPage.KEY_MAPPING_EDITOR },
+                        )
+                    }
+                    FullScreenPage.KEY_MAPPING_EDITOR -> {
+                        // 全屏编辑器（Batch C 实现）
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("编辑器（待实现）", color = Color.White)
+                        }
+                    }
+                }
+            }
         }
 
         // ── 键盘面板（横向填满全屏底部 tabbar 模式，始终从底部滑入） ──
