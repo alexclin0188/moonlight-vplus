@@ -31,7 +31,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Computer
@@ -83,11 +82,14 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.MoonLinkQuickActions
+import com.alexclin.moonlink.stream.ui.common.RestartHintBanner
 import com.alexclin.moonlink.stream.ui.common.getActionIcon
 import com.alexclin.moonlink.stream.ui.common.getActionLabel
 import com.alexclin.moonlink.stream.ui.panels.QuickActionRow
 import com.limelight.QuickActionRegistry
+import android.view.KeyEvent
 import android.widget.Toast
+import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.stream.ui.display.DisplaySettingsPanel
 
 enum class DetailPage {
@@ -563,51 +565,129 @@ private fun PeripheralsSection(
 
 @Composable
 private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
+    val context = LocalContext.current
+    val pref = engine.prefConfig
+
     DetailScaffold(title = "体感助手", onBack = onBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
+            // 体感总开关（当前激活的模式）
             item {
-                // 总开关
-                var gyroEnabled by remember { mutableStateOf(false) }
-                SettingSwitch("体感开关", gyroEnabled) { gyroEnabled = it }
+                val gyroActive = pref.gyroToRightStick || pref.gyroToMouse
+                var gyroEnabled by remember { mutableStateOf(gyroActive) }
+                SettingSwitch("体感开关", gyroEnabled) {
+                    gyroEnabled = it
+                    if (!it) {
+                        engine.disableGyro()
+                    } else {
+                        // 启用时恢复上次模式（默认右摇杆）
+                        engine.enableGyroRightStick()
+                    }
+                    pref.writePreferences(context)
+                }
             }
 
+            // 模式
             item {
-                // 模式 (简化：两个 RadioButton)
-                var gyroMode by remember { mutableIntStateOf(0) } // 0=右摇杆, 1=鼠标
+                var gyroMode by remember { mutableIntStateOf(
+                    if (pref.gyroToMouse) 1 else 0
+                ) }
+                Text("模式", style = MaterialTheme.typography.bodyMedium,
+                     modifier = Modifier.padding(bottom = 4.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = gyroMode == 0, onClick = { gyroMode = 0 })
-                    Text("右摇杆", Modifier.padding(end = 8.dp))
-                    RadioButton(selected = gyroMode == 1, onClick = { gyroMode = 1 })
+                    RadioButton(selected = gyroMode == 0, onClick = {
+                        gyroMode = 0
+                        engine.enableGyroRightStick()
+                        pref.writePreferences(context)
+                    })
+                    Text("右摇杆", Modifier.padding(end = 16.dp))
+                    RadioButton(selected = gyroMode == 1, onClick = {
+                        gyroMode = 1
+                        engine.enableGyroMouse()
+                        pref.writePreferences(context)
+                    })
                     Text("鼠标")
                 }
             }
 
+            // 灵敏度 (0.5x~3.0x, 25 级)
             item {
-                // 灵敏度 (0.5x~3.0x, 25 级)
-                var sensitivity by remember { mutableFloatStateOf(1.0f) }
+                val initSens = if (pref.gyroSensitivityMultiplier > 0f)
+                    pref.gyroSensitivityMultiplier else 1.0f
+                var sensitivity by remember { mutableFloatStateOf(initSens) }
                 Text("灵敏度: ${"%.1f".format(sensitivity)}x")
-                Slider(value = sensitivity, onValueChange = { sensitivity = it }, valueRange = 0.5f..3.0f)
+                Slider(
+                    value = sensitivity,
+                    onValueChange = { sensitivity = it },
+                    onValueChangeFinished = {
+                        pref.gyroSensitivityMultiplier = sensitivity
+                        pref.writePreferences(context)
+                    },
+                    valueRange = 0.5f..3.0f,
+                )
             }
 
+            // X/Y 轴反转
             item {
-                // X/Y 轴反转
-                var invertX by remember { mutableStateOf(false) }
-                var invertY by remember { mutableStateOf(false) }
-                SettingSwitch("X轴反转", invertX) { invertX = it }
-                SettingSwitch("Y轴反转", invertY) { invertY = it }
+                var invertX by remember { mutableStateOf(pref.gyroInvertXAxis) }
+                var invertY by remember { mutableStateOf(pref.gyroInvertYAxis) }
+                SettingSwitch("X轴反转", invertX) {
+                    invertX = it; pref.gyroInvertXAxis = it; pref.writePreferences(context)
+                }
+                SettingSwitch("Y轴反转", invertY) {
+                    invertY = it; pref.gyroInvertYAxis = it; pref.writePreferences(context)
+                }
             }
 
+            // 激活按键
             item {
-                // 激活按键
-                var activateKey by remember { mutableIntStateOf(0) } // 0=始终, 1=LT, 2=RT
+                val keyToIdx = mapOf(
+                    ControllerGyroManager.GYRO_ACTIVATION_ALWAYS to 0,
+                    KeyEvent.KEYCODE_BUTTON_L2 to 1,
+                    KeyEvent.KEYCODE_BUTTON_R2 to 2,
+                )
+                val idxToKey = mapOf(
+                    0 to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS,
+                    1 to KeyEvent.KEYCODE_BUTTON_L2,
+                    2 to KeyEvent.KEYCODE_BUTTON_R2,
+                )
+                val initIdx = keyToIdx[pref.gyroActivationKeyCode] ?: 1
+                var activateKey by remember { mutableIntStateOf(initIdx) }
+
                 Text("激活按键:", style = MaterialTheme.typography.bodyMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(selected = activateKey == 0, onClick = { activateKey = 0 }, label = { Text("始终") })
-                    FilterChip(selected = activateKey == 1, onClick = { activateKey = 1 }, label = { Text("LT") })
-                    FilterChip(selected = activateKey == 2, onClick = { activateKey = 2 }, label = { Text("RT") })
+                    FilterChip(
+                        selected = activateKey == 0,
+                        onClick = {
+                            activateKey = 0
+                            pref.gyroActivationKeyCode = ControllerGyroManager.GYRO_ACTIVATION_ALWAYS
+                            pref.writePreferences(context)
+                            engine.recomputeGyroHold()
+                        },
+                        label = { Text("始终") },
+                    )
+                    FilterChip(
+                        selected = activateKey == 1,
+                        onClick = {
+                            activateKey = 1
+                            pref.gyroActivationKeyCode = KeyEvent.KEYCODE_BUTTON_L2
+                            pref.writePreferences(context)
+                            engine.recomputeGyroHold()
+                        },
+                        label = { Text("LT") },
+                    )
+                    FilterChip(
+                        selected = activateKey == 2,
+                        onClick = {
+                            activateKey = 2
+                            pref.gyroActivationKeyCode = KeyEvent.KEYCODE_BUTTON_R2
+                            pref.writePreferences(context)
+                            engine.recomputeGyroHold()
+                        },
+                        label = { Text("RT") },
+                    )
                 }
             }
         }
@@ -688,80 +768,57 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
     }
 }
 
-// ── Detail Pages ──
-
-@Composable
-private fun DetailScaffold(
-    title: String,
-    onBack: () -> Unit,
-    content: @Composable () -> Unit,
-) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-                title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-        HorizontalDivider()
-        content()
-    }
-}
-
 @Composable
 private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
     val context = LocalContext.current
     val pref = engine.prefConfig
 
-    DetailScaffold(title = "主机设置", onBack = onBack) {
+    val handleBack = {
+        if (engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+            engine.changeResolution()
+        } else {
+            onBack()
+        }
+    }
+
+    DetailScaffold(title = "主机设置", onBack = handleBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
-            // 7个Switch配置项
+            // ── 需要重启提示横幅 ──
+            if (engine.displaySettingsRestartPending) {
+                item { RestartHintBanner(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) }
+            }
+
+            // 实时生效
             item {
                 var v by remember { mutableStateOf(pref.lockScreenAfterDisconnect) }
                 SettingSwitch("断开串流时锁定屏幕", v) { v = it; pref.lockScreenAfterDisconnect = it; pref.writePreferences(context) }
             }
+
+            // ── 以下选项需重启串流才能生效 ──
             item {
                 var v by remember { mutableStateOf(pref.enableSops) }
-                SettingSwitch("自动优化主机设置", v) { v = it; pref.enableSops = it; pref.writePreferences(context) }
+                SettingSwitch("自动优化主机设置", v) { v = it; pref.enableSops = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var v by remember { mutableStateOf(pref.playHostAudio) }
-                SettingSwitch("在电脑上播放声音", v) { v = it; pref.playHostAudio = it; pref.writePreferences(context) }
-            }
-            item {
-                var v by remember { mutableStateOf(pref.swapQuitAndDisconnect) }
-                SettingSwitch("交换退出/断开按钮功能", v) { v = it; pref.swapQuitAndDisconnect = it; pref.writePreferences(context) }
+                SettingSwitch("在电脑上播放声音", v) { v = it; pref.playHostAudio = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var controlOnly by remember { mutableStateOf(pref.controlOnly) }
                 SettingSwitch("仅控制模式", controlOnly) {
-                    controlOnly = it; pref.controlOnly = it; pref.writePreferences(context)
+                    controlOnly = it; pref.controlOnly = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true
                 }
             }
             item {
                 var v by remember { mutableStateOf(pref.enableClipboardSyncText) }
-                SettingSwitch("同步剪贴板文本", v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context) }
+                SettingSwitch("同步剪贴板文本", v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var v by remember { mutableStateOf(pref.enableClipboardSyncImage) }
-                SettingSwitch("同步剪贴板图片", v) { v = it; pref.enableClipboardSyncImage = it; pref.writePreferences(context) }
+                SettingSwitch("同步剪贴板图片", v) { v = it; pref.enableClipboardSyncImage = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
         }
     }
@@ -988,5 +1045,6 @@ private fun SettingSwitch(label: String, checked: Boolean, onToggle: (Boolean) -
         Switch(checked = checked, onCheckedChange = onToggle)
     }
 }
+
 
 

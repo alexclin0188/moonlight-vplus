@@ -170,6 +170,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     @Volatile
     var applyDisplaySettings: Boolean = false
 
+    /** Evdev 修饰键追踪状态（CR-2）：当前按住的所有修饰键位掩码 */
+    private var currentModifiers: Byte = 0
+
     /** 当前显示的对话框引用，release 时需关闭防止 WindowLeaked */
     private var activeDialog: android.app.AlertDialog? = null
     private var pcUuid: String? = null
@@ -867,8 +870,50 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     fun toggleGyro() {
-        prefConfig.gyroToRightStick = !prefConfig.gyroToRightStick
-        displayTransientMessage(if (prefConfig.gyroToRightStick) "体感已开启" else "体感已关闭")
+        val enable = !prefConfig.gyroToRightStick
+        if (enable) {
+            enableGyroRightStick()
+        } else {
+            disableGyro()
+        }
+        displayTransientMessage(if (enable) "体感已开启" else "体感已关闭")
+    }
+
+    /** 开启体感右摇杆模式，注册陀螺仪传感器 */
+    fun enableGyroRightStick() {
+        prefConfig.gyroToRightStick = true
+        prefConfig.gyroToMouse = false
+        controllerHandler?.gyroManager?.setGyroToRightStickEnabled(true)
+        LimeLog.info("StreamEngine: 体感右摇杆模式已启用")
+    }
+
+    /** 开启体感鼠标模式，注册陀螺仪传感器到默认上下文 */
+    fun enableGyroMouse() {
+        prefConfig.gyroToMouse = true
+        prefConfig.gyroToRightStick = false
+        controllerHandler?.gyroManager?.setGyroToMouseEnabled(true)
+        LimeLog.info("StreamEngine: 体感鼠标模式已启用")
+    }
+
+    /** 关闭所有体感模式，注销陀螺仪传感器 */
+    fun disableGyro() {
+        val hadRightStick = prefConfig.gyroToRightStick
+        val hadMouse = prefConfig.gyroToMouse
+        prefConfig.gyroToRightStick = false
+        prefConfig.gyroToMouse = false
+        if (hadRightStick) {
+            controllerHandler?.gyroManager?.setGyroToRightStickEnabled(false)
+        }
+        if (hadMouse) {
+            controllerHandler?.gyroManager?.setGyroToMouseEnabled(false)
+        }
+        LimeLog.info("StreamEngine: 体感已关闭")
+    }
+
+    /** 激活按键发生变化时重新计算所有控制器的 gyroHold 状态 */
+    fun recomputeGyroHold() {
+        controllerHandler?.gyroManager?.recomputeGyroHoldForAllContexts()
+        LimeLog.info("StreamEngine: gyroHold 已重新计算")
     }
 
     fun toggleAdaptiveBitrate() {
@@ -950,6 +995,19 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             com.limelight.binding.input.KeyboardTranslator.VK_MENU -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_ALT
             else -> 0
         }
+    }
+
+    /**
+     * 根据 evdev scancode 映射修饰键位掩码（CR-2）。
+     * 用于 EvdevCaptureProvider 路径的 keyboardEvent() 调用链，
+     * 与 [getKeyModifier]（使用 KeyboardTranslator.VK_* 常量）不同。
+     */
+    private fun getKeyModifierByEvdevCode(keyCode: Short): Byte = when (keyCode.toInt()) {
+        0x2A, 0x36 -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_SHIFT
+        0x1D        -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_CTRL
+        0x38        -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_ALT
+        0x5B        -> com.limelight.nvstream.input.KeyboardPacket.MODIFIER_META
+        else        -> 0
     }
 
     // ========================================================================
@@ -1335,8 +1393,20 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     override fun keyboardEvent(buttonDown: Boolean, keyCode: Short) {
-        // 鼠标/键盘事件走 conn 直接发送键盘码（基础支持）
-        conn?.sendKeyboardInput(keyCode, if (buttonDown) 0x01 else 0x00, 0x00, 0x00)
+        val modifierBit = getKeyModifierByEvdevCode(keyCode)
+        if (modifierBit != 0.toByte()) {
+            // 修饰键（Shift/Ctrl/Alt/Win）按下/释放 → 更新追踪状态
+            currentModifiers = if (buttonDown) {
+                (currentModifiers.toInt() or modifierBit.toInt()).toByte()
+            } else {
+                (currentModifiers.toInt() and modifierBit.toInt().inv()).toByte()
+            }
+        }
+        // 发送按键事件，使用协议正确的 KEY_DOWN(0x03)/KEY_UP(0x04) 和当前修饰键状态
+        conn?.sendKeyboardInput(keyCode,
+            if (buttonDown) com.limelight.nvstream.input.KeyboardPacket.KEY_DOWN
+            else com.limelight.nvstream.input.KeyboardPacket.KEY_UP,
+            currentModifiers, 0)
     }
 
     // ========================================================================

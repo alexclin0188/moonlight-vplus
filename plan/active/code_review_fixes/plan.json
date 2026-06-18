@@ -1,0 +1,90 @@
+{
+  "feature": "code_review_fixes",
+  "title": "代码审查修复：StreamEngine 键盘事件损坏 + DisplaySettingsPanel VDD/外接缺失 + DetailScaffold 重复 + 多项低优问题",
+  "state": "approved",
+  "version": "1.0",
+  "created": "2026-06-18",
+  "updated": "2026-06-18",
+  "dependsOn": ["display_settings_redesign"],
+  "description": "基于代码审查发现的 10 个问题，修复 StreamEngine.keyboardEvent 行为编码错误、缺少 VDD/外接显示器开关、DetailScaffold 重复实现等缺陷。由代码审查报告驱动，用户确认需要修复。",
+  "batches": [
+    {
+      "id": "batchA",
+      "name": "严重修复：StreamEngine.keyboardEvent 行为编码 + 修饰键",
+      "items": ["CR-1", "CR-2"]
+    },
+    {
+      "id": "batchB",
+      "name": "功能补齐：VDD 虚拟显示器 + 外接显示器开关实现",
+      "items": ["CR-3"]
+    },
+    {
+      "id": "batchC",
+      "name": "重构：提取共享 DetailScaffold 组件",
+      "items": ["CR-4"]
+    },
+    {
+      "id": "batchD",
+      "name": "低优修复：双重写入/定时器/阈值/不一致问题",
+      "items": ["CR-5", "CR-6", "CR-7", "CR-8"]
+    }
+  ],
+  "todos": [
+    {
+      "id": "CR-1",
+      "content": "StreamEngine.kt keyboardEvent() 修复：KEY_DOWN=0x03 / KEY_UP=0x04 替代 0x01/0x00",
+      "status": "pending",
+      "priority": "critical",
+      "batch": "batchA"
+    },
+    {
+      "id": "CR-2",
+      "content": "StreamEngine.kt keyboardEvent() 修复：增加内部修饰键追踪（Path C），为 keyboardEvent 调用链（EvdevListener 路径）添加 getModifierBit 追踪 + currentModifiers 状态变量，在 sendKeyboardInput 中正确传递修饰键位",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchA"
+    },
+    {
+      "id": "CR-3",
+      "content": "DisplaySettingsPanel.kt 新增 VddSection：VDD虚拟显示器 + 使用外接显示器两个 Switch（参考旧 DisplaySection 逻辑），VDD 写入 display_settings SP 的 vdd_enabled，外接写入 prefConfig.useExternalDisplay",
+      "status": "pending",
+      "priority": "high",
+      "batch": "batchB"
+    },
+    {
+      "id": "CR-4",
+      "content": "提取共享 DetailScaffold：统一 SubPanelContainer.kt 和 DisplaySettingsPanel.kt 中的 private DetailScaffold 为共享组件，消除视觉差异（Spacer/图标尺寸对齐）",
+      "status": "pending",
+      "priority": "medium",
+      "batch": "batchC"
+    },
+    {
+      "id": "CR-5",
+      "content": "FramePacingSelector 修复：RadioButton.onClick 设为空操作，由 Row.clickable 统一处理（消除 writePreferences 双重写入）",
+      "status": "pending",
+      "priority": "low",
+      "batch": "batchD"
+    },
+    {
+      "id": "CR-6",
+      "content": "VideoSwitches 修复：反转分辨率/可旋转画面 增加 writeDirectPrefs 调用 + 可旋转画面增加 displaySettingsRestartPending",
+      "status": "pending",
+      "priority": "low",
+      "batch": "batchD"
+    },
+    {
+      "id": "CR-7",
+      "content": "移除自动收起计时器或增加交互重置逻辑（FpsSelector + ABR 模式两个 LaunchedEffect），避免 5 秒自动收起打断用户操作",
+      "status": "pending",
+      "priority": "low",
+      "batch": "batchD"
+    },
+    {
+      "id": "CR-8",
+      "content": "BitrateUtils.getPresetByKbps 阈值 kbps <= 1 改为 kbps <= 0",
+      "status": "pending",
+      "priority": "low",
+      "batch": "batchD"
+    }
+  ]
+}

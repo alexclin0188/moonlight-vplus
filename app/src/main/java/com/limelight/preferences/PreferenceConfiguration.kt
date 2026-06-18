@@ -121,7 +121,6 @@ class PreferenceConfiguration {
     var screenCombinationMode = 0
     var vddScreenCombinationMode = 0
     var lockScreenAfterDisconnect = false
-    var swapQuitAndDisconnect = false
     var bindAllUsb = false
     var mouseEmulation = false
     var analogStickForScrolling: AnalogStickForScrolling = AnalogStickForScrolling.NONE
@@ -287,7 +286,6 @@ class PreferenceConfiguration {
                 .putBoolean(SOPS_PREF_STRING, enableSops)
                 .putBoolean(STRETCH_PREF_STRING, stretchVideo)
                 .putBoolean(LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING, lockScreenAfterDisconnect)
-                .putBoolean(SWAP_QUIT_AND_DISCONNECT_PERF_STRING, swapQuitAndDisconnect)
                 .putBoolean(CLIPBOARD_SYNC_TEXT_PREF_STRING, enableClipboardSyncText)
                 .putBoolean(CLIPBOARD_SYNC_IMAGE_PREF_STRING, enableClipboardSyncImage)
                 .putBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, touchscreenTrackpad)
@@ -409,7 +407,6 @@ class PreferenceConfiguration {
         private const val TOOL_PANEL_AUTO_HIDE_MODE_PREF_STRING = "tool_panel_auto_hide_mode"
         private const val ENABLE_STUN_PREF_STRING = "checkbox_enable_stun"
         private const val LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING = "checkbox_lock_screen_after_disconnect"
-        private const val SWAP_QUIT_AND_DISCONNECT_PERF_STRING = "checkbox_swap_quit_and_disconnect"
         private const val SCREEN_COMBINATION_MODE_PREF_STRING = "list_screen_combination_mode"
         private const val FRAME_PACING_PREF_STRING = "frame_pacing"
         private const val ABSOLUTE_MOUSE_MODE_PREF_STRING = "checkbox_absolute_mouse_mode"
@@ -1160,7 +1157,6 @@ class PreferenceConfiguration {
             config.vddScreenCombinationMode = -1
 
             config.lockScreenAfterDisconnect = prefs.getBoolean(LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING, DEFAULT_LATENCY_TOAST)
-            config.swapQuitAndDisconnect = prefs.getBoolean(SWAP_QUIT_AND_DISCONNECT_PERF_STRING, DEFAULT_LATENCY_TOAST)
             config.absoluteMouseMode = prefs.getBoolean(ABSOLUTE_MOUSE_MODE_PREF_STRING, DEFAULT_ABSOLUTE_MOUSE_MODE)
 
             // 对于没有触摸屏的设备，默认启用本地鼠标指针

@@ -238,10 +238,11 @@ fun StreamOverlay(
                         interactionSource = remember { MutableInteractionSource() },
                     ) {
                         // 点击外部关闭时，如有待重启变更加载设置
-                        if (activeEntry == "operations" && engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+                        if (panelState == PanelState.SUB_PANEL && engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
                             engine.changeResolution()
                             return@clickable
                         }
+                        detailPage = DetailPage.MAIN_LIST
                         panelState = PanelState.HIDDEN
                         activeEntry = null
                     },

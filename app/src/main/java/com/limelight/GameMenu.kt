@@ -1069,8 +1069,7 @@ class GameMenu(
                 handler.postDelayed({ sendKeys(shortArrayOf(85.s(), 83.s())) }, SLEEP_DELAY)
             }
             "quit" -> View.OnClickListener {
-                if (game.prefConfig.swapQuitAndDisconnect) game.disconnect()
-                else disconnectAndQuit()
+                disconnectAndQuit()
             }
             "send_tab" -> View.OnClickListener { sendKeys(shortArrayOf(KeyboardTranslator.VK_TAB.s())) }
             "send_alt_tab" -> View.OnClickListener { sendKeys(shortArrayOf(KeyboardTranslator.VK_MENU.s(), KeyboardTranslator.VK_TAB.s())) }

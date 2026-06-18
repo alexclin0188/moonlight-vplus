@@ -60,6 +60,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.stream.engine.StreamEngine
+import com.alexclin.moonlink.stream.ui.DetailScaffold
+import com.alexclin.moonlink.stream.ui.common.RestartHintBanner
 import com.limelight.preferences.CustomResolutionsConsts
 import com.limelight.preferences.PreferenceConfiguration
 import kotlin.math.roundToInt
@@ -68,6 +70,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val FPS_AUTO_PREF = "fps_auto"
+
+// ── 展开项联动 ID ──
+private const val EXP_SECTION_ABR = 0
+private const val EXP_SECTION_FPS = 1
+private const val EXP_SECTION_VIDEO_FORMAT = 2
+private const val EXP_SECTION_RESOLUTION_SCALE = 3
+private const val EXP_SECTION_OUTPUT_BUFFER = 4
+private const val EXP_SECTION_FRAME_PACING = 5
 private val STANDARD_RESOLUTIONS = listOf(
     "640x360", "854x480", "1280x720",
     "1920x1080", "2560x1440", "3840x2160",
@@ -94,6 +104,9 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
     }
 
     DetailScaffold(title = "显示设置", onBack = handleBack) {
+        var activeExpandableId by remember { mutableIntStateOf(-1) }
+        val onSectionExpand = { id: Int -> activeExpandableId = id }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -101,7 +114,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // ── 需要重启提示横幅 ──
             if (engine.displaySettingsRestartPending) {
                 item {
-                    RestartHintBanner()
+                    RestartHintBanner(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp))
                 }
             }
 
@@ -109,25 +122,71 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             item { SectionTitle("帧率与画面") }
 
             // DB-1: 码率选择行(含智能码率 & 流量估算)
-            item { BitrateSelector(context, engine) }
+            item {
+                BitrateSelector(
+                    context = context,
+                    engine = engine,
+                    abrSectionId = EXP_SECTION_ABR,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DB-1: 帧率选择
-            item { FpsSelector(engine) }
+            item {
+                FpsSelector(
+                    engine = engine,
+                    sectionId = EXP_SECTION_FPS,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DE-1: 视频编码格式
-            item { VideoFormatSelector(engine) }
+            item {
+                VideoFormatSelector(
+                    engine = engine,
+                    sectionId = EXP_SECTION_VIDEO_FORMAT,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DD-3: 分辨率缩放
-            item { ResolutionScaleSelector(engine) }
+            item {
+                ResolutionScaleSelector(
+                    engine = engine,
+                    sectionId = EXP_SECTION_RESOLUTION_SCALE,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DC-2: 输出缓冲区滑块
-            item { OutputBufferSlider(engine) }
+            item {
+                OutputBufferSlider(
+                    engine = engine,
+                    sectionId = EXP_SECTION_OUTPUT_BUFFER,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DE-2: 帧时序模式
-            item { FramePacingSelector(engine) }
+            item {
+                FramePacingSelector(
+                    engine = engine,
+                    sectionId = EXP_SECTION_FRAME_PACING,
+                    activeSectionId = activeExpandableId,
+                    onSectionExpand = onSectionExpand,
+                )
+            }
 
             // DB-3: HDR
             item { HdrSection(engine) }
+
+            // CR-3: VDD虚拟显示器 + 使用外接显示器
+            item { VddSection(engine) }
 
             // DC-2: 画面设置开关组
             item { VideoSwitches(engine) }
@@ -151,7 +210,12 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
 // ══════════════════════════════════════════
 
 @Composable
-private fun FpsSelector(engine: StreamEngine) {
+private fun FpsSelector(
+    engine: StreamEngine,
+    sectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     val fpsAutoPref = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
@@ -166,10 +230,9 @@ private fun FpsSelector(engine: StreamEngine) {
     val extraFpsOptions = listOf(144, 165)
     val currentFpsText = if (selectedFps == 0) "自动" else "${selectedFps}FPS"
 
-    // 5秒无操作自动收起
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            kotlinx.coroutines.delay(5000)
+    // 其它 section 展开时收起自己
+    LaunchedEffect(activeSectionId) {
+        if (activeSectionId != sectionId && expanded) {
             expanded = false
         }
     }
@@ -178,7 +241,11 @@ private fun FpsSelector(engine: StreamEngine) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    val willExpand = !expanded
+                    if (willExpand) onSectionExpand(sectionId)
+                    expanded = willExpand
+                }
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -257,7 +324,13 @@ private fun FpsRadioItem(value: Int, label: String, selected: Boolean, onClick: 
 // ══════════════════════════════════════════
 
 @Composable
-private fun BitrateSelector(context: android.content.Context, engine: StreamEngine) {
+private fun BitrateSelector(
+    context: android.content.Context,
+    engine: StreamEngine,
+    abrSectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val pref = engine.prefConfig
     val presets = BitrateUtils.BitratePreset.entries.toList()
 
@@ -349,9 +422,9 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                 "lowLatency" to "低延迟",
             )
             var abrExpanded by remember { mutableStateOf(false) }
-            LaunchedEffect(abrExpanded) {
-                if (abrExpanded) {
-                    kotlinx.coroutines.delay(5000)
+            // 其它 section 展开时收起 ABR 模式
+            LaunchedEffect(activeSectionId) {
+                if (activeSectionId != abrSectionId && abrExpanded) {
                     abrExpanded = false
                 }
             }
@@ -359,7 +432,11 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { abrExpanded = !abrExpanded }
+                        .clickable {
+                            val willExpand = !abrExpanded
+                            if (willExpand) onSectionExpand(abrSectionId)
+                            abrExpanded = willExpand
+                        }
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -381,6 +458,7 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
                                     .clickable {
+                                        abrMode = value
                                         onAbrModeSelected(engine, value, context)
                                         abrExpanded = false
                                     }
@@ -388,6 +466,7 @@ private fun BitrateSelector(context: android.content.Context, engine: StreamEngi
                             ) {
                                 RadioButton(selected = abrMode == value,
                                      onClick = {
+                                         abrMode = value
                                          onAbrModeSelected(engine, value, context)
                                          abrExpanded = false
                                      })
@@ -583,7 +662,12 @@ private fun onAbrModeSelected(
 // ══════════════════════════════════════════
 
 @Composable
-private fun VideoFormatSelector(engine: StreamEngine) {
+private fun VideoFormatSelector(
+    engine: StreamEngine,
+    sectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     val formats = listOf(
@@ -596,9 +680,9 @@ private fun VideoFormatSelector(engine: StreamEngine) {
     val currentLabel = formats.find { it.first == pref.videoFormat }?.second ?: "自动"
     var expanded by remember { mutableStateOf(false) }
 
-    LaunchedEffect(expanded) {
-        if (expanded) {
-            kotlinx.coroutines.delay(5000)
+    // 其它 section 展开时收起自己
+    LaunchedEffect(activeSectionId) {
+        if (activeSectionId != sectionId && expanded) {
             expanded = false
         }
     }
@@ -607,7 +691,11 @@ private fun VideoFormatSelector(engine: StreamEngine) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    val willExpand = !expanded
+                    if (willExpand) onSectionExpand(sectionId)
+                    expanded = willExpand
+                }
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -728,7 +816,12 @@ private fun selectHdrMode(
 // ══════════════════════════════════════════
 
 @Composable
-private fun ResolutionScaleSelector(engine: StreamEngine) {
+private fun ResolutionScaleSelector(
+    engine: StreamEngine,
+    sectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     val defaultScale = 100
@@ -737,11 +830,22 @@ private fun ResolutionScaleSelector(engine: StreamEngine) {
     var resScaleSlider by remember { mutableFloatStateOf(initScale.toFloat()) }
     val scope = rememberCoroutineScope()
 
+    // 其它 section 展开时收起自己
+    LaunchedEffect(activeSectionId) {
+        if (activeSectionId != sectionId && expanded) {
+            expanded = false
+        }
+    }
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    val willExpand = !expanded
+                    if (willExpand) onSectionExpand(sectionId)
+                    expanded = willExpand
+                }
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -788,7 +892,12 @@ private fun ResolutionScaleSelector(engine: StreamEngine) {
 // ══════════════════════════════════════════
 
 @Composable
-private fun OutputBufferSlider(engine: StreamEngine) {
+private fun OutputBufferSlider(
+    engine: StreamEngine,
+    sectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     val defaultBuf = 2  // PreferenceConfiguration.DEFAULT_OUTPUT_BUFFER_QUEUE_LIMIT
@@ -796,11 +905,22 @@ private fun OutputBufferSlider(engine: StreamEngine) {
     var expanded by remember { mutableStateOf(false) }
     var sliderValue by remember { mutableFloatStateOf(initVal.toFloat()) }
 
+    // 其它 section 展开时收起自己
+    LaunchedEffect(activeSectionId) {
+        if (activeSectionId != sectionId && expanded) {
+            expanded = false
+        }
+    }
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    val willExpand = !expanded
+                    if (willExpand) onSectionExpand(sectionId)
+                    expanded = willExpand
+                }
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -867,8 +987,8 @@ private fun VideoSwitches(engine: StreamEngine) {
 
     Column {
         SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context) }
+        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
     }
 }
 
@@ -877,7 +997,12 @@ private fun VideoSwitches(engine: StreamEngine) {
 // ══════════════════════════════════════════
 
 @Composable
-private fun FramePacingSelector(engine: StreamEngine) {
+private fun FramePacingSelector(
+    engine: StreamEngine,
+    sectionId: Int = -1,
+    activeSectionId: Int = -1,
+    onSectionExpand: (Int) -> Unit = {},
+) {
     val context = LocalContext.current
     val pref = engine.prefConfig
     var expanded by remember { mutableStateOf(false) }
@@ -893,11 +1018,22 @@ private fun FramePacingSelector(engine: StreamEngine) {
     )
     val currentLabel = options.find { it.value == pref.framePacing }?.label ?: "最低延迟"
 
+    // 其它 section 展开时收起自己
+    LaunchedEffect(activeSectionId) {
+        if (activeSectionId != sectionId && expanded) {
+            expanded = false
+        }
+    }
+
     Column {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable { expanded = !expanded }
+                .clickable {
+                    val willExpand = !expanded
+                    if (willExpand) onSectionExpand(sectionId)
+                    expanded = willExpand
+                }
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -929,12 +1065,7 @@ private fun FramePacingSelector(engine: StreamEngine) {
                     ) {
                         RadioButton(
                             selected = pref.framePacing == option.value,
-                            onClick = {
-                                pref.framePacing = option.value
-                                pref.writePreferences(context)
-                                PreferenceManager.getDefaultSharedPreferences(context)
-                                    .edit().putString("frame_pacing", option.spKey).apply()
-                            },
+                            onClick = {},  // 由 Row.clickable 统一处理，避免双重写入
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(option.label, style = MaterialTheme.typography.bodyMedium)
@@ -1265,26 +1396,6 @@ private fun CustomResolutionDialog(
 }
 
 // ══════════════════════════════════════════
-// 需重启提示横幅
-// ══════════════════════════════════════════
-
-@Composable
-private fun RestartHintBanner() {
-    Surface(
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-    ) {
-        Text(
-            text = "部分配置修改在退出设置时才会生效",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onTertiaryContainer,
-            modifier = Modifier.padding(12.dp),
-        )
-    }
-}
-
-// ══════════════════════════════════════════
 // 通用组件
 // ══════════════════════════════════════════
 
@@ -1296,20 +1407,24 @@ private fun SectionTitle(title: String) {
 }
 
 @Composable
-private fun DetailScaffold(title: String, onBack: () -> Unit, content: @Composable () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
-            }
-            Text(title, style = MaterialTheme.typography.titleMedium,
-                 color = MaterialTheme.colorScheme.onSurface)
+private fun VddSection(engine: StreamEngine) {
+    val context = LocalContext.current
+    val pref = engine.prefConfig
+    val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+    var useVdd by remember { mutableStateOf(displayPrefs.getBoolean("vdd_enabled", false)) }
+    var useExternal by remember { mutableStateOf(pref.useExternalDisplay) }
+
+    Column {
+        SettingSwitch("VDD虚拟显示器", useVdd) {
+            useVdd = it
+            displayPrefs.edit().putBoolean("vdd_enabled", it).apply()
+            if (it) Toast.makeText(context, "VDD切换需重启串流生效", Toast.LENGTH_SHORT).show()
         }
-        HorizontalDivider()
-        content()
+        SettingSwitch("使用外接显示器", useExternal) {
+            useExternal = it
+            pref.useExternalDisplay = it
+            pref.writePreferences(context)
+        }
     }
 }
 

@@ -24,7 +24,7 @@ object BitrateUtils {
      * 根据码率值(kbps)判断对应的预设模式
      */
     fun getPresetByKbps(kbps: Int): BitratePreset = when {
-        kbps <= 1 -> BitratePreset.AUTO
+        kbps <= 0 -> BitratePreset.AUTO
         kbps <= 3000 -> BitratePreset.M2
         kbps <= 15000 -> BitratePreset.M8
         kbps <= 50000 -> BitratePreset.M20
