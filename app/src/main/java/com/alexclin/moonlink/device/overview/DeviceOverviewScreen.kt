@@ -165,13 +165,12 @@ fun DeviceOverviewScreen(
                         ),
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
-                            // ── 桌面缩略图 (自适应剩余高度) ────────
+                            // ── 桌面缩略图 (自适应剩余高度，无内边距，仅顶部圆角) ────────
                             Box(
                                 modifier = Modifier
                                     .weight(1f)
                                     .fillMaxWidth()
-                                    .padding(start = 8.dp, top = 8.dp, end = 8.dp)
-                                    .clip(RoundedCornerShape(12.dp))
+                                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
                                     .background(MaterialTheme.colorScheme.surfaceVariant)
                                     .clickable(enabled = isOnline) {
                                         val forceResume = computer.runningGameId != 0
@@ -184,7 +183,7 @@ fun DeviceOverviewScreen(
                                     uuid = computer.uuid,
                                     isOnline = isOnline,
                                     modifier = Modifier.fillMaxSize(),
-                                    clipShape = RoundedCornerShape(12.dp),
+                                    clipShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
                                 )
 
                                 // Status badge (top-start)
