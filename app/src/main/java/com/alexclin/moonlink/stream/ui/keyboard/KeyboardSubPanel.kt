@@ -3,6 +3,7 @@ package com.alexclin.moonlink.stream.ui.keyboard
 import android.graphics.Rect
 import android.view.ViewTreeObserver
 import android.view.inputmethod.InputMethodManager
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,12 +17,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -42,11 +45,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.CustomKeyRepository
 
@@ -265,20 +275,60 @@ private fun KeyboardTabBar(
 /**
  * 输入法标签内容。
  *
- * 进入时弹出系统键盘，内容区显示提示文字。
+ * 包含一个不可见的 [BasicTextField]，自动获取 IME 焦点。
+ * 用户通过系统输入法输入的文本会通过 [StreamEngine.sendUtf8Text] 发送到远程主机，
+ * 避开键码映射（Android → Windows VK 转换），直接发送 Unicode 文本。
  */
 @Composable
 private fun ImeTabContent(
     engine: StreamEngine,
 ) {
+    val focusRequester = remember { FocusRequester() }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue("")) }
+
     LaunchedEffect(Unit) {
-        engine.toggleKeyboard()
+        // 请求焦点以弹出系统 IME 键盘
+        focusRequester.requestFocus()
     }
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
+        // ── 不可见的文本输入框（接收 IME 输入） ──
+        BasicTextField(
+            value = textFieldValue,
+            onValueChange = { newValue ->
+                val oldText = textFieldValue.text
+                val newText = newValue.text
+
+                // 计算新增的文本（用户输入的字符）
+                if (newText.length > oldText.length) {
+                    val addedText = newText.substring(oldText.length)
+                    engine.sendUtf8Text(addedText)
+                }
+
+                // 更新状态
+                textFieldValue = newValue
+
+                // 自动清空：保持输入框为空，下次输入仍能检测到新增文本
+                if (newText.isNotEmpty()) {
+                    textFieldValue = TextFieldValue("")
+                }
+            },
+            modifier = Modifier
+                .width(1.dp)    // 宽度极小但 > 0，确保可聚焦
+                .height(1.dp)
+                .focusRequester(focusRequester),
+            singleLine = true,
+            textStyle = TextStyle(
+                color = Color.Transparent,
+                fontSize = 1.sp,
+            ),
+            cursorBrush = SolidColor(Color.Transparent),
+        )
+
+        // ── 提示文字 ──
         Text(
             text = "使用系统输入法输入文字",
             style = MaterialTheme.typography.bodyMedium,

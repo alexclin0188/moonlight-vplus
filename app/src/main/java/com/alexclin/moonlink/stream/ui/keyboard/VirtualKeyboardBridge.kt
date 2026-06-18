@@ -1,16 +1,17 @@
 package com.alexclin.moonlink.stream.ui.keyboard
 
 import com.alexclin.moonlink.stream.engine.StreamEngine
+import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.binding.input.advance_setting.KeyboardUIController
 
 /**
  * 将旧 [KeyboardUIController] 的按键事件桥接到 [StreamEngine]。
  *
- * ## 键码格式
+ * ## 键码转换
  *
  * [KeyboardUIController] 通过 View tag 传递 **Android KeyEvent 键码**（如 k45 = KEYCODE_Q），
- * 本适配器直接将这些键码传给 [StreamEngine.sendKeyboardInputWithModifier]，
- * 由 NvConnection 发送到主机（与旧版 Game 路径一致）。
+ * 本适配器使用 [KeyboardTranslator] 将 Android 键码转换为 **Windows VK 码**，
+ * 再传给 [StreamEngine.sendKeyboardInputWithModifier]，与旧版 Game → KeyboardInputHandler 路径一致。
  *
  * ## 修饰键跟踪
  *
@@ -21,6 +22,9 @@ import com.limelight.binding.input.advance_setting.KeyboardUIController
 class VirtualKeyboardBridge(
     private val engine: StreamEngine,
 ) : KeyboardUIController.OnKeyboardEventListener {
+
+    /** Android 键码 → Windows VK 码翻译器 */
+    private val translator = KeyboardTranslator()
 
     /** 当前活跃的修饰键 bitmask（SHIFT=0x01, CTRL=0x02, ALT=0x04, META=0x08） */
     private var modifierState: Byte = 0
@@ -54,9 +58,15 @@ class VirtualKeyboardBridge(
             }
         }
 
-        // 所有按键事件（包括修饰键的 down/up）都发送
-        // modifier 参数使用当前累积的修饰键状态
-        engine.sendKeyboardInputWithModifier(keyCode, down, modifierState)
+        // 将 Android KeyEvent 键码翻译为 Windows VK 码（与旧 KeyboardInputHandler 一致）
+        val translatedKeyCode = translator.translate(keyCode.toInt(), -1)
+        if (translatedKeyCode.toInt() == 0) {
+            // 未知键码，跳过
+            return
+        }
+
+        // 发送翻译后的键码，modifier 参数使用当前累积的修饰键状态
+        engine.sendKeyboardInputWithModifier(translatedKeyCode, down, modifierState)
     }
 
     override fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int) {

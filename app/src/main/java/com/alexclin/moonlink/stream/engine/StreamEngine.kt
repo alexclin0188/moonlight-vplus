@@ -1078,6 +1078,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     /**
+     * 将 Unicode 文本直接发送到远程主机（适用于系统 IME 输入）。
+     * 绕过键码映射，直接发送 UTF-8 编码的文本。
+     */
+    fun sendUtf8Text(text: String) {
+        conn?.sendUtf8Text(text)
+    }
+
+    /**
      * 振动反馈（供虚拟键盘按键使用）。
      */
     fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int) {
