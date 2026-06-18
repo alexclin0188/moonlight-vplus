@@ -313,7 +313,7 @@ private fun FpsRadioItem(value: Int, label: String, selected: Boolean, onClick: 
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().clickable { onClick(value) }.padding(vertical = 3.dp),
     ) {
-        RadioButton(selected = selected, onClick = { onClick(value) })
+        RadioButton(selected = selected, onClick = {})  // 由 Row.clickable 统一处理
         Spacer(Modifier.width(8.dp))
         Text(label, style = MaterialTheme.typography.bodyMedium)
     }

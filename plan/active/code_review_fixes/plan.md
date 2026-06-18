@@ -1,8 +1,8 @@
 # 代码审查修复计划
 
-> 创建日期：2026-06-18 | 状态：ready | 版本：1.0
+> 创建日期：2026-06-18 | 状态：ready | 版本：1.1
 > 前置依赖：display_settings_redesign（已完成）
-> 驱动来源：代码审查报告（共 10 项发现）
+> 驱动来源：代码审查报告（共 11 项发现）
 
 ---
 
@@ -18,6 +18,7 @@
 | **CR-6** | 🟢 低 | `DisplaySettingsPanel.kt:872-875` | `VideoSwitches`：`writeDirectPrefs` 仅为拉伸视频调用；可旋转画面未设 `displaySettingsRestartPending` | 补全调用 |
 | **CR-7** | 🟢 低 | `DisplaySettingsPanel.kt:171,353` | 自动收起计时器（5s）可能打断用户正在进行的操作 | 移除或增加交互重置 |
 | **CR-8** | 🟢 低 | `BitrateUtils.kt:27` | `getPresetByKbps` 阈值 `kbps <= 1` 应改为 `kbps <= 0` | 修改边界值 |
+| **CR-9** | 🟢 低 | `DisplaySettingsPanel.kt:311-319` | `FpsRadioItem` 的 `RadioButton.onClick` 与父级 `Row.clickable` 各执行一次 `onClick(value)`，双重回调（与 CR-5 相同的反模式，Post-Review 新发现） | RadioButton 设为空操作，由 Row 统一处理 |
 
 ### 不影响修复的条目
 
@@ -259,38 +260,81 @@ kbps <= 0 -> BitratePreset.AUTO
 
 ---
 
+### CR-9：FpsRadioItem 双重回调修复
+
+**发现来源**：代码审查验证 CR-1~CR-8 时发现（Post-Review 新问题）
+
+**现状**（简化，`DisplaySettingsPanel.kt` 第 311-319 行）：
+```kotlin
+private fun FpsRadioItem(value: Int, label: String, selected: Boolean, onClick: (Int) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().clickable { onClick(value) }  // 回调 #1
+            .padding(vertical = 3.dp),
+    ) {
+        RadioButton(selected = selected, onClick = { onClick(value) })  // 回调 #2
+        Spacer(Modifier.width(8.dp))
+        Text(label, style = MaterialTheme.typography.bodyMedium)
+    }
+}
+```
+
+**问题**：`Row.clickable` 和 `RadioButton.onClick` 都调用了 `onClick(value)`。当用户点击 RadioButton 区域时，Compose 事件传播会触发两个点击处理器，导致回调执行**两次**。
+
+与 CR-5 的 `FramePacingSelector`（第 1068 行已于前期修复中修正为 `onClick = {}`）是完全相同的反模式，但 `FpsRadioItem` 遗漏了修复。
+
+**影响**：回调中包含 `selectedFps` 状态更新和 `pref.writePreferences(context)`，会导致 SharedPreferences 被重复写入两次。虽然写入的是相同的值不会造成数据损坏，但属于不必要的多余写操作。
+
+**修复**：
+```kotlin
+RadioButton(selected = selected, onClick = {})  // 由 Row.clickable 统一处理
+```
+
+**对比参考**：`FramePacingSelector` 第 1066-1068 行（CR-5 已修复）：
+```kotlin
+RadioButton(
+    selected = pref.framePacing == option.value,
+    onClick = {},  // 由 Row.clickable 统一处理，避免双重写入
+)
+```
+
+---
+
 ## 三、影响范围
 
-| 文件 | 变更类型 | 涉及任务 |
-|------|---------|---------|
-| `StreamEngine.kt` | 修改 | CR-1, CR-2 |
-| `DisplaySettingsPanel.kt` (display/) | 修改 | CR-3, CR-5, CR-6, CR-7 |
-| `SubPanelContainer.kt` | 修改 | CR-4 |
-| **新建** `DetailScaffold.kt` (ui/) | 新建 | CR-4 |
-| `BitrateUtils.kt` (display/) | 修改 | CR-8 |
+| 文件 | 变更类型 | 涉及任务 | 状态 |
+|------|---------|---------|------|
+| `StreamEngine.kt` | 修改 | CR-1, CR-2 | ✅ 已完成 |
+| `DisplaySettingsPanel.kt` (display/) | 修改 | CR-3, CR-5, CR-6, CR-7, **CR-9** | ⏳ 前 4 项已完成，CR-9 待修复 |
+| `SubPanelContainer.kt` | 修改 | CR-4 | ✅ 已完成 |
+| **新建** `DetailScaffold.kt` (ui/) | 新建 | CR-4 | ✅ 已完成 |
+| `BitrateUtils.kt` (display/) | 修改 | CR-8 | ✅ 已完成 |
 
 ---
 
 ## 四、验证清单
 
-| # | 验证项 | 关联任务 | 预期结果 |
-|---|--------|---------|---------|
-| 1 | 物理键盘按键输入 | CR-1 | Sunshine 主机正确识别 KEY_DOWN/KEY_UP |
-| 2 | 修饰键组合（如 Ctrl+C） | CR-2 | 修饰键位正确传递 |
-| 3 | VDD 开关切换 | CR-3 | `vdd_enabled` 写入 display_settings SP，Toast 提示重启生效 |
-| 4 | 外接显示器开关切换 | CR-3 | `prefConfig.useExternalDisplay` 写入，preferences 持久化 |
-| 5 | 所有详情页导航栏视觉一致 | CR-4 | 返回按钮间距、图标大小统一 |
-| 6 | FramePacing 选择 | CR-5 | 无双重写入，功能正常 |
-| 7 | 可旋转画面切换 | CR-6 | 显示重启待处理标记 |
-| 8 | 自动收起不再打断操作 | CR-7 | 展开后无自动关闭行为（或可被交互重置） |
-| 9 | 码率预设映射 | CR-8 | `getPresetByKbps(0)` 返回 AUTO |
+| # | 验证项 | 关联任务 | 预期结果 | 状态 |
+|---|--------|---------|---------|------|
+| 1 | 物理键盘按键输入 | CR-1 | Sunshine 主机正确识别 KEY_DOWN/KEY_UP | ✅ |
+| 2 | 修饰键组合（如 Ctrl+C） | CR-2 | 修饰键位正确传递 | ✅ |
+| 3 | VDD 开关切换 | CR-3 | `vdd_enabled` 写入 display_settings SP，Toast 提示重启生效 | ✅ |
+| 4 | 外接显示器开关切换 | CR-3 | `prefConfig.useExternalDisplay` 写入，preferences 持久化 | ✅ |
+| 5 | 所有详情页导航栏视觉一致 | CR-4 | 返回按钮间距、图标大小统一 | ✅ |
+| 6 | FramePacing 选择 | CR-5 | 无双重写入，功能正常 | ✅ |
+| 7 | 可旋转画面切换 | CR-6 | 显示重启待处理标记 | ✅ |
+| 8 | 自动收起不再打断操作 | CR-7 | 展开后无自动关闭行为（或可被交互重置） | ✅ |
+| 9 | 码率预设映射 | CR-8 | `getPresetByKbps(0)` 返回 AUTO | ✅ |
+| 10 | FPS 选择无双重写入 | CR-9 | 点击 RadioButton 时 `writePreferences` 仅执行一次 | ⏳ |
 
 ---
 
 ## 五、风险与注意事项
 
-1. **CR-2 修饰键修复**：需要确认 `EvdevListener` 接口的调用方是否持有修饰键信息。如果无法获取，则保持当前行为并记录限制。
-2. **CR-3 VDD 持久化键**：`vdd_enabled` 是 `display_settings` SP 中的键，非 `prefConfig` 字段。需确保读写使用正确的 SharedPreferences 实例。
-3. **CR-4 包可见性**：`SubPanelContainer.kt` 在 `ui` 包，`DisplaySettingsPanel.kt` 在 `ui.display` 子包。共享组件需放在两个包都能引用的位置。
-4. **CR-6 writeDirectPrefs 扩展**：需确认旧 PreferenceScreen 中 `checkbox_reverse_resolution` / `checkbox_rotable_screen` 键是否存在。如果不存在，则不需要补充 writeDirectPrefs。
-5. **回归**：修复后需确保所有详情页（体感助手、更多、主机设置、外设、显示设置）导航栏正常。
+> CR-1~CR-8 已在代码中落实，以下风险项仅保留以供参考，当前只需关注 CR-9。
+
+1. ~~CR-2 修饰键修复：需要确认 `EvdevListener` 接口的调用方是否持有修饰键信息。如果无法获取，则保持当前行为并记录限制。~~ ✅ 已落实
+2. ~~CR-3 VDD 持久化键：`vdd_enabled` 是 `display_settings` SP 中的键，非 `prefConfig` 字段。需确保读写使用正确的 SharedPreferences 实例。~~ ✅ 已落实
+3. ~~CR-4 包可见性：`SubPanelContainer.kt` 在 `ui` 包，`DisplaySettingsPanel.kt` 在 `ui.display` 子包。共享组件需放在两个包都能引用的位置。~~ ✅ 已落实
+4. ~~CR-6 writeDirectPrefs 扩展：需确认旧 PreferenceScreen 中 `checkbox_reverse_resolution` / `checkbox_rotable_screen` 键是否存在。如果不存在，则不需要补充 writeDirectPrefs。~~ ✅ 已落实
+5. ~~回归：修复后需确保所有详情页（体感助手、更多、主机设置、外设、显示设置）导航栏正常。~~ ✅ 已落实
+6. **CR-9 注意**：修复的行是一个被多个调用点共用的 `private fun FpsRadioItem`（第 279、295 行均有调用）。将 `RadioButton.onClick` 改为 `{}` 后，所有调用点都会统一由 `Row.clickable` 处理，因此不需要逐调用点修改，修复是安全的。

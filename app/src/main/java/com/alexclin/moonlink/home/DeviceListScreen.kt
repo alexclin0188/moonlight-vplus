@@ -13,6 +13,7 @@ import androidx.core.net.toUri
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,24 +21,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
 import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
 import com.alexclin.moonlink.stream.StreamActivity
-import com.limelight.Game
-import com.google.zxing.integration.android.IntentIntegrator
 import com.limelight.R
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -92,6 +99,7 @@ fun DeviceListScreen(
 ) {
     val context = LocalContext.current
     val scope   = rememberCoroutineScope()
+    val configuration = LocalConfiguration.current
 
     var isPairingLoading by remember { mutableStateOf(false) }
 
@@ -217,40 +225,15 @@ fun DeviceListScreen(
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     )
                     Spacer(Modifier.height(16.dp))
-                    Box {
-                        Button(onClick = { showAddMenu = true }) {
-                            Text("手动添加")
-                        }
-                        DropdownMenu(
-                            expanded = showAddMenu,
-                            onDismissRequest = { showAddMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(context.getString(com.limelight.R.string.addpc_manual)) },
-                                onClick = {
-                                    showAddMenu = false
-                                    context.startActivity(Intent(context, AddComputerManually::class.java))
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text(context.getString(com.limelight.R.string.addpc_qr_scan)) },
-                                onClick = {
-                                    showAddMenu = false
-                                    val integrator = IntentIntegrator(context as Activity)
-                                    integrator.setDesiredBarcodeFormats(IntentIntegrator.QR_CODE)
-                                    integrator.setPrompt(context.getString(com.limelight.R.string.qr_scan_prompt))
-                                    integrator.setBeepEnabled(false)
-                                    integrator.setOrientationLocked(false)
-                                    qrCodeLauncher.launch(integrator.createScanIntent())
-                                }
-                            )
-                        }
+                    Button(onClick = { showAddMenu = true }) {
+                        Text("手动添加")
                     }
                 }
             }
-        } else {
-            val configuration = LocalConfiguration.current
-            val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
+        }
+
+    if (computers.isNotEmpty()) {
+        val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
             if (isLandscape) {
                 val bothNonEmpty = paired.isNotEmpty() && unpaired.isNotEmpty()
@@ -411,6 +394,77 @@ fun DeviceListScreen(
                                 setPairingLoading = { isPairingLoading = it },
                                 onComputerRemoved = onComputerRemoved,
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── 底部居中 FAB + 弹出菜单（从 FAB 上方展开动画） ──
+        val density = LocalDensity.current
+        val expandedStates = remember { MutableTransitionState(false) }
+        expandedStates.targetState = showAddMenu
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 16.dp)
+                .zIndex(10f),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            FloatingActionButton(
+                onClick = { showAddMenu = true },
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "添加设备")
+            }
+
+            // 自定义弹窗带动画 — 从 FAB 上方展开/收起
+            if (expandedStates.currentState || expandedStates.targetState) {
+                Popup(
+                    onDismissRequest = { showAddMenu = false },
+                    alignment = Alignment.BottomCenter,
+                    offset = IntOffset(0, with(density) { (-72).dp.roundToPx() }),
+                    properties = PopupProperties(focusable = true),
+                ) {
+                    AnimatedVisibility(
+                        visibleState = expandedStates,
+                        enter = fadeIn() + scaleIn(
+                            initialScale = 0.5f,
+                            transformOrigin = TransformOrigin(0.5f, 1f),
+                        ),
+                        exit = fadeOut() + scaleOut(
+                            targetScale = 0.5f,
+                            transformOrigin = TransformOrigin(0.5f, 1f),
+                        ),
+                    ) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            shadowElevation = 8.dp,
+                            color = MaterialTheme.colorScheme.surface,
+                        ) {
+                            Column(
+                                modifier = Modifier.width(IntrinsicSize.Min),
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text(context.getString(com.limelight.R.string.addpc_manual)) },
+                                    onClick = {
+                                        showAddMenu = false
+                                        context.startActivity(Intent(context, AddComputerManually::class.java))
+                                    }
+                                )
+                                HorizontalDivider()
+                                DropdownMenuItem(
+                                    text = { Text(context.getString(com.limelight.R.string.addpc_qr_scan)) },
+                                    onClick = {
+                                        showAddMenu = false
+                                        val intent = Intent("com.google.zxing.client.android.SCAN").apply {
+                                            putExtra("SCAN_FORMATS", "QR_CODE")
+                                            putExtra("PROMPT_MESSAGE", context.getString(com.limelight.R.string.qr_scan_prompt))
+                                        }
+                                        qrCodeLauncher.launch(intent)
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -722,7 +776,7 @@ private fun DeviceCard(
                 }
 
                 Icon(
-                    imageVector = Icons.Filled.KeyboardArrowRight,
+                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = "更多",
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,

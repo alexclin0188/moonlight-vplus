@@ -213,7 +213,7 @@ fun DetailScaffold(
 
 ---
 
-### Batch D：低优修复（CR-5, CR-6, CR-7, CR-8）
+### Batch D：低优修复（CR-5, CR-6, CR-7, CR-8, CR-9）
 
 #### CR-5：FramePacingSelector 双重写入
 
@@ -272,6 +272,25 @@ kbps <= 1 -> BitratePreset.AUTO
 kbps <= 0 -> BitratePreset.AUTO
 ```
 
+#### CR-9：FpsRadioItem 双重回调
+
+**文件**: `app/src/main/java/com/alexclin/moonlink/stream/ui/display/DisplaySettingsPanel.kt` L311-319
+
+**问题**：`Row.clickable { onClick(value) }` 和 `RadioButton(onClick = { onClick(value) })` 都执行了回调，导致 `writePreferences` 双重写入。与 CR-5 相同反模式。
+
+**修复**（仅改第 316 行）：
+```kotlin
+// 当前
+RadioButton(selected = selected, onClick = { onClick(value) })
+
+// 修复后
+RadioButton(selected = selected, onClick = {})  // 由 Row.clickable 统一处理
+```
+
+**参考**：`FramePacingSelector` 第 1068 行已使用 `onClick = {}`。
+
+**验证**：编译通过；点击 FPS 选项时 `writePreferences` 只执行一次。
+
 ---
 
 ## 执行顺序
@@ -283,7 +302,7 @@ Batch B (CR-3) → 功能补齐，独立可验
   ↓
 Batch C (CR-4) → 重构，涉及跨文件变更
   ↓
-Batch D (CR-5, CR-6, CR-7, CR-8) → 低优修复，无依赖
+Batch D (CR-5, CR-6, CR-7, CR-8, CR-9) → 低优修复，无依赖
 ```
 
 ---
@@ -296,6 +315,7 @@ Batch D (CR-5, CR-6, CR-7, CR-8) → 低优修复，无依赖
 2. 键盘输入检查：物理键盘/蓝牙键盘按键事件
 3. 显示设置面板检查：VDD/外接开关显示 + 导航栏视觉一致
 4. 功能回归：帧率选择、码率选择、帧时序模式、3画面开关
+5. CR-9 回归：FPS 选项点击功能正常，无双重写入
 
 ---
 
@@ -305,7 +325,7 @@ Batch D (CR-5, CR-6, CR-7, CR-8) → 低优修复，无依赖
 
 ## 需修改的文件
 
-1. `app/src/main/java/com/alexclin/moonlink/stream/engine/StreamEngine.kt` — CR-1, CR-2
-2. `app/src/main/java/com/alexclin/moonlink/stream/ui/display/DisplaySettingsPanel.kt` — CR-3, CR-5, CR-6, CR-7
-3. `app/src/main/java/com/alexclin/moonlink/stream/ui/SubPanelContainer.kt` — CR-4（删除私有函数）
-4. `app/src/main/java/com/alexclin/moonlink/stream/ui/display/BitrateUtils.kt` — CR-8
+1. `app/src/main/java/com/alexclin/moonlink/stream/engine/StreamEngine.kt` — CR-1, CR-2 ✅
+2. `app/src/main/java/com/alexclin/moonlink/stream/ui/display/DisplaySettingsPanel.kt` — CR-3, CR-5, CR-6, CR-7 ✅, **CR-9 ⏳**
+3. `app/src/main/java/com/alexclin/moonlink/stream/ui/SubPanelContainer.kt` — CR-4 ✅
+4. `app/src/main/java/com/alexclin/moonlink/stream/ui/display/BitrateUtils.kt` — CR-8 ✅
