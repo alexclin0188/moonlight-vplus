@@ -146,8 +146,6 @@ fun KeyMappingScreen() {
     // ── .mkmp 导入 ──
     var showImportMkmpDialog by remember { mutableStateOf(false) }
     var importMkmpJson by remember { mutableStateOf("") }
-    var importMkmpOverwriteTarget by remember { mutableLongStateOf(-1L) } // -1 = 不覆盖
-
     val mkmpOpenLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
@@ -359,7 +357,7 @@ private fun SchemeSelectionDialog(
                 onClick = {
                     schemes.find { it.configId == selectedId }?.let { onSelect(it) }
                 },
-                enabled = selectedId != 0L,
+                enabled = schemes.any { it.configId == selectedId },
             ) { Text("导出") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
@@ -540,10 +538,14 @@ private fun buildMkmpJson(db: SuperConfigDatabaseHelper, scheme: ConfigScheme): 
         "enhanced_touch" to "boolean",
         "global_opacity" to "int",
     )
-    for ((key, _) in configAttrs) {
+    for ((key, type) in configAttrs) {
         val value = db.queryConfigAttribute(scheme.configId, key, null)
         if (value != null) {
-            configJson.put(key, value.toString())
+            when (type) {
+                "boolean" -> configJson.put(key, java.lang.Boolean.parseBoolean(value.toString()))
+                "int" -> configJson.put(key, (value as Number).toInt())
+                else -> configJson.put(key, value.toString())
+            }
         }
     }
 
@@ -553,7 +555,13 @@ private fun buildMkmpJson(db: SuperConfigDatabaseHelper, scheme: ConfigScheme): 
         val attrs = db.queryAllElementAttributes(scheme.configId, eid) ?: continue
         val el = JSONObject()
         for ((k, v) in attrs) {
-            el.put(k, v.toString())
+            // 保留元素属性的原始类型（Boolean/Number/String）
+            when (v) {
+                is Boolean -> el.put(k, v)
+                is Number -> el.put(k, v)
+                is String -> el.put(k, v)
+                else -> el.put(k, v.toString())
+            }
         }
         elementsArray.put(el)
     }

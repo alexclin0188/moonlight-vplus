@@ -2,8 +2,11 @@ package com.alexclin.moonlink.stream.ui.panels
 
 import android.content.ContentValues
 import android.content.Context
-import android.content.SharedPreferences
+import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import android.content.SharedPreferences
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,6 +32,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
@@ -66,6 +70,8 @@ import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 import com.limelight.preferences.PreferenceConfiguration
+import org.json.JSONArray
+import org.json.JSONObject
 
 /** 当前方案的 SharedPreference key，与旧 PageConfigController 互通 */
 private const val PREF_CURRENT_CONFIG_ID = "current_config_id"
@@ -117,13 +123,35 @@ fun KeyMappingSchemeSelector(
 
     LaunchedEffect(Unit) { refreshSchemes() }
 
+    // ── .mkmp 导入状态 ──
+    var showImportMkmpDialog by remember { mutableStateOf(false) }
+    var importMkmpJson by remember { mutableStateOf("") }
+
+    val mkmpOpenLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        try {
+            val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
+            if (json.isBlank()) {
+                Toast.makeText(context, "文件内容为空", Toast.LENGTH_SHORT).show()
+                return@rememberLauncherForActivityResult
+            }
+            importMkmpJson = json
+            showImportMkmpDialog = true
+        } catch (e: Exception) {
+            Toast.makeText(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     // ── 选择方案 ──
     fun selectScheme(configId: Long) {
         currentConfigId = configId
         prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, configId).apply()
-        // 尝试让旧 PageConfigController 重新加载
+        // 启用按键映射并刷新元素布局
         try {
             engine.setCrownFeatureEnabled(true)
+            engine.controllerManager?.refreshLayout()
         } catch (_: Exception) { }
     }
 
@@ -249,6 +277,27 @@ fun KeyMappingSchemeSelector(
         )
     }
 
+    // ════════════════════════════════════════════
+    // Dialog：导入 .mkmp
+    // ════════════════════════════════════════════
+    if (showImportMkmpDialog) {
+        ImportMkmpDialog(
+            json = importMkmpJson,
+            schemes = schemes,
+            onConfirm = { name, overrideTargetId ->
+                try {
+                    importMkmpFromJson(context, importMkmpJson, name, overrideTargetId)
+                    refreshSchemes()
+                    Toast.makeText(context, "方案「$name」已导入", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+                showImportMkmpDialog = false
+            },
+            onDismiss = { showImportMkmpDialog = false },
+        )
+    }
+
     // ── 页面主体 ──
     Box(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface)) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -286,11 +335,12 @@ fun KeyMappingSchemeSelector(
             ) {
                 OutlinedButton(
                     onClick = {
-                        // T-15 / T-12: 导入 .mkmp / .mdat（Batch E/D 实现）
-                        Toast.makeText(context, "导入功能将在后续版本中实现", Toast.LENGTH_SHORT).show()
+                        mkmpOpenLauncher.launch(arrayOf("application/json", "*/*"))
                     },
                     modifier = Modifier.weight(1f),
                 ) {
+                    Icon(Icons.Default.FileUpload, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text("导入")
                 }
                 Button(
@@ -570,5 +620,142 @@ private fun SchemeCard(
                 }
             }
         }
+    }
+}
+
+// ════════════════════════════════════════════════════════════
+//  .mkmp 导入弹窗（T-15 前置集成）
+// ════════════════════════════════════════════════════════════
+
+@Composable
+private fun ImportMkmpDialog(
+    json: String,
+    schemes: List<SchemeInfo>,
+    onConfirm: (name: String, overrideTargetId: Long) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    // 尝试从 JSON 中提取 name
+    val parsedName = remember {
+        try {
+            JSONObject(json).optString("name", "导入方案")
+        } catch (_: Exception) { "导入方案" }
+    }
+    var name by remember { mutableStateOf(parsedName) }
+    var selectedId by remember { mutableLongStateOf(0L) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("导入按键方案") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { if (it.length <= 10) name = it },
+                    label = { Text("方案名称（1-10 字符）") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+
+                Spacer(Modifier.height(12.dp))
+                Text("覆盖已有方案", style = MaterialTheme.typography.labelMedium)
+                Spacer(Modifier.height(4.dp))
+
+                // 不覆盖，作为新方案导入
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { selectedId = 0L }
+                        .padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RadioButton(selected = selectedId == 0L, onClick = { selectedId = 0L })
+                    Spacer(Modifier.width(8.dp))
+                    Text("不覆盖，作为新方案导入", style = MaterialTheme.typography.bodyMedium)
+                }
+
+                // 已有方案列表
+                schemes.forEach { scheme ->
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectedId = scheme.configId }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(selected = selectedId == scheme.configId,
+                                    onClick = { selectedId = scheme.configId })
+                        Spacer(Modifier.width(8.dp))
+                        Text(scheme.name, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val n = name.trim()
+                    if (n.isNotEmpty()) onConfirm(n, selectedId)
+                },
+                enabled = name.trim().isNotEmpty(),
+            ) { Text("导入") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+    )
+}
+
+/**
+ * 从 .mkmp JSON 导入方案到数据库。
+ * @param overrideTargetId 不为 0L 时覆盖该已有方案，否则创建新方案。
+ */
+private fun importMkmpFromJson(context: android.content.Context, json: String, newName: String, overrideTargetId: Long = 0L) {
+    val root = JSONObject(json)
+    val configObj = root.optJSONObject("config") ?: JSONObject()
+    val elementsArray = root.optJSONArray("elements") ?: JSONArray()
+
+    val db = SuperConfigDatabaseHelper(context)
+
+    // 覆盖模式：先删除旧数据，复用原有 config_id
+    if (overrideTargetId != 0L) {
+        db.deleteConfig(overrideTargetId)
+    }
+
+    val newConfigId = if (overrideTargetId != 0L) overrideTargetId else System.currentTimeMillis()
+
+    // 写入 config
+    val configValues = ContentValues().apply {
+        put(PageConfigController.COLUMN_LONG_CONFIG_ID, newConfigId)
+        put(PageConfigController.COLUMN_STRING_CONFIG_NAME, newName)
+        // 复制可用的 config 属性
+        for (key in configObj.keys()) {
+            val v = configObj.opt(key)
+            when (v) {
+                is Boolean -> put(key, v)
+                is Int -> put(key, v)
+                is String -> put(key, v)
+                is Long -> put(key, v)
+                is Double -> put(key, v.toFloat())
+            }
+        }
+    }
+    db.insertConfig(configValues)
+
+    // 写入 elements
+    var elementIdCounter = System.currentTimeMillis()
+    for (i in 0 until elementsArray.length()) {
+        val elObj = elementsArray.getJSONObject(i)
+        val elValues = ContentValues()
+        elValues.put("config_id", newConfigId)
+        elValues.put("element_id", elementIdCounter++)
+        for (key in elObj.keys()) {
+            val v = elObj.opt(key)
+            when (v) {
+                is Boolean -> elValues.put(key, v)
+                is Int -> elValues.put(key, v.toLong())
+                is Long -> elValues.put(key, v)
+                is Double -> elValues.put(key, v)
+                is String -> elValues.put(key, v)
+            }
+        }
+        db.insertElement(elValues)
     }
 }

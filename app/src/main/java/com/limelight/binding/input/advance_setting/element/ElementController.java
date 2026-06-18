@@ -136,6 +136,13 @@ public class ElementController {
 
 
     /**
+     * 返回元素编辑器的根布局，用于 Compose AndroidView 嵌入。
+     */
+    public FrameLayout getView() {
+        return elementsLayout;
+    }
+
+    /**
      * 隐藏所有虚拟按键的容器。
      */
     public void hideAllElementsForTest() {

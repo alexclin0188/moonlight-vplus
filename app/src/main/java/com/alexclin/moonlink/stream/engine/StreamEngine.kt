@@ -10,6 +10,7 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.Toast
 import com.limelight.Game
 import com.limelight.LimeLog
@@ -851,16 +852,39 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     var controllerManager: com.limelight.binding.input.advance_setting.ControllerManager? = null
         private set
 
+    /**
+     * 初始化旧 Crown 系统的 [ControllerManager] 桥接。
+     *
+     * 需要在包含 `R.id.advance_setting_view` 的 [FrameLayout] 就绪后调用。
+     * 在旧 [Game] Activity 中，此布局由 `activity_game.xml` 提供。
+     * MoonLink 模式下由外部将 inflate 后的布局传入。
+     *
+     * @param layout 根 FrameLayout，需包含 `R.id.advance_setting_view` 子视图
+     */
+    fun initializeControllerManager(layout: FrameLayout) {
+        if (controllerManager != null) return
+        controllerManager = com.limelight.binding.input.advance_setting.ControllerManager(layout, activity)
+        // 如果按键映射已启用，立即显示元素覆盖层
+        if (isCrownFeatureEnabled) {
+            controllerManager?.show()
+        }
+    }
+
     // ── 按键映射开关（Crown → MoonLink） ──
 
     /** 按键映射是否启用，读取新 Pref key [PreferenceConfiguration.KEY_MAPPING_ENABLED_PREF_STRING]。 */
     val isCrownFeatureEnabled: Boolean
         get() = prefConfig.keyMappingEnabled
 
-    /** 设置按键映射开关并持久化。由 Compose UI（KeyMappingSection）调用。 */
+    /** 设置按键映射开关并持久化。同时联动旧 [ControllerManager] 显示/隐藏元素覆盖层。由 Compose UI（KeyMappingSection）调用。 */
     fun setCrownFeatureEnabled(enabled: Boolean) {
         prefConfig.keyMappingEnabled = enabled
         prefConfig.writePreferences(activity)
+        if (enabled) {
+            controllerManager?.show()
+        } else {
+            controllerManager?.hide()
+        }
     }
 
     fun togglePerformanceOverlay() {

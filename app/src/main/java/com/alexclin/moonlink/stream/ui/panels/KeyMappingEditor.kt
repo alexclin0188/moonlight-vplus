@@ -1,18 +1,16 @@
 package com.alexclin.moonlink.stream.ui.panels
 
-import android.view.View
-import android.widget.FrameLayout
+import android.content.ContentValues
+import android.net.Uri
+import android.view.KeyEvent
 import android.widget.Toast
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,29 +20,32 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BorderColor
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Keyboard
+import androidx.compose.material.icons.filled.Layers
+import androidx.compose.material.icons.filled.LayersClear
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -56,203 +57,383 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.alexclin.moonlink.stream.engine.StreamEngine
-import com.limelight.binding.input.advance_setting.element.ElementController
+import com.alexclin.moonlink.stream.ui.editor.applyResize
+import com.alexclin.moonlink.stream.ui.editor.CanvasCallbacks
+import com.alexclin.moonlink.stream.ui.editor.EditorCanvas
+import com.alexclin.moonlink.stream.ui.editor.EditorElement
+import com.alexclin.moonlink.stream.ui.editor.EditorPropertiesPanel
+import com.alexclin.moonlink.stream.ui.editor.EditorState
+import com.alexclin.moonlink.stream.ui.editor.ElementType
+import com.alexclin.moonlink.stream.ui.editor.SchemeExporter
+import com.alexclin.moonlink.stream.ui.editor.snapToGrid
+import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import kotlin.math.roundToInt
+
+private const val MAX_SCREEN_PX = 5000
+private const val PREF_CURRENT_CONFIG_ID = "current_config_id"
 
 // ════════════════════════════════════════════════════════════
-//  T-08: 全屏编辑器 Compose 壳
+//  全屏编辑器（路线 A — 纯 Compose）
 // ════════════════════════════════════════════════════════════
 
-/**
- * 按键映射全屏编辑器（T-08 / T-09 / T-10）。
- *
- * 顶部工具栏 + 元素编辑画布区域 + 底栏网格宽度滑块。
- * 当旧 [ElementController] 桥接可用时，通过 AndroidView 嵌入其 View；
- * 暂不可用时显示引导提示。
- */
 @Composable
 fun KeyMappingEditor(
     engine: StreamEngine,
     onClose: () -> Unit,
 ) {
     val context = LocalContext.current
+    val prefs = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
+    var currentConfigId by remember { mutableStateOf(prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)) }
+    val db = remember { SuperConfigDatabaseHelper(context) }
+    val editorState = remember(currentConfigId) { EditorState(db, currentConfigId) }
 
     // ── 状态 ──
+    var elements by remember { mutableStateOf<List<EditorElement>>(emptyList()) }
+    var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+    var pressedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var schemeName by remember { mutableStateOf("按键方案") }
     var isEditingName by remember { mutableStateOf(false) }
     var gridWidth by remember { mutableIntStateOf(8) }
     var showAddMenu by remember { mutableStateOf(false) }
+    var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showPropertiesPanel by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(true) }
+    // 画布尺寸缓存（用于自动居中）
+    var canvasWidthPx by remember { mutableIntStateOf(1080) }
+    var canvasHeightPx by remember { mutableIntStateOf(1920) }
 
-    // 尝试加载当前方案名
-    LaunchedEffect(Unit) {
-        try {
-            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(context)
-            val currentId = prefs.getLong("current_config_id", 0L)
-            if (currentId != 0L) {
-                val db = SuperConfigDatabaseHelper(context)
-                val name = db.queryConfigAttribute(currentId, "config_name", "按键方案") as? String
-                if (!name.isNullOrBlank()) schemeName = name
+    // ── 网格吸附辅助 ──
+    val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
+
+    // ── 加载 ──
+    fun reloadElements() {
+        elements = editorState.loadElements()
+        schemeName = editorState.getConfigName()
+        isLoading = false
+    }
+    LaunchedEffect(currentConfigId) { reloadElements() }
+
+    // ── 保存方案名 ──
+    fun saveSchemeName(name: String) {
+        val cv = ContentValues().apply { put(PageConfigController.COLUMN_STRING_CONFIG_NAME, name) }
+        db.updateConfig(currentConfigId, cv)
+        schemeName = name
+    }
+
+    // ── 复制元素 ──
+    fun duplicateSelected() {
+        val src = elements.find { it.elementId in selectedIds } ?: return
+        val newEl = src.copy(
+            elementId = System.currentTimeMillis(),
+            centralX = (src.centralX + 30).coerceAtMost(MAX_SCREEN_PX),
+            centralY = (src.centralY + 30).coerceAtMost(MAX_SCREEN_PX),
+            layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
+        )
+        editorState.addElement(newEl)
+        selectedIds = setOf(newEl.elementId)
+        reloadElements()
+        Toast.makeText(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT).show()
+    }
+
+    // ── 删除元素 ──
+    fun deleteSelected() {
+        val id = selectedIds.firstOrNull() ?: return
+        editorState.deleteElement(id)
+        selectedIds = emptySet()
+        reloadElements()
+    }
+
+    // ── 图层调整 ──
+    fun moveLayer(direction: Int) {
+        val id = selectedIds.firstOrNull() ?: return
+        val idx = elements.indexOfFirst { it.elementId == id }
+        if (idx < 0) return
+        val el = elements[idx]
+        val newLayer = (el.layer + direction).coerceIn(0, 999)
+        if (newLayer == el.layer) return
+        val updated = el.copy(layer = newLayer)
+        editorState.saveElement(updated)
+        reloadElements()
+    }
+
+    // ── 拖拽/缩放结束保存（带网格吸附） ──
+    fun saveElementOnInteractionEnd(id: Long, snap: Boolean = true) {
+        val el = elements.find { it.elementId == id } ?: return
+        val finalEl = if (snap && gridCellSize > 1) {
+            el.copy(
+                centralX = snapToGrid(el.centralX, gridCellSize),
+                centralY = snapToGrid(el.centralY, gridCellSize),
+            )
+        } else el
+        if (finalEl != el) {
+            elements = elements.map { if (it.elementId == id) finalEl else it }
+        }
+        editorState.saveElement(finalEl)
+    }
+
+    // ── 键盘 Delete 键处理 ──
+    DisposableEffect(Unit) {
+        val rootView = (context as? android.app.Activity)?.window?.decorView
+        val onKeyListener = android.view.View.OnKeyListener { _, keyCode, event ->
+            if (event.action == KeyEvent.ACTION_DOWN &&
+                (keyCode == KeyEvent.KEYCODE_DEL || keyCode == KeyEvent.KEYCODE_FORWARD_DEL)
+            ) {
+                if (selectedIds.isNotEmpty()) {
+                    showDeleteConfirm = true
+                    true
+                } else false
+            } else false
+        }
+        rootView?.setOnKeyListener(onKeyListener)
+        onDispose { rootView?.setOnKeyListener(null) }
+    }
+
+    // ── 导出 / 导入 Launcher ──
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(SchemeExporter.MIME_TYPE)
+    ) { uri: Uri? ->
+        if (uri != null) {
+            val success = SchemeExporter.export(context, db, currentConfigId, uri)
+            if (success) {
+                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
             }
-        } catch (_: Exception) { }
-    }
-
-    // 进入编辑模式（桥接可用时）
-    val elementController = engine.controllerManager?.elementController
-    LaunchedEffect(elementController) {
-        elementController?.let { ec ->
-            try {
-                ec.changeMode(ElementController.Mode.Edit)
-            } catch (_: Exception) { }
         }
     }
 
-    // 退出编辑器
-    val exitEditor: () -> Unit = {
-        elementController?.let { ec ->
-            try {
-                ec.changeMode(ElementController.Mode.Normal)
-            } catch (_: Exception) { }
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            SchemeExporter.import(context, db, uri) { newConfigId ->
+                // 切换到新导入的方案
+                currentConfigId = newConfigId
+                prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, newConfigId).apply()
+                Toast.makeText(context, "已切换到导入的方案", Toast.LENGTH_SHORT).show()
+            }
         }
-        onClose()
     }
 
-    // ── 页面主体 ──
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xCC000000))
-            .pointerInput(Unit) { detectTapGestures { } },
-    ) {
+    // ── 退出 ──
+    val exitEditor: () -> Unit = { onClose() }
+
+    // ════════════════════════════════════════════════════════
+    //  UI
+    // ════════════════════════════════════════════════════════
+
+    val selectedElement = elements.find { it.elementId in selectedIds }
+
+    Box(modifier = Modifier.fillMaxSize().background(Color(0xCC000000))) {
         Column(modifier = Modifier.fillMaxSize()) {
-            // ════════════════════════════════════════
-            // 顶栏（T-08：工具栏）
-            // ════════════════════════════════════════
+            // ── 顶栏 ──
+            val toolbarActions = ToolbarActions(
+                addElement = { showAddMenu = true },
+                addComboKey = { Toast.makeText(context, "组合键编辑（待实现）", Toast.LENGTH_SHORT).show() },
+                exit = exitEditor,
+                delete = { showDeleteConfirm = true },
+                duplicate = { duplicateSelected() },
+                layerUp = { moveLayer(1) },
+                layerDown = { moveLayer(-1) },
+                properties = { showPropertiesPanel = !showPropertiesPanel },
+                export = { exportLauncher.launch("${schemeName.filter { it.isLetterOrDigit() || it == '_' }}.json") },
+                import = { importLauncher.launch(arrayOf(SchemeExporter.MIME_TYPE, "*/*")) },
+            )
             EditorToolbar(
                 schemeName = schemeName,
                 isEditingName = isEditingName,
                 onStartEditName = { isEditingName = true },
                 onNameChange = { schemeName = it },
-                onConfirmName = { isEditingName = false },
-                onAddElement = { showAddMenu = true },
-                onAddComboKey = {
-                    Toast.makeText(context, "组合键编辑（待实现）", Toast.LENGTH_SHORT).show()
-                },
-                onExit = exitEditor,
+                onConfirmName = { saveSchemeName(schemeName); isEditingName = false },
+                actions = toolbarActions,
+                hasSelection = selectedIds.isNotEmpty(),
             )
 
-            // ════════════════════════════════════════
-            // 中间：元素编辑画布区域（T-09）
-            // ════════════════════════════════════════
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+            // ── 选中元素信息行 ──
+            selectedElement?.let { el ->
+                SelectionInfoBar(element = el)
+            }
+
+            // ── 编辑画布 ──
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
             ) {
-                if (elementController != null) {
-                    ElementEditorCanvas(elementController = elementController!!)
-                } else {
-                    BridgePlaceholder()
+                val density = LocalDensity.current
+                LaunchedEffect(maxWidth, maxHeight) {
+                    with(density) {
+                        canvasWidthPx = maxWidth.toPx().roundToInt()
+                        canvasHeightPx = maxHeight.toPx().roundToInt()
+                    }
+                }
+
+                when {
+                    isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("加载中...", color = Color.White.copy(alpha = 0.5f))
+                    }
+                    elements.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("暂无元素，点击顶栏「按键」添加", color = Color.White.copy(alpha = 0.5f),
+                            style = MaterialTheme.typography.bodyMedium)
+                    }
+                    else -> {
+                        val canvasCallbacks = CanvasCallbacks(
+                            elementTap = { id ->
+                                selectedIds = if (id in selectedIds) emptySet() else setOf(id)
+                            },
+                            elementDragStart = { id -> selectedIds = setOf(id) },
+                            elementDrag = { id, delta ->
+                                elements = elements.map { el ->
+                                    if (el.elementId == id) {
+                                        el.copy(
+                                            centralX = (el.centralX + delta.x).roundToInt().coerceIn(0, MAX_SCREEN_PX),
+                                            centralY = (el.centralY + delta.y).roundToInt().coerceIn(0, MAX_SCREEN_PX),
+                                        )
+                                    } else el
+                                }
+                            },
+                            elementDragEnd = { saveElementOnInteractionEnd(it, snap = true) },
+                            elementResizeStart = { id, _ -> selectedIds = setOf(id) },
+                            elementResize = { id, handle, delta ->
+                                elements = elements.map { el ->
+                                    if (el.elementId == id) applyResize(el, handle, delta)
+                                    else el
+                                }
+                            },
+                            elementResizeEnd = { saveElementOnInteractionEnd(it, snap = false) },
+                            canvasTap = { selectedIds = emptySet() },
+                        )
+                        EditorCanvas(
+                            elements = elements,
+                            selectedIds = selectedIds,
+                            pressedIds = pressedIds,
+                            gridColumnCount = gridWidth,
+                            callbacks = canvasCallbacks,
+                        )
+                    }
                 }
             }
 
-            // ════════════════════════════════════════
-            // 底栏：网格宽度滑块（T-10）
-            // ════════════════════════════════════════
-            GridWidthSlider(
-                gridWidth = gridWidth,
-                onGridWidthChange = { gridWidth = it },
-            )
+            // ── 属性编辑面板（选中元素时展开） ──
+            if (showPropertiesPanel) {
+                val selEl = selectedElement
+                if (selEl != null) {
+                    EditorPropertiesPanel(
+                        element = selEl,
+                        onSave = { updated ->
+                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                            editorState.saveElement(updated)
+                            showPropertiesPanel = false
+                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                        },
+                        onCancel = { showPropertiesPanel = false },
+                    )
+                }
+            }
+
+            // ── 底栏 ──
+            GridWidthSlider(gridWidth = gridWidth, onGridWidthChange = { gridWidth = it })
         }
 
-        // ── 添加元素菜单 ──
+        // ── 添加菜单 ──
         if (showAddMenu) {
             AddElementMenu(
                 onDismiss = { showAddMenu = false },
-                onSelect = { _ ->
+                onSelect = { type ->
                     showAddMenu = false
-                    elementController?.let { ec ->
-                        try {
-                            ec.changeMode(ElementController.Mode.Edit)
-                            Toast.makeText(context, "已切换编辑模式，请在画布上放置元素", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "添加元素失败: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
-                    }
+                    val newEl = editorState.createDefaultElement(type)
+                    val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
+                    val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
+                    val elToInsert = newEl.copy(
+                        elementId = System.currentTimeMillis(),
+                        centralX = centerX,
+                        centralY = centerY,
+                    )
+                    editorState.addElement(elToInsert)
+                    selectedIds = setOf(elToInsert.elementId)
+                    reloadElements()
+                    Toast.makeText(context, "已添加「${type.displayName}」", Toast.LENGTH_SHORT).show()
                 },
             )
         }
-    }
-}
 
-// ════════════════════════════════════════════════════════════
-//  元素编辑画布（T-09 核心）
-// ════════════════════════════════════════════════════════════
-
-@Composable
-private fun ElementEditorCanvas(elementController: ElementController) {
-    AndroidView(
-        factory = { ctx: android.content.Context ->
-            try {
-                // 通过 getElements() 获取已有元素列表
-                val elements = elementController.elements
-                // 创建一个容器显示元素列表预览（当旧系统 View 不可嵌入时）
-                val container = FrameLayout(ctx).apply {
-                    setBackgroundColor(0x33000000)
-                }
-                // 添加提示信息
-                val hint = android.widget.TextView(ctx).apply {
-                    text = "编辑器桥接已连接，当前 ${elements?.size ?: 0} 个元素"
-                    setTextColor(android.graphics.Color.WHITE)
-                    textSize = 14f
-                    gravity = android.view.Gravity.CENTER
-                }
-                container.addView(hint)
-                container
-            } catch (e: Exception) {
-                placeholderView(ctx, "编辑器加载失败: ${e.message}")
-            }
-        },
-        modifier = Modifier.fillMaxSize(),
-    )
-}
-
-@Composable
-private fun BridgePlaceholder() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "编辑器桥接未就绪",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White.copy(alpha = 0.7f),
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "旧 Crown 元素编辑器 (ElementController) 尚不可用。\n请先在 Game.kt 中完成 ControllerManager 初始化桥接。",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.5f),
-                modifier = Modifier.padding(horizontal = 32.dp),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+        // ── 删除确认 ──
+        if (showDeleteConfirm) {
+            val el = selectedElement
+            AlertDialog(
+                onDismissRequest = { showDeleteConfirm = false },
+                title = { Text("删除元素") },
+                text = {
+                    Text("确定要删除「${el?.text?.ifBlank { el?.type?.displayName ?: "元素" }}」吗？")
+                },
+                confirmButton = {
+                    Button(
+                        onClick = { showDeleteConfirm = false; deleteSelected() },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    ) { Text("删除") }
+                },
+                dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("取消") } },
             )
         }
     }
 }
 
 // ════════════════════════════════════════════════════════════
-//  编辑器工具栏（T-08）
+//  选中元素信息行
 // ════════════════════════════════════════════════════════════
+
+@Composable
+private fun SelectionInfoBar(element: EditorElement) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 3.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Text(
+                "类型: ${element.type.displayName}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "ID: ${element.elementId}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Text(
+                "X:${element.centralX} Y:${element.centralY} W:${element.width} H:${element.height} L:${element.layer}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// ════════════════════════════════════════════════════════════
+//  编辑器工具栏（含选中操作）
+// ════════════════════════════════════════════════════════════
+
+/** 工具栏操作回调集合 */
+private data class ToolbarActions(
+    val addElement: () -> Unit = {},
+    val addComboKey: () -> Unit = {},
+    val exit: () -> Unit = {},
+    val delete: () -> Unit = {},
+    val duplicate: () -> Unit = {},
+    val layerUp: () -> Unit = {},
+    val layerDown: () -> Unit = {},
+    val properties: () -> Unit = {},
+    val export: () -> Unit = {},
+    val import: () -> Unit = {},
+)
 
 @Composable
 private fun EditorToolbar(
@@ -261,128 +442,154 @@ private fun EditorToolbar(
     onStartEditName: () -> Unit,
     onNameChange: (String) -> Unit,
     onConfirmName: () -> Unit,
-    onAddElement: () -> Unit,
-    onAddComboKey: () -> Unit,
-    onExit: () -> Unit,
+    actions: ToolbarActions = ToolbarActions(),
+    hasSelection: Boolean = false,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
         shadowElevation = 4.dp,
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // ← 保存退出
-            IconButton(onClick = onExit) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "保存退出",
-                    tint = MaterialTheme.colorScheme.primary)
-            }
-
-            // 方案名称（可编辑）
-            if (isEditingName) {
-                BasicTextField(
-                    value = schemeName,
-                    onValueChange = { if (it.length <= 10) onNameChange(it) },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                )
-                IconButton(onClick = onConfirmName) {
-                    Icon(Icons.Default.Check, contentDescription = "确认",
+        Column {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // ← 退出
+                IconButton(onClick = actions.exit) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "保存退出",
                         tint = MaterialTheme.colorScheme.primary)
                 }
-            } else {
-                Text(
-                    schemeName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onStartEditName() }
-                        .padding(horizontal = 8.dp),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                IconButton(onClick = onStartEditName) {
-                    Icon(Icons.Default.BorderColor, contentDescription = "编辑名称",
-                        modifier = Modifier.size(18.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+
+                // 方案名
+                if (isEditingName) {
+                    BasicTextField(
+                        value = schemeName,
+                        onValueChange = { if (it.length <= 10) onNameChange(it) },
+                        singleLine = true,
+                        textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                        modifier = Modifier.weight(1f).clip(RoundedCornerShape(4.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant)
+                            .padding(horizontal = 8.dp, vertical = 4.dp),
+                    )
+                    IconButton(onClick = onConfirmName) {
+                        Icon(Icons.Default.Check, contentDescription = "确认",
+                            tint = MaterialTheme.colorScheme.primary)
+                    }
+                } else {
+                    Text(schemeName, style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f).clickable { onStartEditName() }
+                            .padding(horizontal = 8.dp),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    IconButton(onClick = onStartEditName) {
+                        Icon(Icons.Default.BorderColor, contentDescription = "编辑名称",
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant)
+
+                TextButton(onClick = actions.addElement) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("按键", style = MaterialTheme.typography.labelMedium)
+                }
+                TextButton(onClick = actions.addComboKey) {
+                    Icon(Icons.Default.Keyboard, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("组合键", style = MaterialTheme.typography.labelMedium)
+                }
+
+                HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant)
+
+                TextButton(onClick = actions.export) {
+                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("导出", style = MaterialTheme.typography.labelMedium)
+                }
+                TextButton(onClick = actions.import) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("导入", style = MaterialTheme.typography.labelMedium)
                 }
             }
 
-            // 分隔
-            HorizontalDivider(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(1.dp),
-                color = MaterialTheme.colorScheme.outlineVariant,
-            )
-
-            // 添加按键
-            TextButton(onClick = onAddElement) {
-                Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(2.dp))
-                Text("按键", style = MaterialTheme.typography.labelMedium)
-            }
-
-            // 组合键
-            TextButton(onClick = onAddComboKey) {
-                Icon(Icons.Default.Keyboard, contentDescription = null, modifier = Modifier.size(18.dp))
-                Spacer(Modifier.width(2.dp))
-                Text("组合键", style = MaterialTheme.typography.labelMedium)
+            // ── 选中操作栏（有选中元素时显示） ──
+            if (hasSelection) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        IconButton(onClick = actions.delete, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Delete, contentDescription = "删除",
+                                tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+                        }
+                        IconButton(onClick = actions.duplicate, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "复制",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.Layers, contentDescription = "上移一层",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.BorderColor, contentDescription = "属性",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(Modifier.width(4.dp))
+                    }
+                }
             }
         }
     }
 }
 
 // ════════════════════════════════════════════════════════════
-//  网格宽度滑块（T-10）
+//  网格宽度滑块
 // ════════════════════════════════════════════════════════════
 
 @Composable
-private fun GridWidthSlider(
-    gridWidth: Int,
-    onGridWidthChange: (Int) -> Unit,
-) {
+private fun GridWidthSlider(gridWidth: Int, onGridWidthChange: (Int) -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
         shadowElevation = 2.dp,
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Default.GridOn, contentDescription = null,
                 modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(8.dp))
-            Text("编辑网格", style = MaterialTheme.typography.bodySmall,
+            Text("网格", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(8.dp))
             Slider(
                 value = gridWidth.toFloat(),
                 onValueChange = { onGridWidthChange(it.roundToInt()) },
-                valueRange = 1f..10f,
-                steps = 8,
+                valueRange = 0f..10f,
+                steps = 9,
                 modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(8.dp))
-            Text("${gridWidth} 列", style = MaterialTheme.typography.bodySmall,
+            Text(if (gridWidth == 0) "关" else "${gridWidth}列",
+                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Medium)
         }
@@ -390,78 +597,49 @@ private fun GridWidthSlider(
 }
 
 // ════════════════════════════════════════════════════════════
-//  添加元素菜单（T-08 辅助）
+//  添加元素菜单
 // ════════════════════════════════════════════════════════════
 
 @Composable
 private fun AddElementMenu(
     onDismiss: () -> Unit,
-    onSelect: (String) -> Unit,
+    onSelect: (ElementType) -> Unit,
 ) {
     val elementTypes = listOf(
-        "DigitalCommonButton" to "普通按钮",
-        "DigitalSwitchButton" to "开关按钮",
-        "AnalogStick" to "摇杆",
-        "DigitalPad" to "方向键",
+        ElementType.DIGITAL_COMMON_BUTTON to "普通按键",
+        ElementType.DIGITAL_SWITCH_BUTTON to "开关按键",
+        ElementType.DIGITAL_MOVABLE_BUTTON to "可移动按键",
+        ElementType.ANALOG_STICK to "摇杆",
+        ElementType.DIGITAL_PAD to "方向键",
+        ElementType.DIGITAL_COMBINE_BUTTON to "组合键",
+        ElementType.GROUP_BUTTON to "组按键",
+        ElementType.SIMPLIFY_PERFORMANCE to "性能面板",
+        ElementType.WHEEL_PAD to "滚轮面板",
     )
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x44000000))
-            .clickable(onClick = onDismiss),
+        modifier = Modifier.fillMaxSize().background(Color(0x44000000)).clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            modifier = Modifier
-                .padding(32.dp)
-                .clip(RoundedCornerShape(16.dp)),
+            modifier = Modifier.padding(32.dp).clip(RoundedCornerShape(16.dp)),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 8.dp,
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                Text("添加元素", style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(12.dp))
+                Text("添加元素", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.height(8.dp))
                 elementTypes.forEach { (type, label) ->
-                    TextButton(
-                        onClick = { onSelect(type) },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
+                    TextButton(onClick = { onSelect(type) }, modifier = Modifier.fillMaxWidth()) {
                         Text(label)
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 HorizontalDivider()
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
+                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
                     Text("取消", color = MaterialTheme.colorScheme.error)
                 }
             }
         }
     }
 }
-
-// ════════════════════════════════════════════════════════════
-//  工具函数
-// ════════════════════════════════════════════════════════════
-
-private fun placeholderView(ctx: android.content.Context, message: String): View {
-    return FrameLayout(ctx).also { container ->
-        container.setBackgroundColor(0x33000000)
-        val tv = android.widget.TextView(ctx).apply {
-            text = message
-            setTextColor(android.graphics.Color.WHITE)
-            textSize = 14f
-            gravity = android.view.Gravity.CENTER
-        }
-        container.addView(tv, FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT,
-        ))
-    }
-}
-
-private fun <T> T.roundToInt(): Int where T : Number = this.toFloat().roundToInt()

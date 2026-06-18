@@ -97,7 +97,6 @@ enum class DetailPage {
     DISPLAY,
     HOST_SETTINGS,
     PERIPHERALS,
-    KEY_MAPPING,
     QUICK_ACTION_EDITOR,
     GYRO,
     MORE,
@@ -181,7 +180,6 @@ fun SubPanelContainer(
                         onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
-                DetailPage.KEY_MAPPING -> {}
                 DetailPage.GYRO -> {
                     GyroDetail(
                         engine = engine,
