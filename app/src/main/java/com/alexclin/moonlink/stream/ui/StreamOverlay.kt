@@ -79,6 +79,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import com.limelight.binding.input.advance_setting.KeyboardUIController
 import androidx.activity.compose.BackHandler
 import com.alexclin.moonlink.stream.ui.panels.KeyMappingSchemeSelector
+import com.alexclin.moonlink.stream.ui.panels.KeyMappingEditor
 import android.view.View
 
 /** 面板展开状态 */
@@ -402,13 +403,10 @@ fun StreamOverlay(
                         )
                     }
                     FullScreenPage.KEY_MAPPING_EDITOR -> {
-                        // 全屏编辑器（Batch C 实现）
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Text("编辑器（待实现）", color = Color.White)
-                        }
+                        KeyMappingEditor(
+                            engine = engine,
+                            onClose = { fullScreenPage = null },
+                        )
                     }
                 }
             }

@@ -841,6 +841,16 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         displayTransientMessage("虚拟手柄切换（待实现）")
     }
 
+    // ── 旧 Crown ControllerManager 桥接 ──
+
+    /**
+     * 旧 Crown 系统的 [ControllerManager]。
+     * 在 MoonLink 模式下可能为 null，需要先由 Game.kt 初始化。
+     * 编辑器通过此属性获取 [ElementController] 以嵌入旧编辑视图。
+     */
+    var controllerManager: com.limelight.binding.input.advance_setting.ControllerManager? = null
+        private set
+
     // ── 按键映射开关（Crown → MoonLink） ──
 
     /** 按键映射是否启用，读取新 Pref key [PreferenceConfiguration.KEY_MAPPING_ENABLED_PREF_STRING]。 */

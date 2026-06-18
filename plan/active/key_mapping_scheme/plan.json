@@ -87,21 +87,21 @@
     {
       "id": "T-08",
       "content": "全屏编辑器 Compose 壳：全屏 overlay + 顶部工具栏（方案名可编辑+添加按键/组合键按钮+退出保存）",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batchC"
     },
     {
       "id": "T-09",
       "content": "编辑器集成旧 ElementController：Compose AndroidView 嵌入 element_touch_view + 编辑模式切换，选中态展示属性编辑面板",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batchC"
     },
     {
       "id": "T-10",
       "content": "编辑器网格宽度滑块 + 工具栏位置自适应（双指滑动切换左右吸附）",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchC"
     },
