@@ -33,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -54,7 +55,15 @@ fun QuickActionRow(
     onEditClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    val visibleIds = configIds.take(3)
+    val configuration = LocalConfiguration.current
+    val panelWidth = (configuration.screenWidthDp.dp * 0.45f).coerceIn(280.dp, 400.dp)
+    val horizontalPadding = 16.dp  // LazyRow contentPadding 8dp × 2
+    val fixedItemWidth = 56.dp     // QuickActionChip size
+    val gapWidth = 4.dp            // Modifier.padding(end = 4.dp)
+    val availableWidth = panelWidth - horizontalPadding - fixedItemWidth * 2f - gapWidth * 2f
+    val itemSlotWidth = fixedItemWidth + gapWidth
+    val maxConfigItems = (availableWidth / itemSlotWidth).toInt().coerceAtLeast(0)
+    val visibleIds = configIds.take(maxConfigItems)
 
     Column {
         Row(

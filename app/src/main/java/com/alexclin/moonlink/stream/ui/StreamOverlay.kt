@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
@@ -52,10 +54,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.random.Random
 import kotlin.math.roundToInt
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.common.PanelAnimations
@@ -108,6 +114,7 @@ fun StreamOverlay(
     var keyboardInitialTab by remember { mutableIntStateOf(0) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
     var showFloatingKeyboard by remember { mutableStateOf(false) }
+    var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
 
     // 操作面板自动隐藏：窄面板开启且用户无操作时2秒自动隐藏
     LaunchedEffect(panelState) {
@@ -163,7 +170,7 @@ fun StreamOverlay(
     }
 
     // ── 返回键多级处理（300ms防抖） ──
-    var lastBackPressTime by remember { mutableLongStateOf(0L) }
+    var lastBackPressTime by rememberSaveable { mutableLongStateOf(0L) }
     val backPressDebounceMs = 300L
     BackHandler(enabled = panelState != PanelState.HIDDEN && !showFloatingKeyboard) {
         val now = SystemClock.elapsedRealtime()
@@ -171,7 +178,22 @@ fun StreamOverlay(
         lastBackPressTime = now
 
         when (panelState) {
-            PanelState.SUB_PANEL, PanelState.KEYBOARD_PANEL -> {
+            PanelState.SUB_PANEL -> {
+                if (detailPage != DetailPage.MAIN_LIST) {
+                    if (engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+                        engine.changeResolution()
+                    }
+                    detailPage = DetailPage.MAIN_LIST
+                    return@BackHandler
+                }
+                if (engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+                    engine.changeResolution()
+                    return@BackHandler
+                }
+                panelState = PanelState.VERTICAL_BAR
+                activeEntry = null
+            }
+            PanelState.KEYBOARD_PANEL -> {
                 panelState = PanelState.VERTICAL_BAR
                 activeEntry = null
             }
@@ -184,26 +206,13 @@ fun StreamOverlay(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // ── 连接进度 overlay（阶段更新 + 首帧后自动消失） ──
+        // ── 连接进度 overlay（匹配旧版 FullscreenProgressOverlay 设计） ──
         AnimatedVisibility(
             visible = connectionStage != null,
             enter = fadeIn(),
             exit = fadeOut(),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xBB000000)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "启动中 ${connectionStage ?: ""}",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(32.dp),
-                )
-            }
+            ConnectionProgressOverlay(connectionStage = connectionStage)
         }
 
         // ── 性能监控面板（置于面板层之下，不遮挡悬浮按钮/面板/键盘） ──
@@ -228,6 +237,11 @@ fun StreamOverlay(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
                     ) {
+                        // 点击外部关闭时，如有待重启变更加载设置
+                        if (activeEntry == "operations" && engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+                            engine.changeResolution()
+                            return@clickable
+                        }
                         panelState = PanelState.HIDDEN
                         activeEntry = null
                     },
@@ -337,11 +351,14 @@ fun StreamOverlay(
         ) {
             SubPanelContainer(
                 engine = engine,
+                detailPage = detailPage,
+                onDetailPageChange = { detailPage = it },
                 onOpenKeyboardShortcuts = {
                     panelState = PanelState.KEYBOARD_PANEL
                     activeEntry = "keyboard"
                     keyboardInitialTab = 1  // 跳转到"快捷键"标签
                 },
+                modifier = Modifier.offset(x = (-60).dp),
             )
         }
 
@@ -386,6 +403,95 @@ fun StreamOverlay(
                     },
                 )
             }
+        }
+    }
+}
+
+/** 连接进度 overlay — 匹配旧版 FullscreenProgressOverlay 设计 */
+@Composable
+private fun ConnectionProgressOverlay(connectionStage: String?) {
+    val context = LocalContext.current
+    val tipResIds = remember {
+        intArrayOf(
+            com.limelight.R.string.tip_esc_exit,
+            com.limelight.R.string.tip_double_tap_mouse,
+            com.limelight.R.string.tip_long_press_controller,
+            com.limelight.R.string.tip_volume_keys,
+            com.limelight.R.string.tip_wallpaper_change,
+            com.limelight.R.string.tip_5ghz_wifi,
+            com.limelight.R.string.tip_close_apps,
+            com.limelight.R.string.tip_home_saves,
+            com.limelight.R.string.tip_hdr_colors,
+            com.limelight.R.string.tip_touch_modes,
+            com.limelight.R.string.tip_custom_keys,
+            com.limelight.R.string.tip_performance_overlay,
+            com.limelight.R.string.tip_audio_config,
+            com.limelight.R.string.tip_external_display,
+            com.limelight.R.string.tip_virtual_display,
+            com.limelight.R.string.tip_dynamic_bitrate,
+            com.limelight.R.string.tip_cards_show,
+        )
+    }
+    val random = remember { Random }
+    // connectionStage 变化时换一条新 tip
+    val currentTip by remember(connectionStage) {
+        mutableStateOf(context.getString(tipResIds[random.nextInt(tipResIds.size)]))
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xBB000000)),
+    ) {
+        // 居中内容
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.Center)
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            // 状态文字（"建立连接中"）
+            Text(
+                text = context.getString(com.limelight.R.string.conn_establishing_title),
+                color = Color.White,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                modifier = Modifier.padding(bottom = 24.dp),
+            )
+
+            // 进度条（indeterminate 水平）
+            LinearProgressIndicator(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                color = MaterialTheme.colorScheme.primary,
+                trackColor = Color(0x33FFFFFF),
+            )
+
+            // 进度文字（连接阶段）
+            Text(
+                text = connectionStage ?: context.getString(com.limelight.R.string.conn_establishing_msg),
+                color = Color(0xFFCCCCCC),
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Light,
+                modifier = Modifier.padding(top = 8.dp),
+                textAlign = TextAlign.Center,
+            )
+
+            // 随机提示
+            Spacer(Modifier.height(24.dp))
+            Text(
+                text = currentTip,
+                color = Color(0xFFBBBBBB),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Light,
+                lineHeight = 20.sp,
+                maxLines = 3,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }

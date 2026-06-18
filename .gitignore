@@ -71,3 +71,8 @@ app/nonRoot/release/baselineProfiles/
 .omo
 
 *.log
+
+# npm tooling (not needed for Android build)
+node_modules/
+package.json
+package-lock.json

@@ -250,7 +250,7 @@ class StreamActivity : ComponentActivity() {
         engine.release()
     }
 
-    @Deprecated("Deprecated in Java")
+    @Suppress("DEPRECATION")
     override fun onBackPressed() {
         // 防抖
         val now = SystemClock.elapsedRealtime()

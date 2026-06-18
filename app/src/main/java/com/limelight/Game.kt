@@ -274,7 +274,7 @@ class Game : Activity(), SurfaceHolder.Callback,
             this,
             prefConfig.width,
             prefConfig.height,
-            prefConfig.rotableScreen,
+            prefConfig,
             prefConfig.onscreenController || prefConfig.onscreenKeyboard
         ) { currentTargetDisplay }
         tombstonePrefs = getSharedPreferences("DecoderTombstone", 0)

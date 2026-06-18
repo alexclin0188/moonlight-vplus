@@ -58,7 +58,7 @@ import java.security.cert.X509Certificate
  *
  * 引用 [com.limelight] 包中的底层类，不修改任何旧代码。
  */
-class StreamEngine(private val activity: Activity) : NvConnectionListener, GameGestures, EvdevListener {
+class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures, EvdevListener {
 
     /** 从 SharedPreferences 读取的全部串流配置 */
     lateinit var prefConfig: PreferenceConfiguration
@@ -161,6 +161,10 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
     /** 当前串流使用的显示器 device_id */
     @Volatile
     var currentDeviceId: String? = null
+
+    /** 显示设置面板中有需要重启串流才能生效的选项被修改 */
+    @Volatile
+    var displaySettingsRestartPending: Boolean = false
 
     /** 用户是否在面板中主动设置过分辨率/缩放，为 false 时不发送 mode/resolutionScale 到 Sunshine */
     @Volatile
@@ -898,6 +902,12 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         LimeLog.info("StreamEngine: AdaptiveBitrateService 已启动，初始码率=${prefConfig.bitrate}kbps")
     }
 
+    /** 停止智能码率服务。幂等，可在任意状态下安全调用。 */
+    fun stopAdaptiveBitrate() {
+        adaptiveBitrateService?.stop()
+        adaptiveBitrateService = null
+    }
+
     fun toggleControlOnly() {
         prefConfig.controlOnly = !prefConfig.controlOnly
         displayTransientMessage(if (prefConfig.controlOnly) "纯控制模式已开启" else "纯控制模式已关闭")
@@ -1198,8 +1208,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         StreamLogger.log(activity, "CONN", "断开 errorCode=$errorCode")
         connected = false
         // 停止智能码率
-        adaptiveBitrateService?.stop()
-        adaptiveBitrateService = null
+        stopAdaptiveBitrate()
         handler.post {
             activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (!activity.isFinishing) {
@@ -1414,8 +1423,7 @@ class StreamEngine(private val activity: Activity) : NvConnectionListener, GameG
         activeDialog?.dismiss()
         activeDialog = null
         onPerfInfoUpdate = null
-        adaptiveBitrateService?.stop()
-        adaptiveBitrateService = null
+        stopAdaptiveBitrate()
         // 切换分辨率时由新 Activity 接管串流，不在这里 stop
         if (!isChangingResolution && connected) conn?.stop()
         releaseWifiLocks()

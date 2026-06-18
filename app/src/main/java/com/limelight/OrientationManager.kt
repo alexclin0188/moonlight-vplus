@@ -23,7 +23,7 @@ class OrientationManager(
     private val activity: Activity,
     private val originalWidth: Int,
     private val originalHeight: Int,
-    private val rotableScreen: Boolean,
+    private val prefConfig: PreferenceConfiguration,
     private val hasOnscreenControls: Boolean,
     private val displayProvider: () -> Display?,
 ) {
@@ -64,7 +64,7 @@ class OrientationManager(
         }
 
         activity.requestedOrientation = when {
-            rotableScreen -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
+            prefConfig.rotableScreen -> ActivityInfo.SCREEN_ORIENTATION_FULL_USER
             display != null && PreferenceConfiguration.isSquarishScreen(display) -> when (desiredOrientation) {
                 Configuration.ORIENTATION_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
                 Configuration.ORIENTATION_PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_USER_PORTRAIT
@@ -91,7 +91,7 @@ class OrientationManager(
             LimeLog.info("OrientationManager: server rotation settled, restored FULL_USER")
         } else {
             setPreferredOrientation()
-            if (rotableScreen && connection != null) {
+            if (prefConfig.rotableScreen && connection != null) {
                 handleRotationChange()
             }
         }
@@ -99,14 +99,14 @@ class OrientationManager(
 
     /**
      * 首次收到服务端分辨率时调用。
-     * - rotableScreen=true：检查客户端物理方向是否匹配服务端，不匹配则通知服务端
-     * - rotableScreen=false：若服务端方向与用户配置不匹配，重置服务端旋转
+     * - prefConfig.rotableScreen=true：检查客户端物理方向是否匹配服务端，不匹配则通知服务端
+     * - prefConfig.rotableScreen=false：若服务端方向与用户配置不匹配，重置服务端旋转
      */
     fun syncOrientationOnFirstFrame(serverWidth: Int, serverHeight: Int) {
         if (lastRotation != -1 || !connected) return
         val conn = connection ?: return
 
-        if (rotableScreen) {
+        if (prefConfig.rotableScreen) {
             checkAndSyncOrientation(serverWidth, serverHeight)
         } else {
             val configIsLandscape = originalWidth > originalHeight
@@ -129,11 +129,11 @@ class OrientationManager(
 
     /**
      * 服务端分辨率变更时调用，处理方向锁定和恢复。
-     * - rotableScreen=true：短暂锁定方向匹配服务端，1 秒后恢复 FULL_USER
-     * - rotableScreen=false：重新设置用户配置的方向（不受服务端影响）
+     * - prefConfig.rotableScreen=true：短暂锁定方向匹配服务端，1 秒后恢复 FULL_USER
+     * - prefConfig.rotableScreen=false：重新设置用户配置的方向（不受服务端影响）
      */
     fun onServerResolutionChanged(isLandscape: Boolean) {
-        if (rotableScreen) {
+        if (prefConfig.rotableScreen) {
             handler.removeCallbacksAndMessages(null)
             isServerInitiatedRotation = true
             activity.requestedOrientation = if (isLandscape)

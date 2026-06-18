@@ -84,11 +84,27 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
     val context = LocalContext.current
     val pref = engine.prefConfig
 
-    DetailScaffold(title = "显示设置", onBack = onBack) {
+    val handleBack = {
+        // isFinishing 保护：recreate 调用在 Activity 将销毁时不执行，回退到 onBack
+        if (engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+            engine.changeResolution()
+        } else {
+            onBack()
+        }
+    }
+
+    DetailScaffold(title = "显示设置", onBack = handleBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
+            // ── 需要重启提示横幅 ──
+            if (engine.displaySettingsRestartPending) {
+                item {
+                    RestartHintBanner()
+                }
+            }
+
             // ── 分组一：帧率与画面 ──
             item { SectionTitle("帧率与画面") }
 
@@ -203,6 +219,7 @@ private fun FpsSelector(engine: StreamEngine) {
                             fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, true).apply()
                             // 自动模式下保留 pref.fps 原值，不覆盖
                         }
+                        engine.displaySettingsRestartPending = true
                         expanded = false
                     }
                 }
@@ -213,6 +230,7 @@ private fun FpsSelector(engine: StreamEngine) {
                             fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, false).apply()
                             pref.fps = it
                             pref.writePreferences(context)
+                            engine.displaySettingsRestartPending = true
                             expanded = false
                         }
                     }
@@ -534,8 +552,7 @@ private fun setFixedBitrate(
     writeDirectPrefs(pref, context)
 
     // 切换到固定预设时停止 ABR 服务，防止后台 tick 覆盖手动设定值
-    engine.adaptiveBitrateService?.stop()
-    engine.adaptiveBitrateService = null
+    engine.stopAdaptiveBitrate()
 
     val conn = engine.conn
     if (conn != null) {
@@ -616,6 +633,7 @@ private fun VideoFormatSelector(engine: StreamEngine) {
                                 pref.writePreferences(context)
                                 PreferenceManager.getDefaultSharedPreferences(context)
                                     .edit().putString("video_format", spValue).apply()
+                                engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
                             .padding(vertical = 2.dp),
@@ -627,6 +645,7 @@ private fun VideoFormatSelector(engine: StreamEngine) {
                                 pref.writePreferences(context)
                                 PreferenceManager.getDefaultSharedPreferences(context)
                                     .edit().putString("video_format", spValue).apply()
+                                engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
                         )
@@ -654,50 +673,54 @@ private fun HdrSection(engine: StreamEngine) {
     Column {
         SettingSwitch("HDR", hdrEnabled) {
             hdrEnabled = it; pref.enableHdr = it; pref.writePreferences(context)
+            engine.displaySettingsRestartPending = true
         }
         AnimatedVisibility(visible = hdrEnabled) {
             Column(modifier = Modifier.padding(start = 24.dp)) {
                 SettingSwitch("HDR高亮度", highBrightness) {
                     highBrightness = it; pref.enableHdrHighBrightness = it; pref.writePreferences(context)
+                    engine.displaySettingsRestartPending = true
                 }
                 Spacer(Modifier.height(4.dp))
                 Text("HDR模式", style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.primary)
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        hdrMode = 1; pref.hdrMode = 1; pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putString("list_hdr_mode", "1").apply()
-                    }.padding(vertical = 2.dp),
-                ) {
-                    RadioButton(selected = hdrMode == 1, onClick = {
-                        hdrMode = 1; pref.hdrMode = 1; pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putString("list_hdr_mode", "1").apply()
-                    })
-                    Spacer(Modifier.width(4.dp))
-                    Text("HDR10/PQ", style = MaterialTheme.typography.bodyMedium)
-                }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().clickable {
-                        hdrMode = 2; pref.hdrMode = 2; pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putString("list_hdr_mode", "2").apply()
-                    }.padding(vertical = 2.dp),
-                ) {
-                    RadioButton(selected = hdrMode == 2, onClick = {
-                        hdrMode = 2; pref.hdrMode = 2; pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putString("list_hdr_mode", "2").apply()
-                    })
-                    Spacer(Modifier.width(4.dp))
-                    Text("HLG", style = MaterialTheme.typography.bodyMedium)
+                // PQ / HLG 用列表迭代消除重复代码
+                val hdrModes = listOf(1 to "HDR10/PQ", 2 to "HLG")
+                hdrModes.forEach { (mode, label) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { selectHdrMode(engine, context, mode) { hdrMode = mode } }
+                            .padding(vertical = 2.dp),
+                    ) {
+                        RadioButton(
+                            selected = hdrMode == mode,
+                            onClick = {},  // 由 Row.clickable 统一处理
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(label, style = MaterialTheme.typography.bodyMedium)
+                    }
                 }
             }
         }
     }
+}
+
+/**
+ * 选中 HDR 模式：持久化到 prefConfig + SP，标记待重启。
+ * 闭包 [onSelected] 在写入完成后回调，用于更新 Composable 本地状态。
+ */
+private fun selectHdrMode(
+    engine: StreamEngine, context: android.content.Context,
+    mode: Int, onSelected: () -> Unit,
+) {
+    engine.prefConfig.hdrMode = mode
+    engine.prefConfig.writePreferences(context)
+    PreferenceManager.getDefaultSharedPreferences(context)
+        .edit().putString("list_hdr_mode", mode.toString()).apply()
+    engine.displaySettingsRestartPending = true
+    onSelected()
 }
 
 // ══════════════════════════════════════════
@@ -744,6 +767,7 @@ private fun ResolutionScaleSelector(engine: StreamEngine) {
                         pref.writePreferences(context)
                         PreferenceManager.getDefaultSharedPreferences(context)
                             .edit().putInt("seekbar_resolutions_scale", pref.resolutionScale).apply()
+                        engine.displaySettingsRestartPending = true
                         // 调整完毕自动收起
                         expanded = false
                     },
@@ -822,6 +846,7 @@ private fun MtkSwitch(engine: StreamEngine) {
         var checked by remember { mutableStateOf(pref.forceMtkMaxOperatingRate) }
         SettingSwitch("MTK专属选项", checked) {
             checked = it; pref.forceMtkMaxOperatingRate = it; pref.writePreferences(context)
+            engine.displaySettingsRestartPending = true
         }
         Text(
             "强制MTK解码器高频运行以降低延迟，其它设备可能异常，默认关闭。",
@@ -841,8 +866,8 @@ private fun VideoSwitches(engine: StreamEngine) {
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context) }
-        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context) }
+        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
         SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context) }
     }
 }
@@ -1003,7 +1028,7 @@ private fun DisplaySection(engine: StreamEngine) {
                     selected = selectedRes == cleanRes,
                     onClick = {
                         selectedRes = cleanRes
-                        onResolutionSelected(engine, context, cleanRes, nativeRes)
+                        onResolutionSelected(engine, context, cleanRes)
                     },
                     label = { Text(res, style = MaterialTheme.typography.labelSmall) },
                 )
@@ -1139,13 +1164,19 @@ private fun DisplaySection(engine: StreamEngine) {
             HorizontalDivider(Modifier.padding(vertical = 8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth()
-                    .clickable { pref.enablePip = !pref.enablePip }
+                    .clickable {
+                        pref.enablePip = !pref.enablePip
+                        pref.writePreferences(context)
+                    }
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Checkbox(
                     checked = pref.enablePip,
-                    onCheckedChange = { pref.enablePip = it },
+                    onCheckedChange = {
+                        pref.enablePip = it
+                        pref.writePreferences(context)
+                    },
                 )
                 Spacer(Modifier.width(8.dp))
                 Text(
@@ -1167,13 +1198,14 @@ private fun loadCustomResolutions(context: Context): List<String> {
 
 private fun onResolutionSelected(
     engine: StreamEngine, context: android.content.Context,
-    res: String, nativeRes: String,
+    res: String,
 ) {
     // 始终存实际分辨率字符串（如 "2560x1600"），避免旧解析代码对 "Native" 字符串崩溃
     val actualRes = res
     val prefs = PreferenceManager.getDefaultSharedPreferences(context)
     prefs.edit().putString(PreferenceConfiguration.RESOLUTION_PREF_STRING, actualRes).apply()
-    engine.changeResolution()  // → activity.recreate()
+    // 标记需要重启，退出面板时统一触发 activity.recreate()
+    engine.displaySettingsRestartPending = true
 }
 
 private fun saveCustomResolution(context: android.content.Context, width: Int, height: Int) {
@@ -1230,6 +1262,26 @@ private fun CustomResolutionDialog(
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
     )
+}
+
+// ══════════════════════════════════════════
+// 需重启提示横幅
+// ══════════════════════════════════════════
+
+@Composable
+private fun RestartHintBanner() {
+    Surface(
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+    ) {
+        Text(
+            text = "部分配置修改在退出设置时才会生效",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            modifier = Modifier.padding(12.dp),
+        )
+    }
 }
 
 // ══════════════════════════════════════════

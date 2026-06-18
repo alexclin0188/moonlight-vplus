@@ -68,7 +68,7 @@ fun VerticalBar(
             ),
         shape = shape,
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
+        shadowElevation = if (subPanelVisible) 0.dp else 8.dp,
     ) {
         Column(
             modifier = Modifier.fillMaxHeight().padding(vertical = 12.dp),

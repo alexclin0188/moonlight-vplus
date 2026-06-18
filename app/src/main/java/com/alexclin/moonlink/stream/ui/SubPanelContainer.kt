@@ -94,7 +94,6 @@ enum class DetailPage {
     MAIN_LIST,
     DISPLAY,
     HOST_SETTINGS,
-    SHORTCUT_ACTIONS,
     PERIPHERALS,
     KEY_MAPPING,
     QUICK_ACTION_EDITOR,
@@ -105,10 +104,11 @@ enum class DetailPage {
 @Composable
 fun SubPanelContainer(
     engine: StreamEngine,
+    detailPage: DetailPage,
+    onDetailPageChange: (DetailPage) -> Unit,
     onOpenKeyboardShortcuts: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
     val context = LocalContext.current
     var configIds: List<String> by remember { mutableStateOf(QuickActionRegistry.loadConfig(context)) }
     val configuration = LocalConfiguration.current
@@ -117,7 +117,6 @@ fun SubPanelContainer(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .padding(end = 60.dp)
             .width(panelWidth),
         shape = RoundedCornerShape(0.dp),
         color = MaterialTheme.colorScheme.surface,
@@ -157,41 +156,38 @@ fun SubPanelContainer(
                         engine = engine,
                         configIds = configIds,
                         onOpenKeyboardShortcuts = onOpenKeyboardShortcuts,
-                        onEditActionClick = { detailPage = DetailPage.QUICK_ACTION_EDITOR },
-                        onNavigate = { detailPage = it },
+                        onEditActionClick = { onDetailPageChange(DetailPage.QUICK_ACTION_EDITOR) },
+                        onNavigate = { onDetailPageChange(it) },
                     )
                 }
                 DetailPage.DISPLAY -> {
                     DisplaySettingsPanel(
                         engine = engine,
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
                 DetailPage.HOST_SETTINGS -> {
                     HostSettingsSection(
                         engine = engine,
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
-                }
-                DetailPage.SHORTCUT_ACTIONS -> {
-                    // 已改向："快捷操作"入口现直接调用 onOpenKeyboardShortcuts
                 }
                 DetailPage.PERIPHERALS -> {
                     PeripheralsDetail(
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
                 DetailPage.KEY_MAPPING -> {}
                 DetailPage.GYRO -> {
                     GyroDetail(
                         engine = engine,
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
                 DetailPage.MORE -> {
                     MoreDetail(
                         engine = engine,
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
                 DetailPage.QUICK_ACTION_EDITOR -> {
@@ -200,9 +196,9 @@ fun SubPanelContainer(
                         onSave = { newIds ->
                             QuickActionRegistry.saveConfig(context, newIds)
                             configIds = newIds
-                            detailPage = DetailPage.MAIN_LIST
+                            onDetailPageChange(DetailPage.MAIN_LIST)
                         },
-                        onBack = { detailPage = DetailPage.MAIN_LIST },
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
             }

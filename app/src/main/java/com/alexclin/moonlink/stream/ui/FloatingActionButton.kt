@@ -62,7 +62,7 @@ fun FloatingActionButton(
         Box(
             modifier = Modifier
                 .offset { IntOffset(dragOffsetX.roundToInt(), dragOffsetY.roundToInt()) }
-                .size(56.dp)       // 触控目标 56dp
+                .size(46.dp)       // 触控目标 56dp
                 .pointerInput(Unit) {
                     detectDragGestures { change, dragAmount ->
                         change.consume()
