@@ -55,6 +55,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.engine.StreamEngine
@@ -102,7 +103,8 @@ fun KeyboardSubPanel(
     // ── 缓存键盘高度（px） ──
     var cachedKeyboardHeightPx by remember { mutableIntStateOf(0) }
 
-    // 通过 ViewTreeObserver 监听键盘高度（兼容所有 API 级别）
+    // 通过 ViewTreeObserver 监听键盘高度变化。
+    // 键盘弹出：缓存高度用于内容区尺寸；键盘收起且当前在输入法标签：自动隐藏面板。
     DisposableEffect(view) {
         val rootView = view.rootView
         val rect = Rect()
@@ -112,6 +114,10 @@ fun KeyboardSubPanel(
             val keyboardHeight = screenHeight - rect.bottom
             if (keyboardHeight > 0 && keyboardHeight != cachedKeyboardHeightPx) {
                 cachedKeyboardHeightPx = keyboardHeight
+            } else if (keyboardHeight == 0 && cachedKeyboardHeightPx > 0 && selectedTab == 0) {
+                // 系统键盘被手动收起且当前仍在输入法标签 → 隐藏面板
+                cachedKeyboardHeightPx = 0
+                onClose()
             }
         }
         rootView.viewTreeObserver.addOnGlobalLayoutListener(listener)
@@ -237,21 +243,25 @@ private fun KeyboardTabBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(start = 4.dp, top = 4.dp, end = 8.dp, bottom = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            TAB_LABELS.forEachIndexed { index, label ->
-                val isSelected = selectedTab == index
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .clickable { onTabSelected(index) }
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                )
+            // Tab 标签等宽均分
+            Row(modifier = Modifier.weight(1f)) {
+                TAB_LABELS.forEachIndexed { index, label ->
+                    val isSelected = selectedTab == index
+                    Text(
+                        text = label,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onTabSelected(index) }
+                            .padding(vertical = 8.dp),
+                    )
+                }
             }
             IconButton(
                 onClick = onClose,
@@ -320,7 +330,7 @@ private fun ImeTabContent(
                 .width(1.dp)    // 宽度极小但 > 0，确保可聚焦
                 .height(1.dp)
                 .focusRequester(focusRequester),
-            singleLine = true,
+            singleLine = false,  // 允许检测 Enter（\n），IME 不会自动关闭键盘
             textStyle = TextStyle(
                 color = Color.Transparent,
                 fontSize = 1.sp,
