@@ -279,9 +279,10 @@ fun MoonLinkApp(
     }
 
     Scaffold(
-        // ── Unified top bar (隐藏于横屏) ──────────────────
+        // ── Unified top bar (隐藏于横屏主页) ────────────
         topBar = {
-            if (!isLandscape && topBarTitle.isNotEmpty()) {
+            val hideTopBar = isLandscape && showBottomBar
+            if (!hideTopBar && topBarTitle.isNotEmpty()) {
                 TopAppBar(
                     title = {
                         Text(
