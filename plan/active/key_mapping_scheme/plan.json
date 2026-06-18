@@ -108,28 +108,28 @@
     {
       "id": "T-11",
       "content": "Settings Tab 新建 Compose 页面「按键配置管理」，设置 Tab 分类入口",
-      "status": "pending",
+      "status": "completed",
       "priority": "high",
       "batch": "batchD"
     },
     {
       "id": "T-12",
       "content": "旧 export_super_config 迁移为 Compose：方案选择弹窗 → SAF 导出 .mdat",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchD"
     },
     {
       "id": "T-13",
       "content": "旧 import_super_config 迁移为 Compose：SAF 选 .mdat → 解析 + 合并确认弹窗（新建方案/合并到所选）",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchD"
     },
     {
       "id": "T-14",
       "content": ".mkmp 导出入口：方案选择 → SAF 导出简化的 JSON（不含内部版本/MD5）",
-      "status": "pending",
+      "status": "completed",
       "priority": "medium",
       "batch": "batchD"
     },
