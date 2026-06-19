@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -457,7 +458,7 @@ fun StreamOverlay(
     }
 }
 
-/** 连接进度 overlay — 匹配旧版 FullscreenProgressOverlay 设计 */
+/** 连接进度 overlay — 进度条垂直居中，Tip 独立层不参与居中计算 */
 @Composable
 private fun ConnectionProgressOverlay(connectionStage: String?) {
     val context = LocalContext.current
@@ -493,7 +494,8 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
             .fillMaxSize()
             .background(Color(0xBB000000)),
     ) {
-        // 居中内容
+        // ── 核心锚点组（状态文字 + 进度条 + 阶段文字）──
+        // 整体垂直居中，进度条固定于屏幕中线
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -507,15 +509,15 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 color = Color.White,
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Medium,
-                modifier = Modifier.padding(bottom = 24.dp),
+                modifier = Modifier.padding(bottom = 16.dp),
             )
 
-            // 进度条（indeterminate 水平）
+            // 进度条（indeterminate 细线效果）
             LinearProgressIndicator(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(8.dp)
-                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(4.dp)),
+                    .height(2.dp)
+                    .clip(androidx.compose.foundation.shape.RoundedCornerShape(1.dp)),
                 color = MaterialTheme.colorScheme.primary,
                 trackColor = Color(0x33FFFFFF),
             )
@@ -529,9 +531,18 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 modifier = Modifier.padding(top = 8.dp),
                 textAlign = TextAlign.Center,
             )
+        }
 
-            // 随机提示
-            Spacer(Modifier.height(24.dp))
+        // ── Tip 提示（独立层，不参与居中计算）──
+        // 置于屏幕下半部靠顶位置，高度变化不拉扯进度条
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.5f)
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 32.dp),
+            contentAlignment = Alignment.TopCenter,
+        ) {
             Text(
                 text = currentTip,
                 color = Color(0xFFBBBBBB),
@@ -541,6 +552,7 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 16.dp),
             )
         }
     }
