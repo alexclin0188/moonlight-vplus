@@ -91,6 +91,8 @@ import android.view.KeyEvent
 import android.widget.Toast
 import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.stream.ui.display.DisplaySettingsPanel
+import com.alexclin.moonlink.stream.ui.panels.VirtualControllerConfigPanel
+import com.alexclin.moonlink.stream.ui.panels.KeyMappingConfigPanel
 
 enum class DetailPage {
     MAIN_LIST,
@@ -100,6 +102,8 @@ enum class DetailPage {
     QUICK_ACTION_EDITOR,
     GYRO,
     MORE,
+    VIRTUAL_CONTROLLER_CONFIG,
+    KEY_MAPPING_CONFIG,
 }
 
 @Composable
@@ -203,6 +207,18 @@ fun SubPanelContainer(
                         onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
+                DetailPage.VIRTUAL_CONTROLLER_CONFIG -> {
+                    VirtualControllerConfigPanel(
+                        engine = engine,
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
+                    )
+                }
+                DetailPage.KEY_MAPPING_CONFIG -> {
+                    KeyMappingConfigPanel(
+                        engine = engine,
+                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
+                    )
+                }
             }
         }
     }
@@ -232,7 +248,11 @@ private fun MainListView(
         // ── 分隔线：快捷操作区与按键映射的分隔 ──
         item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-        item { KeyMappingSection(engine = engine, onOpenFullScreenPage = onOpenFullScreenPage) }
+        item { KeyMappingSection(
+            engine = engine,
+            onOpenFullScreenPage = onOpenFullScreenPage,
+            onNavigateToConfig = onNavigate,
+        ) }
 
         item { TouchModeSection(engine = engine) }
 
@@ -354,6 +374,7 @@ private fun PanZoomSection(engine: StreamEngine) {
 private fun KeyMappingSection(
     engine: StreamEngine,
     onOpenFullScreenPage: (FullScreenPage) -> Unit = {},
+    onNavigateToConfig: (DetailPage) -> Unit = {},
 ) {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
@@ -389,7 +410,12 @@ private fun KeyMappingSection(
                 TextButton(onClick = {
                     onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
                 }, modifier = Modifier.fillMaxWidth()) {
-                    Text("切换按键映射方案 >")
+                    Column {
+                        Text("切换按键映射方案 >", style = MaterialTheme.typography.bodyMedium)
+                        Text("当前方案：${engine.currentSchemeName}",
+                             style = MaterialTheme.typography.bodySmall,
+                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
                 }
 
                 // 2. 编辑当前方案 → 全屏编辑器
@@ -399,15 +425,20 @@ private fun KeyMappingSection(
                     Text("编辑当前方案 >")
                 }
 
-                // 3. 其它设置 → 展开
-                var showOther by remember { mutableStateOf(false) }
-                TextButton(onClick = { showOther = !showOther }, modifier = Modifier.fillMaxWidth()) {
-                    Text("其它设置 ${if (showOther) "▲" else "▼"}")
+                // 3. 虚拟手柄配置 / 按键映射方案配置（根据方案类型动态显示）
+                val configLabel = if (engine.currentSchemeType == "virtual_controller") {
+                    "虚拟手柄配置 >"
+                } else {
+                    "按键映射方案配置 >"
                 }
-                AnimatedVisibility(visible = showOther) {
-                    Column(Modifier.padding(start = 12.dp)) {
-                        ExpandableOtherSettings(engine = engine)
-                    }
+                val configDetailPage = if (engine.currentSchemeType == "virtual_controller") {
+                    DetailPage.VIRTUAL_CONTROLLER_CONFIG
+                } else {
+                    DetailPage.KEY_MAPPING_CONFIG
+                }
+                TextButton(onClick = { onNavigateToConfig(configDetailPage) },
+                    modifier = Modifier.fillMaxWidth()) {
+                    Text(configLabel)
                 }
             }
         }

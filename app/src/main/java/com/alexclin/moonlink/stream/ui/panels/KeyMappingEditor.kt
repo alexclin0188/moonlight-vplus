@@ -28,7 +28,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BorderColor
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Layers
@@ -67,12 +69,16 @@ import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.editor.applyResize
 import com.alexclin.moonlink.stream.ui.editor.CanvasCallbacks
+import com.alexclin.moonlink.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.stream.ui.editor.EditorCanvas
+import com.alexclin.moonlink.stream.ui.editor.GroupChildListDialog
+import com.alexclin.moonlink.stream.ui.editor.EditorClipboard
 import com.alexclin.moonlink.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.stream.ui.editor.EditorState
 import com.alexclin.moonlink.stream.ui.editor.ElementType
 import com.alexclin.moonlink.stream.ui.editor.SchemeExporter
+import com.alexclin.moonlink.stream.ui.editor.WheelPadSegmentEditor
 import com.alexclin.moonlink.stream.ui.editor.snapToGrid
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
@@ -107,16 +113,26 @@ fun KeyMappingEditor(
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var showPropertiesPanel by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
+    // 组合键编辑弹窗
+    var showComboKeyEditor by remember { mutableStateOf(false) }
+    // 组按键子元素管理弹窗
+    var showChildManager by remember { mutableStateOf(false) }
+    // WheelPad 分段编辑弹窗
+    var showWheelPadSegmentEditor by remember { mutableStateOf(false) }
     // 画布尺寸缓存（用于自动居中）
     var canvasWidthPx by remember { mutableIntStateOf(1080) }
     var canvasHeightPx by remember { mutableIntStateOf(1920) }
+    // 跨方案剪贴板状态（用于刷新粘贴按钮的可见性）
+    var clipboardHasData by remember { mutableStateOf(EditorClipboard.hasData) }
 
     // ── 网格吸附辅助 ──
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
 
-    // ── 加载 ──
+    // ── 加载（自动清理 GroupButton 和 WheelPad 的孤儿引用） ──
     fun reloadElements() {
-        elements = editorState.loadElements()
+        val raw = editorState.loadElements()
+        val afterGroup = editorState.cleanupOrphanedGroupButtonRefs(raw)
+        elements = editorState.cleanupOrphanedWheelPadRefs(afterGroup)
         schemeName = editorState.getConfigName()
         isLoading = false
     }
@@ -129,7 +145,7 @@ fun KeyMappingEditor(
         schemeName = name
     }
 
-    // ── 复制元素 ──
+    // ── 复制元素（同方案内快速复制） ──
     fun duplicateSelected() {
         val src = elements.find { it.elementId in selectedIds } ?: return
         val newEl = src.copy(
@@ -144,7 +160,52 @@ fun KeyMappingEditor(
         Toast.makeText(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT).show()
     }
 
-    // ── 删除元素 ──
+    // ── 复制到跨方案剪贴板（携带 GroupButton 子元素） ──
+    fun copySelectedToClipboard() {
+        val src = elements.find { it.elementId in selectedIds } ?: return
+        val children = if (src.type == ElementType.GROUP_BUTTON) {
+            val childIds = src.value
+                .split(",")
+                .mapNotNull { it.trim().toLongOrNull() }
+                .filter { it != -1L }
+            elements.filter { it.elementId in childIds }
+        } else {
+            emptyList()
+        }
+        EditorClipboard.copy(src, children)
+        clipboardHasData = true
+        val childInfo = if (children.isNotEmpty()) "（含 ${children.size} 个子按键）" else ""
+        Toast.makeText(context, "已复制「${src.text.ifBlank { src.type.displayName }}」$childInfo 到剪贴板", Toast.LENGTH_SHORT).show()
+    }
+
+    // ── 从跨方案剪贴板粘贴 ──
+    fun pasteFromClipboard() {
+        val result = EditorClipboard.paste(
+            configId = currentConfigId,
+            offsetX = 30,
+            offsetY = 30,
+        ) ?: return
+
+        // 插入所有子元素
+        for (child in result.childElements) {
+            editorState.addElement(child)
+        }
+
+        // 插入根元素（已更新子元素 ID 引用）
+        editorState.addElement(result.rootElement)
+
+        reloadElements()
+        selectedIds = setOf(result.rootElement.elementId)
+
+        val summary = if (result.childElements.isNotEmpty()) {
+            "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」及 ${result.childElements.size} 个子按键"
+        } else {
+            "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」"
+        }
+        Toast.makeText(context, summary, Toast.LENGTH_SHORT).show()
+    }
+
+    // ── 删除元素（reloadElements 自动清理 GroupButton 的孤儿引用） ──
     fun deleteSelected() {
         val id = selectedIds.firstOrNull() ?: return
         editorState.deleteElement(id)
@@ -236,7 +297,10 @@ fun KeyMappingEditor(
             // ── 顶栏 ──
             val toolbarActions = ToolbarActions(
                 addElement = { showAddMenu = true },
-                addComboKey = { Toast.makeText(context, "组合键编辑（待实现）", Toast.LENGTH_SHORT).show() },
+                addComboKey = { showComboKeyEditor = true },
+                manageChildren = { showChildManager = true },
+                copyToClipboard = { copySelectedToClipboard() },
+                pasteClipboard = { pasteFromClipboard() },
                 exit = exitEditor,
                 delete = { showDeleteConfirm = true },
                 duplicate = { duplicateSelected() },
@@ -254,6 +318,8 @@ fun KeyMappingEditor(
                 onConfirmName = { saveSchemeName(schemeName); isEditingName = false },
                 actions = toolbarActions,
                 hasSelection = selectedIds.isNotEmpty(),
+                isGroupButtonSelected = selectedElement?.type == ElementType.GROUP_BUTTON,
+                clipboardHasData = clipboardHasData,
             )
 
             // ── 选中元素信息行 ──
@@ -332,6 +398,12 @@ fun KeyMappingEditor(
                             Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
                         },
                         onCancel = { showPropertiesPanel = false },
+                        onManageChildren = if (selEl.type == ElementType.GROUP_BUTTON)
+                            ({ showPropertiesPanel = false; showChildManager = true })
+                        else null,
+                        onManageSegments = if (selEl.type == ElementType.WHEEL_PAD)
+                            ({ showPropertiesPanel = false; showWheelPadSegmentEditor = true })
+                        else null,
                     )
                 }
             }
@@ -360,6 +432,82 @@ fun KeyMappingEditor(
                     Toast.makeText(context, "已添加「${type.displayName}」", Toast.LENGTH_SHORT).show()
                 },
             )
+        }
+
+        // ── 组合键编辑弹窗 ──
+        if (showComboKeyEditor) {
+            val comboKeys = elements.filter { it.type == ElementType.DIGITAL_COMBINE_BUTTON }
+            ComboKeyEditorDialog(
+                existingComboKeys = comboKeys,
+                onSaveNew = { newEl ->
+                    val finalEl = newEl.copy(
+                        elementId = System.currentTimeMillis(),
+                        configId = currentConfigId,
+                        centralX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
+                        centralY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
+                        layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
+                    )
+                    editorState.addElement(finalEl)
+                    selectedIds = setOf(finalEl.elementId)
+                    reloadElements()
+                    Toast.makeText(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT).show()
+                    showComboKeyEditor = false
+                },
+                onSaveExisting = { updatedEl ->
+                    editorState.saveElement(updatedEl)
+                    Toast.makeText(context, "组合键已更新", Toast.LENGTH_SHORT).show()
+                    reloadElements()
+                    showComboKeyEditor = false
+                },
+                onDeleteExisting = { targetEl ->
+                    editorState.deleteElement(targetEl.elementId)
+                    Toast.makeText(context, "已删除组合键", Toast.LENGTH_SHORT).show()
+                    reloadElements()
+                    showComboKeyEditor = false
+                },
+                onDismiss = { showComboKeyEditor = false },
+            )
+        }
+
+        // ── WheelPad 分段编辑弹窗 ──
+        if (showWheelPadSegmentEditor) {
+            val wheelEl = selectedElement
+            if (wheelEl != null && wheelEl.type == ElementType.WHEEL_PAD) {
+                WheelPadSegmentEditor(
+                    element = wheelEl,
+                    allElements = elements,
+                    onSave = { updated ->
+                        editorState.saveElement(updated)
+                        reloadElements()
+                        Toast.makeText(context, "分段已更新", Toast.LENGTH_SHORT).show()
+                        showWheelPadSegmentEditor = false
+                    },
+                    onDismiss = { showWheelPadSegmentEditor = false },
+                )
+            } else {
+                showWheelPadSegmentEditor = false
+            }
+        }
+
+        // ── 组按键子元素管理弹窗 ──
+        if (showChildManager) {
+            val groupEl = selectedElement
+            if (groupEl != null && groupEl.type == ElementType.GROUP_BUTTON) {
+                GroupChildListDialog(
+                    groupElement = groupEl,
+                    allElements = elements,
+                    editorState = editorState,
+                    onSave = { updatedGroup ->
+                        editorState.saveElement(updatedGroup)
+                        reloadElements()
+                        Toast.makeText(context, "子按键列表已更新", Toast.LENGTH_SHORT).show()
+                        showChildManager = false
+                    },
+                    onDismiss = { showChildManager = false },
+                )
+            } else {
+                showChildManager = false
+            }
         }
 
         // ── 删除确认 ──
@@ -425,6 +573,9 @@ private fun SelectionInfoBar(element: EditorElement) {
 private data class ToolbarActions(
     val addElement: () -> Unit = {},
     val addComboKey: () -> Unit = {},
+    val manageChildren: () -> Unit = {},
+    val copyToClipboard: () -> Unit = {},
+    val pasteClipboard: () -> Unit = {},
     val exit: () -> Unit = {},
     val delete: () -> Unit = {},
     val duplicate: () -> Unit = {},
@@ -444,6 +595,8 @@ private fun EditorToolbar(
     onConfirmName: () -> Unit,
     actions: ToolbarActions = ToolbarActions(),
     hasSelection: Boolean = false,
+    isGroupButtonSelected: Boolean = false,
+    clipboardHasData: Boolean = false,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -508,6 +661,15 @@ private fun EditorToolbar(
                 HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
                     color = MaterialTheme.colorScheme.outlineVariant)
 
+                // ── 跨方案粘贴按钮（剪贴板有内容时显示） ──
+                if (clipboardHasData) {
+                    TextButton(onClick = actions.pasteClipboard) {
+                        Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(2.dp))
+                        Text("粘贴", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+
                 TextButton(onClick = actions.export) {
                     Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(2.dp))
@@ -539,6 +701,10 @@ private fun EditorToolbar(
                             Icon(Icons.Default.ContentCopy, contentDescription = "复制",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
+                        IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
+                            Icon(Icons.Default.FileCopy, contentDescription = "复制到剪贴板",
+                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
                         IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.Layers, contentDescription = "上移一层",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -546,6 +712,13 @@ private fun EditorToolbar(
                         IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                        }
+                        // 组按键子元素管理按钮
+                        if (isGroupButtonSelected) {
+                            IconButton(onClick = actions.manageChildren, modifier = Modifier.size(32.dp)) {
+                                Icon(Icons.Default.Add, contentDescription = "子按键",
+                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                            }
                         }
                         IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.BorderColor, contentDescription = "属性",

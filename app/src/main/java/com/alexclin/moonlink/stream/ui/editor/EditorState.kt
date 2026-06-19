@@ -153,6 +153,83 @@ class EditorState(
         db.deleteElement(configId, elementId)
     }
 
+    // ═══════════════════════════════════════════════════════════════════════
+    // 清理
+    // ═══════════════════════════════════════════════════════════════════════
+
+    /**
+     * 通用孤儿引用清理 — 遍历 [elementTypes] 的元素，对其 [EditorElement.value]
+     * 按 `,` 拆分为项，用 [itemFilter] 逐项判断是否保留，移除不满足条件的项。
+     *
+     * @param currentElements 当前在内存中的元素列表
+     * @param elementTypes    需要处理的元素类型集合
+     * @param shouldSkip      附加跳过条件（返回 true 则跳过该元素，不解析 value）
+     * @param itemFilter      逐项过滤：(item字符串, 有效ID集合) → true 保留, false 移除
+     * @return 清理后的元素列表（内存副本已更新）
+     */
+    fun cleanupOrphanedRefs(
+        currentElements: List<EditorElement>,
+        elementTypes: Set<ElementType>,
+        shouldSkip: (EditorElement) -> Boolean = { false },
+        itemFilter: (item: String, validIds: Set<Long>) -> Boolean,
+    ): List<EditorElement> {
+        val validIds = currentElements.map { it.elementId }.toSet()
+        val result = currentElements.toMutableList()
+        var hasChanges = false
+
+        for ((index, el) in currentElements.withIndex()) {
+            if (el.type !in elementTypes) continue
+            if (el.value.isBlank() || shouldSkip(el)) continue
+
+            val items = el.value.split(",")
+            val cleaned = items.filter { item -> itemFilter(item, validIds) }
+
+            if (cleaned.size < items.size) {
+                val newValue = cleaned.joinToString(",")
+                val updated = el.copy(value = newValue)
+                result[index] = updated
+                db.updateElement(configId, el.elementId, updated.toContentValues())
+                hasChanges = true
+            }
+        }
+
+        return if (hasChanges) result else currentElements
+    }
+
+    /**
+     * 清理 GroupButton 的孤儿子元素 ID 引用。
+     * 委托给 [cleanupOrphanedRefs]。
+     */
+    fun cleanupOrphanedGroupButtonRefs(currentElements: List<EditorElement>): List<EditorElement> =
+        cleanupOrphanedRefs(
+            currentElements,
+            elementTypes = setOf(ElementType.GROUP_BUTTON),
+            shouldSkip = { it.value == "-1" },
+            itemFilter = { item, validIds ->
+                val id = item.trim().toLongOrNull()
+                id == null || id == -1L || id in validIds
+            },
+        )
+
+    /**
+     * 清理 WheelPad 的孤儿 GroupButton 引用（`gb{id}` 格式）。
+     * 委托给 [cleanupOrphanedRefs]。
+     */
+    fun cleanupOrphanedWheelPadRefs(currentElements: List<EditorElement>): List<EditorElement> =
+        cleanupOrphanedRefs(
+            currentElements,
+            elementTypes = setOf(ElementType.WHEEL_PAD),
+            itemFilter = { item, validIds ->
+                val valuePart = item.substringBefore("|").trim()
+                if (valuePart.startsWith("gb")) {
+                    val groupId = valuePart.substring(2).toLongOrNull()
+                    groupId != null && groupId in validIds
+                } else {
+                    true
+                }
+            },
+        )
+
     /** 批量插入（导入用） */
     fun addElements(elements: List<EditorElement>) {
         var counter = System.currentTimeMillis()

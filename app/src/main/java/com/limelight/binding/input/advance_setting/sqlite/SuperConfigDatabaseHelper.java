@@ -22,6 +22,10 @@ import com.limelight.binding.input.advance_setting.element.DigitalSwitchButton;
 import com.limelight.binding.input.advance_setting.element.Element;
 import com.limelight.utils.MathUtils;
 
+import android.content.SharedPreferences;
+import android.util.DisplayMetrics;
+import android.view.WindowManager;
+import android.preference.PreferenceManager;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,18 +33,33 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.json.JSONObject;
+import org.json.JSONException;
+import java.util.Iterator;
+import com.limelight.LimeLog;
 
 public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
+    private final Context context;
+
     private class ExportFile {
         private int version;
         private String settings;
         private String elements;
         private String md5;
+        // 导出时的源设备屏幕像素尺寸，用于导入时坐标缩放
+        private int sourceWidth;
+        private int sourceHeight;
 
         public ExportFile(int version, String settings, String elements) {
+            this(version, settings, elements, 0, 0);
+        }
+
+        public ExportFile(int version, String settings, String elements, int sourceWidth, int sourceHeight) {
             this.version = version;
             this.settings = settings;
             this.elements = elements;
+            this.sourceWidth = sourceWidth;
+            this.sourceHeight = sourceHeight;
             this.md5 = MathUtils.computeMD5(version + settings + elements);
         }
 
@@ -74,6 +93,22 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
 
         public void setMd5(String md5) {
             this.md5 = md5;
+        }
+
+        public int getSourceWidth() {
+            return sourceWidth;
+        }
+
+        public void setSourceWidth(int sourceWidth) {
+            this.sourceWidth = sourceWidth;
+        }
+
+        public int getSourceHeight() {
+            return sourceHeight;
+        }
+
+        public void setSourceHeight(int sourceHeight) {
+            this.sourceHeight = sourceHeight;
         }
     }
 
@@ -139,14 +174,17 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
     private static final int DATABASE_OLD_VERSION_4 = 4;
     private static final int DATABASE_OLD_VERSION_5 = 5;
     private static final int DATABASE_OLD_VERSION_6 = 6;
-    private static final int DATABASE_VERSION = 9;
+    private static final int DATABASE_VERSION = 10;
     private SQLiteDatabase writableDataBase;
     private SQLiteDatabase readableDataBase;
 
     public SuperConfigDatabaseHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.context = context.getApplicationContext();
         writableDataBase = getWritableDatabase();
         readableDataBase = getReadableDatabase();
+        // 首次构造时触发 SP→DB 迁移
+        migrateVirtualControllerFromSharedPreferences(context);
     }
 
     @Override
@@ -206,7 +244,15 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
                 PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH + " TEXT DEFAULT 'false'," +
                 PageConfigController.COLUMN_INT_GLOBAL_OPACITY + " INTEGER DEFAULT 100," +
                 PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " INTEGER," +
-                PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER" +
+                PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER," +
+                "scheme_type TEXT DEFAULT 'game_key_mapping'," +
+                "osc_vibrate INTEGER DEFAULT 1," +
+                "osc_opacity INTEGER DEFAULT 90," +
+                "osc_only_l3r3 INTEGER DEFAULT 0," +
+                "osc_show_guide INTEGER DEFAULT 1," +
+                "osc_half_height INTEGER DEFAULT 1," +
+                "osc_flip_face_buttons INTEGER DEFAULT 0," +
+                "osc_element_layout TEXT" +
                 ")";
 
         db.execSQL(createConfigTable);
@@ -255,6 +301,16 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         }
         db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = -1;");
         db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = -1;");
+        if (oldVersion < 10) {
+            db.execSQL("ALTER TABLE config ADD COLUMN scheme_type TEXT DEFAULT 'game_key_mapping';");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_vibrate INTEGER DEFAULT 1;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_opacity INTEGER DEFAULT 90;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_only_l3r3 INTEGER DEFAULT 0;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_show_guide INTEGER DEFAULT 1;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_half_height INTEGER DEFAULT 1;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_flip_face_buttons INTEGER DEFAULT 0;");
+            db.execSQL("ALTER TABLE config ADD COLUMN osc_element_layout TEXT;");
+        }
     }
 
     /**
@@ -748,6 +804,18 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         // 关闭 Cursor
         cursor.close();
 
+        // 获取当前设备屏幕尺寸，写入导出文件用于导入时坐标缩放
+        int sourceWidth = 0, sourceHeight = 0;
+        try {
+            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            if (wm != null) {
+                DisplayMetrics metrics = new DisplayMetrics();
+                wm.getDefaultDisplay().getRealMetrics(metrics);
+                sourceWidth = metrics.widthPixels;
+                sourceHeight = metrics.heightPixels;
+            }
+        } catch (Exception ignored) {}
+
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(ContentValues.class, new ContentValuesSerializer());
         Gson gson = gsonBuilder.create();
@@ -758,9 +826,63 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         String elementsString = gson.toJson(elementsValues);
 
 
-        return gson.toJson(new ExportFile(DATABASE_VERSION, settingString, elementsString));
+        return gson.toJson(new ExportFile(DATABASE_VERSION, settingString, elementsString, sourceWidth, sourceHeight));
 
 
+    }
+
+    /**
+     * 对元素列表应用屏幕坐标缩放。
+     * 读取 ExportFile 中存储的源屏幕尺寸，与当前设备屏幕尺寸计算缩放比例后应用到各元素。
+     */
+    private void scaleElementsFromExport(int sourceWidth, int sourceHeight, ContentValues[] elements) {
+        if (sourceWidth <= 0 || sourceHeight <= 0 || elements == null || elements.length == 0) return;
+
+        // 获取当前设备屏幕尺寸
+        int targetWidth = 0, targetHeight = 0;
+        try {
+            WindowManager wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+            if (wm != null) {
+                DisplayMetrics metrics = new DisplayMetrics();
+                wm.getDefaultDisplay().getRealMetrics(metrics);
+                targetWidth = metrics.widthPixels;
+                targetHeight = metrics.heightPixels;
+            }
+        } catch (Exception ignored) {}
+
+        if (targetWidth <= 0 || targetHeight <= 0) return;
+        // 如果源和目标尺寸完全相同，跳过缩放
+        if (sourceWidth == targetWidth && sourceHeight == targetHeight) return;
+
+        float scaleX = (float) targetWidth / (float) sourceWidth;
+        float scaleY = (float) targetHeight / (float) sourceHeight;
+
+        for (ContentValues el : elements) {
+            // 位置
+            Long cx = el.getAsLong(Element.COLUMN_INT_ELEMENT_CENTRAL_X);
+            if (cx != null) {
+                el.put(Element.COLUMN_INT_ELEMENT_CENTRAL_X, Math.round(cx * scaleX));
+            }
+            Long cy = el.getAsLong(Element.COLUMN_INT_ELEMENT_CENTRAL_Y);
+            if (cy != null) {
+                el.put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, Math.round(cy * scaleY));
+            }
+            // 尺寸
+            Long w = el.getAsLong(Element.COLUMN_INT_ELEMENT_WIDTH);
+            if (w != null) {
+                el.put(Element.COLUMN_INT_ELEMENT_WIDTH, Math.max(1L, Math.round(w * scaleX)));
+            }
+            Long h = el.getAsLong(Element.COLUMN_INT_ELEMENT_HEIGHT);
+            if (h != null) {
+                el.put(Element.COLUMN_INT_ELEMENT_HEIGHT, Math.max(1L, Math.round(h * scaleY)));
+            }
+            // 半径
+            Long radius = el.getAsLong(Element.COLUMN_INT_ELEMENT_RADIUS);
+            if (radius != null) {
+                float uniformScale = Math.min(scaleX, scaleY);
+                el.put(Element.COLUMN_INT_ELEMENT_RADIUS, Math.max(1L, Math.round(radius * uniformScale)));
+            }
+        }
     }
 
     /**
@@ -799,6 +921,9 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         ContentValues settingValues = gson.fromJson(settingString, ContentValues.class);
         ContentValues[] elements = gson.fromJson(elementsString, ContentValues[].class);
         normalizeGlobalStyleSettings(settingValues);
+
+        // ── 屏幕参数缩放：根据源屏幕与当前设备屏幕的比例换算元素坐标 ──
+        scaleElementsFromExport(exportFile.getSourceWidth(), exportFile.getSourceHeight(), elements);
 
         // --- 预处理，建立从旧ID到内存中ContentValues对象的映射 ---
         Map<Long, ContentValues> oldIdToObjectMap = new HashMap<>();
@@ -887,6 +1012,71 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         return 0; // 成功
     }
 
+    /**
+     * 从 SharedPreferences 迁移虚拟手柄方案的配置和元素布局到数据库。
+     * 仅在 config_id=0 的记录缺少 scheme_type 字段时执行一次。
+     */
+    private static final String SP_MIGRATION_FLAG = "sp_to_db_migrated";
+    private boolean migrationChecked = false;
+    private void migrateVirtualControllerFromSharedPreferences(Context context) {
+        if (migrationChecked) return;
+        migrationChecked = true;
+        try {
+            // 检查 SP 迁移标记，避免重复迁移
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+            if (prefs.getBoolean(SP_MIGRATION_FLAG, false)) {
+                return; // 已迁移
+            }
+        } catch (Exception e) {
+            return;
+        }
+
+        try {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
+
+            // 先更新已有 config_id=0 的行，而不是 insert（避免主键冲突）
+            ContentValues cv = new ContentValues();
+            cv.put("scheme_type", "virtual_controller");
+            // 从 Default SP 读取配置
+            cv.put("osc_vibrate", prefs.getBoolean("checkbox_vibrate_osc", true) ? 1 : 0);
+            cv.put("osc_opacity", prefs.getInt("seekbar_osc_opacity", 90));
+            cv.put("osc_only_l3r3", prefs.getBoolean("checkbox_only_show_L3R3", false) ? 1 : 0);
+            cv.put("osc_show_guide", prefs.getBoolean("checkbox_show_guide_button", true) ? 1 : 0);
+            cv.put("osc_half_height", prefs.getBoolean("checkbox_half_height_osc_portrait", true) ? 1 : 0);
+            cv.put("osc_flip_face_buttons", prefs.getBoolean("checkbox_flip_face_buttons", false) ? 1 : 0);
+            // 从 OSC SP 读取元素布局
+            SharedPreferences oscPrefs = context.getSharedPreferences("OSC", Context.MODE_PRIVATE);
+            JSONObject layoutJson = new JSONObject();
+            for (String key : oscPrefs.getAll().keySet()) {
+                try {
+                    String val = oscPrefs.getString(key, null);
+                    if (val != null) {
+                        layoutJson.put(key, new JSONObject(val));
+                    }
+                } catch (JSONException ignored) {}
+            }
+            if (layoutJson.length() > 0) {
+                cv.put("osc_element_layout", layoutJson.toString());
+            }
+
+            // 尝试更新已有行，如果影响行数为 0 则 insert
+            int rowsAffected = writableDataBase.update("config", cv, "config_id = ?", new String[]{"0"});
+            if (rowsAffected == 0) {
+                cv.put(PageConfigController.COLUMN_LONG_CONFIG_ID, 0L);
+                cv.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, "default");
+                cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true");
+                cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_MODE, "true");
+                writableDataBase.insert("config", null, cv);
+            }
+
+            // 标记迁移完成
+            prefs.edit().putBoolean(SP_MIGRATION_FLAG, true).apply();
+            LimeLog.info("SuperConfigDatabaseHelper: SP→DB 迁移完成");
+        } catch (Exception e) {
+            LimeLog.warning("SuperConfigDatabaseHelper: SP→DB 迁移失败: " + e.getMessage());
+        }
+    }
+
     public int mergeConfig(String configString, Long existConfigId) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(ContentValues.class, new ContentValuesSerializer());
@@ -913,6 +1103,9 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         String elementsString = exportFile.getElements();
 
         ContentValues[] elements = gson.fromJson(elementsString, ContentValues[].class);
+
+        // ── 屏幕参数缩放 ──
+        scaleElementsFromExport(exportFile.getSourceWidth(), exportFile.getSourceHeight(), elements);
 
         // 将组按键及其子按键存储在MAP中
         Map<ContentValues, List<ContentValues>> groupButtonMaps = new HashMap<>();

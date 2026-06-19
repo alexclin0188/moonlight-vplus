@@ -194,6 +194,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         /** 睡眠快捷键两段式延迟 (ms) */
         private const val SLEEP_DELAY = 200L
+
+        /** 当前方案的 SharedPreference key，与旧 PageConfigController 互通 */
+        const val PREF_CURRENT_CONFIG_ID = "current_config_id"
     }
 
     // ========================================================================
@@ -864,8 +867,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun initializeControllerManager(layout: FrameLayout) {
         if (controllerManager != null) return
         controllerManager = com.limelight.binding.input.advance_setting.ControllerManager(layout, activity)
-        // 如果按键映射已启用，立即显示元素覆盖层
+        // 如果按键映射已启用，从持久化的 config_id 加载元素并显示覆盖层
         if (isCrownFeatureEnabled) {
+            controllerManager?.refreshLayout()
             controllerManager?.show()
         }
     }
@@ -876,11 +880,48 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     val isCrownFeatureEnabled: Boolean
         get() = prefConfig.keyMappingEnabled
 
-    /** 设置按键映射开关并持久化。同时联动旧 [ControllerManager] 显示/隐藏元素覆盖层。由 Compose UI（KeyMappingSection）调用。 */
+    /** 当前选中的方案 configId，从 SharedPreferences 读取。 */
+    val currentSchemeConfigId: Long
+        get() {
+            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+            return prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)
+        }
+
+    /** 当前方案的类型（"virtual_controller" / "game_key_mapping"），从数据库查询。 */
+    val currentSchemeType: String
+        get() {
+            try {
+                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+                val type = db.queryConfigAttribute(currentSchemeConfigId, "scheme_type", "game_key_mapping")
+                return type as? String ?: "game_key_mapping"
+            } catch (_: Exception) {
+                return "game_key_mapping"
+            }
+        }
+
+    /** 当前方案的名称，从数据库查询。 */
+    val currentSchemeName: String
+        get() {
+            try {
+                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+                val name = db.queryConfigAttribute(
+                    currentSchemeConfigId,
+                    com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_STRING_CONFIG_NAME,
+                    "未命名"
+                )
+                return name as? String ?: "未命名"
+            } catch (_: Exception) {
+                return "未命名"
+            }
+        }
+
+    /** 设置按键映射开关并持久化。同时联动旧 [ControllerManager] 加载元素并显示/隐藏覆盖层。由 Compose UI（KeyMappingSection）调用。 */
     fun setCrownFeatureEnabled(enabled: Boolean) {
         prefConfig.keyMappingEnabled = enabled
         prefConfig.writePreferences(activity)
         if (enabled) {
+            // 从持久化的 PREF_CURRENT_CONFIG_ID 加载方案元素后再显示
+            controllerManager?.refreshLayout()
             controllerManager?.show()
         } else {
             controllerManager?.hide()

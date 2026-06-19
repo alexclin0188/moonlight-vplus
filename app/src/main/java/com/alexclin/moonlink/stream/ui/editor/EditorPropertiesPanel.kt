@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.ui.editor.KeyValuePickerDialog
 import com.alexclin.moonlink.stream.ui.editor.getKeyLabelByValue
 import kotlin.math.roundToInt
+import org.json.JSONObject
 
 // ════════════════════════════════════════════════════════════════════════════
 //  属性编辑面板
@@ -85,6 +86,8 @@ fun EditorPropertiesPanel(
     element: EditorElement,
     onSave: (EditorElement) -> Unit,
     onCancel: () -> Unit,
+    onManageChildren: (() -> Unit)? = null,
+    onManageSegments: (() -> Unit)? = null,
 ) {
     // ── 本地可编辑状态 ──
     var text by remember(element.elementId) { mutableStateOf(element.text) }
@@ -115,6 +118,7 @@ fun EditorPropertiesPanel(
     var leftValue by remember(element.elementId) { mutableStateOf(element.leftValue) }
     var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
     var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
+    var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
 
     var collapsedSections by remember(element.elementId) {
         mutableStateOf(setOf<Section>())
@@ -146,9 +150,9 @@ fun EditorPropertiesPanel(
         middleValue = middleValue,
         upValue = upValue,
         downValue = downValue,
-        leftValue = leftValue,
-        rightValue = rightValue,
+        leftValue = leftValue,                        rightValue = rightValue,
         flag1 = flag1,
+        extraAttributesJson = extraAttributesJson,
     )
 
     // ── 界面 ──
@@ -372,9 +376,100 @@ fun EditorPropertiesPanel(
 
                         // 组按键标志
                         if (element.type == ElementType.GROUP_BUTTON) {
+                            // ── 子元素信息行 ──
+                            val childCount = element.value
+                                .split(",")
+                                .mapNotNull { it.trim().toLongOrNull() }
+                                .count { it != -1L }
+                            PropertyRow("子按键") {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(
+                                        if (childCount > 0) "${childCount} 个" else "无",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = if (childCount > 0) MaterialTheme.colorScheme.onSurface
+                                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    if (onManageChildren != null) {
+                                        TextButton(
+                                            onClick = onManageChildren,
+                                        ) {
+                                            Text(
+                                                if (childCount > 0) "管理" else "添加",
+                                                style = MaterialTheme.typography.labelSmall,
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+
                             PropertyRow("隐藏标志") {
                                 SmallIntField(value = flag1, onValueChange = { flag1 = it },
                                     modifier = Modifier.width(80.dp))
+                            }
+                            // 组按键扩展属性（直接读写顶层 extraAttributesJson 状态）
+                            PropertyRow("可拖拽") {
+                                val movable = try {
+                                    JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
+                                } catch (_: Exception) { false }
+                                var checked by remember(element.elementId) { mutableStateOf(movable) }
+                                androidx.compose.material3.Switch(
+                                    checked = checked,
+                                    onCheckedChange = {
+                                        checked = it
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("movableInNormalMode", it)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                            PropertyRow("永久独立") {
+                                val independent = try {
+                                    JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
+                                } catch (_: Exception) { false }
+                                var checked by remember(element.elementId) { mutableStateOf(independent) }
+                                androidx.compose.material3.Switch(
+                                    checked = checked,
+                                    onCheckedChange = {
+                                        checked = it
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("isPermanentlyIndependent", it)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                        }
+
+                        // WheelPad 分段数 + 分段编辑入口
+                        if (element.type == ElementType.WHEEL_PAD) {
+                            PropertyRow("分段数") {
+                                Column {
+                                    Slider(
+                                        value = (mode.toIntOrNull() ?: 8).toFloat(),
+                                        onValueChange = { mode = it.roundToInt().toString() },
+                                        valueRange = 2f..24f,
+                                        steps = 21,
+                                        modifier = Modifier.weight(1f),
+                                    )
+                                    Text("${mode.toIntOrNull() ?: 8} 段",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                            }
+                            // 分段编辑入口
+                            if (onManageSegments != null) {
+                                PropertyRow("分段编辑") {
+                                    TextButton(onClick = onManageSegments) {
+                                        Text("编辑分段", style = MaterialTheme.typography.labelSmall)
+                                    }
+                                }
                             }
                         }
 
@@ -683,6 +778,7 @@ internal fun buildUpdatedElement(
     leftValue: String,
     rightValue: String,
     flag1: String,
+    extraAttributesJson: String = element.extraAttributesJson,
 ): EditorElement {
     return element.copy(
         text = text,
@@ -709,6 +805,7 @@ internal fun buildUpdatedElement(
         leftValue = leftValue,
         rightValue = rightValue,
         flag1 = flag1.toIntOrNull() ?: element.flag1,
+        extraAttributesJson = extraAttributesJson,
     )
 }
 

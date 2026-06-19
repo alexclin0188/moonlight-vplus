@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.stream.ui.ScreenScaleHelper
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat
@@ -133,7 +134,7 @@ fun KeyMappingScreen() {
         try {
             val db = SuperConfigDatabaseHelper(context)
             val scheme = schemes.find { it.configId == exportMkmpTarget } ?: return@rememberLauncherForActivityResult
-            val json = buildMkmpJson(db, scheme)
+            val json = buildMkmpJson(context, db, scheme)
             context.contentResolver.openOutputStream(uri)?.use {
                 it.write(json.toByteArray(Charsets.UTF_8))
             }
@@ -526,7 +527,7 @@ private fun ImportMkmpDialog(
  * 构建 .mkmp 简化 JSON。
  * 不含 MD5/版本号等内部元数据。
  */
-private fun buildMkmpJson(db: SuperConfigDatabaseHelper, scheme: ConfigScheme): String {
+private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: ConfigScheme): String {
     val configJson = JSONObject()
     val configAttrs = listOf(
         "touch_enable" to "boolean",
@@ -568,9 +569,15 @@ private fun buildMkmpJson(db: SuperConfigDatabaseHelper, scheme: ConfigScheme): 
 
     val root = JSONObject().apply {
         put("format", "mkmp")
-        put("version", 1)
+        put("version", 2)  // v2: 增加 sourceWidth/sourceHeight 用于屏幕参数换算
         put("name", scheme.name)
         put("created", SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()))
+        // 写入源设备屏幕尺寸，供导入时坐标缩放
+        try {
+            val (w, h) = ScreenScaleHelper.getDeviceScreenSize(context)
+            put(ScreenScaleHelper.KEY_SOURCE_WIDTH, w)
+            put(ScreenScaleHelper.KEY_SOURCE_HEIGHT, h)
+        } catch (_: Exception) { }
         put("config", configJson)
         put("elements", elementsArray)
     }
@@ -586,6 +593,10 @@ private fun importMkmpFromJson(context: android.content.Context, json: String, n
     val configObj = root.optJSONObject("config") ?: JSONObject()
     val elementsArray = root.optJSONArray("elements") ?: JSONArray()
 
+    // ── 读取源设备屏幕尺寸，计算缩放 ──
+    val sourceWidth = root.optInt(ScreenScaleHelper.KEY_SOURCE_WIDTH, 0)
+    val sourceHeight = root.optInt(ScreenScaleHelper.KEY_SOURCE_HEIGHT, 0)
+
     val db = SuperConfigDatabaseHelper(context)
 
     // 覆盖模式：先删除旧数据，复用原有 config_id
@@ -594,6 +605,11 @@ private fun importMkmpFromJson(context: android.content.Context, json: String, n
     }
 
     val newConfigId = if (overrideTargetId != 0L) overrideTargetId else System.currentTimeMillis()
+
+    // ── 获取目标设备屏幕尺寸 ──
+    val (targetWidth, targetHeight) = try {
+        ScreenScaleHelper.getDeviceScreenSize(context)
+    } catch (_: Exception) { Pair(0, 0) }
 
     // 写入 config
     val configValues = ContentValues().apply {
@@ -613,7 +629,7 @@ private fun importMkmpFromJson(context: android.content.Context, json: String, n
     }
     db.insertConfig(configValues)
 
-    // 写入 elements
+    // 写入 elements（带屏幕参数换算）
     var elementIdCounter = System.currentTimeMillis()
     for (i in 0 until elementsArray.length()) {
         val elObj = elementsArray.getJSONObject(i)
@@ -629,6 +645,12 @@ private fun importMkmpFromJson(context: android.content.Context, json: String, n
                 is Double -> elValues.put(key, v)
                 is String -> elValues.put(key, v)
             }
+        }
+        // 对每个元素应用坐标缩放
+        if (sourceWidth > 0 && sourceHeight > 0 && targetWidth > 0 && targetHeight > 0) {
+            ScreenScaleHelper.scaleElementContentValues(
+                elValues, sourceWidth, sourceHeight, targetWidth, targetHeight
+            )
         }
         db.insertElement(elValues)
     }
