@@ -494,8 +494,8 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
             .fillMaxSize()
             .background(Color(0xBB000000)),
     ) {
-        // ── 核心锚点组（状态文字 + 进度条 + 阶段文字）──
-        // 整体垂直居中，进度条固定于屏幕中线
+        // ── 核心锚点组（状态文字 + 进度条 + 阶段文字 + Tip）──
+        // 整体垂直居中，所有内容从上到下排列，Tip 在连接信息之下不遮挡
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -528,21 +528,11 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 color = Color(0xFFCCCCCC),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Light,
-                modifier = Modifier.padding(top = 8.dp),
+                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
                 textAlign = TextAlign.Center,
             )
-        }
 
-        // ── Tip 提示（独立层，不参与居中计算）──
-        // 置于屏幕下半部靠顶位置，高度变化不拉扯进度条
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.5f)
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 32.dp),
-            contentAlignment = Alignment.TopCenter,
-        ) {
+            // ── Tip 提示（在连接信息下方，自然地跟随居中布局）──
             Text(
                 text = currentTip,
                 color = Color(0xFFBBBBBB),
@@ -552,7 +542,6 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 maxLines = 3,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = 16.dp),
             )
         }
     }

@@ -378,11 +378,11 @@ private fun KeyMappingSection(
 ) {
     val context = LocalContext.current
     var enabled by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
-    var expanded by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
+    val expanded = enabled
 
     Column {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Default.VideogameAsset, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
@@ -400,29 +400,40 @@ private fun KeyMappingSection(
                     engine.prefConfig.writePreferences(context)
                     Toast.makeText(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT).show()
                 }
-                expanded = newValue
             })
         }
 
         AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 44.dp, end = 12.dp, bottom = 8.dp)) {
+            Column(Modifier.padding(start = 15.dp, end = 12.dp)) {
                 // 1. 切换按键映射方案 → 全屏方案选择页
-                TextButton(onClick = {
-                    onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Column {
-                        Text("切换按键映射方案 >", style = MaterialTheme.typography.bodyMedium)
-                        Text("当前方案：${engine.currentSchemeName}",
-                             style = MaterialTheme.typography.bodySmall,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(
+                    onClick = {
+                        onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                        Column {
+                            Text("切换按键映射方案 >", style = MaterialTheme.typography.bodyMedium)
+                            Text("当前方案：${engine.currentSchemeName}",
+                                 style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 }
 
                 // 2. 编辑当前方案 → 全屏编辑器
-                TextButton(onClick = {
-                    onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_EDITOR)
-                }, modifier = Modifier.fillMaxWidth()) {
-                    Text("编辑当前方案 >")
+                TextButton(
+                    onClick = {
+                        onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_EDITOR)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                        Text("编辑当前方案 >")
+                    }
                 }
 
                 // 3. 虚拟手柄配置 / 按键映射方案配置（根据方案类型动态显示）
@@ -436,9 +447,14 @@ private fun KeyMappingSection(
                 } else {
                     DetailPage.KEY_MAPPING_CONFIG
                 }
-                TextButton(onClick = { onNavigateToConfig(configDetailPage) },
-                    modifier = Modifier.fillMaxWidth()) {
-                    Text(configLabel)
+                TextButton(
+                    onClick = { onNavigateToConfig(configDetailPage) },
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                ) {
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
+                        Text(configLabel)
+                    }
                 }
             }
         }

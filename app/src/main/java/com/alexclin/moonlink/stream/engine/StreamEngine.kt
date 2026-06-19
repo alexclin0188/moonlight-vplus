@@ -218,6 +218,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             prefConfig.touchscreenTrackpad = false
             prefConfig.enableNativeMousePointer = false
 
+            // 默认关闭按键映射（不持久化上次状态）
+            prefConfig.keyMappingEnabled = false
+
             // 初始化 NativeTouchContext 静态参数
             NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
             NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
@@ -845,32 +848,30 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         displayTransientMessage("虚拟手柄切换（待实现）")
     }
 
-    // ── 旧 Crown ControllerManager 桥接 ──
+    // ── 旧 Crown ControllerManager 桥接（保留为 null，供编辑器等旧代码引用） ──
 
-    /**
-     * 旧 Crown 系统的 [ControllerManager]。
-     * 在 MoonLink 模式下可能为 null，需要先由 Game.kt 初始化。
-     * 编辑器通过此属性获取 [ElementController] 以嵌入旧编辑视图。
-     */
+    /** 旧 Crown 系统的 [ControllerManager]。当前 MoonLink 模式下始终为 null。 */
+    @Deprecated("不再使用，保留仅避免旧代码编译错误")
     var controllerManager: com.limelight.binding.input.advance_setting.ControllerManager? = null
         private set
 
-    /**
-     * 初始化旧 Crown 系统的 [ControllerManager] 桥接。
-     *
-     * 需要在包含 `R.id.advance_setting_view` 的 [FrameLayout] 就绪后调用。
-     * 在旧 [Game] Activity 中，此布局由 `activity_game.xml` 提供。
-     * MoonLink 模式下由外部将 inflate 后的布局传入。
-     *
-     * @param layout 根 FrameLayout，需包含 `R.id.advance_setting_view` 子视图
-     */
-    fun initializeControllerManager(layout: FrameLayout) {
-        if (controllerManager != null) return
-        controllerManager = com.limelight.binding.input.advance_setting.ControllerManager(layout, activity)
-        // 如果按键映射已启用，从持久化的 config_id 加载元素并显示覆盖层
-        if (isCrownFeatureEnabled) {
-            controllerManager?.refreshLayout()
-            controllerManager?.show()
+    /** 空实现，仅兼容旧调用方。 */
+    @Deprecated("不再使用，保留仅避免旧代码编译错误")
+    fun initializeControllerManager(layout: android.widget.FrameLayout) { }
+
+    // ── 新 Compose 按键映射覆盖层 ──
+
+    /** 当前按键映射覆盖层的元素列表。由 [reloadOverlay] 更新。 */
+    val currentOverlayElements: androidx.compose.runtime.MutableState<List<com.alexclin.moonlink.stream.ui.editor.EditorElement>> =
+        androidx.compose.runtime.mutableStateOf(emptyList())
+
+    /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。 */
+    fun reloadOverlay() {
+        try {
+            val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+            currentOverlayElements.value = com.alexclin.moonlink.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
+        } catch (_: Exception) {
+            currentOverlayElements.value = emptyList()
         }
     }
 
@@ -899,9 +900,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             }
         }
 
-    /** 当前方案的名称，从数据库查询。 */
+    /** 当前方案的名称，从数据库查询。内置方案固定返回"内置虚拟手柄"。 */
     val currentSchemeName: String
         get() {
+            if (currentSchemeConfigId == 0L) return "内置虚拟手柄"
             try {
                 val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
@@ -915,16 +917,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             }
         }
 
-    /** 设置按键映射开关并持久化。同时联动旧 [ControllerManager] 加载元素并显示/隐藏覆盖层。由 Compose UI（KeyMappingSection）调用。 */
+    /** 设置按键映射开关（不持久化，重启后默认为关闭）。同时加载当前方案的覆盖层元素。由 Compose UI（KeyMappingSection）调用。 */
     fun setCrownFeatureEnabled(enabled: Boolean) {
         prefConfig.keyMappingEnabled = enabled
-        prefConfig.writePreferences(activity)
         if (enabled) {
-            // 从持久化的 PREF_CURRENT_CONFIG_ID 加载方案元素后再显示
-            controllerManager?.refreshLayout()
-            controllerManager?.show()
+            reloadOverlay()
         } else {
-            controllerManager?.hide()
+            currentOverlayElements.value = emptyList()
         }
     }
 

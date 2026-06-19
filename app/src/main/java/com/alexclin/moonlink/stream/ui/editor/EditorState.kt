@@ -297,7 +297,7 @@ class EditorState(
 // ════════════════════════════════════════════════════════════════════════════
 
 /** 将 DB 返回的 Map<String, Object> 安全转换为 Int */
-private fun Map<String, Any?>.optInt(key: String, default: Int = 0): Int {
+fun Map<String, Any?>.optInt(key: String, default: Int = 0): Int {
     return when (val v = this[key]) {
         is Long -> v.toInt()
         is Int -> v
@@ -307,7 +307,7 @@ private fun Map<String, Any?>.optInt(key: String, default: Int = 0): Int {
 }
 
 /** 将 DB 返回的 Map<String, Object> 安全转换为 Long */
-private fun Map<String, Any?>.optLong(key: String, default: Long = 0L): Long {
+fun Map<String, Any?>.optLong(key: String, default: Long = 0L): Long {
     return when (val v = this[key]) {
         is Long -> v
         is Int -> v.toLong()
@@ -317,7 +317,7 @@ private fun Map<String, Any?>.optLong(key: String, default: Long = 0L): Long {
 }
 
 /** 将 DB 返回的 Map<String, Object> 安全转换为 String */
-private fun Map<String, Any?>.optString(key: String, default: String = ""): String {
+fun Map<String, Any?>.optString(key: String, default: String = ""): String {
     return when (val v = this[key]) {
         is String -> v
         else -> default
@@ -347,7 +347,7 @@ private fun Map<String, Any?>.optBoolean(key: String, default: Boolean = false):
  * - FLOAT 列 → `Double`
  * - NULL 列 → 不在 map 中
  */
-internal fun Map<String, Any?>.toEditorElement(): EditorElement {
+fun Map<String, Any?>.toEditorElement(): EditorElement {
     return EditorElement(
         elementId = this.optLong(Element.COLUMN_LONG_ELEMENT_ID),
         configId = this.optLong(Element.COLUMN_LONG_CONFIG_ID),

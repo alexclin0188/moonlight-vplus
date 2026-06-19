@@ -1,11 +1,7 @@
 package com.alexclin.moonlink.stream.ui.panels
 
 import android.content.ContentValues
-import android.content.Context
-import android.net.Uri
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -26,20 +22,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Gamepad
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -51,7 +45,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -118,14 +111,14 @@ fun KeyMappingSchemeSelector(
 
     LaunchedEffect(Unit) { refreshSchemes() }
 
-    // ── 选择方案 ──
+    // ── 选择方案（选中后自动返回子面板，刷新覆盖层） ──
     fun selectScheme(configId: Long) {
         currentConfigId = configId
         prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, configId).apply()
         try {
             engine.setCrownFeatureEnabled(true)
-            engine.controllerManager?.refreshLayout()
         } catch (_: Exception) { }
+        onClose()
     }
 
     // ── 新建方案 Dialog ──
@@ -138,30 +131,25 @@ fun KeyMappingSchemeSelector(
             title = { Text("新建按键方案") },
             text = {
                 Column {
-                    // 类型选择
+                    // 类型选择 — FilterChip 形式，两选项一行
                     Text("选择方案类型", style = MaterialTheme.typography.labelMedium,
-                         modifier = Modifier.padding(bottom = 4.dp))
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        RadioButton(selected = newType == SCHEME_TYPE_VIRTUAL_CONTROLLER,
-                            onClick = { newType = SCHEME_TYPE_VIRTUAL_CONTROLLER })
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text("虚拟手柄方案", style = MaterialTheme.typography.bodyMedium)
-                            Text("复制内置手柄布局", style = MaterialTheme.typography.bodySmall,
-                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                         modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp)) {
-                        RadioButton(selected = newType == SCHEME_TYPE_GAME_KEY_MAPPING,
-                            onClick = { newType = SCHEME_TYPE_GAME_KEY_MAPPING })
-                        Spacer(Modifier.width(8.dp))
-                        Column {
-                            Text("游戏按键映射", style = MaterialTheme.typography.bodyMedium)
-                            Text("创建空白方案", style = MaterialTheme.typography.bodySmall,
-                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                         modifier = Modifier.padding(bottom = 8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        FilterChip(
+                            selected = newType == SCHEME_TYPE_VIRTUAL_CONTROLLER,
+                            onClick = { newType = SCHEME_TYPE_VIRTUAL_CONTROLLER },
+                            label = { Text("虚拟手柄方案", style = MaterialTheme.typography.bodyMedium) },
+                            modifier = Modifier.weight(1f),
+                        )
+                        FilterChip(
+                            selected = newType == SCHEME_TYPE_GAME_KEY_MAPPING,
+                            onClick = { newType = SCHEME_TYPE_GAME_KEY_MAPPING },
+                            label = { Text("游戏按键映射", style = MaterialTheme.typography.bodyMedium) },
+                            modifier = Modifier.weight(1f),
+                        )
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -183,6 +171,12 @@ fun KeyMappingSchemeSelector(
                             Toast.makeText(context, "名称长度需为 1-10 字符", Toast.LENGTH_SHORT).show()
                             return@TextButton
                         }
+                        // 检查同名方案
+                        val nameExists = schemes.any { it.name.equals(name, ignoreCase = true) }
+                        if (nameExists) {
+                            Toast.makeText(context, "已存在同名方案「$name」，请修改名称", Toast.LENGTH_SHORT).show()
+                            return@TextButton
+                        }
                         try {
                             val db = SuperConfigDatabaseHelper(context)
                             val newId = System.currentTimeMillis()
@@ -195,45 +189,40 @@ fun KeyMappingSchemeSelector(
                             db.insertConfig(cv)
 
                             if (newType == SCHEME_TYPE_VIRTUAL_CONTROLLER) {
-                                // 复制内置方案（config_id=0）的 elements 到新方案
-                                val defaultElementIds = db.queryAllElementIds(0L)
+                                // 使用 DefaultElements 生成默认手柄元素并直接写入新方案
+                                val config = com.limelight.preferences.PreferenceConfiguration.readPreferences(context)
+                                val dm = context.resources.displayMetrics
+                                val isPortrait = context.resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+                                val defaultCvs = com.alexclin.moonlink.stream.ui.overlay.DefaultElements.createDefaultElements(
+                                    dm.widthPixels, dm.heightPixels, config, isPortrait
+                                )
                                 var elementIdCounter = System.currentTimeMillis() + 1
-                                for (oldEid in defaultElementIds) {
-                                    val attrs = db.queryAllElementAttributes(0L, oldEid)
-                                    val elCv = ContentValues()
-                                    for ((key, value) in attrs) {
-                                        if (key == "_id" || key == "config_id" || key == "element_id") continue
-                                        when (value) {
-                                            is Long -> elCv.put(key, value)
-                                            is String -> elCv.put(key, value)
-                                            is Double -> elCv.put(key, value)
-                                            is ByteArray -> elCv.put(key, value)
-                                        }
-                                    }
-                                    elCv.put("config_id", newId)
-                                    elCv.put("element_id", elementIdCounter++)
-                                    db.insertElement(elCv)
+                                for (cv in defaultCvs) {
+                                    cv.put("config_id", newId)
+                                    cv.put("element_id", elementIdCounter++)
+                                    db.insertElement(cv)
                                 }
-                                // 复制 osc_* 配置
-                                val defaultOscVibrate = db.queryConfigAttribute(0L, "osc_vibrate", 1) as? Long ?: 1L
-                                val defaultOscOpacity = db.queryConfigAttribute(0L, "osc_opacity", 90) as? Long ?: 90L
-                                val defaultOscLayout = db.queryConfigAttribute(0L, "osc_element_layout", null) as? String
+                                // 写入 osc_* 配置
                                 val updateCv = ContentValues()
-                                updateCv.put("osc_vibrate", defaultOscVibrate)
-                                updateCv.put("osc_opacity", defaultOscOpacity)
-                                if (defaultOscLayout != null) {
-                                    updateCv.put("osc_element_layout", defaultOscLayout)
-                                }
+                                updateCv.put("osc_vibrate", 1L)
+                                updateCv.put("osc_opacity", 90L)
                                 db.updateConfig(newId, updateCv)
                             }
 
                             refreshSchemes()
-                            selectScheme(newId)
+                            // 设置当前方案为新创建的方案
+                            currentConfigId = newId
+                            prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, newId).apply()
+                            try {
+                                engine.setCrownFeatureEnabled(true)
+                                engine.reloadOverlay()
+                            } catch (_: Exception) { }
+                            showNewDialog = false
                             Toast.makeText(context, "方案「$name」已创建", Toast.LENGTH_SHORT).show()
+                            onOpenEditor()
                         } catch (e: Exception) {
                             Toast.makeText(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT).show()
                         }
-                        showNewDialog = false
                     },
                     enabled = newName.trim().isNotEmpty(),
                 ) { Text("确认") }
@@ -291,22 +280,24 @@ fun KeyMappingSchemeSelector(
                 )
             }
 
-            // ── 搜索栏（保留） ──
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                placeholder = { Text("搜索方案名") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
-                shape = RoundedCornerShape(12.dp),
-            )
-
-            // ── 新建按钮行（移除导入按钮，仅保留新建） ──
+            // ── 搜索栏 + 新建按钮（同行，按钮在行尾） ──
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.End,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = { Text("搜索方案名", style = MaterialTheme.typography.bodySmall) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
+                    },
+                    singleLine = true,
+                    textStyle = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.weight(1f).height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                )
+                Spacer(Modifier.width(8.dp))
                 Button(onClick = { showNewDialog = true }) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
@@ -314,39 +305,48 @@ fun KeyMappingSchemeSelector(
                 }
             }
 
-            // ── 方案列表 ──
+            // ── 方案列表（每行三个 Chip，含内置虚拟手柄方案） ──
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text("加载中...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
+                // 内置虚拟手柄方案
+                val builtIn = SchemeInfo(configId = 0L, name = "内置虚拟手柄",
+                    schemeType = SCHEME_TYPE_VIRTUAL_CONTROLLER, isDefault = true)
+                val showBuiltIn = searchQuery.isBlank()
+                    || "内置虚拟手柄".contains(searchQuery, ignoreCase = true)
+                val userSchemes = schemes.filter { it.configId != 0L }
+                    .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
+                val allItems = (if (showBuiltIn) listOf(builtIn) else emptyList()) + userSchemes
+
                 LazyColumn(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    // ── 1. 虚拟手柄方案（内置，固定置顶） ──
-                    item(key = "virtual_controller") {
-                        VirtualControllerSchemeCard(
-                            schemeType = SCHEME_TYPE_VIRTUAL_CONTROLLER,
-                            isSelected = currentConfigId == 0L,
-                            onSelect = { selectScheme(0L) },
-                        )
-                    }
-
-                    // ── 2. 用户方案列表 ──
-                    val filtered = schemes.filter { it.configId != 0L }
-                        .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
-                    items(filtered, key = { it.configId }) { scheme ->
-                        SchemeCard(
-                            scheme = scheme,
-                            isSelected = scheme.configId == currentConfigId,
-                            onSelect = { selectScheme(scheme.configId) },
-                            onLongPress = {
-                                if (!scheme.isDefault) {
-                                    deleteTarget = scheme
-                                }
-                            },
-                        )
+                    // 每行三个 Chip
+                    val chunks = allItems.chunked(3)
+                    items(chunks, key = { it.joinToString("-") { c -> c.configId.toString() } }) { chunk ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            chunk.forEach { scheme ->
+                                SchemeChip(
+                                    name = scheme.name,
+                                    typeIcon = if (scheme.schemeType == "virtual_controller")
+                                        Icons.Default.Gamepad else Icons.Default.Keyboard,
+                                    isSelected = scheme.configId == currentConfigId,
+                                    onSelect = { selectScheme(scheme.configId) },
+                                    onLongPress = if (scheme.configId == 0L) null
+                                                  else ({ deleteTarget = scheme }),
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+                            repeat(3 - chunk.size) {
+                                Spacer(Modifier.weight(1f))
+                            }
+                        }
                     }
 
                     item { Spacer(modifier = Modifier.height(80.dp)) }
@@ -357,92 +357,49 @@ fun KeyMappingSchemeSelector(
 }
 
 // ════════════════════════════════════════════════════════════
-//  内置虚拟手柄方案卡片
-// ════════════════════════════════════════════════════════════
-
-@Composable
-private fun VirtualControllerSchemeCard(
-    schemeType: String,
-    isSelected: Boolean,
-    onSelect: () -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
-            .combinedClickable(
-                onClick = onSelect,
-                onLongClick = { /* 内置方案不可删除 */ },
-            )
-            .padding(12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                Icons.Default.Gamepad,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text("虚拟手柄方案", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-                Text("内置方案，始终可用", style = MaterialTheme.typography.bodySmall,
-                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-            RadioButton(
-                selected = isSelected,
-                onClick = onSelect,
-            )
-        }
-    }
-}
-
-// ════════════════════════════════════════════════════════════
-//  用户方案卡片（圆角矩形 + 长按删除）
+//  方案 Chip（Chip 形式，每行三个）
 // ════════════════════════════════════════════════════════════
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun SchemeCard(
-    scheme: SchemeInfo,
+private fun SchemeChip(
+    name: String,
+    typeIcon: androidx.compose.ui.graphics.vector.ImageVector,
     isSelected: Boolean,
     onSelect: () -> Unit,
-    onLongPress: () -> Unit,
+    onLongPress: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
-                        else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
+    Surface(
+        modifier = modifier
             .combinedClickable(
                 onClick = onSelect,
-                onLongClick = onLongPress,
-            )
-            .padding(12.dp),
+                onLongClick = onLongPress ?: {},
+            ),
+        shape = RoundedCornerShape(20.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primaryContainer
+                else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+        tonalElevation = if (isSelected) 2.dp else 0.dp,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            // 方案类型图标
-            val typeIcon = if (scheme.schemeType == "virtual_controller") Icons.Default.Gamepad
-                           else Icons.Default.Keyboard
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
-                if (isSelected) Icons.Default.CheckCircle else typeIcon,
+                typeIcon,
                 contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
+                tint = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                       else MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Spacer(Modifier.width(12.dp))
-
-            // 方案名
+            Spacer(Modifier.width(4.dp))
             Text(
-                scheme.name,
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                modifier = Modifier.weight(1f),
+                name,
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                color = if (isSelected) MaterialTheme.colorScheme.onPrimaryContainer
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
