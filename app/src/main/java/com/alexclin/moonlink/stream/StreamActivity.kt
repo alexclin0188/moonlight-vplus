@@ -69,6 +69,14 @@ class StreamActivity : ComponentActivity() {
             or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         )
 
+        // API 26+ 用 adjustResize（系统自动 resize），API 25- 用 adjustNothing
+        //（避免 adjustResize + 沉浸式全屏在低版本上的兼容问题）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        } else {
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        }
+
         // 默认横屏
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
 
