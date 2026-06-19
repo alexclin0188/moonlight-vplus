@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -32,12 +33,21 @@ import com.alexclin.moonlink.stream.ui.editor.drawWheelPad
  * 命中时通过 [onElementAction] 回调通知上层发送实际按键输入给主机。
  * relX/relY 是触摸点相对于元素中心的位置（用于十字键方向检测和摇杆轴值计算）。
  * 虚拟手柄和游戏按键映射共用此覆盖层，仅数据来源不同。
+ *
+ * @param globalOpacity  全局透明度（0-100），叠加到所有元素的渲染透明度上
+ * @param enabled        false 时跳过所有触摸处理，元素仍渲染但不可交互
+ * @param touchSense     触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
+ * @param enhancedTouch  增强触控：启用时扩大触摸命中区域边距，提升触摸响应
  */
 @Composable
 fun KeyMappingOverlay(
     elements: List<EditorElement>,
     modifier: Modifier = Modifier,
     onElementAction: ((element: EditorElement, isPressed: Boolean, relX: Float, relY: Float) -> Unit)? = null,
+    globalOpacity: Int = 100,
+    enabled: Boolean = true,
+    touchSense: Int = 100,
+    enhancedTouch: Boolean = false,
 ) {
     val pressedIds = remember { mutableStateMapOf<Long, Boolean>() }
     // 记录每个元素的触摸偏移，用于 MOVE 时更新摇杆
@@ -46,9 +56,12 @@ fun KeyMappingOverlay(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .pointerInteropFilter { motionEvent ->
+            .alpha(globalOpacity.coerceIn(0, 100) / 100f)
+            .then(
+                if (enabled) Modifier.pointerInteropFilter { motionEvent ->
+                val touchMargin = computeTouchMargin(touchSense, enhancedTouch)
                 val position = Offset(motionEvent.x, motionEvent.y)
-                val hitIdx = findHitElement(elements, position)
+                val hitIdx = findHitElement(elements, position, touchMargin)
 
                 when (motionEvent.action) {
                     MotionEvent.ACTION_DOWN -> {
@@ -107,6 +120,8 @@ fun KeyMappingOverlay(
                     else -> false
                 }
             }
+                else Modifier
+            )
     ) {
         Canvas(modifier = Modifier.fillMaxSize(), contentDescription = "keymap") {
             val sorted = elements.sortedBy { it.layer }
@@ -122,18 +137,26 @@ fun KeyMappingOverlay(
 private fun findHitElement(
     elements: List<EditorElement>,
     position: Offset,
+    touchMargin: Int = 0,
 ): EditorElement? {
     val idx = elements.indices.sortedWith(
         compareByDescending<Int> { elements[it].layer }
             .thenByDescending { it }
-    ).firstOrNull { hitTest(elements[it], position) }
+    ).firstOrNull { hitTest(elements[it], position, touchMargin) }
     return if (idx != null) elements[idx] else null
 }
 
-/** 检测 [offset] 是否落在元素 [el] 的矩形区域内 */
-internal fun hitTest(el: EditorElement, offset: Offset): Boolean {
-    val halfW = el.width / 2f
-    val halfH = el.height / 2f
+/**
+ * 检测 [offset] 是否落在元素 [el] 的矩形区域内。
+ *
+ * @param el            被检测的元素
+ * @param offset        触摸点坐标
+ * @param touchMargin   额外触控边距（像素），增强触控时增加此值以扩大命中区域
+ * @return true 表示命中
+ */
+internal fun hitTest(el: EditorElement, offset: Offset, touchMargin: Int = 0): Boolean {
+    val halfW = el.width / 2f + touchMargin
+    val halfH = el.height / 2f + touchMargin
     val rect = Rect(
         left = el.centralX - halfW,
         top = el.centralY - halfH,
@@ -141,6 +164,20 @@ internal fun hitTest(el: EditorElement, offset: Offset): Boolean {
         bottom = el.centralY + halfH,
     )
     return rect.contains(offset)
+}
+
+/**
+ * 根据触控灵敏度和增强触控计算触摸命中边距。
+ * - 基础边距由 touchSense 决定（1~4px），越高越灵敏
+ * - enhancedTouch 启用时额外 +8px
+ * - 最终值归一化到 [0..16] 范围
+ */
+internal fun computeTouchMargin(touchSense: Int, enhancedTouch: Boolean): Int {
+    // touchSense: 1~200 → baseMargin: 1~4px
+    val senseNorm = touchSense.coerceIn(1, 200) / 100f
+    val baseMargin = (senseNorm * 2).toInt().coerceIn(1, 4)
+    val enhancedBonus = if (enhancedTouch) 8 else 0
+    return (baseMargin + enhancedBonus).coerceIn(0, 16)
 }
 
 /** 根据元素类型分发绘制到对应的 renderer */

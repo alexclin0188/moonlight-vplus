@@ -47,6 +47,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.stream.ui.panels.SchemeInfo
+import com.alexclin.moonlink.stream.ui.panels.loadUserSchemes
 import com.alexclin.moonlink.stream.ui.ScreenScaleHelper
 import org.json.JSONArray
 import org.json.JSONObject
@@ -54,31 +56,14 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-// ── 方案数据模型 ──
-private data class ConfigScheme(
-    val configId: Long,
-    val name: String,
-)
-
 @Composable
 fun KeyMappingScreen() {
     val context = LocalContext.current
 
     // ── 加载方案列表 ──
-    var schemes by remember { mutableStateOf<List<ConfigScheme>>(emptyList()) }
+    var schemes by remember { mutableStateOf<List<SchemeInfo>>(emptyList()) }
 
-    fun refreshSchemes() {
-        try {
-            val db = SuperConfigDatabaseHelper(context)
-            val ids = db.queryAllConfigIds()
-            schemes = ids.map { id ->
-                val name = db.queryConfigAttribute(id, PageConfigController.COLUMN_STRING_CONFIG_NAME, "未命名") as? String ?: "未命名"
-                ConfigScheme(id, name)
-            }
-        } catch (_: Exception) { }
-    }
-
-    LaunchedEffect(Unit) { refreshSchemes() }
+    LaunchedEffect(Unit) { schemes = loadUserSchemes(context) }
 
     // ── .mdat 导出 ──
     var showExportMdatDialog by remember { mutableStateOf(false) }
@@ -265,7 +250,7 @@ fun KeyMappingScreen() {
                         -2 -> Toast.makeText(context, "文件已被篡改或损坏", Toast.LENGTH_SHORT).show()
                         -3 -> Toast.makeText(context, "版本不匹配", Toast.LENGTH_SHORT).show()
                         else -> {
-                            refreshSchemes()
+                            schemes = loadUserSchemes(context)
                             Toast.makeText(context, "导入成功", Toast.LENGTH_SHORT).show()
                         }
                     }
@@ -305,7 +290,7 @@ fun KeyMappingScreen() {
             onConfirm = { name, overrideTargetId ->
                 try {
                     importMkmpFromJson(context, importMkmpJson, name, overrideTargetId)
-                    refreshSchemes()
+                    schemes = loadUserSchemes(context)
                     Toast.makeText(context, "方案「$name」已导入", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
                     Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
@@ -324,8 +309,8 @@ fun KeyMappingScreen() {
 @Composable
 private fun SchemeSelectionDialog(
     title: String,
-    schemes: List<ConfigScheme>,
-    onSelect: (ConfigScheme) -> Unit,
+    schemes: List<SchemeInfo>,
+    onSelect: (SchemeInfo) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var selectedId by remember { mutableLongStateOf(schemes.firstOrNull()?.configId ?: 0L) }
@@ -372,7 +357,7 @@ private fun SchemeSelectionDialog(
 @Composable
 private fun ImportMdatDialog(
     json: String,
-    schemes: List<ConfigScheme>,
+    schemes: List<SchemeInfo>,
     mode: String,
     onModeChange: (String) -> Unit,
     mergeTarget: Long,
@@ -446,7 +431,7 @@ private fun ImportMdatDialog(
 @Composable
 private fun ImportMkmpDialog(
     json: String,
-    schemes: List<ConfigScheme>,
+    schemes: List<SchemeInfo>,
     onConfirm: (name: String, overrideTargetId: Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -527,7 +512,7 @@ private fun ImportMkmpDialog(
  * 构建 .mkmp 简化 JSON。
  * 不含 MD5/版本号等内部元数据。
  */
-private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: ConfigScheme): String {
+private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: SchemeInfo): String {
     val configJson = JSONObject()
     val configAttrs = listOf(
         "touch_enable" to "boolean",

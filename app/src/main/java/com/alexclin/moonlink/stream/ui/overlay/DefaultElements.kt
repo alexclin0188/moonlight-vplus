@@ -2,19 +2,19 @@ package com.alexclin.moonlink.stream.ui.overlay
 
 import android.content.ContentValues
 import com.limelight.binding.input.advance_setting.element.Element
-import com.limelight.preferences.PreferenceConfiguration
 
 /**
- * 虚拟手柄默认元素生成。
+ * 内置方案默认元素生成。
  *
- * 全新布局设计，参考标准 Xbox/PS 手柄按键排布：
+ * 布局设计参考标准 Xbox/PS 手柄按键排布：
  * - 左半区：左摇杆（上）、D-Pad（下）
  * - 右半区：功能键钻石排布 Y/A/X/B（下），右摇杆（上）
  * - 顶部：LT/LB（左）、RB/RT（右）
  * - 底部中央：BACK、START
  *
- * **只在新建方案时调用一次**，将计算好的坐标存入 DB，后续直接读取。
  * 坐标系统：128×72 网格（16:9），实际像素 = 网格值 × screenHeight / 72。
+ *
+ * 不依赖 [PreferenceConfiguration]，所有选项通过参数传入。
  */
 object DefaultElements {
 
@@ -69,24 +69,26 @@ object DefaultElements {
         Math.round(height / GRID_HEIGHT.toFloat() * this.toFloat())
 
     /**
-     * 生成默认虚拟手柄的元素 ContentValues 列表。
+     * 生成内置方案的按键元素 ContentValues 列表。
      *
-     * @param screenWidthPx  屏幕宽度 (px)
-     * @param screenHeightPx 屏幕高度 (px)
-     * @param config         用户偏好
-     * @param isPortrait     是否竖屏（用于竖屏半高模式判断）
+     * @param screenWidthPx      屏幕宽度 (px)
+     * @param screenHeightPx     屏幕高度 (px)
+     * @param onlyL3R3           仅显示 L3/R3（精简模式）
+     * @param halfHeightPortrait 竖屏半高模式
+     * @param isPortrait         是否竖屏
      */
     fun createDefaultElements(
         screenWidthPx: Int,
         screenHeightPx: Int,
-        config: PreferenceConfiguration,
+        onlyL3R3: Boolean = false,
+        halfHeightPortrait: Boolean = false,
         isPortrait: Boolean = false,
     ): List<ContentValues> {
         var height = screenHeightPx
         var baseYUnit = 0
 
         // 竖屏半高模式
-        if (config.halfHeightOscPortrait && isPortrait) {
+        if (halfHeightPortrait && isPortrait) {
             height /= 2
             baseYUnit = 72
         }
@@ -133,7 +135,7 @@ object DefaultElements {
             put(Element.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
         }
 
-        if (!config.onlyL3R3) {
+        if (!onlyL3R3) {
             var eid = 1L
 
             // ── D-Pad (左下) ──

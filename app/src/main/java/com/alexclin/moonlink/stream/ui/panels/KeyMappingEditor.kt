@@ -68,6 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.editor.applyResize
+import com.alexclin.moonlink.stream.ui.panels.isSchemeNameDuplicate
 import com.alexclin.moonlink.stream.ui.editor.CanvasCallbacks
 import com.alexclin.moonlink.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.stream.ui.editor.EditorCanvas
@@ -80,12 +81,76 @@ import com.alexclin.moonlink.stream.ui.editor.ElementType
 import com.alexclin.moonlink.stream.ui.editor.SchemeExporter
 import com.alexclin.moonlink.stream.ui.editor.WheelPadSegmentEditor
 import com.alexclin.moonlink.stream.ui.editor.snapToGrid
+import com.alexclin.moonlink.stream.ui.editor.toContentValues
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 import kotlin.math.roundToInt
 
 private const val MAX_SCREEN_PX = 5000
-private const val PREF_CURRENT_CONFIG_ID = "current_config_id"
+
+/**
+ * 退出编辑器时的处理逻辑（提取为函数以避免 lambda 内 return 语法问题）。
+ * 新建模式：校验名称 → 创建方案 → 保存元素 → 退出。
+ * 编辑模式：直接关闭。
+ */
+private fun doExit(
+    context: android.content.Context,
+    isNewScheme: Boolean,
+    schemeName: String,
+    db: SuperConfigDatabaseHelper,
+    editorState: EditorState,
+    prefs: android.content.SharedPreferences,
+    engine: StreamEngine,
+    onClose: () -> Unit,
+) {
+    if (!isNewScheme) {
+        onClose()
+        return
+    }
+
+    val name = schemeName.trim()
+    if (name.isEmpty()) {
+        Toast.makeText(context, "方案名称不能为空", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    // 校验名称不重复
+    if (isSchemeNameDuplicate(context, name)) {
+        Toast.makeText(context, "已存在同名方案「$name」，请修改名称", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    // 创建方案
+    try {
+        val newId = System.currentTimeMillis()
+        // 创建 config 记录
+        val configCv = ContentValues()
+        configCv.put(PageConfigController.COLUMN_LONG_CONFIG_ID, newId)
+        configCv.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, name)
+        configCv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
+        configCv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_MODE, "true")
+        db.insertConfig(configCv)
+
+        // 迁移所有元素从 -1 到新 configId
+        val currentElements = editorState.loadElements()
+        db.deleteConfig(-1L) // 删除旧元素
+        var eid = System.currentTimeMillis() + 1
+        for (el in currentElements) {
+            val cv = el.copy(configId = newId, elementId = eid).toContentValues()
+            db.insertElement(cv)
+            eid++
+        }
+
+        // 设为当前方案
+        prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newId).apply()
+        engine.setCrownFeatureEnabled(true)
+        engine.reloadOverlay()
+        Toast.makeText(context, "方案「$name」已创建", Toast.LENGTH_SHORT).show()
+        onClose()
+    } catch (e: Exception) {
+        Toast.makeText(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT).show()
+    }
+}
 
 // ════════════════════════════════════════════════════════════
 //  全屏编辑器（路线 A — 纯 Compose）
@@ -98,7 +163,8 @@ fun KeyMappingEditor(
 ) {
     val context = LocalContext.current
     val prefs = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
-    var currentConfigId by remember { mutableStateOf(prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)) }
+    var currentConfigId by remember { mutableStateOf(prefs.getLong(StreamEngine.PREF_CURRENT_CONFIG_ID, 0L)) }
+    val isNewScheme = currentConfigId == -1L
     val db = remember { SuperConfigDatabaseHelper(context) }
     val editorState = remember(currentConfigId) { EditorState(db, currentConfigId) }
 
@@ -106,7 +172,7 @@ fun KeyMappingEditor(
     var elements by remember { mutableStateOf<List<EditorElement>>(emptyList()) }
     var selectedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var pressedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
-    var schemeName by remember { mutableStateOf("按键方案") }
+    var schemeName by remember { mutableStateOf(if (isNewScheme) "我的方案1" else "按键方案") }
     var isEditingName by remember { mutableStateOf(false) }
     var gridWidth by remember { mutableIntStateOf(8) }
     var showAddMenu by remember { mutableStateOf(false) }
@@ -277,14 +343,16 @@ fun KeyMappingEditor(
             SchemeExporter.import(context, db, uri) { newConfigId ->
                 // 切换到新导入的方案
                 currentConfigId = newConfigId
-                prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, newConfigId).apply()
+                prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newConfigId).apply()
                 Toast.makeText(context, "已切换到导入的方案", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
-    // ── 退出 ──
-    val exitEditor: () -> Unit = { onClose() }
+    // ── 退出（新建模式需先创建方案） ──
+    val exitEditor: () -> Unit = {
+        doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
+    }
 
     // ════════════════════════════════════════════════════════
     //  UI

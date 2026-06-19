@@ -865,11 +865,64 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     val currentOverlayElements: androidx.compose.runtime.MutableState<List<com.alexclin.moonlink.stream.ui.editor.EditorElement>> =
         androidx.compose.runtime.mutableStateOf(emptyList())
 
+    // ── 按键映射配置面板的设置值（运行时状态） ──
+
+    /** 全局透明度（0-100），由 [KeyMappingConfigPanel] 更新，[KeyMappingOverlay] 消费。 */
+    var configGlobalOpacity: Int by mutableStateOf(100)
+
+    /** 触控开关，由 [KeyMappingConfigPanel] 更新，[KeyMappingOverlay] 消费。 */
+    var configTouchEnabled: Boolean by mutableStateOf(true)
+
+    /** 增强触控开关 */
+    var configEnhancedTouch: Boolean by mutableStateOf(false)
+
+    /** 游戏震动 */
+    var configGameVibrator: Boolean by mutableStateOf(false)
+
+    /** 按键震动 */
+    var configButtonVibrator: Boolean by mutableStateOf(false)
+
+    /** 鼠标滚轮速度 */
+    var configWheelSpeed: Int by mutableStateOf(20)
+
+    /** 触控灵敏度 */
+    var configTouchSense: Int by mutableStateOf(100)
+
+    /**
+     * 从 DB 读取当前方案的配置面板设置并同步到运行时状态。
+     * 在打开配置面板时或切换方案后调用。
+     */
+    fun loadConfigFromDb() {
+        try {
+            val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+            val configId = currentSchemeConfigId
+            configTouchEnabled = java.lang.Boolean.parseBoolean(
+                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
+            )
+            configTouchSense = ((db.queryConfigAttribute(configId, "touch_sense", 100L) as? Long) ?: 100L).toInt()
+            configGameVibrator = java.lang.Boolean.parseBoolean(
+                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
+            )
+            configButtonVibrator = java.lang.Boolean.parseBoolean(
+                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
+            )
+            configWheelSpeed = ((db.queryConfigAttribute(configId, "mouse_wheel_speed", 20L) as? Long) ?: 20L).toInt()
+            configEnhancedTouch = java.lang.Boolean.parseBoolean(
+                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
+            )
+            configGlobalOpacity = ((db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
+        } catch (_: Exception) {
+            // 保持默认值
+        }
+    }
+
     /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。 */
     fun reloadOverlay() {
         try {
             val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
             currentOverlayElements.value = com.alexclin.moonlink.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
+            // 同时加载配置状态
+            loadConfigFromDb()
         } catch (_: Exception) {
             currentOverlayElements.value = emptyList()
         }
@@ -888,22 +941,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             return prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)
         }
 
-    /** 当前方案的类型（"virtual_controller" / "game_key_mapping"），从数据库查询。 */
-    val currentSchemeType: String
-        get() {
-            try {
-                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
-                val type = db.queryConfigAttribute(currentSchemeConfigId, "scheme_type", "game_key_mapping")
-                return type as? String ?: "game_key_mapping"
-            } catch (_: Exception) {
-                return "game_key_mapping"
-            }
-        }
-
-    /** 当前方案的名称，从数据库查询。内置方案固定返回"内置虚拟手柄"。 */
+    /** 当前方案的名称，从数据库查询。内置方案固定返回"内置方案"。 */
     val currentSchemeName: String
         get() {
-            if (currentSchemeConfigId == 0L) return "内置虚拟手柄"
+            if (currentSchemeConfigId == 0L) return "内置方案"
             try {
                 val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
@@ -917,13 +958,16 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             }
         }
 
-    /** 设置按键映射开关（不持久化，重启后默认为关闭）。同时加载当前方案的覆盖层元素。由 Compose UI（KeyMappingSection）调用。 */
+    /** 设置按键映射开关（不持久化，重启后默认为关闭）。同时加载当前方案的覆盖层元素和配置状态。由 Compose UI（KeyMappingSection）调用。 */
     fun setCrownFeatureEnabled(enabled: Boolean) {
         prefConfig.keyMappingEnabled = enabled
         if (enabled) {
             reloadOverlay()
         } else {
             currentOverlayElements.value = emptyList()
+            // 关闭时重置触控状态，让下层触控处理器接管
+            configTouchEnabled = true
+            configGlobalOpacity = 100
         }
     }
 

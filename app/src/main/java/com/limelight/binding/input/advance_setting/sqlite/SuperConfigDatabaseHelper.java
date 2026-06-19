@@ -22,7 +22,6 @@ import com.limelight.binding.input.advance_setting.element.DigitalSwitchButton;
 import com.limelight.binding.input.advance_setting.element.Element;
 import com.limelight.utils.MathUtils;
 
-import android.content.SharedPreferences;
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
 import android.preference.PreferenceManager;
@@ -33,10 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.json.JSONObject;
-import org.json.JSONException;
 import java.util.Iterator;
-import com.limelight.LimeLog;
 
 public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
     private final Context context;
@@ -174,7 +170,8 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
     private static final int DATABASE_OLD_VERSION_4 = 4;
     private static final int DATABASE_OLD_VERSION_5 = 5;
     private static final int DATABASE_OLD_VERSION_6 = 6;
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_OLD_VERSION_10 = 10;
+    private static final int DATABASE_VERSION = 11;
     private SQLiteDatabase writableDataBase;
     private SQLiteDatabase readableDataBase;
 
@@ -183,8 +180,6 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         this.context = context.getApplicationContext();
         writableDataBase = getWritableDatabase();
         readableDataBase = getReadableDatabase();
-        // 首次构造时触发 SP→DB 迁移
-        migrateVirtualControllerFromSharedPreferences(context);
     }
 
     @Override
@@ -311,6 +306,17 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
             db.execSQL("ALTER TABLE config ADD COLUMN osc_flip_face_buttons INTEGER DEFAULT 0;");
             db.execSQL("ALTER TABLE config ADD COLUMN osc_element_layout TEXT;");
         }
+        if (oldVersion < 11) {
+            // 清理内置方案的遗留记录（configId=0 的 config 和 element 行）
+            db.delete("config", "config_id = ?", new String[]{"0"});
+            db.delete("element", "config_id = ?", new String[]{"0"});
+            // 清理 SP 迁移标记，不再需要
+            try {
+                android.content.SharedPreferences prefs =
+                    PreferenceManager.getDefaultSharedPreferences(context);
+                prefs.edit().remove("sp_to_db_migrated").apply();
+            } catch (Exception ignored) { }
+        }
     }
 
     /**
@@ -396,6 +402,8 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
                 settingsJson.addProperty(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100);
                 settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
                 settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
+            case DATABASE_OLD_VERSION_10:
+                // 版本10 → 11: 无 schema 变更，清理内置方案遗留数据由 onUpgrade 处理
             case DATABASE_VERSION:
                 break; // 到达最新版本，停止
             default:
@@ -1012,70 +1020,7 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         return 0; // 成功
     }
 
-    /**
-     * 从 SharedPreferences 迁移虚拟手柄方案的配置和元素布局到数据库。
-     * 仅在 config_id=0 的记录缺少 scheme_type 字段时执行一次。
-     */
-    private static final String SP_MIGRATION_FLAG = "sp_to_db_migrated";
-    private boolean migrationChecked = false;
-    private void migrateVirtualControllerFromSharedPreferences(Context context) {
-        if (migrationChecked) return;
-        migrationChecked = true;
-        try {
-            // 检查 SP 迁移标记，避免重复迁移
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-            if (prefs.getBoolean(SP_MIGRATION_FLAG, false)) {
-                return; // 已迁移
-            }
-        } catch (Exception e) {
-            return;
-        }
 
-        try {
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-            // 先更新已有 config_id=0 的行，而不是 insert（避免主键冲突）
-            ContentValues cv = new ContentValues();
-            cv.put("scheme_type", "virtual_controller");
-            // 从 Default SP 读取配置
-            cv.put("osc_vibrate", prefs.getBoolean("checkbox_vibrate_osc", true) ? 1 : 0);
-            cv.put("osc_opacity", prefs.getInt("seekbar_osc_opacity", 90));
-            cv.put("osc_only_l3r3", prefs.getBoolean("checkbox_only_show_L3R3", false) ? 1 : 0);
-            cv.put("osc_show_guide", prefs.getBoolean("checkbox_show_guide_button", true) ? 1 : 0);
-            cv.put("osc_half_height", prefs.getBoolean("checkbox_half_height_osc_portrait", true) ? 1 : 0);
-            cv.put("osc_flip_face_buttons", prefs.getBoolean("checkbox_flip_face_buttons", false) ? 1 : 0);
-            // 从 OSC SP 读取元素布局
-            SharedPreferences oscPrefs = context.getSharedPreferences("OSC", Context.MODE_PRIVATE);
-            JSONObject layoutJson = new JSONObject();
-            for (String key : oscPrefs.getAll().keySet()) {
-                try {
-                    String val = oscPrefs.getString(key, null);
-                    if (val != null) {
-                        layoutJson.put(key, new JSONObject(val));
-                    }
-                } catch (JSONException ignored) {}
-            }
-            if (layoutJson.length() > 0) {
-                cv.put("osc_element_layout", layoutJson.toString());
-            }
-
-            // 尝试更新已有行，如果影响行数为 0 则 insert
-            int rowsAffected = writableDataBase.update("config", cv, "config_id = ?", new String[]{"0"});
-            if (rowsAffected == 0) {
-                cv.put(PageConfigController.COLUMN_LONG_CONFIG_ID, 0L);
-                cv.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, "default");
-                cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true");
-                cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_MODE, "true");
-                writableDataBase.insert("config", null, cv);
-            }
-
-            // 标记迁移完成
-            prefs.edit().putBoolean(SP_MIGRATION_FLAG, true).apply();
-            LimeLog.info("SuperConfigDatabaseHelper: SP→DB 迁移完成");
-        } catch (Exception e) {
-            LimeLog.warning("SuperConfigDatabaseHelper: SP→DB 迁移失败: " + e.getMessage());
-        }
-    }
 
     public int mergeConfig(String configString, Long existConfigId) {
         GsonBuilder gsonBuilder = new GsonBuilder();

@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.DetailScaffold
 import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.element.ElementController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 
 /**
@@ -82,9 +81,9 @@ fun KeyMappingConfigPanel(
         ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
     ) }
 
-    // ── 运行时同步：将 DB 值同步到运行中的控制器（打开面板时执行一次） ──
+    // ── 运行时同步：将 DB 值同步到 engine 运行时状态（打开面板时执行一次） ──
     LaunchedEffect(Unit) {
-        syncToControllers(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
+        syncConfigToEngine(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
     }
 
     // ── 保存到 DB 并同步到控制器 ──
@@ -99,7 +98,7 @@ fun KeyMappingConfigPanel(
         cv.put(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
         db.updateConfig(configId, cv)
 
-        syncToControllers(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
+        syncConfigToEngine(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
     }
 
     DetailScaffold(title = "按键映射方案配置", onBack = onBack) {
@@ -210,45 +209,4 @@ fun KeyMappingConfigPanel(
     }
 }
 
-/**
- * 将按键映射方案的全部设置项同步到运行中的 [ControllerManager] 的子控制器。
- *
- * 对应旧 [PageConfigController] 中每个设置的实时同步逻辑。
- */
-private fun syncToControllers(
-    engine: StreamEngine,
-    touchEnabled: Boolean,
-    touchSense: Int,
-    gameVibrator: Boolean,
-    buttonVibrator: Boolean,
-    wheelSpeed: Int,
-    enhancedTouch: Boolean,
-    globalOpacity: Int,
-) {
-    val cm = engine.controllerManager ?: return
-    val ec = cm.elementController
-    val tc = cm.touchController
-
-    // 1. 触控开关 — 对应 PageConfigController.loadMouseEnable()
-    tc?.enableTouch(touchEnabled)
-
-    // 2. 触控灵敏度 — 对应 PageConfigController.loadMouseSense()
-    tc?.adjustTouchSense(touchSense)
-
-    // 3. 游戏震动 — 对应 PageConfigController.loadGameVibrator()
-    ec?.setGameVibrator(gameVibrator)
-
-    // 4. 按键震动 — 对应 PageConfigController.loadButtonVibrator()
-    ec?.setButtonVibrator(buttonVibrator)
-
-    // 5. 鼠标滚轮速度 — 对应 PageConfigController.loadMouseWheelSpeed()
-    // 数值越小滚动越快，所以转换范围
-    ElementController.setMouseScrollRepeatInterval(120 - wheelSpeed)
-
-    // 6. 增强触控 — 对应 PageConfigController.loadEnhancedTouch()
-    tc?.setEnhancedTouch(enhancedTouch)
-
-    // 7. 全局透明度 — 对应 PageConfigController.loadGlobalStyles()
-    ec?.applyGlobalOpacity(globalOpacity)
-}
 

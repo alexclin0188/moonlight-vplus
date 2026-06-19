@@ -178,8 +178,9 @@ class StreamActivity : ComponentActivity() {
                     }
 
                     // ── 摇杆辅助：根据 relX/relY 和元素半径计算轴值 ──
+                    // 死区大小由 configTouchSense 决定：sense=100 → 0.2（原默认值），sense=200 → 0.1（灵敏），sense=1 → 0.5（迟钝）
                     fun computeStickAxis(relX: Float, relY: Float, radius: Float): Pair<Short, Short> {
-                        val deadZone = 0.2f
+                        val deadZone = (20f / engine.configTouchSense.coerceIn(1, 200)).coerceIn(0.05f, 0.5f)
                         val maxRadius = radius.coerceAtLeast(1f)
                         var nx = (relX / maxRadius).coerceIn(-1f, 1f)
                         var ny = (relY / maxRadius).coerceIn(-1f, 1f)
@@ -280,11 +281,20 @@ class StreamActivity : ComponentActivity() {
                         }
                     }
 
+                    val globalOpacity = engine.configGlobalOpacity
+                    val touchEnabled = engine.configTouchEnabled
+                    val touchSense = engine.configTouchSense
+                    val enhancedTouch = engine.configEnhancedTouch
+
                     if (overlayElements.isNotEmpty()) {
                         KeyMappingOverlay(
                             elements = overlayElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
+                            globalOpacity = globalOpacity,
+                            enabled = touchEnabled,
+                            touchSense = touchSense,
+                            enhancedTouch = enhancedTouch,
                         )
                     }
 

@@ -91,7 +91,6 @@ import android.view.KeyEvent
 import android.widget.Toast
 import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.stream.ui.display.DisplaySettingsPanel
-import com.alexclin.moonlink.stream.ui.panels.VirtualControllerConfigPanel
 import com.alexclin.moonlink.stream.ui.panels.KeyMappingConfigPanel
 
 enum class DetailPage {
@@ -102,7 +101,6 @@ enum class DetailPage {
     QUICK_ACTION_EDITOR,
     GYRO,
     MORE,
-    VIRTUAL_CONTROLLER_CONFIG,
     KEY_MAPPING_CONFIG,
 }
 
@@ -204,12 +202,6 @@ fun SubPanelContainer(
                             configIds = newIds
                             onDetailPageChange(DetailPage.MAIN_LIST)
                         },
-                        onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
-                    )
-                }
-                DetailPage.VIRTUAL_CONTROLLER_CONFIG -> {
-                    VirtualControllerConfigPanel(
-                        engine = engine,
                         onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
@@ -436,24 +428,14 @@ private fun KeyMappingSection(
                     }
                 }
 
-                // 3. 虚拟手柄配置 / 按键映射方案配置（根据方案类型动态显示）
-                val configLabel = if (engine.currentSchemeType == "virtual_controller") {
-                    "虚拟手柄配置 >"
-                } else {
-                    "按键映射方案配置 >"
-                }
-                val configDetailPage = if (engine.currentSchemeType == "virtual_controller") {
-                    DetailPage.VIRTUAL_CONTROLLER_CONFIG
-                } else {
-                    DetailPage.KEY_MAPPING_CONFIG
-                }
+                // 3. 按键映射配置（所有方案统一使用此入口）
                 TextButton(
-                    onClick = { onNavigateToConfig(configDetailPage) },
+                    onClick = { onNavigateToConfig(DetailPage.KEY_MAPPING_CONFIG) },
                     modifier = Modifier.fillMaxWidth(),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                        Text(configLabel)
+                        Text("按键映射配置 >")
                     }
                 }
             }
