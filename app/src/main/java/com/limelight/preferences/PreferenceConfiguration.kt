@@ -293,6 +293,11 @@ class PreferenceConfiguration {
                 .putBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, touchscreenTrackpad)
                 .putBoolean(ENABLE_ENHANCED_TOUCH_PREF_STRING, enableEnhancedTouch)
                 .putBoolean(KEY_MAPPING_ENABLED_PREF_STRING, keyMappingEnabled)
+                .putBoolean(ADAPTIVE_BITRATE_PREF_STRING, enableAdaptiveBitrate)
+                .putString(ABR_MODE_PREF_STRING, abrMode)
+                .putBoolean(UNLOCK_FPS_STRING, unlockFps)
+                .putInt(OUTPUT_BUFFER_QUEUE_LIMIT_PREF_STRING, outputBufferQueueLimit)
+                .putInt(HOST_SCALE_PREF_STRING, resolutionScale)
 
             if (synchronous) {
                 editor.commit()

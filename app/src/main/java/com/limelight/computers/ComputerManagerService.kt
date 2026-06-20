@@ -127,6 +127,9 @@ class ComputerManagerService : Service() {
             if (!pollComputer(details)) {
                 if (!newPc && offlineCount < pollTriesBeforeOffline) {
                     releaseLocalDatabaseReference()
+                    // 发射当前状态让 UI 感知轮询正在进行，
+                    // 避免重试期间 UI 无响应（Fix: 扫描在线状态不更新问题）
+                    _computerUpdates.tryEmit(details)
                     return false
                 }
                 details.state = ComputerDetails.State.OFFLINE
@@ -310,6 +313,31 @@ class ComputerManagerService : Service() {
             }
         }
     }
+
+        /**
+         * 强制刷新所有设备在线状态。
+         * - 设置所有设备状态为 UNKNOWN
+         * - 立即发射到 Flow 通知 UI
+         * - 重启轮询 Job（重置 offlineCount 并立即开始新轮询）
+         * - 重启 mDNS 发现
+         *
+         * 调用时机：Activity.onResume、网络恢复等需要立即重新扫描的场景。
+         */
+        fun forceRefresh() {
+            synchronized(pollingTuples) {
+                for (tuple in pollingTuples) {
+                    synchronized(tuple.networkLock) {
+                        tuple.computer.state = ComputerDetails.State.UNKNOWN
+                    }
+                    _computerUpdates.tryEmit(tuple.computer)
+                    // 重启轮询 Job：重置 offlineCount 到 0，立即开始新轮询
+                    tuple.job?.cancel()
+                    tuple.job = createPollingJob(tuple)
+                }
+            }
+            // 重新激活 mDNS 发现以获取最新设备地址
+            discoveryBinder?.startDiscovery(MDNS_QUERY_PERIOD_MS)
+        }
     }
 
     override fun onUnbind(intent: Intent?): Boolean {
@@ -742,10 +770,18 @@ class ComputerManagerService : Service() {
                     LimeLog.info("Network diagnostics after available: ${networkDiagnostics?.getLastDiagnostics()}")
                     synchronized(pollingTuples) {
                         for (tuple in pollingTuples) {
-                            tuple.computer.state = ComputerDetails.State.UNKNOWN
+                            // 使用 tuple.networkLock 轮询锁防止竞态（Fix: 网络回调与轮询锁不一致）
+                            synchronized(tuple.networkLock) {
+                                tuple.computer.state = ComputerDetails.State.UNKNOWN
+                            }
                             _computerUpdates.tryEmit(tuple.computer)
+                            // 重启轮询 Job 以重置 offlineCount，立即开始新轮询（Fix: 锁屏后状态不更新）
+                            tuple.job?.cancel()
+                            tuple.job = createPollingJob(tuple)
                         }
                     }
+                    // 确保 mDNS 发现重新激活，以便获取最新的设备地址
+                    discoveryBinder?.startDiscovery(MDNS_QUERY_PERIOD_MS)
                 }
 
                 override fun onLost(network: Network) {
@@ -753,7 +789,10 @@ class ComputerManagerService : Service() {
                     networkDiagnostics?.diagnoseNetwork()
                     synchronized(pollingTuples) {
                         for (tuple in pollingTuples) {
-                            tuple.computer.state = ComputerDetails.State.OFFLINE
+                            // 使用 tuple.networkLock 轮询锁防止竞态（Fix: 网络回调与轮询锁不一致）
+                            synchronized(tuple.networkLock) {
+                                tuple.computer.state = ComputerDetails.State.OFFLINE
+                            }
                             _computerUpdates.tryEmit(tuple.computer)
                         }
                     }

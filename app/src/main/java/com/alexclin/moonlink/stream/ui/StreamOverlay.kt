@@ -135,6 +135,11 @@ fun StreamOverlay(
         }
     }
 
+    // 全屏页面状态同步到 engine，供 StreamActivity 等外部组件判断
+    LaunchedEffect(fullScreenPage) {
+        engine.isFullScreenPageActive = fullScreenPage != null
+    }
+
     // 操作面板自动隐藏：窄面板开启且用户无操作时2秒自动隐藏
     LaunchedEffect(panelState) {
         val mode = engine.prefConfig.toolPanelAutoHideMode
@@ -244,7 +249,9 @@ fun StreamOverlay(
             PreferenceConfiguration.PerfOverlayPosition.BOTTOM_LEFT -> Alignment.BottomStart
             PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT -> Alignment.BottomEnd
         }
-        PerformanceOverlay(engine = engine, modifier = Modifier.align(perfAlign))
+        if (fullScreenPage == null) {
+            PerformanceOverlay(engine = engine, modifier = Modifier.align(perfAlign))
+        }
 
         // ── 面板外点击关闭层 ──
         if (panelState != PanelState.HIDDEN) {
@@ -268,22 +275,27 @@ fun StreamOverlay(
             )
         }
 
-        // ── 悬浮按钮 ──
-        AnimatedVisibility(
-            visible = panelState == PanelState.HIDDEN && !showFloatingKeyboard,
-            enter = PanelAnimations.fabEnter,
-            exit = PanelAnimations.fabExit,
-        ) {
-            FloatingActionButton(
-                visible = true,
-                initialOffsetX = fabOffset.x,
-                initialOffsetY = fabOffset.y,
-                onToggle = onToggle,
-                onPositionChanged = { x, y -> fabOffset = Offset(x, y) },
-            )
+        // ── 编辑器打开时不显示悬浮按钮/面板/键盘（避免视觉干扰） ──
+        val showFloatingUI = fullScreenPage == null
+
+        // ── 悬浮按钮（编辑器打开时隐藏） ──
+        if (showFloatingUI) {
+            AnimatedVisibility(
+                visible = panelState == PanelState.HIDDEN && !showFloatingKeyboard,
+                enter = PanelAnimations.fabEnter,
+                exit = PanelAnimations.fabExit,
+            ) {
+                FloatingActionButton(
+                    visible = true,
+                    initialOffsetX = fabOffset.x,
+                    initialOffsetY = fabOffset.y,
+                    onToggle = onToggle,
+                    onPositionChanged = { x, y -> fabOffset = Offset(x, y) },
+                )
+            }
         }
 
-        // ── 浮动虚拟键盘覆盖层（兼容旧版 Game.toggleVirtualKeyboard 逻辑） ──
+        // ── 浮动虚拟键盘覆盖层（编辑器打开时也会显示，但编辑器模式下很少触发） ──
         if (showFloatingKeyboard) {
             BackHandler {
                 showFloatingKeyboard = false
@@ -291,7 +303,6 @@ fun StreamOverlay(
             val bridge = remember { VirtualKeyboardBridge(engine) }
             val keyboardContainer = remember { mutableStateOf<FrameLayout?>(null) }
 
-            // 监听虚拟键盘隐藏状态，隐藏时恢复悬浮按钮
             LaunchedEffect(showFloatingKeyboard) {
                 if (showFloatingKeyboard) {
                     while (true) {
@@ -305,9 +316,7 @@ fun StreamOverlay(
                 }
             }
 
-            Box(
-                modifier = Modifier.fillMaxSize(),
-            ) {
+            Box(modifier = Modifier.fillMaxSize()) {
                 AndroidView(
                     factory = { ctx ->
                         val container = FrameLayout(ctx).apply {
@@ -326,84 +335,100 @@ fun StreamOverlay(
             }
         }
 
-        // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向） ──
-        val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        AnimatedVisibility(
-            visible = panelState != PanelState.HIDDEN && panelState != PanelState.KEYBOARD_PANEL,
-            enter = PanelAnimations.verticalBarEnter,
-            exit = PanelAnimations.verticalBarExit,
-            modifier = Modifier.align(if (isLandscape) Alignment.CenterEnd else Alignment.BottomCenter),
-        ) {
-            if (isLandscape) {
-                VerticalBar(
-                    activeEntry = activeEntry,
-                    onEntryClick = onEntryClick,
-                    subPanelVisible = panelState == PanelState.SUB_PANEL,
-                )
-            } else {
-                HorizontalBar(
-                    activeEntry = activeEntry,
-                    onEntryClick = onEntryClick,
+        // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向；编辑器打开时隐藏） ──
+        if (showFloatingUI) {
+            val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+            AnimatedVisibility(
+                visible = panelState != PanelState.HIDDEN && panelState != PanelState.KEYBOARD_PANEL,
+                enter = PanelAnimations.verticalBarEnter,
+                exit = PanelAnimations.verticalBarExit,
+                modifier = Modifier.align(if (isLandscape) Alignment.CenterEnd else Alignment.BottomCenter),
+            ) {
+                if (isLandscape) {
+                    VerticalBar(
+                        activeEntry = activeEntry,
+                        onEntryClick = onEntryClick,
+                        subPanelVisible = panelState == PanelState.SUB_PANEL,
+                    )
+                } else {
+                    HorizontalBar(
+                        activeEntry = activeEntry,
+                        onEntryClick = onEntryClick,
+                    )
+                }
+            }
+        }
+
+        // ── 操作子面板（编辑器打开时隐藏） ──
+        if (showFloatingUI) {
+            val density = LocalDensity.current
+            val barWidthPx = with(density) { 60.dp.toPx().roundToInt() }
+            val subPanelEnter = remember(barWidthPx) {
+                slideInHorizontally(
+                    initialOffsetX = { _ -> barWidthPx },
+                    animationSpec = tween(250, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(200))
+            }
+            val subPanelExit = remember(barWidthPx) {
+                slideOutHorizontally(
+                    targetOffsetX = { _ -> barWidthPx },
+                    animationSpec = tween(200, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(150))
+            }
+            AnimatedVisibility(
+                visible = panelState == PanelState.SUB_PANEL,
+                enter = subPanelEnter,
+                exit = subPanelExit,
+                modifier = Modifier.align(Alignment.CenterEnd),
+            ) {
+                SubPanelContainer(
+                    engine = engine,
+                    detailPage = detailPage,
+                    onDetailPageChange = { detailPage = it },
+                    onOpenKeyboardShortcuts = {
+                        panelState = PanelState.KEYBOARD_PANEL
+                        activeEntry = "keyboard"
+                        keyboardInitialTab = 1
+                    },
+                    onOpenFullScreenPage = { fullScreenPage = it },
+                    modifier = Modifier.offset(x = (-60).dp),
                 )
             }
         }
 
-        // ── 操作子面板 ──
-        val density = LocalDensity.current
-        val barWidthPx = with(density) { 60.dp.toPx().roundToInt() }
-        val subPanelEnter = remember(barWidthPx) {
-            slideInHorizontally(
-                initialOffsetX = { _ -> barWidthPx },
-                animationSpec = tween(250, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(200))
-        }
-        val subPanelExit = remember(barWidthPx) {
-            slideOutHorizontally(
-                targetOffsetX = { _ -> barWidthPx },
-                animationSpec = tween(200, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(150))
-        }
-        AnimatedVisibility(
-            visible = panelState == PanelState.SUB_PANEL,
-            enter = subPanelEnter,
-            exit = subPanelExit,
-            modifier = Modifier.align(Alignment.CenterEnd),
-        ) {
-            SubPanelContainer(
-                engine = engine,
-                detailPage = detailPage,
-                onDetailPageChange = { detailPage = it },
-                onOpenKeyboardShortcuts = {
-                    panelState = PanelState.KEYBOARD_PANEL
-                    activeEntry = "keyboard"
-                    keyboardInitialTab = 1  // 跳转到"快捷键"标签
-                },
-                onOpenFullScreenPage = { fullScreenPage = it },
-                modifier = Modifier.offset(x = (-60).dp),
-            )
-        }
-
         // ── 全屏覆盖页面（方案选择/编辑器） ──
+        // 编辑器模式下：不显示黑色背景，让串流画面透出；非编辑器模式下保持黑色背景
         fullScreenPage?.let { page ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xCC000000))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = { /* 不关闭，由内部返回按钮或 BackHandler 处理 */ }
-                    ),
-            ) {
-                when (page) {
-                    FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR -> {
+            when (page) {
+                FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xCC000000))
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                                onClick = { /* 不关闭，由内部返回按钮或 BackHandler 处理 */ }
+                            ),
+                    ) {
                         KeyMappingSchemeSelector(
                             engine = engine,
                             onClose = { fullScreenPage = null },
                             onOpenEditor = { fullScreenPage = FullScreenPage.KEY_MAPPING_EDITOR },
                         )
                     }
-                    FullScreenPage.KEY_MAPPING_EDITOR -> {
+                }
+                FullScreenPage.KEY_MAPPING_EDITOR -> {
+                    // 编辑器以串流画面为背景 — 无黑色遮罩，只由 KeyMappingEditor 自身半透明背景控制
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clickable(
+                                indication = null,
+                                interactionSource = remember { MutableInteractionSource() },
+                                onClick = { /* 由内部保存/取消按钮或 BackHandler 处理 */ }
+                            ),
+                    ) {
                         KeyMappingEditor(
                             engine = engine,
                             onClose = { fullScreenPage = null },
@@ -413,46 +438,48 @@ fun StreamOverlay(
             }
         }
 
-        // ── 键盘面板（横向填满全屏底部 tabbar 模式，始终从底部滑入） ──
-        val keyboardEnter = remember {
-            slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(250, easing = FastOutSlowInEasing)
-            ) + fadeIn(animationSpec = tween(200))
-        }
-        val keyboardExit = remember {
-            slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(200, easing = FastOutSlowInEasing)
-            ) + fadeOut(animationSpec = tween(150))
-        }
-        AnimatedVisibility(
-            visible = panelState == PanelState.KEYBOARD_PANEL,
-            enter = keyboardEnter,
-            exit = keyboardExit,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        ) {
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                color = MaterialTheme.colorScheme.surface,
-                shadowElevation = 8.dp,
+        // ── 键盘面板（横向填满全屏底部 tabbar 模式；编辑器打开时隐藏） ──
+        if (showFloatingUI) {
+            val keyboardEnter = remember {
+                slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = tween(250, easing = FastOutSlowInEasing)
+                ) + fadeIn(animationSpec = tween(200))
+            }
+            val keyboardExit = remember {
+                slideOutVertically(
+                    targetOffsetY = { it },
+                    animationSpec = tween(200, easing = FastOutSlowInEasing)
+                ) + fadeOut(animationSpec = tween(150))
+            }
+            AnimatedVisibility(
+                visible = panelState == PanelState.KEYBOARD_PANEL,
+                enter = keyboardEnter,
+                exit = keyboardExit,
+                modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                KeyboardSubPanel(
-                    engine = engine,
-                    initialTab = keyboardInitialTab,
-                    onClose = {
-                        panelState = PanelState.VERTICAL_BAR
-                        activeEntry = null
-                    },
-                    onCloseToHidden = {
-                        panelState = PanelState.HIDDEN
-                        activeEntry = null
-                    },
-                    onShowFloatingKeyboard = {
-                        showFloatingKeyboard = true
-                    },
-                )
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    shadowElevation = 8.dp,
+                ) {
+                    KeyboardSubPanel(
+                        engine = engine,
+                        initialTab = keyboardInitialTab,
+                        onClose = {
+                            panelState = PanelState.VERTICAL_BAR
+                            activeEntry = null
+                        },
+                        onCloseToHidden = {
+                            panelState = PanelState.HIDDEN
+                            activeEntry = null
+                        },
+                        onShowFloatingKeyboard = {
+                            showFloatingKeyboard = true
+                        },
+                    )
+                }
             }
         }
     }
@@ -494,8 +521,8 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
             .fillMaxSize()
             .background(Color(0xBB000000)),
     ) {
-        // ── 核心锚点组（状态文字 + 进度条 + 阶段文字 + Tip）──
-        // 整体垂直居中，所有内容从上到下排列，Tip 在连接信息之下不遮挡
+        // ── 核心锚点组（状态文字 + 进度条 + 阶段文字）──
+        // 垂直居中，Tip 独立在外层不参与居中计算，避免单行/多行切换导致进度条浮动
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -528,22 +555,26 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 color = Color(0xFFCCCCCC),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Light,
-                modifier = Modifier.padding(top = 8.dp, bottom = 24.dp),
-                textAlign = TextAlign.Center,
-            )
-
-            // ── Tip 提示（在连接信息下方，自然地跟随居中布局）──
-            Text(
-                text = currentTip,
-                color = Color(0xFFBBBBBB),
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Light,
-                lineHeight = 20.sp,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 8.dp),
                 textAlign = TextAlign.Center,
             )
         }
+
+        // ── Tip 提示（独立层，固定在屏幕下方，不参加居中计算）──
+        Text(
+            text = currentTip,
+            color = Color(0xFFBBBBBB),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Light,
+            lineHeight = 20.sp,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(start = 32.dp, end = 32.dp, bottom = 48.dp),
+        )
     }
 }
 

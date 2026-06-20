@@ -261,6 +261,11 @@ class EditorState(
                 ElementType.GROUP_BUTTON -> "GROUP"
                 ElementType.DIGITAL_PAD -> "方向"
                 ElementType.ANALOG_STICK -> ""
+                ElementType.DIGITAL_STICK -> ""
+                ElementType.INVISIBLE_ANALOG_STICK -> ""
+                ElementType.INVISIBLE_DIGITAL_STICK -> ""
+                ElementType.SIMPLIFY_PERFORMANCE -> DEFAULT_PERF_TEMPLATE
+                ElementType.WHEEL_PAD -> "轮盘"
                 else -> "按键"
             },
             value = when (type) {
@@ -268,6 +273,7 @@ class EditorState(
                 ElementType.DIGITAL_SWITCH_BUTTON -> "k29"
                 ElementType.DIGITAL_MOVABLE_BUTTON -> "k29"
                 ElementType.DIGITAL_COMBINE_BUTTON -> "k29"
+                ElementType.WHEEL_PAD -> "k29"
                 else -> ""
             },
             width = 100,
@@ -281,8 +287,18 @@ class EditorState(
             normalTextColor = 0xFFFFFFFF.toInt(),
             pressedTextColor = 0xFFCCCCCC.toInt(),
             textSizePercent = 25,
-            thick = 5,
-            sense = 100,
+            thick = when (type) {
+                ElementType.SIMPLIFY_PERFORMANCE -> 30
+                else -> 5
+            },
+            sense = when (type) {
+                ElementType.GROUP_BUTTON -> 1  // 子元素默认可见
+                else -> 100
+            },
+            radius = when (type) {
+                ElementType.SIMPLIFY_PERFORMANCE -> 19
+                else -> 0
+            },
             extraAttributesJson = when (type) {
                 ElementType.DIGITAL_MOVABLE_BUTTON -> """{"isTrackpadMode":false}"""
                 ElementType.GROUP_BUTTON -> """{"movableInNormalMode":false,"userHasManuallySet":false,"isPermanentlyIndependent":false}"""

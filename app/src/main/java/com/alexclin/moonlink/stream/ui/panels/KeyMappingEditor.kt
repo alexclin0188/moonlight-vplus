@@ -1,40 +1,45 @@
 package com.alexclin.moonlink.stream.ui.panels
 
 import android.content.ContentValues
-import android.net.Uri
 import android.view.KeyEvent
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BorderColor
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.GridOn
-import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LayersClear
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,6 +75,7 @@ import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.editor.applyResize
 import com.alexclin.moonlink.stream.ui.panels.isSchemeNameDuplicate
 import com.alexclin.moonlink.stream.ui.editor.CanvasCallbacks
+import com.alexclin.moonlink.stream.ui.editor.ColorEditorDialog
 import com.alexclin.moonlink.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.stream.ui.editor.EditorCanvas
 import com.alexclin.moonlink.stream.ui.editor.GroupChildListDialog
@@ -78,7 +84,7 @@ import com.alexclin.moonlink.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.stream.ui.editor.EditorState
 import com.alexclin.moonlink.stream.ui.editor.ElementType
-import com.alexclin.moonlink.stream.ui.editor.SchemeExporter
+import com.alexclin.moonlink.stream.ui.editor.TypeSpecificEditorDialog
 import com.alexclin.moonlink.stream.ui.editor.WheelPadSegmentEditor
 import com.alexclin.moonlink.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.stream.ui.editor.toContentValues
@@ -87,6 +93,9 @@ import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHel
 import kotlin.math.roundToInt
 
 private const val MAX_SCREEN_PX = 5000
+private const val GRID_MIN = 0
+private const val GRID_MAX = 200
+private const val GRID_MIN_ACTIVE = 20
 
 /**
  * 退出编辑器时的处理逻辑（提取为函数以避免 lambda 内 return 语法问题）。
@@ -104,6 +113,8 @@ private fun doExit(
     onClose: () -> Unit,
 ) {
     if (!isNewScheme) {
+        // 编辑模式：退出时刷新覆盖层
+        engine.reloadOverlay()
         onClose()
         return
     }
@@ -174,10 +185,11 @@ fun KeyMappingEditor(
     var pressedIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
     var schemeName by remember { mutableStateOf(if (isNewScheme) "我的方案1" else "按键方案") }
     var isEditingName by remember { mutableStateOf(false) }
-    var gridWidth by remember { mutableIntStateOf(8) }
+    var gridWidth by remember { mutableIntStateOf(0) }
     var showAddMenu by remember { mutableStateOf(false) }
+    var showElementList by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
-    var showPropertiesPanel by remember { mutableStateOf(false) }
+    var showClearAllConfirm by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(true) }
     // 组合键编辑弹窗
     var showComboKeyEditor by remember { mutableStateOf(false) }
@@ -190,6 +202,14 @@ fun KeyMappingEditor(
     var canvasHeightPx by remember { mutableIntStateOf(1920) }
     // 跨方案剪贴板状态（用于刷新粘贴按钮的可见性）
     var clipboardHasData by remember { mutableStateOf(EditorClipboard.hasData) }
+    // 网格滑块展开/收起（由 EditorToolbar 控制，canvasTap 也可收起）
+    var showGridSlider by remember { mutableStateOf(false) }
+    // 全屏颜色编辑对话框
+    var showColorEditor by remember { mutableStateOf(false) }
+    var pendingColorEditorElement by remember { mutableStateOf<EditorElement?>(null) }
+    // 全屏类型专属属性编辑对话框
+    var showTypeSpecificEditor by remember { mutableStateOf(false) }
+    var pendingTypeSpecificEditorElement by remember { mutableStateOf<EditorElement?>(null) }
 
     // ── 网格吸附辅助 ──
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
@@ -324,32 +344,16 @@ fun KeyMappingEditor(
         onDispose { rootView?.setOnKeyListener(null) }
     }
 
-    // ── 导出 / 导入 Launcher ──
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(SchemeExporter.MIME_TYPE)
-    ) { uri: Uri? ->
-        if (uri != null) {
-            val success = SchemeExporter.export(context, db, currentConfigId, uri)
-            if (success) {
-                Toast.makeText(context, "导出成功", Toast.LENGTH_SHORT).show()
-            }
+    // ── 保存所有元素到 DB 并退出 ──
+    fun saveAllAndExit() {
+        // 先确保所有在内存中的元素同步到 DB
+        for (el in elements) {
+            editorState.saveElement(el)
         }
+        doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
     }
 
-    val importLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            SchemeExporter.import(context, db, uri) { newConfigId ->
-                // 切换到新导入的方案
-                currentConfigId = newConfigId
-                prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newConfigId).apply()
-                Toast.makeText(context, "已切换到导入的方案", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    // ── 退出（新建模式需先创建方案） ──
+    // ── 取消退出（不触发额外保存） ──
     val exitEditor: () -> Unit = {
         doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
     }
@@ -359,125 +363,217 @@ fun KeyMappingEditor(
     // ════════════════════════════════════════════════════════
 
     val selectedElement = elements.find { it.elementId in selectedIds }
+    val hasSelection = selectedIds.isNotEmpty()
+    // 按钮在上半屏 → 属性面板在底部（面板不遮挡按钮）
+    // 按钮在下半屏 → 属性面板在顶部（面板不遮挡按钮）
+    val showPanelAtBottom = if (selectedElement != null) {
+        selectedElement.centralY <= canvasHeightPx / 2
+    } else {
+        true
+    }
 
-    Box(modifier = Modifier.fillMaxSize().background(Color(0xCC000000))) {
-        Column(modifier = Modifier.fillMaxSize()) {
-            // ── 顶栏 ──
-            val toolbarActions = ToolbarActions(
-                addElement = { showAddMenu = true },
-                addComboKey = { showComboKeyEditor = true },
-                manageChildren = { showChildManager = true },
-                copyToClipboard = { copySelectedToClipboard() },
-                pasteClipboard = { pasteFromClipboard() },
-                exit = exitEditor,
-                delete = { showDeleteConfirm = true },
-                duplicate = { duplicateSelected() },
-                layerUp = { moveLayer(1) },
-                layerDown = { moveLayer(-1) },
-                properties = { showPropertiesPanel = !showPropertiesPanel },
-                export = { exportLauncher.launch("${schemeName.filter { it.isLetterOrDigit() || it == '_' }}.json") },
-                import = { importLauncher.launch(arrayOf(SchemeExporter.MIME_TYPE, "*/*")) },
-            )
-            EditorToolbar(
-                schemeName = schemeName,
-                isEditingName = isEditingName,
-                onStartEditName = { isEditingName = true },
-                onNameChange = { schemeName = it },
-                onConfirmName = { saveSchemeName(schemeName); isEditingName = false },
-                actions = toolbarActions,
-                hasSelection = selectedIds.isNotEmpty(),
-                isGroupButtonSelected = selectedElement?.type == ElementType.GROUP_BUTTON,
-                clipboardHasData = clipboardHasData,
-            )
+    val toolbarActions = ToolbarActions(
+        addElement = { showAddMenu = true },
+        showElementList = { showElementList = true },
+        manageChildren = { showChildManager = true },
+        clearAll = { showClearAllConfirm = true },
+        copyToClipboard = { copySelectedToClipboard() },
+        pasteClipboard = { pasteFromClipboard() },
+        save = { saveAllAndExit() },
+        exit = exitEditor,
+        delete = { showDeleteConfirm = true },
+        duplicate = { duplicateSelected() },
+        layerUp = { moveLayer(1) },
+        layerDown = { moveLayer(-1) },
+        properties = {},
+    )
 
-            // ── 选中元素信息行 ──
-            selectedElement?.let { el ->
-                SelectionInfoBar(element = el)
-            }
-
-            // ── 编辑画布 ──
-            BoxWithConstraints(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
-            ) {
-                val density = LocalDensity.current
-                LaunchedEffect(maxWidth, maxHeight) {
-                    with(density) {
-                        canvasWidthPx = maxWidth.toPx().roundToInt()
-                        canvasHeightPx = maxHeight.toPx().roundToInt()
-                    }
-                }
-
-                when {
-                    isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("加载中...", color = Color.White.copy(alpha = 0.5f))
-                    }
-                    elements.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("暂无元素，点击顶栏「按键」添加", color = Color.White.copy(alpha = 0.5f),
-                            style = MaterialTheme.typography.bodyMedium)
-                    }
-                    else -> {
-                        val canvasCallbacks = CanvasCallbacks(
-                            elementTap = { id ->
-                                selectedIds = if (id in selectedIds) emptySet() else setOf(id)
-                            },
-                            elementDragStart = { id -> selectedIds = setOf(id) },
-                            elementDrag = { id, delta ->
-                                elements = elements.map { el ->
-                                    if (el.elementId == id) {
-                                        el.copy(
-                                            centralX = (el.centralX + delta.x).roundToInt().coerceIn(0, MAX_SCREEN_PX),
-                                            centralY = (el.centralY + delta.y).roundToInt().coerceIn(0, MAX_SCREEN_PX),
-                                        )
-                                    } else el
-                                }
-                            },
-                            elementDragEnd = { saveElementOnInteractionEnd(it, snap = true) },
-                            elementResizeStart = { id, _ -> selectedIds = setOf(id) },
-                            elementResize = { id, handle, delta ->
-                                elements = elements.map { el ->
-                                    if (el.elementId == id) applyResize(el, handle, delta)
-                                    else el
-                                }
-                            },
-                            elementResizeEnd = { saveElementOnInteractionEnd(it, snap = false) },
-                            canvasTap = { selectedIds = emptySet() },
-                        )
-                        EditorCanvas(
-                            elements = elements,
-                            selectedIds = selectedIds,
-                            pressedIds = pressedIds,
-                            gridColumnCount = gridWidth,
-                            callbacks = canvasCallbacks,
-                        )
-                    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        // ── Layer 1: 全屏编辑画布 ──
+        BoxWithConstraints(
+            modifier = Modifier.fillMaxSize(),
+        ) {
+            val density = LocalDensity.current
+            LaunchedEffect(maxWidth, maxHeight) {
+                with(density) {
+                    canvasWidthPx = maxWidth.toPx().roundToInt()
+                    canvasHeightPx = maxHeight.toPx().roundToInt()
                 }
             }
 
-            // ── 属性编辑面板（选中元素时展开） ──
-            if (showPropertiesPanel) {
-                val selEl = selectedElement
-                if (selEl != null) {
-                    EditorPropertiesPanel(
-                        element = selEl,
-                        onSave = { updated ->
-                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
-                            editorState.saveElement(updated)
-                            showPropertiesPanel = false
-                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+            when {
+                isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("加载中...", color = Color.White.copy(alpha = 0.5f))
+                }
+                elements.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("暂无元素，点击顶栏「按键」添加", color = Color.White.copy(alpha = 0.5f),
+                        style = MaterialTheme.typography.bodyMedium)
+                }
+                else -> {
+                    val canvasCallbacks = CanvasCallbacks(
+                        elementTap = { id ->
+                            selectedIds = if (id in selectedIds) emptySet() else setOf(id)
                         },
-                        onCancel = { showPropertiesPanel = false },
-                        onManageChildren = if (selEl.type == ElementType.GROUP_BUTTON)
-                            ({ showPropertiesPanel = false; showChildManager = true })
-                        else null,
-                        onManageSegments = if (selEl.type == ElementType.WHEEL_PAD)
-                            ({ showPropertiesPanel = false; showWheelPadSegmentEditor = true })
-                        else null,
+                        elementDragStart = { id -> selectedIds = setOf(id) },
+                        elementDrag = { id, delta ->
+                            elements = elements.map { el ->
+                                if (el.elementId == id) {
+                                    el.copy(
+                                        centralX = (el.centralX + delta.x).roundToInt().coerceIn(0, MAX_SCREEN_PX),
+                                        centralY = (el.centralY + delta.y).roundToInt().coerceIn(0, MAX_SCREEN_PX),
+                                    )
+                                } else el
+                            }
+                        },
+                        elementDragEnd = { saveElementOnInteractionEnd(it, snap = true) },
+                        elementResizeStart = { id, _ -> selectedIds = setOf(id) },
+                        elementResize = { id, handle, delta ->
+                            elements = elements.map { el ->
+                                if (el.elementId == id) applyResize(el, handle, delta)
+                                else el
+                            }
+                        },
+                        elementResizeEnd = { saveElementOnInteractionEnd(it, snap = false) },
+                        canvasTap = {
+                            selectedIds = emptySet()
+                            showGridSlider = false
+                        },
+                    )
+                    EditorCanvas(
+                        elements = elements,
+                        selectedIds = selectedIds,
+                        pressedIds = pressedIds,
+                        gridColumnCount = gridWidth,
+                        callbacks = canvasCallbacks,
                     )
                 }
             }
+        }
 
-            // ── 底栏 ──
-            GridWidthSlider(gridWidth = gridWidth, onGridWidthChange = { gridWidth = it })
+        // ── Layer 2: 控件覆盖层 ──
+        //     IDLE（无选中）→ 显示工具栏
+        //     SELECTED（有选中）→ 显示精简属性面板，工具栏隐藏
+        //     属性面板在屏幕上方或下方取决于按键位置
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (hasSelection) {
+                // ── 选中状态：工具栏隐藏，显示属性面板 ──
+                // 按钮在上半屏 → 面板在底部；按钮在下半屏 → 面板在顶部
+                if (showPanelAtBottom) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    EditorPropertiesPanel(
+                        element = selectedElement!!,
+                        atTop = false,
+                        onSave = { updated: EditorElement ->
+                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                            editorState.saveElement(updated)
+                            selectedIds = emptySet()
+                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                        },
+                        onDelete = { showDeleteConfirm = true },
+                        onDuplicate = { duplicateSelected() },
+                        onOpenColorEditor = { el ->
+                            pendingColorEditorElement = el
+                            showColorEditor = true
+                        },
+                        onOpenTypeSpecificEditor = { el ->
+                            pendingTypeSpecificEditorElement = el
+                            showTypeSpecificEditor = true
+                        },
+                        onElementChanged = { updated ->
+                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                        },
+                    )
+                } else {
+                    EditorPropertiesPanel(
+                        element = selectedElement!!,
+                        atTop = true,
+                        onSave = { updated: EditorElement ->
+                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                            editorState.saveElement(updated)
+                            selectedIds = emptySet()
+                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                        },
+                        onDelete = { showDeleteConfirm = true },
+                        onDuplicate = { duplicateSelected() },
+                        onOpenColorEditor = { el ->
+                            pendingColorEditorElement = el
+                            showColorEditor = true
+                        },
+                        onOpenTypeSpecificEditor = { el ->
+                            pendingTypeSpecificEditorElement = el
+                            showTypeSpecificEditor = true
+                        },
+                        onElementChanged = { updated ->
+                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                        },
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            } else {
+                // ── IDLE 状态：显示工具栏 ──
+                EditorToolbar(
+                    schemeName = schemeName,
+                    isEditingName = isEditingName,
+                    onStartEditName = { isEditingName = true },
+                    onNameChange = { schemeName = it },
+                    onConfirmName = { saveSchemeName(schemeName); isEditingName = false },
+                    actions = toolbarActions,
+                    hasSelection = false,
+                    showSelectionBar = false,
+                    isGroupButtonSelected = false,
+                    clipboardHasData = clipboardHasData,
+                    gridWidth = gridWidth,
+                    onGridWidthChange = { gridWidth = it },
+                    showGridSlider = showGridSlider,
+                    onToggleGridSlider = { showGridSlider = !showGridSlider },
+                )
+                Spacer(modifier = Modifier.weight(1f))
+            }
+        }
+
+        // ── 颜色自定义对话框 ──
+        if (showColorEditor && pendingColorEditorElement != null) {
+            ColorEditorDialog(
+                element = pendingColorEditorElement!!,
+                onSave = { updated: EditorElement ->
+                    elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                    editorState.saveElement(updated)
+                    showColorEditor = false
+                    pendingColorEditorElement = null
+                    Toast.makeText(context, "颜色已更新", Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = { showColorEditor = false; pendingColorEditorElement = null },
+                onElementChanged = { updated ->
+                    elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                },
+            )
+        }
+
+        // ── 类型专属属性设置对话框 ──
+        if (showTypeSpecificEditor && pendingTypeSpecificEditorElement != null) {
+            TypeSpecificEditorDialog(
+                element = pendingTypeSpecificEditorElement!!,
+                onSave = { updated: EditorElement ->
+                    elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                    editorState.saveElement(updated)
+                    showTypeSpecificEditor = false
+                    pendingTypeSpecificEditorElement = null
+                    Toast.makeText(context, "属性已更新", Toast.LENGTH_SHORT).show()
+                },
+                onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
+            )
+        }
+
+        // ── 按键列表弹窗 ──
+        if (showElementList && elements.isNotEmpty()) {
+            ElementListDialog(
+                elements = elements,
+                onSelect = { el ->
+                    selectedIds = setOf(el.elementId)
+                    showElementList = false
+                },
+                onDismiss = { showElementList = false },
+            )
         }
 
         // ── 添加菜单 ──
@@ -486,6 +582,10 @@ fun KeyMappingEditor(
                 onDismiss = { showAddMenu = false },
                 onSelect = { type ->
                     showAddMenu = false
+                    if (type == ElementType.DIGITAL_COMBINE_BUTTON) {
+                        showComboKeyEditor = true
+                        return@AddElementMenu
+                    }
                     val newEl = editorState.createDefaultElement(type)
                     val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
                     val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
@@ -596,6 +696,31 @@ fun KeyMappingEditor(
                 dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("取消") } },
             )
         }
+
+        // ── 清空所有元素确认 ──
+        if (showClearAllConfirm) {
+            AlertDialog(
+                onDismissRequest = { showClearAllConfirm = false },
+                title = { Text("清空所有按键") },
+                text = { Text("确定要删除屏幕上所有按键元素吗？此操作不可撤销。") },
+                confirmButton = {
+                    Button(
+                        onClick = {
+                            showClearAllConfirm = false
+                            // 删除所有元素
+                            for (el in elements) {
+                                editorState.deleteElement(el.elementId)
+                            }
+                            selectedIds = emptySet()
+                            reloadElements()
+                            Toast.makeText(context, "已清空所有按键", Toast.LENGTH_SHORT).show()
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    ) { Text("清空") }
+                },
+                dismissButton = { TextButton(onClick = { showClearAllConfirm = false }) { Text("取消") } },
+            )
+        }
     }
 }
 
@@ -634,24 +759,24 @@ private fun SelectionInfoBar(element: EditorElement) {
 }
 
 // ════════════════════════════════════════════════════════════
-//  编辑器工具栏（含选中操作）
+//  编辑器工具栏（含选中操作 + 网格滑块）
 // ════════════════════════════════════════════════════════════
 
 /** 工具栏操作回调集合 */
 private data class ToolbarActions(
     val addElement: () -> Unit = {},
-    val addComboKey: () -> Unit = {},
+    val showElementList: () -> Unit = {},
     val manageChildren: () -> Unit = {},
+    val clearAll: () -> Unit = {},
     val copyToClipboard: () -> Unit = {},
     val pasteClipboard: () -> Unit = {},
+    val save: () -> Unit = {},
     val exit: () -> Unit = {},
     val delete: () -> Unit = {},
     val duplicate: () -> Unit = {},
     val layerUp: () -> Unit = {},
     val layerDown: () -> Unit = {},
     val properties: () -> Unit = {},
-    val export: () -> Unit = {},
-    val import: () -> Unit = {},
 )
 
 @Composable
@@ -663,9 +788,15 @@ private fun EditorToolbar(
     onConfirmName: () -> Unit,
     actions: ToolbarActions = ToolbarActions(),
     hasSelection: Boolean = false,
+    showSelectionBar: Boolean = true,
     isGroupButtonSelected: Boolean = false,
     clipboardHasData: Boolean = false,
+    gridWidth: Int = 8,
+    onGridWidthChange: (Int) -> Unit = {},
+    showGridSlider: Boolean = false,
+    onToggleGridSlider: () -> Unit = {},
 ) {
+
     Surface(
         modifier = Modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
@@ -676,12 +807,6 @@ private fun EditorToolbar(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // ← 退出
-                IconButton(onClick = actions.exit) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "保存退出",
-                        tint = MaterialTheme.colorScheme.primary)
-                }
-
                 // 方案名
                 if (isEditingName) {
                     BasicTextField(
@@ -702,6 +827,7 @@ private fun EditorToolbar(
                 } else {
                     Text(schemeName, style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.weight(1f).clickable { onStartEditName() }
                             .padding(horizontal = 8.dp),
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -720,10 +846,11 @@ private fun EditorToolbar(
                     Spacer(Modifier.width(2.dp))
                     Text("按键", style = MaterialTheme.typography.labelMedium)
                 }
-                TextButton(onClick = actions.addComboKey) {
-                    Icon(Icons.Default.Keyboard, contentDescription = null, modifier = Modifier.size(18.dp))
+
+                TextButton(onClick = actions.showElementList) {
+                    Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("组合键", style = MaterialTheme.typography.labelMedium)
+                    Text("按键列表", style = MaterialTheme.typography.labelMedium)
                 }
 
                 HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
@@ -738,20 +865,90 @@ private fun EditorToolbar(
                     }
                 }
 
-                TextButton(onClick = actions.export) {
-                    Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                // ── 网格列数选择（点击展开/隐藏滑块） ──
+                TextButton(onClick = onToggleGridSlider) {
+                    Icon(Icons.Default.GridOn, contentDescription = null, modifier = Modifier.size(16.dp),
+                        tint = if (showGridSlider) MaterialTheme.colorScheme.primary
+                               else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(2.dp))
-                    Text("导出", style = MaterialTheme.typography.labelMedium)
+                    Text(if (gridWidth == 0) "网格 关闭" else "网格 ${gridWidth}列",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (showGridSlider) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface)
+                    Spacer(Modifier.width(2.dp))
+                    Icon(
+                        if (showGridSlider) Icons.Default.KeyboardArrowUp
+                        else Icons.Default.KeyboardArrowDown,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
-                TextButton(onClick = actions.import) {
-                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+
+                // ── 清空 / 取消 / 保存 ──
+                TextButton(onClick = actions.clearAll) {
+                    Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.error)
                     Spacer(Modifier.width(2.dp))
-                    Text("导入", style = MaterialTheme.typography.labelMedium)
+                    Text("清空", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.error)
+                }
+
+                TextButton(onClick = actions.exit) {
+                    Text("取消", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Button(
+                    onClick = actions.save,
+                    modifier = Modifier.height(32.dp),
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+                ) {
+                    Text("保存", style = MaterialTheme.typography.labelMedium)
+                }
+            }
+
+            // ── 网格滑块（可展开/收起） ──
+            AnimatedVisibility(visible = showGridSlider) {
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(if (gridWidth == 0) "关闭" else "${GRID_MIN_ACTIVE}列",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Slider(
+                            value = gridWidth.toFloat(),
+                            onValueChange = { newValue ->
+                                val snapped = when {
+                                    newValue < 1f -> 0
+                                    newValue in 1f..(GRID_MIN_ACTIVE - 1).toFloat() -> {
+                                        // 从 0 向右拖 → 跳到 20；从右侧向左拖 → 归 0
+                                        if (gridWidth == 0) GRID_MIN_ACTIVE else 0
+                                    }
+                                    else -> newValue.roundToInt()
+                                }
+                                onGridWidthChange(snapped)
+                            },
+                            valueRange = GRID_MIN.toFloat()..GRID_MAX.toFloat(),
+                            modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                        )
+                        Text("${GRID_MAX}列", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(Modifier.width(8.dp))
+                        Text(if (gridWidth == 0) "关闭" else "${gridWidth}列",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                            fontWeight = FontWeight.Medium)
+                    }
                 }
             }
 
             // ── 选中操作栏（有选中元素时显示） ──
-            if (hasSelection) {
+            if (hasSelection && showSelectionBar) {
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
@@ -801,44 +998,61 @@ private fun EditorToolbar(
 }
 
 // ════════════════════════════════════════════════════════════
-//  网格宽度滑块
+//  选中操作栏（从 EditorToolbar 中提取，用于浮动定位）
 // ════════════════════════════════════════════════════════════
 
 @Composable
-private fun GridWidthSlider(gridWidth: Int, onGridWidthChange: (Int) -> Unit) {
+private fun EditorSelectionBar(
+    actions: ToolbarActions,
+    isGroupButtonSelected: Boolean = false,
+) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-        shadowElevation = 2.dp,
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
-            Icon(Icons.Default.GridOn, contentDescription = null,
-                modifier = Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(8.dp))
-            Text("网格", style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Spacer(Modifier.width(8.dp))
-            Slider(
-                value = gridWidth.toFloat(),
-                onValueChange = { onGridWidthChange(it.roundToInt()) },
-                valueRange = 0f..10f,
-                steps = 9,
-                modifier = Modifier.weight(1f),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(if (gridWidth == 0) "关" else "${gridWidth}列",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Medium)
+            IconButton(onClick = actions.delete, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Delete, contentDescription = "删除",
+                    tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+            }
+            IconButton(onClick = actions.duplicate, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.ContentCopy, contentDescription = "复制",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.FileCopy, contentDescription = "复制到剪贴板",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.Layers, contentDescription = "上移一层",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+            IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+            // 组按键子元素管理按钮
+            if (isGroupButtonSelected) {
+                IconButton(onClick = actions.manageChildren, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Add, contentDescription = "子按键",
+                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                }
+            }
+            IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
+                Icon(Icons.Default.BorderColor, contentDescription = "属性",
+                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+            }
+            Spacer(Modifier.width(4.dp))
         }
     }
 }
 
 // ════════════════════════════════════════════════════════════
-//  添加元素菜单
+//  添加元素菜单（3列网格、无标题、可滚动）
 // ════════════════════════════════════════════════════════════
 
 @Composable
@@ -846,16 +1060,21 @@ private fun AddElementMenu(
     onDismiss: () -> Unit,
     onSelect: (ElementType) -> Unit,
 ) {
-    val elementTypes = listOf(
-        ElementType.DIGITAL_COMMON_BUTTON to "普通按键",
-        ElementType.DIGITAL_SWITCH_BUTTON to "开关按键",
-        ElementType.DIGITAL_MOVABLE_BUTTON to "可移动按键",
-        ElementType.ANALOG_STICK to "摇杆",
-        ElementType.DIGITAL_PAD to "方向键",
-        ElementType.DIGITAL_COMBINE_BUTTON to "组合键",
-        ElementType.GROUP_BUTTON to "组按键",
-        ElementType.SIMPLIFY_PERFORMANCE to "性能面板",
-        ElementType.WHEEL_PAD to "滚轮面板",
+    data class MenuItem(val type: ElementType, val label: String)
+
+    val menuItems = listOf(
+        MenuItem(ElementType.DIGITAL_COMMON_BUTTON, "普通按钮"),
+        MenuItem(ElementType.DIGITAL_SWITCH_BUTTON, "开关按钮"),
+        MenuItem(ElementType.DIGITAL_MOVABLE_BUTTON, "可移动按钮"),
+        MenuItem(ElementType.DIGITAL_PAD, "十字键"),
+        MenuItem(ElementType.ANALOG_STICK, "手柄摇杆"),
+        MenuItem(ElementType.DIGITAL_STICK, "键盘摇杆"),
+        MenuItem(ElementType.INVISIBLE_ANALOG_STICK, "隐藏手柄摇杆"),
+        MenuItem(ElementType.INVISIBLE_DIGITAL_STICK, "隐藏键盘摇杆"),
+        MenuItem(ElementType.SIMPLIFY_PERFORMANCE, "简化信息"),
+        MenuItem(ElementType.WHEEL_PAD, "轮盘按键"),
+        MenuItem(ElementType.GROUP_BUTTON, "组按键"),
+        MenuItem(ElementType.DIGITAL_COMBINE_BUTTON, "组合键"),
     )
 
     Box(
@@ -863,22 +1082,133 @@ private fun AddElementMenu(
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            modifier = Modifier.padding(32.dp).clip(RoundedCornerShape(16.dp)),
+            modifier = Modifier
+                .padding(horizontal = 24.dp, vertical = 48.dp)
+                .clip(RoundedCornerShape(16.dp)),
             color = MaterialTheme.colorScheme.surface,
             shadowElevation = 8.dp,
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("添加元素", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(8.dp))
-                elementTypes.forEach { (type, label) ->
-                    TextButton(onClick = { onSelect(type) }, modifier = Modifier.fillMaxWidth()) {
-                        Text(label)
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(3),
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                items(menuItems) { item ->
+                    Button(
+                        onClick = { onSelect(item.type) },
+                        modifier = Modifier.fillMaxWidth().height(48.dp),
+                        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(8.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                            contentColor = MaterialTheme.colorScheme.onSurface,
+                        ),
+                    ) {
+                        Text(
+                            item.label,
+                            style = MaterialTheme.typography.labelSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                 }
-                Spacer(Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * 按键列表弹窗 — 以 4 列网格展示当前方案的所有按键。
+ * 点击某个按键后弹窗消失，该按键变为选中状态。
+ * 宽度 80% × 高度 90%，居中显示。
+ */
+@Composable
+private fun ElementListDialog(
+    elements: List<EditorElement>,
+    onSelect: (EditorElement) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Box(
+        modifier = Modifier.fillMaxSize().background(Color(0x44000000)).clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+                .fillMaxSize(0.9f)
+                .clip(RoundedCornerShape(16.dp)),
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 12.dp,
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // ── 标题行 ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("按键列表 (${elements.size} 个)",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "关闭",
+                            modifier = Modifier.size(20.dp))
+                    }
+                }
+
                 HorizontalDivider()
-                TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-                    Text("取消", color = MaterialTheme.colorScheme.error)
+
+                // ── 4 列网格 ──
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(4),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    items(elements, key = { it.elementId }) { el ->
+                        val label = if (el.text.isNotBlank()) el.text else el.type.displayName
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .aspectRatio(1f)
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(MaterialTheme.colorScheme.surfaceVariant)
+                                .clickable { onSelect(el) },
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(4.dp),
+                            ) {
+                                // 类型标签 (2-4 字)
+                                Text(
+                                    el.type.displayName.take(4),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontSize = 9.sp,
+                                    maxLines = 1,
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                // 显示文字
+                                Text(
+                                    label,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 11.sp,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }

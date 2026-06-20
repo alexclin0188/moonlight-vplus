@@ -29,6 +29,7 @@ import com.alexclin.moonlink.stream.ui.StreamOverlay
 import com.alexclin.moonlink.stream.ui.overlay.KeyMappingOverlay
 import com.alexclin.moonlink.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.stream.ui.editor.ElementType
+import com.alexclin.moonlink.stream.ui.editor.buildPerformanceAttrs
 import com.alexclin.moonlink.theme.MoonLinkTheme
 import com.limelight.LimeLog
 import com.limelight.services.StreamNotificationService
@@ -126,13 +127,15 @@ class StreamActivity : ComponentActivity() {
                                 engine.surfaceView = sv
                                 engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
-                                // 触控事件监听
+                                // 触控事件监听（全屏页面打开时阻断穿透到远端）
                                 sv.setOnTouchListener { view, event ->
-                                    engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                                    if (engine.isFullScreenPageActive) false
+                                    else engine.touchHandler?.handleMotionEvent(view, event) ?: false
                                 }
-                                // 鼠标/触控笔事件监听
+                                // 鼠标/触控笔事件监听（全屏页面打开时阻断穿透到远端）
                                 sv.setOnGenericMotionListener { view, event ->
-                                    engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                                    if (engine.isFullScreenPageActive) false
+                                    else engine.touchHandler?.handleMotionEvent(view, event) ?: false
                                 }
                             }
                         },
@@ -212,6 +215,9 @@ class StreamActivity : ComponentActivity() {
                         }
                     }
 
+                    // ── GroupButton 子元素显隐状态 ──
+                    val groupButtonHiddenIds = remember { mutableStateOf<Set<Long>>(emptySet()) }
+
                     // ── 元素触控回调（处理所有类型） ──
                     val onElementAction: (EditorElement, Boolean, Float, Float) -> Unit = remember(engine) {
                         { el, isPressed, relX, relY ->
@@ -269,7 +275,27 @@ class StreamActivity : ComponentActivity() {
                                     }
                                     sendFullState()
                                 }
-                                else -> { /* GROUP_BUTTON, SIMPLIFY_PERFORMANCE, WHEEL_PAD 暂不处理 */ }
+                                ElementType.GROUP_BUTTON -> {
+                                    if (isPressed) {
+                                        // 点击 GroupButton：切换子元素显隐
+                                        val childIds = el.value
+                                            .split(",")
+                                            .mapNotNull { it.trim().toLongOrNull() }
+                                            .filter { it != -1L }
+                                            .toSet()
+                                        if (childIds.isNotEmpty()) {
+                                            val currentHidden = groupButtonHiddenIds.value
+                                            // 如果当前任意子元素已隐藏 → 全部显示；否则全部隐藏
+                                            val anyHidden = childIds.any { it in currentHidden }
+                                            groupButtonHiddenIds.value = if (anyHidden) {
+                                                currentHidden - childIds
+                                            } else {
+                                                currentHidden + childIds
+                                            }
+                                        }
+                                    }
+                                }
+                                else -> { /* SIMPLIFY_PERFORMANCE, WHEEL_PAD 暂不处理 */ }
                             }
                         }
                     }
@@ -286,11 +312,19 @@ class StreamActivity : ComponentActivity() {
                     val touchSense = engine.configTouchSense
                     val enhancedTouch = engine.configEnhancedTouch
 
-                    if (overlayElements.isNotEmpty()) {
+                    if (overlayElements.isNotEmpty() && !engine.isFullScreenPageActive) {
+                        // 过滤被 GroupButton 隐藏的子元素
+                        val hiddenIds = groupButtonHiddenIds.value
+                        val visibleElements = if (hiddenIds.isEmpty()) overlayElements
+                            else overlayElements.filter { it.elementId !in hiddenIds }
+
                         KeyMappingOverlay(
-                            elements = overlayElements,
+                            elements = visibleElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
+                            performanceAttrs = engine.latestPerfInfo?.let {
+                                buildPerformanceAttrs(it)
+                            },
                             globalOpacity = globalOpacity,
                             enabled = touchEnabled,
                             touchSense = touchSense,

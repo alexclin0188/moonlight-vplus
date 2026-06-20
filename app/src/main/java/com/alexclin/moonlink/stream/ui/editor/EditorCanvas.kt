@@ -8,12 +8,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
@@ -62,6 +64,9 @@ data class CanvasCallbacks(
  * 3. 元素（按 layer 排序）
  * 4. 选中态高亮 + 尺寸调整手柄
  *
+ * 隐形元素（INVISIBLE_ANALOG_STICK / INVISIBLE_DIGITAL_STICK）在编辑模式下用
+ * 半透明虚线框绘制，并可被选中/拖拽/调整尺寸，方便用户定位。
+ *
  * @param elements 当前方案的所有元素
  * @param selectedIds 选中元素 ID
  * @param pressedIds 按下元素 ID
@@ -82,62 +87,77 @@ fun EditorCanvas(
     var resizingId by remember { mutableStateOf(0L) }
     var activeResizeHandle by remember { mutableStateOf<ResizeHandle?>(null) }
 
+    // 使用 rememberUpdatedState 确保手势处理器能读到最新的 elements/selectedIds/callbacks，
+    // 但 pointerInput 使用稳定 key（Unit）避免协程因状态变化而重启，
+    // 从而修复已选中的按钮无法拖拽的问题。
+    val currentElements by rememberUpdatedState(elements)
+    val currentSelectedIds by rememberUpdatedState(selectedIds)
+    val currentCallbacks by rememberUpdatedState(callbacks)
+
     Canvas(
         modifier = modifier
             .fillMaxSize()
-            .pointerInput(elements, selectedIds) {
+            .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = { offset ->
+                        val els = currentElements
+                        val ids = currentSelectedIds
+                        val cb = currentCallbacks
                         // 先检查是否点击了 resize handle
-                        val handleHit = if (resizingId == 0L) hitTestResizeHandle(elements, selectedIds, offset) else null
+                        val handleHit = if (resizingId == 0L) hitTestResizeHandle(els, ids, offset) else null
                         if (handleHit != null) {
                             // 点击手柄上不切换选中
                         } else {
-                            val hitId = hitTestElement(elements, offset)
+                            val hitId = hitTestElement(els, offset)
                             if (hitId != null) {
-                                callbacks.elementTap(hitId)
+                                cb.elementTap(hitId)
                             } else {
-                                callbacks.canvasTap()
+                                cb.canvasTap()
                             }
                         }
                     },
                 )
             }
-            .pointerInput(elements, selectedIds) {
+            .pointerInput(Unit) {
                 detectDragGestures(
                     onDragStart = { offset ->
+                        val els = currentElements
+                        val ids = currentSelectedIds
+                        val cb = currentCallbacks
                         // 1. 先检测 resize handle
-                        val handleHit = hitTestResizeHandle(elements, selectedIds, offset)
+                        val handleHit = hitTestResizeHandle(els, ids, offset)
                         if (handleHit != null) {
                             val (elId, handle) = handleHit
                             resizingId = elId
                             activeResizeHandle = handle
-                            callbacks.elementResizeStart(elId, handle)
+                            cb.elementResizeStart(elId, handle)
                             return@detectDragGestures
                         }
                         // 2. 再检测元素本体
-                        val hitId = hitTestElement(elements, offset)
+                        val hitId = hitTestElement(els, offset)
                         if (hitId != null) {
                             draggingId = hitId
-                            callbacks.elementDragStart(hitId)
+                            cb.elementDragStart(hitId)
                         }
                     },
                     onDrag = { change, dragAmount ->
                         change.consume()
+                        val cb = currentCallbacks
                         if (resizingId != 0L && activeResizeHandle != null) {
-                            callbacks.elementResize(resizingId, activeResizeHandle!!, dragAmount)
+                            cb.elementResize(resizingId, activeResizeHandle!!, dragAmount)
                         } else if (draggingId != 0L) {
-                            callbacks.elementDrag(draggingId, dragAmount)
+                            cb.elementDrag(draggingId, dragAmount)
                         }
                     },
                     onDragEnd = {
+                        val cb = currentCallbacks
                         if (resizingId != 0L) {
-                            callbacks.elementResizeEnd(resizingId)
+                            cb.elementResizeEnd(resizingId)
                             resizingId = 0L
                             activeResizeHandle = null
                         }
                         if (draggingId != 0L) {
-                            callbacks.elementDragEnd(draggingId)
+                            cb.elementDragEnd(draggingId)
                             draggingId = 0L
                         }
                     },
@@ -151,10 +171,7 @@ fun EditorCanvas(
     ) {
         val canvasSize = size
 
-        // ── 1. 背景 ──
-        drawRect(color = Color(0xCC000000.toInt()))
-
-        // ── 2. 网格 ──
+        // ── 1. 网格 ──
         if (gridColumnCount > 1) {
             drawGrid(gridColumnCount)
         }
@@ -230,7 +247,7 @@ private fun DrawScope.drawElement(
         ElementType.SIMPLIFY_PERFORMANCE -> drawSimplifyPerformance(element)
         ElementType.WHEEL_PAD -> drawWheelPad(element)
         ElementType.INVISIBLE_ANALOG_STICK,
-        ElementType.INVISIBLE_DIGITAL_STICK -> { /* 隐形不绘制 */ }
+        ElementType.INVISIBLE_DIGITAL_STICK -> drawInvisibleStickPreview(element)
         ElementType.UNKNOWN -> drawUnknownElement(element)
     }
 
@@ -263,6 +280,47 @@ private fun DrawScope.drawSelectionHighlight(element: EditorElement) {
     )
     for ((start, end) in corners) {
         drawLine(Color(0xFFFE9900.toInt()), start, end, 4f)
+    }
+}
+
+/**
+ * 隐形摇杆预览绘制（仅在编辑模式下显示）。
+ * 使用半透明虚线边框 + 中心十字线 + 类型名提示，方便用户定位。
+ */
+private fun DrawScope.drawInvisibleStickPreview(element: EditorElement) {
+    val rect = elementRect(element)
+    val alpha = element.opacity / 100f * 0.4f
+
+    // 半透明虚线边框
+    drawRect(
+        color = Color(0x88AAAAAA.toInt()).copy(alpha = alpha),
+        topLeft = rect.topLeft,
+        size = rect.size,
+        style = Stroke(
+            width = 2f,
+            pathEffect = PathEffect.dashPathEffect(floatArrayOf(8f, 4f)),
+        ),
+    )
+
+    // 中心十字线
+    val cx = rect.center.x
+    val cy = rect.center.y
+    val crossColor = Color(0x66AAAAAA.toInt()).copy(alpha = alpha)
+    drawLine(crossColor, Offset(cx, rect.top), Offset(cx, rect.bottom), 1f)
+    drawLine(crossColor, Offset(rect.left, cy), Offset(rect.right, cy), 1f)
+
+    // 类型名提示
+    drawIntoCanvas { canvas ->
+        canvas.nativeCanvas.apply {
+            val paint = android.graphics.Paint().apply {
+                color = android.graphics.Color.argb((alpha * 180).toInt(), 170, 170, 170)
+                textSize = 11f
+                textAlign = android.graphics.Paint.Align.CENTER
+                isAntiAlias = true
+            }
+            val typeName = if (element.type == ElementType.INVISIBLE_ANALOG_STICK) "隐形摇杆" else "隐形数字摇杆"
+            drawText(typeName, cx, cy + 4f, paint)
+        }
     }
 }
 
@@ -308,8 +366,6 @@ private fun hitTestResizeHandle(
     val r = HANDLE_RADIUS
     for (element in elements) {
         if (element.elementId !in selectedIds) continue
-        if (element.type == ElementType.INVISIBLE_ANALOG_STICK ||
-            element.type == ElementType.INVISIBLE_DIGITAL_STICK) continue
         val rect = elementRect(element)
         val positions = positionsForHandles(rect)
         val handles = ResizeHandle.entries
@@ -335,10 +391,8 @@ fun elementRect(element: EditorElement): Rect {
 private fun hitTestElement(elements: List<EditorElement>, offset: Offset): Long? {
     val sorted = elements.sortedByDescending { it.layer }
     for (el in sorted) {
-        if (el.type != ElementType.INVISIBLE_ANALOG_STICK && el.type != ElementType.INVISIBLE_DIGITAL_STICK) {
-            if (elementRect(el).contains(offset)) {
-                return el.elementId
-            }
+        if (elementRect(el).contains(offset)) {
+            return el.elementId
         }
     }
     return null

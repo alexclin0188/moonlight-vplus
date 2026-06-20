@@ -244,21 +244,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             displayName = intent.getStringExtra(Game.EXTRA_DISPLAY_NAME)
             forceResumeCurrentSession = intent.getBooleanExtra(Game.EXTRA_FORCE_RESUME_CURRENT_SESSION, false)
             pcUseVdd = intent.getBooleanExtra(Game.EXTRA_PC_USEVDD, false)
-            // 用持久化的 VDD 用户偏好覆盖 Intent 值（用户可能在面板中更改过 VDD）
-            val vddPref = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-            if (vddPref.contains("vdd_enabled")) {
-                pcUseVdd = vddPref.getBoolean("vdd_enabled", pcUseVdd)
-            }
             pcUuid = intent.getStringExtra(Game.EXTRA_PC_UUID)
             pcName = intent.getStringExtra(Game.EXTRA_PC_NAME)
-
-            // 从持久化中恢复用户选择的显示器（用户在串流面板中可能切换过）
-            val displayPrefs = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-            val savedDisplayName = displayPrefs.getString("display_name", null)
-            if (savedDisplayName != null) {
-                currentDisplayName = savedDisplayName
-                currentDeviceId = displayPrefs.getString("display_guid", null)
-            }
 
             // 解析服务器证书
             val certBytes = intent.getByteArrayExtra(Game.EXTRA_SERVER_CERT)
@@ -485,14 +472,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         val displayRefreshRate = activity.windowManager.defaultDisplay.refreshRate
         val roundedRefreshRate = displayRefreshRate.roundToInt()
 
-        // 检查用户是否选择了"自动"帧率
-        val fpsAutoPref = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-        val fpsAuto = fpsAutoPref.getBoolean("fps_auto", false)
-
-        // 实际使用的帧率
-        var chosenFrameRate = if (fpsAuto) roundedRefreshRate else prefConfig.fps
-        // 自动帧率时用原生刷新率而非 0，避免服务器可能拒绝 mode=WxHxFPS 中 FPS=0
-        val effectiveLaunchFps = if (fpsAuto) roundedRefreshRate else prefConfig.fps
+        // 实际使用的帧率 — 始终使用 prefConfig.fps
+        var chosenFrameRate = prefConfig.fps
+        val effectiveLaunchFps = prefConfig.fps
 
         if (prefConfig.framePacing == PreferenceConfiguration.FRAME_PACING_CAP_FPS) {
             if (chosenFrameRate >= roundedRefreshRate) {
@@ -817,11 +799,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun changeDisplay(displayName: String, deviceId: String) {
         currentDisplayName = displayName
         currentDeviceId = deviceId
-        val prefs = activity.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-        prefs.edit()
-            .putString("display_name", displayName)
-            .putString("display_guid", deviceId)
-            .apply()
         // 切换显示器需要重启串流
         changeResolution()
     }
@@ -887,6 +864,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 触控灵敏度 */
     var configTouchSense: Int by mutableStateOf(100)
+
+    /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
+    var isFullScreenPageActive: Boolean by mutableStateOf(false)
 
     /**
      * 从 DB 读取当前方案的配置面板设置并同步到运行时状态。

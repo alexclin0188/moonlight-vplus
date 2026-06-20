@@ -6,34 +6,33 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.BorderColor
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,53 +40,35 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.alexclin.moonlink.stream.ui.editor.KeyValuePickerDialog
-import com.alexclin.moonlink.stream.ui.editor.getKeyLabelByValue
 import kotlin.math.roundToInt
-import org.json.JSONObject
-
-// ════════════════════════════════════════════════════════════════════════════
-//  属性编辑面板
-// ════════════════════════════════════════════════════════════════════════════
 
 /**
- * 选中元素的属性编辑面板。
+ * 属性编辑面板 —— 6 列网格布局（匹配设计文档）。
  *
- * 分组展示所有可编辑属性，支持：
- * - 文字/数值输入
- * - 滑块（透明度、文字大小比例）
- * - 颜色预览 + 十六进制输入
- * - 类型专属属性（方向值、模式、灵敏度等）
+ * Row 1: 按键名 | X坐标 | Y坐标 | 透明度 | 滑块(0%-100%) | 删除按钮
+ * Row 2: 键值  | W宽(px) | H高(px) | 文字大小 | 滑块(10%-150%) | 复制按钮
+ * Row 3: 按键类型 | 粗细(px) | 圆角(px) | 图层 | 颜色自定义 | 专属属性设置 | 保存
  *
- * @param element 当前选中的元素（快照，编辑期间不跟随外部变化）
- * @param onSave 保存变更
- * @param onCancel 放弃变更
+ * @param atTop 面板是否在屏幕顶部（影响圆角方向）
  */
-/** 属性编辑面板的可折叠区段 */
-private enum class Section {
-    BASIC,
-    POSITION,
-    APPEARANCE,
-    COLORS,
-    TYPE_SPECIFIC,
-}
-
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun EditorPropertiesPanel(
     element: EditorElement,
+    atTop: Boolean = false,
     onSave: (EditorElement) -> Unit,
-    onCancel: () -> Unit,
-    onManageChildren: (() -> Unit)? = null,
-    onManageSegments: (() -> Unit)? = null,
+    onDelete: () -> Unit,
+    onDuplicate: () -> Unit,
+    onOpenColorEditor: (EditorElement) -> Unit,
+    onOpenTypeSpecificEditor: (EditorElement) -> Unit,
+    /** 属性变化时实时回调，用于触发画布更新预览 */
+    onElementChanged: ((EditorElement) -> Unit)? = null,
 ) {
     // ── 本地可编辑状态 ──
     var text by remember(element.elementId) { mutableStateOf(element.text) }
@@ -102,502 +83,283 @@ fun EditorPropertiesPanel(
     var opacity by remember(element.elementId) { mutableStateOf(element.opacity.toFloat()) }
     var textSizePercent by remember(element.elementId) { mutableStateOf(element.textSizePercent.toFloat()) }
 
-    // 颜色（十六进制）
-    var normalColorHex by remember(element.elementId) { mutableStateOf(colorToHex(element.normalColor)) }
-    var pressedColorHex by remember(element.elementId) { mutableStateOf(colorToHex(element.pressedColor)) }
-    var bgColorHex by remember(element.elementId) { mutableStateOf(colorToHex(element.backgroundColor)) }
-    var normalTextColorHex by remember(element.elementId) { mutableStateOf(colorToHex(element.normalTextColor)) }
-    var pressedTextColorHex by remember(element.elementId) { mutableStateOf(colorToHex(element.pressedTextColor)) }
+    // ── 实时同步画布拖拽/缩放产生的变化 ──
+    LaunchedEffect(element.centralX) { centralX = element.centralX.toString() }
+    LaunchedEffect(element.centralY) { centralY = element.centralY.toString() }
+    LaunchedEffect(element.width) { width = element.width.toString() }
+    LaunchedEffect(element.height) { height = element.height.toString() }
 
-    // 类型专属
-    var mode by remember(element.elementId) { mutableStateOf(element.mode.toString()) }
-    var sense by remember(element.elementId) { mutableStateOf(element.sense.toString()) }
-    var middleValue by remember(element.elementId) { mutableStateOf(element.middleValue) }
-    var upValue by remember(element.elementId) { mutableStateOf(element.upValue) }
-    var downValue by remember(element.elementId) { mutableStateOf(element.downValue) }
-    var leftValue by remember(element.elementId) { mutableStateOf(element.leftValue) }
-    var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
-    var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
-    var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
-
-    var collapsedSections by remember(element.elementId) {
-        mutableStateOf(setOf<Section>())
-    }
     var showKeyPicker by remember { mutableStateOf(false) }
-    var directionPickerTarget by remember { mutableStateOf<String?>(null) }
 
-    // ── 构建保存后的 Element（委托到顶层纯函数） ──
-    fun buildUpdatedElement(): EditorElement = buildUpdatedElement(
-        element = element,
+    fun snapshot() = element.copy(
         text = text,
         value = value,
-        centralX = centralX,
-        centralY = centralY,
-        width = width,
-        height = height,
-        layer = layer,
-        radius = radius,
-        thick = thick,
-        opacity = opacity,
-        textSizePercent = textSizePercent,
-        normalColorHex = normalColorHex,
-        pressedColorHex = pressedColorHex,
-        bgColorHex = bgColorHex,
-        normalTextColorHex = normalTextColorHex,
-        pressedTextColorHex = pressedTextColorHex,
-        mode = mode,
-        sense = sense,
-        middleValue = middleValue,
-        upValue = upValue,
-        downValue = downValue,
-        leftValue = leftValue,                        rightValue = rightValue,
-        flag1 = flag1,
-        extraAttributesJson = extraAttributesJson,
+        centralX = centralX.toIntOrNull() ?: element.centralX,
+        centralY = centralY.toIntOrNull() ?: element.centralY,
+        width = width.toIntOrNull()?.coerceIn(10, 5000) ?: element.width,
+        height = height.toIntOrNull()?.coerceIn(10, 5000) ?: element.height,
+        layer = layer.toIntOrNull()?.coerceIn(0, 999) ?: element.layer,
+        radius = radius.toIntOrNull()?.coerceIn(0, 500) ?: element.radius,
+        thick = thick.toIntOrNull()?.coerceIn(0, 100) ?: element.thick,
+        opacity = opacity.roundToInt().coerceIn(0, 100),
+        textSizePercent = textSizePercent.roundToInt().coerceIn(10, 150),
     )
 
-    // ── 界面 ──
-    Box {
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
-            shadowElevation = 8.dp,
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+        shadowElevation = 8.dp,
+        shape = if (atTop) {
+            RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+        } else {
+            RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 3.dp),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .verticalScroll(rememberScrollState()),
+            // ── 每列各自独立（所有 3 行对齐）：
+            //   Lbl1(1f) + Input1(1f) + Lbl2(1f) + Input2(1f) + Lbl3(1f) + Input3(1f) + Lbl4(1f) + Content(3f) + Btn
+            //   Lbl1: 按键名 / 键值 / 按键类型
+            //   Input1: 输入框 / 选择框 / 类型值
+            //   Lbl2: X坐标 / W宽 / 粗细
+            //   Input2: X值 / W值 / 粗细值
+            //   Lbl3: Y坐标 / H高 / 圆角
+            //   Input3: Y值 / H值 / 圆角值
+            //   Lbl4: 透明度 / 文字大小 / 图层
+            //   Content: R1/R2 滑块, R3 图层输入+颜色+专属按钮
+            //   Btn: 保存 / 复制 / 删除
+
+            // ═══════════════════════════════════════════════════════
+            // Row 1: 按键名 | X坐标 | Y坐标 | 透明度滑块 | 删除
+            // ═══════════════════════════════════════════════════════
+            Row(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // ── 标题行 ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text("属性编辑", style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onCancel) {
-                        Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text("取消", style = MaterialTheme.typography.labelSmall)
-                    }
-                    TextButton(onClick = { onSave(buildUpdatedElement()) }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text("保存", style = MaterialTheme.typography.labelSmall)
+                // Lbl1: 按键名（右对齐）
+                GridLabel("按键名", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input1: 输入框
+                InlineTextField(value = text, onValueChange = { text = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl2: X坐标（右对齐）
+                GridLabel("X坐标", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input2: X值
+                MiniIntField(value = centralX, onValueChange = { centralX = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl3: Y坐标（右对齐）
+                GridLabel("Y坐标", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input3: Y值
+                MiniIntField(value = centralY, onValueChange = { centralY = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl4: 透明度（右对齐）
+                GridLabel("透明度", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Content: 滑块（占多格）
+                Box(Modifier.weight(3f).padding(end = 4.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("${opacity.roundToInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 8.sp)
+                        Slider(value = opacity, onValueChange = { opacity = it; onElementChanged?.invoke(snapshot()) },
+                            valueRange = 0f..100f,
+                            modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
                 }
+                // Btn: 保存（绿色）
+                TextButton(onClick = { onSave(snapshot()) }, modifier = Modifier.wrapContentHeight(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    Icon(Icons.Default.Check, contentDescription = null,
+                        tint = androidx.compose.ui.graphics.Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("保存", style = MaterialTheme.typography.labelSmall,
+                        color = androidx.compose.ui.graphics.Color(0xFF4CAF50))
+                }
+            }
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // ═══ 基本属性 ═══
-                SectionHeader("基本", Section.BASIC, collapsedSections, { collapsedSections = it })
-                if (Section.BASIC !in collapsedSections) {
-                    PropertyRow("文字") {
-                        SmallTextField(value = text, onValueChange = { text = it },
-                            modifier = Modifier.weight(1f))
+            // ═══════════════════════════════════════════════════════
+            // Row 2: 键值 | W宽 | H高 | 文字大小滑块 | 复制
+            // ═══════════════════════════════════════════════════════
+            Row(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Lbl1: 键值（右对齐）
+                GridLabel("按键值", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input1: 选择框
+                val keyLabel = getKeyLabelByValue(value) ?: value
+                Box(
+                    modifier = Modifier.weight(1f).padding(end = 2.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                        .clickable { showKeyPicker = true }
+                        .padding(horizontal = 3.dp, vertical = 3.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()) {
+                        Text(if (value.isNotEmpty()) keyLabel else "-",
+                            style = TextStyle(fontSize = 9.sp,
+                                color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurfaceVariant),
+                            maxLines = 1, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown,
+                            contentDescription = "选择键值",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    PropertyRow("键值") {
-                        val keyLabel = getKeyLabelByValue(value) ?: value
-                        Row(
-                            modifier = Modifier.weight(1f)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                                .clickable { showKeyPicker = true }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                if (value.isNotEmpty()) "$keyLabel  ($value)" else "点击选择",
-                                style = TextStyle(
-                                    color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 13.sp,
-                                ),
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text("选择", style = MaterialTheme.typography.labelSmall,
+                }
+                // Lbl2: W宽（右对齐）
+                GridLabel("按钮宽度", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input2: W值
+                MiniIntField(value = width, onValueChange = { width = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl3: H高（右对齐）
+                GridLabel("按钮高度", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input3: H值
+                MiniIntField(value = height, onValueChange = { height = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl4: 文字大小（右对齐）
+                GridLabel("文字大小", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Content: 滑块（占多格）
+                Box(Modifier.weight(3f).padding(end = 4.dp)) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text("${textSizePercent.roundToInt()}%",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 8.sp)
+                        Slider(value = textSizePercent,
+                            onValueChange = { textSizePercent = it; onElementChanged?.invoke(snapshot()) },
+                            valueRange = 10f..150f,
+                            modifier = Modifier.height(16.dp).fillMaxWidth())
+                    }
+                }
+                // Btn: 复制
+                TextButton(onClick = onDuplicate, modifier = Modifier.wrapContentHeight(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    Icon(Icons.Default.ContentCopy, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("复制", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            // ═══════════════════════════════════════════════════════
+            // Row 3: 按键类型 | 粗细 | 圆角 | 图层+按钮 | 保存
+            // ═══════════════════════════════════════════════════════
+            Row(
+                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Lbl1: 按键类型（右对齐）
+                GridLabel("按键类型", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input1: 类型值
+                Text(element.type.displayName,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl2: 粗细（右对齐）
+                GridLabel("边框粗细", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input2: 粗细值
+                MiniIntField(value = thick, onValueChange = { thick = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl3: 圆角（右对齐）
+                GridLabel("边框圆角", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input3: 圆角值
+                MiniIntField(value = radius, onValueChange = { radius = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Lbl4: 图层（右对齐）
+                GridLabel("所在图层", Modifier.weight(1f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Content: 图层输入 + 颜色自定义 + 专属属性设置
+                Row(Modifier.weight(3f), verticalAlignment = Alignment.CenterVertically) {
+                    MiniIntField(value = layer, onValueChange = { layer = it; onElementChanged?.invoke(snapshot()) },
+                        modifier = Modifier.weight(1f).wrapContentHeight())
+                    Spacer(Modifier.width(4.dp))
+                    TextButton(onClick = { onOpenColorEditor(snapshot()) },
+                        modifier = Modifier.weight(1f).wrapContentHeight(),
+                        contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                        Text("颜色自定义", style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary)
+                    }
+                    if (element.type.hasTypeSpecificProperties()) {
+                        TextButton(onClick = { onOpenTypeSpecificEditor(snapshot()) },
+                            modifier = Modifier.weight(1f).wrapContentHeight(),
+                            contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                            Text("${element.type.displayName}属性设置", style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary)
                         }
                     }
-                    PropertyRow("图层") {
-                        SmallIntField(value = layer, onValueChange = { layer = it },
-                            modifier = Modifier.width(80.dp))
-                    }
-                    Spacer(Modifier.height(4.dp))
                 }
-
-                // ═══ 位置 & 尺寸 ═══
-                SectionHeader("位置 & 尺寸", Section.POSITION, collapsedSections, { collapsedSections = it })
-                if (Section.POSITION !in collapsedSections) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        IntFieldWithLabel("X", centralX, { centralX = it })
-                        IntFieldWithLabel("Y", centralY, { centralY = it })
-                        IntFieldWithLabel("W", width, { width = it })
-                        IntFieldWithLabel("H", height, { height = it })
-                    }
-                    Spacer(Modifier.height(4.dp))
+                // Btn: 删除（红色）
+                TextButton(onClick = onDelete, modifier = Modifier.wrapContentHeight(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    Icon(Icons.Default.Delete, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(2.dp))
+                    Text("删除", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error)
                 }
-
-                // ═══ 外观 ═══
-                SectionHeader("外观", Section.APPEARANCE, collapsedSections, { collapsedSections = it })
-                if (Section.APPEARANCE !in collapsedSections) {
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        IntFieldWithLabel("圆角", radius, { radius = it }, suffix = "px")
-                        IntFieldWithLabel("边框", thick, { thick = it }, suffix = "px")
-                    }
-                    Spacer(Modifier.height(4.dp))
-
-                    // 透明度
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()) {
-                        Text("透明度", style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.width(64.dp))
-                        Slider(
-                            value = opacity,
-                            onValueChange = { opacity = it },
-                            valueRange = 0f..100f,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text("${opacity.roundToInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.width(40.dp))
-                    }
-
-                    // 文字大小比例
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()) {
-                        Text("文字大小", style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.width(64.dp))
-                        Slider(
-                            value = textSizePercent,
-                            onValueChange = { textSizePercent = it },
-                            valueRange = 10f..150f,
-                            modifier = Modifier.weight(1f),
-                        )
-                        Text("${textSizePercent.roundToInt()}%",
-                            style = MaterialTheme.typography.labelSmall,
-                            modifier = Modifier.width(40.dp))
-                    }
-                    Spacer(Modifier.height(4.dp))
-                }
-
-                // ═══ 颜色 ═══
-                SectionHeader("颜色", Section.COLORS, collapsedSections, { collapsedSections = it })
-                if (Section.COLORS !in collapsedSections) {
-                    ColorRow("正常色", normalColorHex, { normalColorHex = it },
-                        parseHexColor(normalColorHex))
-                    ColorRow("按下色", pressedColorHex, { pressedColorHex = it },
-                        parseHexColor(pressedColorHex))
-                    ColorRow("背景色", bgColorHex, { bgColorHex = it },
-                        parseHexColor(bgColorHex))
-                    ColorRow("文字色", normalTextColorHex, { normalTextColorHex = it },
-                        parseHexColor(normalTextColorHex))
-                    ColorRow("按下文字色", pressedTextColorHex, { pressedTextColorHex = it },
-                        parseHexColor(pressedTextColorHex))
-                    Spacer(Modifier.height(4.dp))
-                }
-
-                // ═══ 类型专属属性 ═══
-                val typeSpecificName = when (element.type) {
-                    ElementType.DIGITAL_PAD -> "方向键设置"
-                    ElementType.ANALOG_STICK, ElementType.DIGITAL_STICK,
-                    ElementType.INVISIBLE_ANALOG_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "摇杆设置"
-                    ElementType.DIGITAL_COMBINE_BUTTON -> "组合键设置"
-                    ElementType.DIGITAL_MOVABLE_BUTTON -> "可移动按键设置"
-                    ElementType.GROUP_BUTTON -> "组按键设置"
-                    else -> null
-                }
-                if (typeSpecificName != null) {
-                    SectionHeader(typeSpecificName, Section.TYPE_SPECIFIC, collapsedSections, { collapsedSections = it })
-                    if (Section.TYPE_SPECIFIC !in collapsedSections) {
-                        // 方向值（十字键/摇杆/组合键通用）
-                        val showDirections = element.type in listOf(
-                            ElementType.DIGITAL_PAD,
-                            ElementType.DIGITAL_COMBINE_BUTTON,
-                            ElementType.DIGITAL_STICK,
-                            ElementType.INVISIBLE_DIGITAL_STICK,
-                        )
-                        if (showDirections) {
-                            FlowRow(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
-                            ) {
-                                DirectionValueField("↑", upValue,
-                                    onClick = { directionPickerTarget = "up" })
-                                DirectionValueField("↓", downValue,
-                                    onClick = { directionPickerTarget = "down" })
-                                DirectionValueField("←", leftValue,
-                                    onClick = { directionPickerTarget = "left" })
-                                DirectionValueField("→", rightValue,
-                                    onClick = { directionPickerTarget = "right" })
-                            }
-                        }
-
-                        // 摇杆中值
-                        if (element.type in listOf(
-                                ElementType.ANALOG_STICK,
-                                ElementType.DIGITAL_STICK,
-                                ElementType.INVISIBLE_ANALOG_STICK,
-                                ElementType.INVISIBLE_DIGITAL_STICK,
-                            )) {
-                            PropertyRow("中值") {
-                                SmallTextField(value = middleValue, onValueChange = { middleValue = it },
-                                    modifier = Modifier.weight(1f))
-                            }
-                            PropertyRow("灵敏度") {
-                                SmallIntField(value = sense, onValueChange = { sense = it },
-                                    modifier = Modifier.width(80.dp))
-                            }
-                        }
-
-                        // 可移动按键模式
-                        if (element.type == ElementType.DIGITAL_MOVABLE_BUTTON) {
-                            PropertyRow("模式 (0=按钮,1=摇杆)") {
-                                SmallIntField(value = mode, onValueChange = { mode = it },
-                                    modifier = Modifier.width(80.dp))
-                            }
-                            PropertyRow("灵敏度") {
-                                SmallIntField(value = sense, onValueChange = { sense = it },
-                                    modifier = Modifier.width(80.dp))
-                            }
-                        }
-
-                        // 组按键标志
-                        if (element.type == ElementType.GROUP_BUTTON) {
-                            // ── 子元素信息行 ──
-                            val childCount = element.value
-                                .split(",")
-                                .mapNotNull { it.trim().toLongOrNull() }
-                                .count { it != -1L }
-                            PropertyRow("子按键") {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text(
-                                        if (childCount > 0) "${childCount} 个" else "无",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = if (childCount > 0) MaterialTheme.colorScheme.onSurface
-                                        else MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    if (onManageChildren != null) {
-                                        TextButton(
-                                            onClick = onManageChildren,
-                                        ) {
-                                            Text(
-                                                if (childCount > 0) "管理" else "添加",
-                                                style = MaterialTheme.typography.labelSmall,
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-
-                            PropertyRow("隐藏标志") {
-                                SmallIntField(value = flag1, onValueChange = { flag1 = it },
-                                    modifier = Modifier.width(80.dp))
-                            }
-                            // 组按键扩展属性（直接读写顶层 extraAttributesJson 状态）
-                            PropertyRow("可拖拽") {
-                                val movable = try {
-                                    JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
-                                } catch (_: Exception) { false }
-                                var checked by remember(element.elementId) { mutableStateOf(movable) }
-                                androidx.compose.material3.Switch(
-                                    checked = checked,
-                                    onCheckedChange = {
-                                        checked = it
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("movableInNormalMode", it)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                            PropertyRow("永久独立") {
-                                val independent = try {
-                                    JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
-                                } catch (_: Exception) { false }
-                                var checked by remember(element.elementId) { mutableStateOf(independent) }
-                                androidx.compose.material3.Switch(
-                                    checked = checked,
-                                    onCheckedChange = {
-                                        checked = it
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("isPermanentlyIndependent", it)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                        }
-
-                        // WheelPad 分段数 + 分段编辑入口
-                        if (element.type == ElementType.WHEEL_PAD) {
-                            PropertyRow("分段数") {
-                                Column {
-                                    Slider(
-                                        value = (mode.toIntOrNull() ?: 8).toFloat(),
-                                        onValueChange = { mode = it.roundToInt().toString() },
-                                        valueRange = 2f..24f,
-                                        steps = 21,
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                    Text("${mode.toIntOrNull() ?: 8} 段",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            // 分段编辑入口
-                            if (onManageSegments != null) {
-                                PropertyRow("分段编辑") {
-                                    TextButton(onClick = onManageSegments) {
-                                        Text("编辑分段", style = MaterialTheme.typography.labelSmall)
-                                    }
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(4.dp))
-                    }
-                }
-
-                // 底部间距
-                Spacer(Modifier.height(16.dp))
             }
-        }
-
-        // ── 键值选择器弹窗 ──
-        if (showKeyPicker) {
-            KeyValuePickerDialog(
-                onSelect = { selectedValue, _ ->
-                    value = selectedValue
-                    showKeyPicker = false
-                },
-                onDismiss = { showKeyPicker = false },
-            )
-        }
-
-        // ── 方向值选择器弹窗 ──
-        val directionTarget = directionPickerTarget
-        if (directionTarget != null) {
-            KeyValuePickerDialog(
-                onSelect = { selectedValue, _ ->
-                    when (directionTarget) {
-                        "up" -> upValue = selectedValue
-                        "down" -> downValue = selectedValue
-                        "left" -> leftValue = selectedValue
-                        "right" -> rightValue = selectedValue
-                    }
-                    directionPickerTarget = null
-                },
-                onDismiss = { directionPickerTarget = null },
-            )
         }
     }
-}
 
-// ════════════════════════════════════════════════════════════════════════════
-//  辅助组件
-// ════════════════════════════════════════════════════════════════════════════
-
-/** 可折叠的分组标题 */
-@Composable
-private fun SectionHeader(
-    title: String,
-    section: Section,
-    collapsed: Set<Section>,
-    onToggle: (Set<Section>) -> Unit,
-) {
-    val isCollapsed = section in collapsed
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-                onToggle(if (isCollapsed) collapsed - section else collapsed + section)
-            }
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(
-            if (isCollapsed) Icons.Default.ExpandMore else Icons.Default.ExpandLess,
-            contentDescription = null,
-            modifier = Modifier.size(18.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-        Spacer(Modifier.width(4.dp))
-        Text(title, style = MaterialTheme.typography.labelMedium,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(8.dp))
-        HorizontalDivider(
-            modifier = Modifier.weight(1f).height(1.dp),
-            color = MaterialTheme.colorScheme.outlineVariant,
+    // ── 键值选择器弹窗 ──
+    if (showKeyPicker) {
+        KeyValuePickerDialog(
+            onSelect = { selectedValue, _ ->
+                value = selectedValue
+                showKeyPicker = false
+                onElementChanged?.invoke(snapshot())
+            },
+            onDismiss = { showKeyPicker = false },
         )
     }
 }
 
-/** 带标签的行布局 */
-@Composable
-private fun PropertyRow(
-    label: String,
-    content: @Composable () -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(64.dp))
-        content()
-    }
-}
+// ═══════════════════════════════════════════════════════════════════════════════
+// 组件
+// ═══════════════════════════════════════════════════════════════════════════════
 
-/** 小型文字输入框 */
+/** 网格小标签 */
 @Composable
-private fun SmallTextField(
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    BasicTextField(
-        value = value,
-        onValueChange = onValueChange,
-        singleLine = true,
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions.Default,
+private fun GridLabel(text: String, modifier: Modifier = Modifier, rightAlign: Boolean = false) {
+    Text(text, style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        fontSize = 9.sp,
+        textAlign = if (rightAlign) androidx.compose.ui.text.style.TextAlign.End else androidx.compose.ui.text.style.TextAlign.Start,
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    )
+            .then(if (rightAlign) Modifier.fillMaxWidth() else Modifier)
+            .padding(end = 1.dp))
 }
 
-/** 小型整数输入框 */
+/** 判断该元素类型是否有专属属性可设置 */
+private fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
+    ElementType.DIGITAL_COMMON_BUTTON,
+    ElementType.DIGITAL_SWITCH_BUTTON,
+    ElementType.UNKNOWN -> false
+    else -> true
+}
+
+/** 微型整数输入框 */
 @Composable
-private fun SmallIntField(
+private fun MiniIntField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -612,211 +374,47 @@ private fun SmallIntField(
         singleLine = true,
         textStyle = TextStyle(
             color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 13.sp,
+            fontSize = 10.sp,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier
-            .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
+            .padding(horizontal = 3.dp, vertical = 3.dp),
     )
 }
 
-/** 带标签的整数输入（用于 FlowRow） */
+/** 行内文字输入框 */
 @Composable
-private fun IntFieldWithLabel(
-    label: String,
+private fun InlineTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    suffix: String = "",
+    modifier: Modifier = Modifier,
 ) {
-    Column(modifier = Modifier.width(72.dp)) {
-        Text(label, style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            SmallIntField(value = value, onValueChange = onValueChange,
-                modifier = Modifier.weight(1f))
-            if (suffix.isNotEmpty()) {
-                Text(suffix, style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 2.dp))
-            }
-        }
-    }
-}
-
-/** 可点击的方向值字段（↑↓←→），点击后打开键值选择器 */
-@Composable
-private fun DirectionValueField(
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-) {
-    val keyLabel = getKeyLabelByValue(value)
-    Column(modifier = Modifier.width(64.dp)) {
-        Text(label, style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 6.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                if (value.isNotEmpty()) (keyLabel ?: value) else "-",
-                style = TextStyle(
-                    color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 12.sp,
-                ),
-                maxLines = 1,
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
-/** 颜色行：色块预览 + 十六进制输入 */
-@Composable
-private fun ColorRow(
-    label: String,
-    hex: String,
-    onHexChange: (String) -> Unit,
-    parsedColor: Int?,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(72.dp))
-
-        // 色块预览
-        Box(
-            modifier = Modifier
-                .size(24.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(if (parsedColor != null) Color(parsedColor) else Color.Transparent)
-                .border(
-                    1.dp,
-                    if (parsedColor != null) Color.Transparent else Color.Red,
-                    RoundedCornerShape(4.dp),
-                ),
-        )
-
-        Spacer(Modifier.width(8.dp))
-
-        // 带 # 前缀的十六进制输入
-        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall)
-        BasicTextField(
-            value = hex.removePrefix("#"),
-            onValueChange = { h ->
-                val clean = h.uppercase().filter { it in "0123456789ABCDEF" || it in "abcdef" }
-                    .take(8)
-                onHexChange(if (clean.isEmpty()) "" else "#$clean")
-            },
-            singleLine = true,
-            textStyle = TextStyle(
-                color = if (parsedColor != null) MaterialTheme.colorScheme.onSurface
-                else MaterialTheme.colorScheme.error,
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-            modifier = Modifier
-                .width(100.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                .padding(horizontal = 6.dp, vertical = 3.dp),
-        )
-    }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  构建更新后的 Element（表单 → 数据模型）
-// ════════════════════════════════════════════════════════════════════════════
-
-/**
- * 将属性编辑面板的表单状态合并到原始 [element] 上，生成最终保存的 [EditorElement]。
- *
- * 所有字符串字段优先尝试解析为数字，解析失败时回退到原始值。
- * 此函数为纯函数，无副作用，便于单元测试。
- */
-internal fun buildUpdatedElement(
-    element: EditorElement,
-    text: String,
-    value: String,
-    centralX: String,
-    centralY: String,
-    width: String,
-    height: String,
-    layer: String,
-    radius: String,
-    thick: String,
-    opacity: Float,
-    textSizePercent: Float,
-    normalColorHex: String,
-    pressedColorHex: String,
-    bgColorHex: String,
-    normalTextColorHex: String,
-    pressedTextColorHex: String,
-    mode: String,
-    sense: String,
-    middleValue: String,
-    upValue: String,
-    downValue: String,
-    leftValue: String,
-    rightValue: String,
-    flag1: String,
-    extraAttributesJson: String = element.extraAttributesJson,
-): EditorElement {
-    return element.copy(
-        text = text,
+    BasicTextField(
         value = value,
-        centralX = centralX.toIntOrNull() ?: element.centralX,
-        centralY = centralY.toIntOrNull() ?: element.centralY,
-        width = width.toIntOrNull()?.coerceIn(10, 5000) ?: element.width,
-        height = height.toIntOrNull()?.coerceIn(10, 5000) ?: element.height,
-        layer = layer.toIntOrNull()?.coerceIn(0, 999) ?: element.layer,
-        radius = radius.toIntOrNull()?.coerceIn(0, 500) ?: element.radius,
-        thick = thick.toIntOrNull()?.coerceIn(0, 100) ?: element.thick,
-        opacity = opacity.roundToInt().coerceIn(0, 100),
-        textSizePercent = textSizePercent.roundToInt().coerceIn(10, 150),
-        normalColor = parseHexColor(normalColorHex) ?: element.normalColor,
-        pressedColor = parseHexColor(pressedColorHex) ?: element.pressedColor,
-        backgroundColor = parseHexColor(bgColorHex) ?: element.backgroundColor,
-        normalTextColor = parseHexColor(normalTextColorHex) ?: element.normalTextColor,
-        pressedTextColor = parseHexColor(pressedTextColorHex) ?: element.pressedTextColor,
-        mode = mode.toIntOrNull() ?: element.mode,
-        sense = sense.toIntOrNull()?.coerceIn(0, 500) ?: element.sense,
-        middleValue = middleValue,
-        upValue = upValue,
-        downValue = downValue,
-        leftValue = leftValue,
-        rightValue = rightValue,
-        flag1 = flag1.toIntOrNull() ?: element.flag1,
-        extraAttributesJson = extraAttributesJson,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 11.sp,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions.Default,
+        modifier = modifier
+            .clip(RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
+            .padding(horizontal = 4.dp, vertical = 3.dp),
     )
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  颜色工具
-// ════════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════════
+//  颜色工具（被 ColorEditorDialog 复用）
+// ═══════════════════════════════════════════════════════════════════════════════
 
-/**
- * 将 ARGB int 转换为 #AARRGGBB 格式的十六进制字符串。
- * 如果 alpha 为 FF，则省略 alpha → #RRGGBB。
- */
 internal fun colorToHex(color: Int): String {
     val alpha = (color shr 24) and 0xFF
     val red = (color shr 16) and 0xFF
@@ -829,21 +427,13 @@ internal fun colorToHex(color: Int): String {
     }
 }
 
-/**
- * 将十六进制字符串解析为 ARGB int。
- * 支持格式：RRGGBB、AARRGGBB、#RRGGBB、#AARRGGBB。
- */
 internal fun parseHexColor(hex: String): Int? {
     val clean = hex.removePrefix("#").trim()
     if (clean.isEmpty()) return null
     return try {
         when (clean.length) {
-            6 -> { // RRGGBB → FFrrggbb
-            (0xFF000000 or clean.toLong(16)).toInt()
-            }
-            8 -> { // AARRGGBB
-            clean.toLong(16).toInt()
-            }
+            6 -> (0xFF000000 or clean.toLong(16)).toInt()
+            8 -> clean.toLong(16).toInt()
             else -> null
         }
     } catch (_: NumberFormatException) {

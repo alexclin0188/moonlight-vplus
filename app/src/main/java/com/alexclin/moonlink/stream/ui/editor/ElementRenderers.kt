@@ -33,6 +33,18 @@ private const val WHEEL_INNER_RATIO = 30f / 100f
 /** 将 ARGB int 转为 Compose Color */
 private fun Int.toColor(): Color = Color(this)
 
+/** 将元素颜色 Int 与元素透明度复合，支持额外 alpha 系数 */
+private fun EditorElement.withOpacity(colorInt: Int, alphaMul: Float = 1f): Color {
+    val base = Color(colorInt)
+    return base.copy(alpha = (base.alpha * alphaMul * opacity / 100f).coerceIn(0f, 1f))
+}
+
+/** 将 ARGB int 与元素透明度复合（用于 native Paint） */
+private fun EditorElement.argbWithOpacity(colorInt: Int): Int {
+    val a = ((colorInt shr 24) and 0xFF) * opacity / 100
+    return (a.coerceIn(0, 255) shl 24) or (colorInt and 0x00FFFFFF)
+}
+
 
 // ════════════════════════════════════════════════════════════════════════════
 //  DigitalCommonButton / DigitalSwitchButton / DigitalCombineButton / DigitalMovableButton
@@ -55,8 +67,8 @@ fun DrawScope.drawDigitalButton(
         Rect(it.left + inset, it.top + inset, it.right - inset, it.bottom - inset)
     }
 
-    val bgColor = element.backgroundColor.toColor()
-    val borderColor = (if (isPressed) element.pressedColor else element.normalColor).toColor()
+    val bgColor = element.withOpacity(element.backgroundColor)
+    val borderColor = element.withOpacity(if (isPressed) element.pressedColor else element.normalColor)
     val radius = element.radius.toFloat()
 
     // ── 背景填充 ──
@@ -79,7 +91,7 @@ fun DrawScope.drawDigitalButton(
     // ── 文字 ──
     if (element.text.isNotBlank()) {
         val fontSizePx = (element.height * element.textSizePercent / 100f).coerceIn(8f, 120f)
-        val textArgb = if (isPressed) element.pressedTextColor else element.normalTextColor
+        val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.apply {
                 val mPaint = android.graphics.Paint().apply {
@@ -127,9 +139,9 @@ fun DrawScope.drawDigitalPad(
     val margin = 5f
     val correctedBorder = thick + margin
 
-    val normalColor = element.normalColor.toColor()
-    val pressedColor = element.pressedColor.toColor()
-    val bgColor = element.backgroundColor.toColor()
+    val bgColor = element.withOpacity(element.backgroundColor)
+    val normalColor = element.withOpacity(element.normalColor)
+    val pressedColor = element.withOpacity(element.pressedColor)
 
     // ── 八边形背景 ──
     val octInset = PAD_OCTAGON_INSET
@@ -149,7 +161,8 @@ fun DrawScope.drawDigitalPad(
     // ── 中心空白区矩形 ──
     val centerSize = PAD_CENTER_SIZE
     val centerOffset = (1 - centerSize) / 2
-    val centerColor = if (activeDirections == 0) normalColor else normalColor.copy(alpha = 0.3f)
+    val centerColor = if (activeDirections == 0) normalColor
+        else element.withOpacity(element.normalColor, 0.3f)
     drawRect(
         color = centerColor,
         topLeft = Offset(rect.left + w * centerOffset, rect.top + h * centerOffset),
@@ -244,9 +257,9 @@ fun DrawScope.drawAnalogStick(
     val deadZoneRadius = outerRadius * innerRadiusPercent / 100f
     val stickRadius = outerRadius * STICK_HEAD_RATIO
 
-    val bgColor = element.backgroundColor.toColor()
-    val normalColor = element.normalColor.toColor()
-    val pressedColor = element.pressedColor.toColor()
+    val bgColor = element.withOpacity(element.backgroundColor)
+    val normalColor = element.withOpacity(element.normalColor)
+    val pressedColor = element.withOpacity(element.pressedColor)
 
     // ── 外圈背景填充 ──
     drawCircle(bgColor, outerRadius, Offset(cx, cy))
@@ -291,46 +304,124 @@ fun DrawScope.drawGroupButton(
         lineTo(rect.right, rect.bottom - markSize)
         close()
     }
-    drawPath(markPath, color = Color(0xAAFFFFFF))
+    drawPath(markPath, color = element.withOpacity(0xAAFFFFFF.toInt()))
 }
 
 // ════════════════════════════════════════════════════════════════════════════
 //  SimplifyPerformance — 性能信息面板
 // ════════════════════════════════════════════════════════════════════════════
 
+/** SimplifyPerformance 默认模板（与旧 CROWN 兼容） */
+const val DEFAULT_PERF_TEMPLATE = "  带宽: ##带宽##    主机/网络/解码: ##主机延时## / ##网络延时## / ##解码时间##    帧率: ##帧率##    丢帧: ##丢帧率##    渲染:##渲染延迟##    时间:HH:MM:SS"
+
+/** ##占位符## 正则 */
+private val PERF_PLACEHOLDER_REGEX = Regex("##(.*?)##")
+
 /**
- * 绘制性能信息面板。半透明背景 + 简洁文字。
+ * 构建性能数据映射 —— 从 [PerformanceInfo] 生成占位符到实际值的映射。
+ * 格式与旧 CROWN 的 performanceAttrs Map 兼容。
+ */
+internal fun buildPerformanceAttrs(perfInfo: com.limelight.binding.video.PerformanceInfo?): Map<String, String> {
+    if (perfInfo == null) return emptyMap()
+    val attrs = mutableMapOf<String, String>()
+    attrs["带宽"] = perfInfo.bandWidth ?: "N/A"
+    attrs["网络延时"] = "${perfInfo.rttInfo.toInt()}"
+    attrs["主机延时"] = if (perfInfo.framesWithHostProcessingLatency > 0)
+        "%.1f".format(perfInfo.aveHostProcessingLatency) else "N/A"
+    attrs["解码时间"] = "%.2f".format(perfInfo.decodeTimeMs)
+    attrs["帧率"] = "Rx %.0f / Rd %.0f".format(perfInfo.receivedFps, perfInfo.renderedFps)
+    attrs["丢帧率"] = "%.2f%%".format(perfInfo.lostFrameRate)
+    attrs["渲染延迟"] = "%.2f".format(perfInfo.renderingLatencyMs)
+    attrs["总延迟"] = "%.0f".format(perfInfo.totalTimeMs)
+    return attrs
+}
+
+/**
+ * 解析模板字符串，替换 ##占位符## 为实际值，替换 HH/MM/SS 为当前时间。
+ */
+internal fun parsePerfTemplate(template: String, attrs: Map<String, String>): String {
+    // 1. 替换 ##占位符##
+    val afterPlaceholders = PERF_PLACEHOLDER_REGEX.replace(template) { match ->
+        attrs[match.groupValues[1]] ?: match.value
+    }
+    // 2. 替换时钟占位符
+    val now = java.util.Calendar.getInstance()
+    return afterPlaceholders
+        .replace("HH", java.text.SimpleDateFormat("HH", java.util.Locale.getDefault()).format(now.time))
+        .replace("MM", java.text.SimpleDateFormat("mm", java.util.Locale.getDefault()).format(now.time))
+        .replace("SS", java.text.SimpleDateFormat("ss", java.util.Locale.getDefault()).format(now.time))
+}
+
+/**
+ * 绘制性能信息面板。支持 ##占位符## 模板替换。
+ *
+ * 当 [performanceAttrs] 非空时渲染实时数据，否则渲染原始模板（编辑器预览）。
+ * 背景自适应文本尺寸，支持多行文本（\n 换行）。
  */
 fun DrawScope.drawSimplifyPerformance(
     element: EditorElement,
+    performanceAttrs: Map<String, String>? = null,
 ) {
     val rect = elementRect(element)
 
-    // 半透明背景
-    drawRect(
-        color = Color(0x88000000),
+    // ── 1. 解析模板 ──
+    val template = element.text.ifBlank { DEFAULT_PERF_TEMPLATE }
+    val renderedText = if (performanceAttrs != null) {
+        parsePerfTemplate(template, performanceAttrs)
+    } else {
+        // 无实时数据时：显示占位效果，但保留模板可见性
+        template
+    }
+
+    val elementOpacity = element.opacity / 100f
+    val fontSizePx = element.thick.toFloat().coerceIn(10f, 50f)
+
+    // ── 2. 计算文本实际尺寸 ──
+    val lines = renderedText.split("\n")
+    val tmpPaint = android.graphics.Paint().apply {
+        textSize = fontSizePx
+        isAntiAlias = true
+    }
+    val fm = tmpPaint.fontMetrics
+    val lineHeight = fm.bottom - fm.top
+    val maxLineWidth = lines.maxOfOrNull { tmpPaint.measureText(it) } ?: 0f
+
+    val hPadding = 10f
+    val vPadding = 8f
+    val contentWidth = maxLineWidth + hPadding * 2
+    val contentHeight = lineHeight * lines.size + vPadding * 2
+
+    // ── 3. 绘制半透明背景 ──
+    val bgColor = Color(0x88000000).copy(alpha = 0x88 / 255f * elementOpacity)
+    drawRoundRect(
+        color = bgColor,
         topLeft = rect.topLeft,
-        size = rect.size,
+        size = Size(contentWidth, contentHeight),
+        cornerRadius = CornerRadius(element.radius.toFloat(), element.radius.toFloat()),
     )
 
-    // 简约边框
-    drawRect(
-        color = Color(0xFF888888),
+    // ── 4. 简约边框 ──
+    drawRoundRect(
+        color = Color(0xFF888888).copy(alpha = 1f * elementOpacity),
         topLeft = rect.topLeft,
-        size = rect.size,
+        size = Size(contentWidth, contentHeight),
+        cornerRadius = CornerRadius(element.radius.toFloat(), element.radius.toFloat()),
         style = Stroke(width = 1f),
     )
 
-    // 文字（FPS / 延迟占位，实际由运行时代入）
+    // ── 5. 逐行绘制文本 ──
+    val textArgb = element.argbWithOpacity(element.normalColor)
     drawIntoCanvas { canvas ->
         canvas.nativeCanvas.apply {
             val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
-                textSize = 12f
+                color = textArgb
+                textSize = fontSizePx
                 isAntiAlias = true
             }
-            drawText("FPS: --", rect.left + 4, rect.top + 14, paint)
-            drawText("延迟: --", rect.left + 4, rect.top + 28, paint)
+            val baseline = rect.top + vPadding - fm.top
+            for ((i, line) in lines.withIndex()) {
+                drawText(line, rect.left + hPadding, baseline + i * lineHeight, paint)
+            }
         }
     }
 }
@@ -353,9 +444,9 @@ fun DrawScope.drawWheelPad(
     val outerRadius = min(rect.width, rect.height) / 2f - element.thick
     val innerRadius = outerRadius * WHEEL_INNER_RATIO
 
-    val bgColor = element.backgroundColor.toColor()
-    val normalColor = element.normalColor.toColor()
-    val pressedColor = element.pressedColor.toColor()
+    val bgColor = element.withOpacity(element.backgroundColor)
+    val normalColor = element.withOpacity(element.normalColor)
+    val pressedColor = element.withOpacity(element.pressedColor)
 
     // 背景圆
     drawCircle(bgColor, outerRadius, Offset(cx, cy))
@@ -365,13 +456,13 @@ fun DrawScope.drawWheelPad(
         style = Stroke(width = element.thick.toFloat()))
 
     // 内圈
-    drawCircle(Color(0xFF000000), innerRadius, Offset(cx, cy))
+    drawCircle(element.withOpacity(element.normalColor, 0f), innerRadius, Offset(cx, cy))
 
-    // 内圈边框
-    drawCircle(normalColor.copy(alpha = 0.5f), innerRadius, Offset(cx, cy),
+    // 内圈边框（alphaMul=0.5 与透明度自动复合）
+    drawCircle(element.withOpacity(element.normalColor, 0.5f), innerRadius, Offset(cx, cy),
         style = Stroke(width = element.thick.toFloat() * 0.5f))
 
-    // 分段线（8段）
+    // 分段线（alphaMul=0.4 与透明度自动复合）
     val segmentCount = element.mode.coerceIn(2, 24)
     val sweepAngle = 360f / segmentCount
     for (i in 0 until segmentCount) {
@@ -380,7 +471,7 @@ fun DrawScope.drawWheelPad(
         val startY = cy + (innerRadius * sin(angle)).toFloat()
         val endX = cx + (outerRadius * cos(angle)).toFloat()
         val endY = cy + (outerRadius * sin(angle)).toFloat()
-        drawLine(normalColor.copy(alpha = 0.4f),
+        drawLine(element.withOpacity(element.normalColor, 0.4f),
             Offset(startX, startY), Offset(endX, endY),
             element.thick.toFloat() * 0.7f)
     }
@@ -389,7 +480,7 @@ fun DrawScope.drawWheelPad(
     drawIntoCanvas { canvas ->
         canvas.nativeCanvas.apply {
             val paint = android.graphics.Paint().apply {
-                color = android.graphics.Color.WHITE
+                color = element.argbWithOpacity(0xFFFFFFFF.toInt())
                 textSize = 14f
                 textAlign = android.graphics.Paint.Align.CENTER
                 isAntiAlias = true
@@ -451,10 +542,12 @@ fun DrawScope.drawTrackpadIndicator(
     val cx = rect.center.x
     val cy = rect.center.y
 
+    val elementOpacity = element.opacity / 100f
+
     // 半透明蓝色覆盖
-    drawRect(Color(0x220066FF), rect.topLeft, rect.size)
+    drawRect(Color(0x220066FF).copy(alpha = (0x22 / 255f * elementOpacity).coerceIn(0f, 1f)), rect.topLeft, rect.size)
 
     // 十字线
-    drawLine(Color(0x440066FF), Offset(cx, rect.top), Offset(cx, rect.bottom), 1f)
-    drawLine(Color(0x440066FF), Offset(rect.left, cy), Offset(rect.right, cy), 1f)
+    drawLine(Color(0x440066FF).copy(alpha = (0x44 / 255f * elementOpacity).coerceIn(0f, 1f)), Offset(cx, rect.top), Offset(cx, rect.bottom), 1f)
+    drawLine(Color(0x440066FF).copy(alpha = (0x44 / 255f * elementOpacity).coerceIn(0f, 1f)), Offset(rect.left, cy), Offset(rect.right, cy), 1f)
 }

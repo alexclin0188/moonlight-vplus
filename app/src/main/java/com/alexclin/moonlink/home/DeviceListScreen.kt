@@ -151,6 +151,13 @@ fun DeviceListScreen(
         }
     }
 
+    // ── 回到主页时强制刷新设备在线状态 ──
+    // Activity.onResume 已触发 forceRefresh，但同一 Activity 内的 Compose 导航
+    // （主页→概要页→主页）不会再次触发 onResume，因此需要在此显式刷新。
+    LaunchedEffect(managerBinder) {
+        managerBinder?.forceRefresh()
+    }
+
     // ── 主动获取 box art 缩略图 ──────────────────────────
     // 为所有在线+已配对且无缓存的设备，自动拉取应用列表并下载缩略图到磁盘，
     // 这样 DeviceBoxArt 在首页就能直接展示桌面图片，无需先进入设备概要页。
@@ -236,75 +243,18 @@ fun DeviceListScreen(
         val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
             if (isLandscape) {
-                val bothNonEmpty = paired.isNotEmpty() && unpaired.isNotEmpty()
-
-                if (bothNonEmpty) {
-                    // ── 横屏：左右分栏 ─────────────────────
-                    // 可控设备在左，未配对设备在右，中间加竖直分割线
-                    Row(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = 16.dp, vertical = 8.dp),
-                    ) {
-                        // Left: paired devices
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            item { SectionHeader("可控设备") }
-                            items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
-                                DeviceCard(
-                                    computer = computer,
-                                    managerBinder = managerBinder,
-                                    onStream = { launchStream(context, computer, managerBinder) },
-                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
-                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
-                                    snackbarHostState = snackbarHostState,
-                                    scope = scope,
-                                    refreshKey = refreshTrigger,
-                                    setPairingLoading = { isPairingLoading = it },
-                                    onComputerRemoved = onComputerRemoved,
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.width(16.dp))
-
-                        // Right: unpaired devices
-                        LazyColumn(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            item {
-                                SectionHeader(
-                                    title = "未配对设备",
-                                )
-                            }
-                            items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
-                                DeviceCard(
-                                    computer = computer,
-                                    managerBinder = managerBinder,
-                                    onStream = { launchStream(context, computer, managerBinder) },
-                                    onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
-                                    onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
-                                    snackbarHostState = snackbarHostState,
-                                    scope = scope,
-                                    refreshKey = refreshTrigger,
-                                    setPairingLoading = { isPairingLoading = it },
-                                    onComputerRemoved = onComputerRemoved,
-                                )
-                            }
-                        }
-                    }
-                } else {
-                    // ── 横屏：只有一侧有设备，全宽单列 ────
+                // ── 横屏：左右固定分栏 ─────────────────
+                // 两列各占一半宽度（weight(1f)），无论另一侧是否有内容
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    // Left: paired devices（空列表时仅留空列，不撑满）
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         if (paired.isNotEmpty()) {
@@ -324,7 +274,17 @@ fun DeviceListScreen(
                                 )
                             }
                         }
+                    }
 
+                    Spacer(Modifier.width(16.dp))
+
+                    // Right: unpaired devices（空列表时仅留空列，不撑满）
+                    LazyColumn(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
                         if (unpaired.isNotEmpty()) {
                             item {
                                 SectionHeader(

@@ -34,6 +34,7 @@ import com.alexclin.moonlink.stream.ui.editor.drawWheelPad
  * relX/relY 是触摸点相对于元素中心的位置（用于十字键方向检测和摇杆轴值计算）。
  * 虚拟手柄和游戏按键映射共用此覆盖层，仅数据来源不同。
  *
+ * @param performanceAttrs SimplifyPerformance 模板替换用的性能数据映射（null 时不替换，显示原始模板）
  * @param globalOpacity  全局透明度（0-100），叠加到所有元素的渲染透明度上
  * @param enabled        false 时跳过所有触摸处理，元素仍渲染但不可交互
  * @param touchSense     触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
@@ -44,6 +45,7 @@ fun KeyMappingOverlay(
     elements: List<EditorElement>,
     modifier: Modifier = Modifier,
     onElementAction: ((element: EditorElement, isPressed: Boolean, relX: Float, relY: Float) -> Unit)? = null,
+    performanceAttrs: Map<String, String>? = null,
     globalOpacity: Int = 100,
     enabled: Boolean = true,
     touchSense: Int = 100,
@@ -127,7 +129,7 @@ fun KeyMappingOverlay(
             val sorted = elements.sortedBy { it.layer }
             for (el in sorted) {
                 val isPressed = pressedIds[el.elementId] == true
-                drawElement(el, isPressed)
+                drawElement(el, isPressed, performanceAttrs)
             }
         }
     }
@@ -181,7 +183,7 @@ internal fun computeTouchMargin(touchSense: Int, enhancedTouch: Boolean): Int {
 }
 
 /** 根据元素类型分发绘制到对应的 renderer */
-internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean) {
+internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, performanceAttrs: Map<String, String>? = null) {
     when (el.type) {
         ElementType.DIGITAL_COMMON_BUTTON,
         ElementType.DIGITAL_SWITCH_BUTTON,
@@ -195,7 +197,7 @@ internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean) {
         ElementType.INVISIBLE_ANALOG_STICK,
         ElementType.INVISIBLE_DIGITAL_STICK -> drawAnalogStick(el)
 
-        ElementType.SIMPLIFY_PERFORMANCE -> drawSimplifyPerformance(el)
+        ElementType.SIMPLIFY_PERFORMANCE -> drawSimplifyPerformance(el, performanceAttrs)
         ElementType.WHEEL_PAD -> drawWheelPad(el)
         ElementType.UNKNOWN -> drawUnknownElement(el)
     }

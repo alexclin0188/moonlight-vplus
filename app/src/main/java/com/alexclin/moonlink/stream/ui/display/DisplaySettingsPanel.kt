@@ -69,8 +69,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-private const val FPS_AUTO_PREF = "fps_auto"
-
 // ── 展开项联动 ID ──
 private const val EXP_SECTION_ABR = 0
 private const val EXP_SECTION_FPS = 1
@@ -218,17 +216,15 @@ private fun FpsSelector(
 ) {
     val context = LocalContext.current
     val pref = engine.prefConfig
-    val fpsAutoPref = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
     val scope = rememberCoroutineScope()
 
     var expanded by remember { mutableStateOf(false) }
     var unlockFps by remember { mutableStateOf(pref.unlockFps) }
-    val fpsAuto = fpsAutoPref.getBoolean(FPS_AUTO_PREF, false)
-    var selectedFps by remember { mutableIntStateOf(if (fpsAuto) 0 else pref.fps) }
+    var selectedFps by remember { mutableIntStateOf(pref.fps) }
 
-    val baseFpsOptions = listOf(0, 30, 60, 90, 120)  // 0 = 自动
+    val baseFpsOptions = listOf(30, 60, 90, 120)
     val extraFpsOptions = listOf(144, 165)
-    val currentFpsText = if (selectedFps == 0) "自动" else "${selectedFps}FPS"
+    val currentFpsText = "${selectedFps}FPS"
 
     // 其它 section 展开时收起自己
     LaunchedEffect(activeSectionId) {
@@ -275,17 +271,11 @@ private fun FpsSelector(
                     }, modifier = Modifier.height(24.dp))  // 调小Switch
                 }
                 baseFpsOptions.forEach { fps ->
-                    val label = if (fps == 0) "自动" else "${fps} FPS"
+                    val label = "${fps} FPS"
                     FpsRadioItem(fps, label, selectedFps == fps) {
                         selectedFps = it
-                        if (it != 0) {
-                            fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, false).apply()
-                            pref.fps = it
-                            pref.writePreferences(context)
-                        } else {
-                            fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, true).apply()
-                            // 自动模式下保留 pref.fps 原值，不覆盖
-                        }
+                        pref.fps = it
+                        pref.writePreferences(context)
                         engine.displaySettingsRestartPending = true
                         expanded = false
                     }
@@ -294,7 +284,6 @@ private fun FpsSelector(
                     extraFpsOptions.forEach { fps ->
                         FpsRadioItem(fps, "${fps} FPS", selectedFps == fps) {
                             selectedFps = it
-                            fpsAutoPref.edit().putBoolean(FPS_AUTO_PREF, false).apply()
                             pref.fps = it
                             pref.writePreferences(context)
                             engine.displaySettingsRestartPending = true
@@ -336,14 +325,10 @@ private fun BitrateSelector(
 
     var selectedPreset by remember { mutableStateOf(BitrateUtils.getPresetByKbps(pref.bitrate)) }
     var abrMode by remember { mutableStateOf(pref.abrMode) }
-    // 从持久化中恢复自定义码率，跨预设切换时仍保持（Bug 4 fix）
-    val savedCustomKbps = loadCustomKbps(context)
-    val initCustomKbps = if (pref.bitrate in BitrateUtils.BITRATE_CUSTOM_MIN..BitrateUtils.BITRATE_CUSTOM_MAX)
-        pref.bitrate else savedCustomKbps.coerceIn(BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)
-    var customKbps by remember { mutableIntStateOf(initCustomKbps) }
+    var customKbps by remember { mutableIntStateOf(pref.bitrate.coerceIn(BitrateUtils.BITRATE_CUSTOM_MIN, BitrateUtils.BITRATE_CUSTOM_MAX)) }
     var sliderProgress by remember {
         val initProgress = if (selectedPreset == BitrateUtils.BitratePreset.CUSTOM)
-            BitrateUtils.customKbpsToProgress(initCustomKbps).toFloat() else 0f
+            BitrateUtils.customKbpsToProgress(customKbps).toFloat() else 0f
         mutableFloatStateOf(initProgress)
     }
     // U6: 配置的 fallback 码率（预设/滑块值，ABR 不可用时的回退）
@@ -499,7 +484,6 @@ private fun BitrateSelector(
                         configuredBitrate = kbps
                         displayBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { v -> v > 0 }
                             ?: configuredBitrate
-                        saveCustomKbps(context, kbps)
                         // 使用 setFixedBitrate 统一处理持久化 + 异步回调 + ABR 同步
                         setFixedBitrate(engine, pref, kbps, context)
                     },
@@ -571,36 +555,6 @@ private fun TrafficEstimateLine(bitrateKbps: Int) {
     )
 }
 
-/**
- * 直接写入 [PreferenceConfiguration.writePreferences] 未覆盖的 SP 键。
- *
- * [writePreferences] 遗漏了多个字段（如 enableAdaptiveBitrate、abrMode、stretchVideo、
- * unlockFps、resolutionScale 等），因为它们原本由旧 PreferenceScreen 自动保存。
- * 新的 Compose UI 必须手动写入这些键。
- */
-private fun writeDirectPrefs(pref: PreferenceConfiguration, context: android.content.Context) {
-    val sp = PreferenceManager.getDefaultSharedPreferences(context)
-    sp.edit()
-        .putBoolean("checkbox_adaptive_bitrate", pref.enableAdaptiveBitrate)
-        .putString("list_abr_mode", pref.abrMode)
-        .putBoolean("checkbox_stretch_video", pref.stretchVideo)
-        .putInt("seekbar_output_buffer_queue_limit", pref.outputBufferQueueLimit)
-        .putBoolean("checkbox_unlock_fps", pref.unlockFps)
-        .putInt("seekbar_resolutions_scale", pref.resolutionScale)
-        .apply()
-}
-
-private const val CUSTOM_KBPS_PREF = "custom_kbps"
-
-private fun loadCustomKbps(context: android.content.Context): Int =
-    context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-        .getInt(CUSTOM_KBPS_PREF, 50000)
-
-private fun saveCustomKbps(context: android.content.Context, kbps: Int) {
-    context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-        .edit().putInt(CUSTOM_KBPS_PREF, kbps).apply()
-}
-
 private fun onBitratePresetSelected(
     engine: StreamEngine, preset: BitrateUtils.BitratePreset,
     context: android.content.Context, customKbps: Int,
@@ -610,7 +564,6 @@ private fun onBitratePresetSelected(
         BitrateUtils.BitratePreset.AUTO -> {
             pref.enableAdaptiveBitrate = true
             pref.writePreferences(context)
-            writeDirectPrefs(pref, context)
             // 运行时切换 AUTO：如果连接已建立但服务未创建，立即启动
             engine.startAdaptiveBitrateIfEnabled()
         }
@@ -627,8 +580,6 @@ private fun setFixedBitrate(
 ) {
     pref.enableAdaptiveBitrate = false
     pref.bitrate = kbps
-    // writePreferences 不保存 enableAdaptiveBitrate，需直接写 SP
-    writeDirectPrefs(pref, context)
 
     // 切换到固定预设时停止 ABR 服务，防止后台 tick 覆盖手动设定值
     engine.stopAdaptiveBitrate()
@@ -654,7 +605,6 @@ private fun onAbrModeSelected(
     val pref = engine.prefConfig
     pref.abrMode = mode
     pref.writePreferences(context)
-    writeDirectPrefs(pref, context)
 }
 
 // ══════════════════════════════════════════
@@ -719,8 +669,6 @@ private fun VideoFormatSelector(
                             .clickable {
                                 pref.videoFormat = option
                                 pref.writePreferences(context)
-                                PreferenceManager.getDefaultSharedPreferences(context)
-                                    .edit().putString("video_format", spValue).apply()
                                 engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
@@ -731,8 +679,6 @@ private fun VideoFormatSelector(
                             onClick = {
                                 pref.videoFormat = option
                                 pref.writePreferences(context)
-                                PreferenceManager.getDefaultSharedPreferences(context)
-                                    .edit().putString("video_format", spValue).apply()
                                 engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
@@ -805,8 +751,6 @@ private fun selectHdrMode(
 ) {
     engine.prefConfig.hdrMode = mode
     engine.prefConfig.writePreferences(context)
-    PreferenceManager.getDefaultSharedPreferences(context)
-        .edit().putString("list_hdr_mode", mode.toString()).apply()
     engine.displaySettingsRestartPending = true
     onSelected()
 }
@@ -869,8 +813,6 @@ private fun ResolutionScaleSelector(
                         engine.applyDisplaySettings = true
                         pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
                         pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putInt("seekbar_resolutions_scale", pref.resolutionScale).apply()
                         engine.displaySettingsRestartPending = true
                         // 调整完毕自动收起
                         expanded = false
@@ -943,7 +885,6 @@ private fun OutputBufferSlider(
                     onValueChangeFinished = {
                         pref.outputBufferQueueLimit = sliderValue.toInt().coerceIn(1, 5)
                         pref.writePreferences(context)
-                        writeDirectPrefs(pref, context)
                         expanded = false
                     },
                     valueRange = 1f..5f, steps = 3,
@@ -986,9 +927,9 @@ private fun VideoSwitches(engine: StreamEngine) {
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context); writeDirectPrefs(pref, context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
     }
 }
 
@@ -1058,8 +999,6 @@ private fun FramePacingSelector(
                                 expanded = false
                                 pref.framePacing = option.value
                                 pref.writePreferences(context)
-                                PreferenceManager.getDefaultSharedPreferences(context)
-                                    .edit().putString("frame_pacing", option.spKey).apply()
                             }
                             .padding(vertical = 3.dp),
                     ) {

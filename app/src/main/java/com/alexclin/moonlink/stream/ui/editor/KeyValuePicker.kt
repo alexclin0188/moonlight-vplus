@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,12 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 
 // ════════════════════════════════════════════════════════════════════════════
 //  键值数据模型
@@ -256,17 +258,14 @@ fun KeyValuePickerDialog(
     var selectedTab by remember { mutableIntStateOf(0) }
     val categories = KeyCategory.entries
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x88000000))
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center,
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .fillMaxSize(0.85f),
+                .fillMaxWidth(0.85f)
+                .fillMaxSize(0.95f),
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 12.dp,
@@ -276,7 +275,7 @@ fun KeyValuePickerDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Text("选择键值", style = MaterialTheme.typography.titleSmall,
@@ -289,21 +288,30 @@ fun KeyValuePickerDialog(
                 }
 
                 // ── 选项卡 ──
-                SecondaryTabRow(selectedTabIndex = selectedTab) {
+                SecondaryTabRow(
+                    selectedTabIndex = selectedTab,
+                    modifier = Modifier.height(36.dp),
+                ) {
                     categories.forEachIndexed { index, cat ->
                         Tab(
                             selected = selectedTab == index,
                             onClick = { selectedTab = index },
-                            text = { Text(cat.label, style = MaterialTheme.typography.labelMedium) },
-                            icon = {
+                            modifier = Modifier.padding(vertical = 0.dp),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                            ) {
                                 Icon(cat.icon, contentDescription = null,
-                                    modifier = Modifier.size(16.dp))
-                            },
-                        )
+                                    modifier = Modifier.size(14.dp))
+                                Spacer(Modifier.width(4.dp))
+                                Text(cat.label, style = MaterialTheme.typography.labelSmall)
+                            }
+                        }
                     }
                 }
 
-                HorizontalDivider()
+                Spacer(Modifier.height(8.dp))
 
                 // ── 按键网格 ──
                 val keys = when (selectedTab) {
@@ -337,12 +345,27 @@ fun KeyValuePickerDialog(
                             }
                         }
                     } else {
-                        // 其他类别用列表展示
-                        items(keys) { key ->
-                            KeyListItem(
-                                key = key,
-                                onClick = { onSelect(key.value, key.label) },
-                            )
+                        // 其他类别：4列网格展示
+                        item {
+                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                keys.chunked(4).forEach { rowKeys ->
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        rowKeys.forEach { key ->
+                                            GridKeyItem(
+                                                key = key,
+                                                onClick = { onSelect(key.value, key.label) },
+                                                modifier = Modifier.weight(1f).heightIn(min = 36.dp),
+                                            )
+                                        }
+                                        repeat(4 - rowKeys.size) {
+                                            Spacer(Modifier.weight(1f))
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -383,35 +406,44 @@ private fun KeyChip(
     }
 }
 
-/** 列表项（用于鼠标/手柄/特殊） */
+/** 网格项（用于鼠标/手柄/特殊，标签 + 键值，等高等宽） */
 @Composable
-private fun KeyListItem(
+private fun GridKeyItem(
     key: KeyEntry,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+    val bg = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(6.dp))
+            .background(bg)
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        contentAlignment = Alignment.Center,
     ) {
-        Text(
-            key.label,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            key.value,
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier
-                .clip(RoundedCornerShape(4.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                key.label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(4.dp))
+            Text(
+                key.value,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+            )
+        }
     }
 }
 
