@@ -24,6 +24,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
 import com.limelight.R
+import kotlin.math.min
+import kotlin.math.sqrt
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.alexclin.moonlink.stream.ui.StreamOverlay
 import com.alexclin.moonlink.stream.ui.overlay.KeyMappingOverlay
@@ -220,13 +224,39 @@ class StreamActivity : ComponentActivity() {
                     val activeDpadDirections = remember { HashMap<Long, Int>() }
                     // 摇杆当前激活的方向集合（elementId → 方向集合），支持对角线
                     val activeStickDirections = remember { HashMap<Long, MutableSet<String>>() }
+                    // WheelPad 状态：元素ID → {是否已激活(弹窗模式用), 当前选中的段索引}
+                    val wheelActiveMap = remember { HashMap<Long, Boolean>() }
+                    val wheelActiveIndex = remember { HashMap<Long, Int>() }
+                    // 摇杆上次点击时间（元素ID → 时间戳），用于双击 middleValue 检测
+                    val stickLastClickTime = remember { HashMap<Long, Long>() }
+                    // MovableButton 触控板模式：追踪上次触摸位置（元素ID → Pair(relX, relY)）
+                    val trackpadLastPos = remember { HashMap<Long, Pair<Float, Float>>() }
+                    // MovableButton 摇杆模式（mode=1）：记录首次触摸偏移（元素ID → Pair(relX, relY)）
+                    val joystickFirstTouch = remember { HashMap<Long, Pair<Float, Float>>() }
 
                     // ── 键盘按键翻译器（用于 kXX 格式按键值） ──
                     val keyboardTranslator = remember { KeyboardTranslator() }
                     // 按键重复 Handler（参考原 Crown 50ms+75ms 双调度）
                     val repeatHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
                     val keyboardRepeatMap = remember { HashMap<Short, java.lang.Runnable>() }
+                    // 鼠标按键重复（btnId → Runnable），手柄状态重复（单一共享）
                     val mouseRepeatMap = remember { HashMap<Int, java.lang.Runnable>() }
+                    val gamepadRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
+
+                    // ── 振动反馈（参考原 Crown buttonVibrator） ──
+                    fun triggerVibration() {
+                        try {
+                            val vibrator = engine.activity.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator?
+                            if (vibrator != null && vibrator.hasVibrator()) {
+                                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                                    vibrator.vibrate(android.os.VibrationEffect.createOneShot(20, android.os.VibrationEffect.DEFAULT_AMPLITUDE))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    vibrator.vibrate(20)
+                                }
+                            }
+                        } catch (_: Exception) { }
+                    }
 
                     /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
                     fun sendKeyboardKey(value: String, isPressed: Boolean) {
@@ -292,6 +322,22 @@ class StreamActivity : ComponentActivity() {
                             } else {
                                 repeatHandler.removeCallbacksAndMessages(null)
                             }
+                        } else {
+                            // 特殊功能键 & gb 组引用（非键盘/鼠标/手柄值的兜底处理）
+                            if (!isPressed) return@sendKeyboardKey
+                            when {
+                                value.startsWith("gb") -> {
+                                    // gb{id} 格式：触发对应 GroupButton（由调用方通过 overlayElements 查找）
+                                }
+                                value == "MMS" -> engine.applyTouchMode(if (engine.prefConfig.enableEnhancedTouch) 1 else 0)
+                                value == "CMS" -> engine.applyTouchMode(1)
+                                value == "TPM" -> engine.applyTouchMode(2)
+                                value == "MTM" -> engine.applyTouchMode(0)
+                                value == "PKS" -> engine.toggleKeyboard()
+                                value == "PCK" -> engine.sendKeyboardShortcut(0, 0) // 主机键盘开关
+                                value == "ACK" -> { val imm = engine.activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager; imm?.toggleSoftInput(0, 0) }
+                                value == "OGM" -> engine.toggleVirtualController()
+                            }
                         }
                     }
 
@@ -332,9 +378,8 @@ class StreamActivity : ComponentActivity() {
                             val value = el.value
                             when (el.type) {
                                 ElementType.DIGITAL_COMMON_BUTTON,
-                                ElementType.DIGITAL_SWITCH_BUTTON,
-                                ElementType.DIGITAL_MOVABLE_BUTTON,
-                                ElementType.DIGITAL_COMBINE_BUTTON -> {
+                                ElementType.DIGITAL_SWITCH_BUTTON -> {
+                                    if (isPressed) triggerVibration()
                                     when {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
@@ -344,20 +389,137 @@ class StreamActivity : ComponentActivity() {
                                             if (flag != 0) {
                                                 btnState.value = if (isPressed) btnState.value or flag
                                                     else btnState.value and flag.inv()
+                                                gamepadRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                                if (isPressed) {
+                                                    val r = java.lang.Runnable { sendFullState() }
+                                                    gamepadRepeatRunnable.value = r
+                                                    repeatHandler.postDelayed(r, 50)
+                                                }
                                             }
                                         }
                                         value.startsWith("m") -> {
-                                            // 鼠标按键 — 直接通过连接发送
                                             val btnId = value.substring(1).toIntOrNull()
                                             if (btnId != null) {
                                                 if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
                                                 else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                mouseRepeatMap.remove(btnId)?.let(repeatHandler::removeCallbacks)
+                                                if (isPressed) {
+                                                    val r = java.lang.Runnable {
+                                                        engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                    }
+                                                    mouseRepeatMap[btnId] = r
+                                                    repeatHandler.postDelayed(r, 50)
+                                                    repeatHandler.postDelayed(r, 75)
+                                                }
                                             }
                                         }
                                     }
                                     sendFullState()
                                 }
+                                ElementType.DIGITAL_MOVABLE_BUTTON -> {
+                                    // 从 extraAttributesJson 解析 isTrackpadMode
+                                    val isTrackpad = try {
+                                        org.json.JSONObject(el.extraAttributesJson).optBoolean("isTrackpadMode", false)
+                                    } catch (_: Exception) { false }
+                                    val joyMode = el.mode == 1
+
+                                    if (isTrackpad) {
+                                        // 触控板模式：触摸移动驱动鼠标（参考旧 Crown）
+                                        if (isPressed) {
+                                            val prev = trackpadLastPos[el.elementId]
+                                            if (prev != null) {
+                                                val dx = relX - prev.first
+                                                val dy = relY - prev.second
+                                                val senseMul = el.sense.coerceIn(1, 500) * 0.01f
+                                                engine.conn?.sendMouseMove((dx * senseMul).toInt().toShort(), (dy * senseMul).toInt().toShort())
+                                            }
+                                            trackpadLastPos[el.elementId] = Pair(relX, relY)
+                                        } else {
+                                            trackpadLastPos.remove(el.elementId)
+                                        }
+                                    } else if (joyMode) {
+                                        // 摇杆模式（mode=1）：参照旧 Crown 合成 MotionEvent
+                                        run joy@ {
+                                            if (engine.surfaceView == null) return@joy
+                                            val sv = engine.surfaceView!!
+                                            val downTime = android.os.SystemClock.uptimeMillis()
+                                            val senseMul = el.sense.coerceIn(1, 500) * 0.01f
+                                            val touchX = (sv.width / 2f + relX * senseMul).toInt().coerceIn(0, sv.width)
+                                            val touchY = (sv.height / 2f + relY * senseMul).toInt().coerceIn(0, sv.height)
+                                            if (isPressed) {
+                                                val prev = joystickFirstTouch[el.elementId]
+                                                if (prev == null) {
+                                                    joystickFirstTouch[el.elementId] = Pair(relX, relY)
+                                                    val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_DOWN, touchX.toFloat(), touchY.toFloat(), 0)
+                                                    engine.touchHandler?.handleMotionEvent(sv, e)
+                                                    e.recycle()
+                                                } else {
+                                                    val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_MOVE, touchX.toFloat(), touchY.toFloat(), 0)
+                                                    engine.touchHandler?.handleMotionEvent(sv, e)
+                                                    e.recycle()
+                                                }
+                                            } else {
+                                                joystickFirstTouch.remove(el.elementId)
+                                                val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_UP, touchX.toFloat(), touchY.toFloat(), 0)
+                                                engine.touchHandler?.handleMotionEvent(sv, e)
+                                                e.recycle()
+                                            }
+                                        }
+                                    } else {
+                                        // 按钮模式（mode=0）：同普通按键
+                                        if (isPressed) triggerVibration()
+                                        when {
+                                            value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
+                                            value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
+                                            value.startsWith("k") -> sendKeyboardKey(value, isPressed)
+                                            value.startsWith("g") -> {
+                                                val flag = parseValueToFlag(value)
+                                                if (flag != 0) {
+                                                    btnState.value = if (isPressed) btnState.value or flag
+                                                        else btnState.value and flag.inv()
+                                                    gamepadRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                                    if (isPressed) {
+                                                        val r = java.lang.Runnable { sendFullState() }
+                                                        gamepadRepeatRunnable.value = r
+                                                        repeatHandler.postDelayed(r, 50)
+                                                    }
+                                                }
+                                            }
+                                            value.startsWith("m") -> {
+                                                val btnId = value.substring(1).toIntOrNull()
+                                                if (btnId != null) {
+                                                    if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                    else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                    mouseRepeatMap.remove(btnId)?.let(repeatHandler::removeCallbacks)
+                                                    if (isPressed) {
+                                                        val r = java.lang.Runnable {
+                                                            engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                        }
+                                                        mouseRepeatMap[btnId] = r
+                                                        repeatHandler.postDelayed(r, 50)
+                                                        repeatHandler.postDelayed(r, 75)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        sendFullState()
+                                    }
+                                }
+                                ElementType.DIGITAL_COMBINE_BUTTON -> {
+                                    // 组合键：同时触发全部5个方向键值（参照旧 Crown）
+                                    if (isPressed) triggerVibration()
+                                    val values = listOfNotNull(
+                                        value.takeIf { it.isNotEmpty() },
+                                        el.upValue.takeIf { it.isNotEmpty() },
+                                        el.downValue.takeIf { it.isNotEmpty() },
+                                        el.leftValue.takeIf { it.isNotEmpty() },
+                                        el.rightValue.takeIf { it.isNotEmpty() },
+                                    )
+                                    for (v in values) sendKeyboardKey(v, isPressed)
+                                    sendFullState()
+                                }
                                 ElementType.DIGITAL_PAD -> {
+                                    if (isPressed) triggerVibration()
                                     // 旧 Crown 方式：位掩码检测，支持对角线（左上 = LEFT|UP）
                                     val newMask = if (isPressed) computeDpadBitmask(relX, relY, el.width, el.height) else 0
                                     val oldMask = activeDpadDirections[el.elementId] ?: 0
@@ -419,6 +581,19 @@ class StreamActivity : ComponentActivity() {
                                     }
                                     // 双击摇杆 = 摇杆点击 (L3/R3)，只在释放且偏移很小时触发
                                     if (!isPressed) {
+                                        // 检测双击（两次按下间隔 < 300ms）
+                                        val now = System.currentTimeMillis()
+                                        val lastClick = stickLastClickTime[el.elementId] ?: 0L
+                                        if (now - lastClick < 300 && lastClick > 0) {
+                                            // 双击 → 触发 middleValue
+                                            if (el.middleValue.isNotEmpty()) {
+                                                sendKeyboardKey(el.middleValue, true)
+                                                sendKeyboardKey(el.middleValue, false)
+                                            }
+                                            stickLastClickTime[el.elementId] = 0L
+                                        } else {
+                                            stickLastClickTime[el.elementId] = now
+                                        }
                                         if (isRightStick) { rsX.value = 0; rsY.value = 0 }
                                         else { lsX.value = 0; lsY.value = 0 }
                                         // 释放所有方向
@@ -449,7 +624,49 @@ class StreamActivity : ComponentActivity() {
                                         }
                                     }
                                 }
-                                else -> { /* SIMPLIFY_PERFORMANCE, WHEEL_PAD 暂不处理 */ }
+                                ElementType.WHEEL_PAD -> {
+                                    // 直接模式：触摸环带直接选择分段（参照旧 Crown）
+                                    if (isPressed) {
+                                        val w = el.width
+                                        val h = el.height
+                                        val cx = w / 2f
+                                        val cy = h / 2f
+                                        val outerR = min(w, h) / 2f - el.thick
+                                        val innerR = outerR * (el.sense.coerceIn(10, 90) / 100f)
+                                        val dx = relX
+                                        val dy = relY
+                                        val dist = kotlin.math.sqrt(dx * dx + dy * dy)
+                                        if (dist in innerR..outerR) {
+                                            var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90
+                                            if (angle < 0) angle += 360
+                                            val segCount = el.mode.coerceIn(2, 24)
+                                            val sweep = 360f / segCount
+                                            val idx = ((angle + sweep / 2) % 360 / sweep).toInt()
+                                            val prevIdx = wheelActiveIndex[el.elementId] ?: -1
+                                            if (idx != prevIdx) {
+                                                // 释放旧段，按下新段
+                                                val segments = el.value.split(",").filter { it.isNotBlank() }
+                                                if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
+                                                if (idx in segments.indices) sendKeyboardKey(segments[idx], true)
+                                                wheelActiveIndex[el.elementId] = idx
+                                            }
+                                        } else {
+                                            val prevIdx = wheelActiveIndex.remove(el.elementId)
+                                            if (prevIdx != null) {
+                                                val segments = el.value.split(",").filter { it.isNotBlank() }
+                                                if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
+                                            }
+                                        }
+                                    } else {
+                                        // 释放
+                                        val prevIdx = wheelActiveIndex.remove(el.elementId)
+                                        if (prevIdx != null) {
+                                            val segments = el.value.split(",").filter { it.isNotBlank() }
+                                            if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
+                                        }
+                                    }
+                                }
+                                else -> { /* SIMPLIFY_PERFORMANCE 无交互操作 */ }
                             }
                         }
                     }
@@ -458,6 +675,23 @@ class StreamActivity : ComponentActivity() {
                     LaunchedEffect(Unit) {
                         if (engine.isCrownFeatureEnabled && overlayElements.isEmpty()) {
                             engine.reloadOverlay()
+                        }
+                    }
+
+                    // ── SIMPLIFY_PERFORMANCE 性能数据状态 + 定时刷新 ──
+                    var perfMap by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+                    LaunchedEffect(Unit) {
+                        // 性能数据更新回调
+                        engine.onPerfInfoUpdate = { info ->
+                            perfMap = buildPerformanceAttrs(info)
+                        }
+                        // 每秒刷新（确保 HH:MM:SS 时钟更新）
+                        while (isActive) {
+                            delay(1000)
+                            val info = engine.latestPerfInfo
+                            if (info != null) {
+                                perfMap = buildPerformanceAttrs(info)
+                            }
                         }
                     }
 
@@ -476,9 +710,7 @@ class StreamActivity : ComponentActivity() {
                             elements = visibleElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
-                            performanceAttrs = engine.latestPerfInfo?.let {
-                                buildPerformanceAttrs(it)
-                            },
+                            performanceAttrs = perfMap,
                             globalOpacity = globalOpacity,
                             enabled = touchEnabled,
                             touchSense = touchSense,

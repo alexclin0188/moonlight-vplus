@@ -88,8 +88,11 @@ fun DrawScope.drawDigitalButton(
         style = Stroke(width = element.thick.toFloat()),
     )
 
-    // ── 文字 ──
-    if (element.text.isNotBlank()) {
+    // ── 文字（text 为空时自动显示键值名） ──
+    val displayText = element.text.ifBlank {
+        getKeyLabelByValue(element.value) ?: ""
+    }
+    if (displayText.isNotBlank()) {
         val fontSizePx = (element.height * element.textSizePercent / 100f).coerceIn(8f, 120f)
         val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
         drawIntoCanvas { canvas ->
@@ -103,7 +106,7 @@ fun DrawScope.drawDigitalButton(
                 }
                 val metrics = mPaint.fontMetrics
                 val baseline = element.centralY - (metrics.top + metrics.bottom) / 2f
-                drawText(element.text, element.centralX.toFloat(), baseline, mPaint)
+                drawText(displayText, element.centralX.toFloat(), baseline, mPaint)
             }
         }
     }
@@ -427,65 +430,117 @@ fun DrawScope.drawSimplifyPerformance(
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  WheelPad — 滚轮面板（基础版）
+//  WheelPad — 滚轮面板（完整版，参照旧 Crown）
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * 绘制滚轮面板（简化版，仅做视觉占位）。
+ * 绘制滚轮面板。
  *
- * 完整版需要解析 [element.extraAttributesJson] 获取分段数量和名称。
+ * 将圆环按 [element.mode] 等分为 N 个扇区，每个扇区对应一个键值。
+ * [activeIndex] 表示当前选中的扇区索引（-1 表示无选中）。
+ *
+ * 段值从 [element.value] 解析（逗号分隔，支持 `|` 后缀命名）。
  */
 fun DrawScope.drawWheelPad(
     element: EditorElement,
+    activeIndex: Int = -1,
 ) {
     val rect = elementRect(element)
     val cx = rect.center.x
     val cy = rect.center.y
     val outerRadius = min(rect.width, rect.height) / 2f - element.thick
-    val innerRadius = outerRadius * WHEEL_INNER_RATIO
+    val innerRatio = (element.sense.coerceIn(10, 90) / 100f)
+    val innerRadius = outerRadius * innerRatio
+    val segmentCount = element.mode.coerceIn(2, 24)
+    val sweepAngle = 360f / segmentCount
 
     val bgColor = element.withOpacity(element.backgroundColor)
     val normalColor = element.withOpacity(element.normalColor)
     val pressedColor = element.withOpacity(element.pressedColor)
 
-    // 背景圆
-    drawCircle(bgColor, outerRadius, Offset(cx, cy))
+    // 解析段值列表（逗号分隔，支持 "k51|名称" 格式）
+    val segments = element.value.split(",").filter { it.isNotBlank() }
 
-    // 外圈
-    drawCircle(normalColor, outerRadius, Offset(cx, cy),
-        style = Stroke(width = element.thick.toFloat()))
+    // ── 绘制各段扇形 ──
+    for (i in 0 until segmentCount) {
+        val startAngle = (i * sweepAngle) - (sweepAngle / 2) - 90
+        val isActive = i == activeIndex
+        val fillColor = if (isActive) pressedColor else bgColor
 
-    // 内圈
-    drawCircle(element.withOpacity(element.normalColor, 0f), innerRadius, Offset(cx, cy))
+        // 扇形填充
+        drawArc(
+            color = fillColor,
+            topLeft = Offset(cx - outerRadius, cy - outerRadius),
+            size = Size(outerRadius * 2, outerRadius * 2),
+            startAngle = startAngle,
+            sweepAngle = sweepAngle,
+            useCenter = true,
+        )
+    }
 
-    // 内圈边框（alphaMul=0.5 与透明度自动复合）
+    // ── 绘制各段分割线（内圆到外圆） ──
+    val dividerColor = element.withOpacity(element.normalColor, 0.4f)
+    for (i in 0 until segmentCount) {
+        val angle = Math.toRadians((i * sweepAngle - sweepAngle / 2 - 90).toDouble())
+        val sx = cx + (innerRadius * cos(angle)).toFloat()
+        val sy = cy + (innerRadius * sin(angle)).toFloat()
+        val ex = cx + (outerRadius * cos(angle)).toFloat()
+        val ey = cy + (outerRadius * sin(angle)).toFloat()
+        drawLine(dividerColor, Offset(sx, sy), Offset(ex, ey), element.thick.toFloat() * 0.7f)
+    }
+
+    // ── 中心圆 ──
+    drawCircle(Color(0xFF000000), innerRadius, Offset(cx, cy))
+
+    // ── 外圈/内圈边框 ──
+    drawCircle(normalColor, outerRadius, Offset(cx, cy), style = Stroke(width = element.thick.toFloat()))
     drawCircle(element.withOpacity(element.normalColor, 0.5f), innerRadius, Offset(cx, cy),
         style = Stroke(width = element.thick.toFloat() * 0.5f))
 
-    // 分段线（alphaMul=0.4 与透明度自动复合）
-    val segmentCount = element.mode.coerceIn(2, 24)
-    val sweepAngle = 360f / segmentCount
-    for (i in 0 until segmentCount) {
-        val angle = Math.toRadians((i * sweepAngle - sweepAngle / 2 - 90).toDouble())
-        val startX = cx + (innerRadius * cos(angle)).toFloat()
-        val startY = cy + (innerRadius * sin(angle)).toFloat()
-        val endX = cx + (outerRadius * cos(angle)).toFloat()
-        val endY = cy + (outerRadius * sin(angle)).toFloat()
-        drawLine(element.withOpacity(element.normalColor, 0.4f),
-            Offset(startX, startY), Offset(endX, endY),
-            element.thick.toFloat() * 0.7f)
+    // ── 各段文字 ──
+    val ringThickness = outerRadius - innerRadius
+    val textSizePx = (ringThickness * 0.35f).coerceIn(8f, 48f)
+    drawIntoCanvas { canvas ->
+        val nativeCanvas = canvas.nativeCanvas
+        val paint = android.graphics.Paint().apply {
+            isAntiAlias = true
+            textAlign = android.graphics.Paint.Align.CENTER
+            textSize = textSizePx
+        }
+        val textRadius = innerRadius + ringThickness / 2f
+        for (i in 0 until segmentCount) {
+            val angle = (i * sweepAngle) - 90
+            val rad = Math.toRadians(angle.toDouble())
+            val tx = cx + (textRadius * cos(rad)).toFloat()
+            val ty = cy + (textRadius * sin(rad)).toFloat()
+
+            val segValue = segments.getOrElse(i) { "" }
+            val displayName = getKeyLabelByValue(segValue) ?: segValue
+            paint.color = element.argbWithOpacity(if (i == activeIndex) element.pressedTextColor else element.normalTextColor)
+            paint.isFakeBoldText = i == activeIndex
+            val metrics = paint.fontMetrics
+            val baseline = ty - (metrics.top + metrics.bottom) / 2f
+            nativeCanvas.drawText(if (displayName.isNotEmpty()) displayName else "-", tx, baseline, paint)
+        }
     }
 
-    // 中心占位文字
-    drawIntoCanvas { canvas ->
-        canvas.nativeCanvas.apply {
-            val paint = android.graphics.Paint().apply {
-                color = element.argbWithOpacity(0xFFFFFFFF.toInt())
-                textSize = 14f
-                textAlign = android.graphics.Paint.Align.CENTER
-                isAntiAlias = true
+    // ── 选中时中心显示键值名 ──
+    if (activeIndex in 0 until segmentCount) {
+        val segValue = segments.getOrElse(activeIndex) { "" }
+        val centerText = getKeyLabelByValue(segValue) ?: segValue
+        drawIntoCanvas { canvas ->
+            canvas.nativeCanvas.apply {
+                val paint = android.graphics.Paint().apply {
+                    color = element.argbWithOpacity(0xFFFFFFFF.toInt())
+                    textSize = (innerRadius * 1.2f).coerceIn(12f, 60f)
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    isAntiAlias = true
+                    isFakeBoldText = true
+                }
+                val metrics = paint.fontMetrics
+                val baseline = cy - (metrics.top + metrics.bottom) / 2f
+                drawText(centerText, cx, baseline, paint)
             }
-            drawText("轮盘", cx, cy + 5f, paint)
         }
     }
 }

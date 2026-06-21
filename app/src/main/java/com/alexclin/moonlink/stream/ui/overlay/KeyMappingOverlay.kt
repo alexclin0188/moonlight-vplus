@@ -238,7 +238,7 @@ internal fun computeTouchMargin(touchSense: Int, enhancedTouch: Boolean): Int {
 }
 
 /** 根据元素类型分发绘制到对应的 renderer */
-internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, performanceAttrs: Map<String, String>? = null) {
+internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, performanceAttrs: Map<String, String>? = null, wheelActiveIndex: Int = -1) {
     when (el.type) {
         ElementType.DIGITAL_COMMON_BUTTON,
         ElementType.DIGITAL_SWITCH_BUTTON,
@@ -253,7 +253,7 @@ internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, perfor
         ElementType.INVISIBLE_DIGITAL_STICK -> drawAnalogStick(el)
 
         ElementType.SIMPLIFY_PERFORMANCE -> drawSimplifyPerformance(el, performanceAttrs)
-        ElementType.WHEEL_PAD -> drawWheelPad(el)
+        ElementType.WHEEL_PAD -> drawWheelPad(el, wheelActiveIndex)
         ElementType.UNKNOWN -> drawUnknownElement(el)
     }
 }

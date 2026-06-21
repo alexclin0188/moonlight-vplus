@@ -249,46 +249,96 @@ class EditorState(
      * elementId 为占位符，insert 时由数据库或调用方分配。
      */
     fun createDefaultElement(type: ElementType): EditorElement {
+        val isPad = type == ElementType.DIGITAL_PAD
+        val isStick = type in listOf(
+            ElementType.ANALOG_STICK, ElementType.DIGITAL_STICK,
+            ElementType.INVISIBLE_ANALOG_STICK, ElementType.INVISIBLE_DIGITAL_STICK,
+        )
+        val isInvisible = type in listOf(
+            ElementType.INVISIBLE_ANALOG_STICK, ElementType.INVISIBLE_DIGITAL_STICK,
+        )
+        val isAnalog = type in listOf(
+            ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK,
+        )
+
         return EditorElement(
-            elementId = 0L, // 占位，addElement 前需分配
+            elementId = 0L,
             configId = configId,
             type = type,
             text = when (type) {
-                ElementType.DIGITAL_COMMON_BUTTON -> "A"
-                ElementType.DIGITAL_SWITCH_BUTTON -> "B"
-                ElementType.DIGITAL_MOVABLE_BUTTON -> "M"
-                ElementType.DIGITAL_COMBINE_BUTTON -> "组合键"
-                ElementType.GROUP_BUTTON -> "GROUP"
-                ElementType.DIGITAL_PAD -> "方向"
-                ElementType.ANALOG_STICK -> ""
-                ElementType.DIGITAL_STICK -> ""
-                ElementType.INVISIBLE_ANALOG_STICK -> ""
-                ElementType.INVISIBLE_DIGITAL_STICK -> ""
                 ElementType.SIMPLIFY_PERFORMANCE -> DEFAULT_PERF_TEMPLATE
-                ElementType.WHEEL_PAD -> "轮盘"
-                else -> "按键"
+                ElementType.WHEEL_PAD -> ""
+                else -> ""
             },
             value = when (type) {
                 ElementType.DIGITAL_COMMON_BUTTON -> "k29"
                 ElementType.DIGITAL_SWITCH_BUTTON -> "k29"
                 ElementType.DIGITAL_MOVABLE_BUTTON -> "k29"
                 ElementType.DIGITAL_COMBINE_BUTTON -> "k29"
-                ElementType.WHEEL_PAD -> "k29"
+                ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK -> "LS"
+                ElementType.WHEEL_PAD -> "k51,k32,k47,k29,k45,k33,k46,k31"
                 else -> ""
             },
-            // DIGITAL_PAD 默认方向值为键盘上下左右键
-            upValue = if (type == ElementType.DIGITAL_PAD) "k19" else "",
-            downValue = if (type == ElementType.DIGITAL_PAD) "k20" else "",
-            leftValue = if (type == ElementType.DIGITAL_PAD) "k21" else "",
-            rightValue = if (type == ElementType.DIGITAL_PAD) "k22" else "",
-            width = 100,
-            height = 100,
-            centralX = 100,
-            centralY = 100,
-            layer = 50,
+            // 方向值（旧 Crown 默认：DIGITAL_PAD=WASD, DIGITAL_STICK=WASD+Shift）
+            upValue = when (type) {
+                ElementType.DIGITAL_PAD -> "k51"
+                ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k51"
+                else -> ""
+            },
+            downValue = when (type) {
+                ElementType.DIGITAL_PAD -> "k47"
+                ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k47"
+                else -> ""
+            },
+            leftValue = when (type) {
+                ElementType.DIGITAL_PAD -> "k29"
+                ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k29"
+                else -> ""
+            },
+            rightValue = when (type) {
+                ElementType.DIGITAL_PAD -> "k32"
+                ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k32"
+                else -> ""
+            },
+            middleValue = when (type) {
+                ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK -> "g64"
+                ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k59"
+                else -> ""
+            },
+            width = when {
+                isPad -> 300
+                isInvisible -> 400
+                isStick -> 200
+                type == ElementType.WHEEL_PAD -> 400
+                else -> 100
+            },
+            height = when {
+                isPad -> 300
+                isInvisible -> 400
+                isStick -> 200
+                type == ElementType.WHEEL_PAD -> 400
+                else -> 100
+            },
+            centralX = when {
+                isStick || type == ElementType.WHEEL_PAD -> 250
+                else -> 100
+            },
+            centralY = when {
+                isStick || type == ElementType.WHEEL_PAD -> 250
+                else -> 100
+            },
+            layer = when {
+                isInvisible -> 45
+                type == ElementType.WHEEL_PAD -> 40
+                else -> 50
+            },
             normalColor = 0xF0888888.toInt(),
             pressedColor = 0xF00000FF.toInt(),
-            backgroundColor = 0x00FFFFFF,
+            backgroundColor = when (type) {
+                ElementType.SIMPLIFY_PERFORMANCE -> 0xF0555555.toInt()
+                ElementType.WHEEL_PAD -> 0xAA444444.toInt()
+                else -> 0x00FFFFFF
+            },
             normalTextColor = 0xFFFFFFFF.toInt(),
             pressedTextColor = 0xFFCCCCCC.toInt(),
             textSizePercent = 25,
@@ -296,17 +346,22 @@ class EditorState(
                 ElementType.SIMPLIFY_PERFORMANCE -> 30
                 else -> 5
             },
-            sense = when (type) {
-                ElementType.GROUP_BUTTON -> 1  // 子元素默认可见
+            sense = when {
+                type == ElementType.GROUP_BUTTON -> 1
+                isStick -> 30
+                type == ElementType.WHEEL_PAD -> 30
                 else -> 100
             },
-            radius = when (type) {
-                ElementType.SIMPLIFY_PERFORMANCE -> 19
+            radius = when {
+                type == ElementType.SIMPLIFY_PERFORMANCE -> 19
+                isStick -> 100
                 else -> 0
             },
+            flag1 = if (type == ElementType.WHEEL_PAD) 1 else 0,
             extraAttributesJson = when (type) {
                 ElementType.DIGITAL_MOVABLE_BUTTON -> """{"isTrackpadMode":false}"""
                 ElementType.GROUP_BUTTON -> """{"movableInNormalMode":false,"userHasManuallySet":false,"isPermanentlyIndependent":false}"""
+                ElementType.WHEEL_PAD -> """{"normalTextColor":-1,"pressedTextColor":-1,"centerTextColor":-1,"textSizePercent":35,"centerTextSizePercent":60,"triggerTextSizePercent":40,"previewGroupChildren":true}"""
                 else -> "{}"
             },
         )
