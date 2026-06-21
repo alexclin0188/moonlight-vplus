@@ -915,6 +915,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。 */
     fun reloadOverlay() {
+        if (!prefConfig.keyMappingEnabled) {
+            currentOverlayElements.value = emptyList()
+            return
+        }
         try {
             val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
             currentOverlayElements.value = com.alexclin.moonlink.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)

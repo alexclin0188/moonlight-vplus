@@ -146,8 +146,8 @@ object DefaultElements {
                 w = DPAD_SIZE.screenScale(height),
                 h = DPAD_SIZE.screenScale(height),
                 radius = 6,
-                upValue = "d1", downValue = "d4",
-                leftValue = "d8", rightValue = "d2",
+                upValue = "k51", downValue = "k47",
+                leftValue = "k29", rightValue = "k32",
                 layer = 60,
             ))
 
@@ -195,7 +195,7 @@ object DefaultElements {
                 cy = (TRIGGER_Y + baseYUnit).screenScale(height),
                 w = TRIGGER_WIDTH.screenScale(height), h = TRIGGER_HEIGHT.screenScale(height)))
 
-            // ── 左摇杆 (左上) ──
+            // ── 左摇杆 (左上，双击 = L3) ──
             result.add(cv(elementId = eid++, type = 30, text = "", value = "",
                 cx = ANALOG_L_CX.screenScale(height),
                 cy = (ANALOG_L_CY + baseYUnit).screenScale(height),
@@ -203,8 +203,9 @@ object DefaultElements {
                 radius = ANALOG_SIZE.screenScale(height) / 2,
                 leftValue = "a0", rightValue = "a0",
                 upValue = "a1", downValue = "a1",
+                middleValue = "g64",
                 layer = 55))
-            // 右摇杆
+            // 右摇杆（双击 = R3）
             result.add(cv(elementId = eid++, type = 30, text = "", value = "",
                 cx = ANALOG_R_CX.screenScale(height) + rightDisplacement,
                 cy = (ANALOG_R_CY + baseYUnit).screenScale(height),
@@ -212,6 +213,7 @@ object DefaultElements {
                 radius = ANALOG_SIZE.screenScale(height) / 2,
                 leftValue = "a2", rightValue = "a2",
                 upValue = "a3", downValue = "a3",
+                middleValue = "g128",
                 layer = 55))
 
             // ── 中央功能键 ──

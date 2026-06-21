@@ -160,41 +160,31 @@ class StreamActivity : ComponentActivity() {
                     val ltV = remember { mutableStateOf(0.toByte()) }   // leftTrigger
                     val rtV = remember { mutableStateOf(0.toByte()) }   // rightTrigger
 
-                    // D-Pad 单独追踪（每个方向独立）
-                    val dpadUp = remember { mutableStateOf(false) }
-                    val dpadDown = remember { mutableStateOf(false) }
-                    val dpadLeft = remember { mutableStateOf(false) }
-                    val dpadRight = remember { mutableStateOf(false) }
-
                     fun sendFullState() {
-                        var flags = btnState.value
-                        if (dpadUp.value) flags = flags or com.limelight.nvstream.input.ControllerPacket.UP_FLAG
-                        if (dpadDown.value) flags = flags or com.limelight.nvstream.input.ControllerPacket.DOWN_FLAG
-                        if (dpadLeft.value) flags = flags or com.limelight.nvstream.input.ControllerPacket.LEFT_FLAG
-                        if (dpadRight.value) flags = flags or com.limelight.nvstream.input.ControllerPacket.RIGHT_FLAG
                         engine.controllerHandler?.reportOscState(
-                            flags, lsX.value, lsY.value, rsX.value, rsY.value, ltV.value, rtV.value
+                            btnState.value, lsX.value, lsY.value, rsX.value, rsY.value, ltV.value, rtV.value
                         )
                     }
 
-                    // ── 解析元素 value 为控制器标志位 ──
+                    // ── 解析元素 value 为控制器标志位（十进制解析，匹配旧 Crown） ──
                     fun parseValueToFlag(value: String): Int {
                         return when {
-                            value.startsWith("k0x") -> value.substring(3).toIntOrNull(16) ?: 0
-                            value.startsWith("g") -> value.substring(1).toIntOrNull(16) ?: 0
+                            value.startsWith("g") -> value.substring(1).toIntOrNull() ?: 0
                             else -> 0
                         }
                     }
 
                     // ── 摇杆辅助：根据 relX/relY 和元素半径计算轴值 ──
-                    // 死区大小由 configTouchSense 决定：sense=100 → 0.2（原默认值），sense=200 → 0.1（灵敏），sense=1 → 0.5（迟钝）
-                    fun computeStickAxis(relX: Float, relY: Float, radius: Float): Pair<Short, Short> {
-                        val deadZone = (20f / engine.configTouchSense.coerceIn(1, 200)).coerceIn(0.05f, 0.5f)
+                    // 死区由 el.sense（元素自身灵敏度，0-100）决定：sense 越大→死区越小→越灵敏
+                    // formula: sense=100→0.05(5%), sense=50→0.275(27.5%), sense=1→0.5(50%)
+                    fun computeStickAxis(relX: Float, relY: Float, radius: Float, element: EditorElement): Pair<Short, Short> {
+                        val normalizedSense = element.sense.coerceIn(1, 100) / 100f
+                        val deadZoneRatio = 0.05f + (1f - normalizedSense) * 0.45f
                         val maxRadius = radius.coerceAtLeast(1f)
                         var nx = (relX / maxRadius).coerceIn(-1f, 1f)
                         var ny = (relY / maxRadius).coerceIn(-1f, 1f)
-                        if (kotlin.math.abs(nx) < deadZone) nx = 0f
-                        if (kotlin.math.abs(ny) < deadZone) ny = 0f
+                        if (kotlin.math.abs(nx) < deadZoneRatio) nx = 0f
+                        if (kotlin.math.abs(ny) < deadZoneRatio) ny = 0f
                         return Pair((nx * 32767).toInt().toShort(), (ny * 32767).toInt().toShort())
                     }
 
@@ -242,6 +232,7 @@ class StreamActivity : ComponentActivity() {
                     // 鼠标按键重复（btnId → Runnable），手柄状态重复（单一共享）
                     val mouseRepeatMap = remember { HashMap<Int, java.lang.Runnable>() }
                     val gamepadRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
+                    val scrollRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
 
                     // ── 振动反馈（参考原 Crown buttonVibrator） ──
                     fun triggerVibration() {
@@ -273,10 +264,15 @@ class StreamActivity : ComponentActivity() {
                                     val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
                                     doSend(gfeKeyCode, action)
                                     if (isPressed) {
-                                        val r = java.lang.Runnable { doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN) }
-                                        keyboardRepeatMap[gfeKeyCode] = r
-                                        repeatHandler.postDelayed(r, 50)
-                                        repeatHandler.postDelayed(r, 75)
+                                    val r = object : java.lang.Runnable {
+                                        override fun run() {
+                                            doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
+                                            repeatHandler.postDelayed(this, 50)
+                                        }
+                                    }
+                                    keyboardRepeatMap[gfeKeyCode] = r
+                                    repeatHandler.postDelayed(r, 50)
+                                    repeatHandler.postDelayed(r, 75)
                                     }
                                 }
                             }
@@ -288,46 +284,71 @@ class StreamActivity : ComponentActivity() {
                                 val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
                                 doSend(shortCode, action)
                                 if (isPressed) {
-                                    val r = java.lang.Runnable { doSend(shortCode, KeyboardPacket.KEY_DOWN) }
+                                    val r = object : java.lang.Runnable {
+                                        override fun run() {
+                                            doSend(shortCode, KeyboardPacket.KEY_DOWN)
+                                            repeatHandler.postDelayed(this, 50)
+                                        }
+                                    }
                                     keyboardRepeatMap[shortCode] = r
                                     repeatHandler.postDelayed(r, 50)
                                     repeatHandler.postDelayed(r, 75)
                                 }
                             }
                         } else if (value == "SU") {
-                            // 鼠标滚轮上 — 按下时持续滚动（参考原 Crown）
+                            // 鼠标滚轮上 — 按下时持续滚动（参考原 Crown：初始延迟 150ms，重复间隔 100ms）
+                            scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                            scrollRepeatRunnable.value = null
                             if (isPressed) {
                                 engine.mouseVScroll(1.toByte())
                                 val r = object : java.lang.Runnable {
                                     override fun run() {
                                         engine.mouseVScroll(1.toByte())
-                                        repeatHandler.postDelayed(this, 50)
+                                        repeatHandler.postDelayed(this, 100)
                                     }
                                 }
-                                repeatHandler.postDelayed(r, 50)
-                            } else {
-                                // 释放时取消所有滚动重复
-                                repeatHandler.removeCallbacksAndMessages(null)
+                                scrollRepeatRunnable.value = r
+                                repeatHandler.postDelayed(r, 150)
                             }
                         } else if (value == "SD") {
+                            scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                            scrollRepeatRunnable.value = null
                             if (isPressed) {
                                 engine.mouseVScroll((-1).toByte())
                                 val r = object : java.lang.Runnable {
                                     override fun run() {
                                         engine.mouseVScroll((-1).toByte())
-                                        repeatHandler.postDelayed(this, 50)
+                                        repeatHandler.postDelayed(this, 100)
                                     }
                                 }
-                                repeatHandler.postDelayed(r, 50)
-                            } else {
-                                repeatHandler.removeCallbacksAndMessages(null)
+                                scrollRepeatRunnable.value = r
+                                repeatHandler.postDelayed(r, 150)
                             }
                         } else {
                             // 特殊功能键 & gb 组引用（非键盘/鼠标/手柄值的兜底处理）
                             if (!isPressed) return@sendKeyboardKey
                             when {
                                 value.startsWith("gb") -> {
-                                    // gb{id} 格式：触发对应 GroupButton（由调用方通过 overlayElements 查找）
+                                    // gb{id} 格式：切换对应 GroupButton 的子元素显隐
+                                    val groupId = value.substring(2).toLongOrNull()
+                                    if (groupId != null && groupId > 0) {
+                                        val childIds = overlayElements
+                                            .find { it.elementId == groupId }
+                                            ?.value
+                                            ?.split(",")
+                                            ?.mapNotNull { it.trim().toLongOrNull() }
+                                            ?.filter { it != -1L }
+                                            ?.toSet() ?: emptySet()
+                                        if (childIds.isNotEmpty()) {
+                                            val currentHidden = groupButtonHiddenIds.value
+                                            val anyHidden = childIds.any { it in currentHidden }
+                                            groupButtonHiddenIds.value = if (anyHidden) {
+                                                currentHidden - childIds
+                                            } else {
+                                                currentHidden + childIds
+                                            }
+                                        }
+                                    }
                                 }
                                 value == "MMS" -> engine.applyTouchMode(if (engine.prefConfig.enableEnhancedTouch) 1 else 0)
                                 value == "CMS" -> engine.applyTouchMode(1)
@@ -341,20 +362,44 @@ class StreamActivity : ComponentActivity() {
                         }
                     }
 
+                    // ── 发送单个方向键值（支持 k/g/m/lt/rt 前缀，匹配旧 Crown） ──
+                    fun sendDirectionValue(value: String, isPressed: Boolean) {
+                        when {
+                            value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
+                            value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
+                            value.startsWith("k") -> sendKeyboardKey(value, isPressed)
+                            value.startsWith("g") -> {
+                                val flag = parseValueToFlag(value)
+                                if (flag != 0) {
+                                    btnState.value = if (isPressed) btnState.value or flag
+                                        else btnState.value and flag.inv()
+                                    sendFullState()
+                                }
+                            }
+                            value.startsWith("m") -> {
+                                val btnId = value.substring(1).toIntOrNull()
+                                if (btnId != null) {
+                                    if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                    else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                }
+                            }
+                        }
+                    }
+
                     // ── 处理 D-Pad 位掩码变化（参考旧 Crown: XOR 检测每个方向的变化） ──
                     fun processDpadBitmaskChange(oldMask: Int, newMask: Int, el: EditorElement) {
                         val changed = oldMask xor newMask
                         if ((changed and DPAD_LEFT) != 0) {
-                            val v = el.leftValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_LEFT) != 0)
+                            val v = el.leftValue; if (v.isNotEmpty()) sendDirectionValue(v, (newMask and DPAD_LEFT) != 0)
                         }
                         if ((changed and DPAD_RIGHT) != 0) {
-                            val v = el.rightValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_RIGHT) != 0)
+                            val v = el.rightValue; if (v.isNotEmpty()) sendDirectionValue(v, (newMask and DPAD_RIGHT) != 0)
                         }
                         if ((changed and DPAD_UP) != 0) {
-                            val v = el.upValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_UP) != 0)
+                            val v = el.upValue; if (v.isNotEmpty()) sendDirectionValue(v, (newMask and DPAD_UP) != 0)
                         }
                         if ((changed and DPAD_DOWN) != 0) {
-                            val v = el.downValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_DOWN) != 0)
+                            val v = el.downValue; if (v.isNotEmpty()) sendDirectionValue(v, (newMask and DPAD_DOWN) != 0)
                         }
                     }
 
@@ -394,6 +439,7 @@ class StreamActivity : ComponentActivity() {
                                                     val r = java.lang.Runnable { sendFullState() }
                                                     gamepadRepeatRunnable.value = r
                                                     repeatHandler.postDelayed(r, 50)
+                                                    repeatHandler.postDelayed(r, 75)
                                                 }
                                             }
                                         }
@@ -482,6 +528,7 @@ class StreamActivity : ComponentActivity() {
                                                         val r = java.lang.Runnable { sendFullState() }
                                                         gamepadRepeatRunnable.value = r
                                                         repeatHandler.postDelayed(r, 50)
+                                                        repeatHandler.postDelayed(r, 75)
                                                     }
                                                 }
                                             }
@@ -534,7 +581,7 @@ class StreamActivity : ComponentActivity() {
                                 ElementType.INVISIBLE_ANALOG_STICK,
                                 ElementType.INVISIBLE_DIGITAL_STICK -> {
                                     val rad = el.radius.coerceAtLeast(el.width.coerceAtMost(el.height) / 2).toFloat()
-                                    val (sx, sy) = computeStickAxis(relX, relY, rad)
+                                    val (sx, sy) = computeStickAxis(relX, relY, rad, el)
                                     // 根据 upValue/downValue/leftValue/rightValue 判断左/右摇杆
                                     val isRightStick = el.leftValue == "a2" || el.rightValue == "a2"
                                     if (isRightStick) {
@@ -544,13 +591,15 @@ class StreamActivity : ComponentActivity() {
                                     }
                                     // 摇杆方向键值处理（参考旧 Crown DigitalStick）
                                     // 每个方向独立检测，支持对角线同时触发
-                                    val deadZone = (el.sense.coerceIn(1, 100) / 100f) * rad
+                                    // sense 越大→阈值越低→越灵敏：sense=100→0.1, sense=1→0.5
+                                    val normalizedSense = el.sense.coerceIn(1, 100) / 100f
+                                    val directionThreshold = 0.1f + (1f - normalizedSense) * 0.4f
                                     val nx = relX / rad.coerceAtLeast(1f)
                                     val ny = relY / rad.coerceAtLeast(1f)
-                                    val leftActive = nx < -deadZone / rad.coerceAtLeast(1f)
-                                    val rightActive = nx > deadZone / rad.coerceAtLeast(1f)
-                                    val upActive = ny < -deadZone / rad.coerceAtLeast(1f)
-                                    val downActive = ny > deadZone / rad.coerceAtLeast(1f)
+                                    val leftActive = nx < -directionThreshold
+                                    val rightActive = nx > directionThreshold
+                                    val upActive = ny < -directionThreshold
+                                    val downActive = ny > directionThreshold
                                     // 获取当前元素各方向状态
                                     val dirState = activeStickDirections.getOrPut(el.elementId) {
                                         mutableSetOf<String>()
@@ -585,10 +634,33 @@ class StreamActivity : ComponentActivity() {
                                         val now = System.currentTimeMillis()
                                         val lastClick = stickLastClickTime[el.elementId] ?: 0L
                                         if (now - lastClick < 300 && lastClick > 0) {
-                                            // 双击 → 触发 middleValue
+                                            // 双击 → 触发 middleValue（支持 k/g/m/lt/rt 前缀，匹配旧 Crown）
                                             if (el.middleValue.isNotEmpty()) {
-                                                sendKeyboardKey(el.middleValue, true)
-                                                sendKeyboardKey(el.middleValue, false)
+                                                val mv = el.middleValue
+                                                when {
+                                                    mv == "lt" -> { ltV.value = 0xFF.toByte(); sendFullState(); ltV.value = 0; sendFullState() }
+                                                    mv == "rt" -> { rtV.value = 0xFF.toByte(); sendFullState(); rtV.value = 0; sendFullState() }
+                                                    mv.startsWith("k") -> {
+                                                        sendKeyboardKey(mv, true)
+                                                        sendKeyboardKey(mv, false)
+                                                    }
+                                                    mv.startsWith("g") -> {
+                                                        val flag = parseValueToFlag(mv)
+                                                        if (flag != 0) {
+                                                            btnState.value = btnState.value or flag
+                                                            sendFullState()
+                                                            btnState.value = btnState.value and flag.inv()
+                                                            sendFullState()
+                                                        }
+                                                    }
+                                                    mv.startsWith("m") -> {
+                                                        val btnId = mv.substring(1).toIntOrNull()
+                                                        if (btnId != null) {
+                                                            engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                            engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                        }
+                                                    }
+                                                }
                                             }
                                             stickLastClickTime[el.elementId] = 0L
                                         } else {
@@ -636,7 +708,7 @@ class StreamActivity : ComponentActivity() {
                                         val dx = relX
                                         val dy = relY
                                         val dist = kotlin.math.sqrt(dx * dx + dy * dy)
-                                        if (dist in innerR..outerR) {
+                                        if (dist > innerR && dist < outerR) {
                                             var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90
                                             if (angle < 0) angle += 360
                                             val segCount = el.mode.coerceIn(2, 24)

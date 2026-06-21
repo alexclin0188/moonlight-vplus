@@ -64,6 +64,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -369,7 +370,7 @@ private fun KeyMappingSection(
     onNavigateToConfig: (DetailPage) -> Unit = {},
 ) {
     val context = LocalContext.current
-    var enabled by remember { mutableStateOf(engine.isCrownFeatureEnabled) }
+    val enabled by remember { derivedStateOf { engine.isCrownFeatureEnabled } }
     val expanded = enabled
 
     Column {
@@ -382,7 +383,6 @@ private fun KeyMappingSection(
             Text("启用按键映射", style = MaterialTheme.typography.bodyLarge,
                  color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Switch(checked = enabled, onCheckedChange = { newValue ->
-                enabled = newValue
                 engine.setCrownFeatureEnabled(newValue)
                 if (newValue) {
                     // 自动切换触控板模式
