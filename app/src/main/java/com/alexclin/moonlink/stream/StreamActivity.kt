@@ -32,6 +32,8 @@ import com.alexclin.moonlink.stream.ui.editor.ElementType
 import com.alexclin.moonlink.stream.ui.editor.buildPerformanceAttrs
 import com.alexclin.moonlink.theme.MoonLinkTheme
 import com.limelight.LimeLog
+import com.limelight.binding.input.KeyboardTranslator
+import com.limelight.nvstream.input.KeyboardPacket
 import com.limelight.services.StreamNotificationService
 
 /**
@@ -192,31 +194,137 @@ class StreamActivity : ComponentActivity() {
                         return Pair((nx * 32767).toInt().toShort(), (ny * 32767).toInt().toShort())
                     }
 
-                    // ── D-Pad 方向检测 ──
-                    fun computeDpadDirection(relX: Float, relY: Float, w: Int, h: Int): Int {
-                        val hw = w / 2f
-                        val hh = h / 2f
-                        // D-Pad 分为 4 个方向区域（对角线分割）
-                        return when {
-                            relX < -hw * 0.33f && kotlin.math.abs(relY) < hh * 0.5f -> 1  // left
-                            relX > hw * 0.33f && kotlin.math.abs(relY) < hh * 0.5f -> 2  // right
-                            relY < -hh * 0.33f && kotlin.math.abs(relX) < hw * 0.5f -> 3  // up
-                            relY > hh * 0.33f && kotlin.math.abs(relX) < hw * 0.5f -> 4  // down
-                            // 角落区域：按角度判断
-                            else -> {
-                                val angle = kotlin.math.atan2(relY.toDouble(), relX.toDouble())
-                                when {
-                                    angle < -Math.PI * 0.75 || angle > Math.PI * 0.75 -> 1 // left
-                                    angle < -Math.PI * 0.25 -> 3 // up
-                                    angle > Math.PI * 0.25 -> 4 // down
-                                    else -> 2 // right
-                                }
-                            }
-                        }
+                    // ── D-Pad 方向位掩码（与旧 Crown DigitalPad 一致） ──
+                    val DPAD_LEFT = 1
+                    val DPAD_RIGHT = 2
+                    val DPAD_UP = 4
+                    val DPAD_DOWN = 8
+
+                    // ── D-Pad 方向检测（旧 Crown 使用 33%/66% 网格分割，支持对角线） ──
+                    fun computeDpadBitmask(relX: Float, relY: Float, w: Int, h: Int): Int {
+                        // 将 relX/relY（相对于元素中心）转换为元素左上角为原点的坐标
+                        val ex = relX + w / 2f
+                        val ey = relY + h / 2f
+                        var mask = 0
+                        if (ex < w * 0.33f) mask = mask or DPAD_LEFT
+                        if (ex > w * 0.66f) mask = mask or DPAD_RIGHT
+                        if (ey > h * 0.66f) mask = mask or DPAD_DOWN
+                        if (ey < h * 0.33f) mask = mask or DPAD_UP
+                        return mask
                     }
 
                     // ── GroupButton 子元素显隐状态 ──
                     val groupButtonHiddenIds = remember { mutableStateOf<Set<Long>>(emptySet()) }
+
+                    // 十字方向键当前激活的方向（elementId → 方向），用于 MOVE 时的方向变更检测
+                    val activeDpadDirections = remember { HashMap<Long, Int>() }
+                    // 摇杆当前激活的方向集合（elementId → 方向集合），支持对角线
+                    val activeStickDirections = remember { HashMap<Long, MutableSet<String>>() }
+
+                    // ── 键盘按键翻译器（用于 kXX 格式按键值） ──
+                    val keyboardTranslator = remember { KeyboardTranslator() }
+                    // 按键重复 Handler（参考原 Crown 50ms+75ms 双调度）
+                    val repeatHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+                    val keyboardRepeatMap = remember { HashMap<Short, java.lang.Runnable>() }
+                    val mouseRepeatMap = remember { HashMap<Int, java.lang.Runnable>() }
+
+                    /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
+                    fun sendKeyboardKey(value: String, isPressed: Boolean) {
+                        val doSend: (Short, Byte) -> Unit = { code, action ->
+                            engine.conn?.sendKeyboardInput(code, action, 0, 0)
+                        }
+                        if (value.startsWith("k") && !value.startsWith("k0x")) {
+                            val crownIdx = value.substring(1).toIntOrNull()
+                            if (crownIdx != null) {
+                                val gfeKeyCode = keyboardTranslator.translate(crownIdx, -1)
+                                if (gfeKeyCode.toInt() != 0) {
+                                    // 取消旧重复
+                                    keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
+                                    val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
+                                    doSend(gfeKeyCode, action)
+                                    if (isPressed) {
+                                        val r = java.lang.Runnable { doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN) }
+                                        keyboardRepeatMap[gfeKeyCode] = r
+                                        repeatHandler.postDelayed(r, 50)
+                                        repeatHandler.postDelayed(r, 75)
+                                    }
+                                }
+                            }
+                        } else if (value.startsWith("k0x")) {
+                            val hexCode = value.substring(3).toIntOrNull(16)
+                            if (hexCode != null && hexCode != 0) {
+                                val shortCode = hexCode.toShort()
+                                keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
+                                val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
+                                doSend(shortCode, action)
+                                if (isPressed) {
+                                    val r = java.lang.Runnable { doSend(shortCode, KeyboardPacket.KEY_DOWN) }
+                                    keyboardRepeatMap[shortCode] = r
+                                    repeatHandler.postDelayed(r, 50)
+                                    repeatHandler.postDelayed(r, 75)
+                                }
+                            }
+                        } else if (value == "SU") {
+                            // 鼠标滚轮上 — 按下时持续滚动（参考原 Crown）
+                            if (isPressed) {
+                                engine.mouseVScroll(1.toByte())
+                                val r = object : java.lang.Runnable {
+                                    override fun run() {
+                                        engine.mouseVScroll(1.toByte())
+                                        repeatHandler.postDelayed(this, 50)
+                                    }
+                                }
+                                repeatHandler.postDelayed(r, 50)
+                            } else {
+                                // 释放时取消所有滚动重复
+                                repeatHandler.removeCallbacksAndMessages(null)
+                            }
+                        } else if (value == "SD") {
+                            if (isPressed) {
+                                engine.mouseVScroll((-1).toByte())
+                                val r = object : java.lang.Runnable {
+                                    override fun run() {
+                                        engine.mouseVScroll((-1).toByte())
+                                        repeatHandler.postDelayed(this, 50)
+                                    }
+                                }
+                                repeatHandler.postDelayed(r, 50)
+                            } else {
+                                repeatHandler.removeCallbacksAndMessages(null)
+                            }
+                        }
+                    }
+
+                    // ── 处理 D-Pad 位掩码变化（参考旧 Crown: XOR 检测每个方向的变化） ──
+                    fun processDpadBitmaskChange(oldMask: Int, newMask: Int, el: EditorElement) {
+                        val changed = oldMask xor newMask
+                        if ((changed and DPAD_LEFT) != 0) {
+                            val v = el.leftValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_LEFT) != 0)
+                        }
+                        if ((changed and DPAD_RIGHT) != 0) {
+                            val v = el.rightValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_RIGHT) != 0)
+                        }
+                        if ((changed and DPAD_UP) != 0) {
+                            val v = el.upValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_UP) != 0)
+                        }
+                        if ((changed and DPAD_DOWN) != 0) {
+                            val v = el.downValue; if (v.isNotEmpty()) sendKeyboardKey(v, (newMask and DPAD_DOWN) != 0)
+                        }
+                    }
+
+                    // ── 按方向名发送摇杆方向键值（参考旧 Crown DigitalStick 独立方向检测） ──
+                    fun sendStickDirection(el: EditorElement, dir: String, isPressed: Boolean) {
+                        val dirValue = when (dir) {
+                            "up" -> el.upValue
+                            "down" -> el.downValue
+                            "left" -> el.leftValue
+                            "right" -> el.rightValue
+                            else -> ""
+                        }
+                        if (dirValue.isNotEmpty() && !dirValue.startsWith("a")) {
+                            sendKeyboardKey(dirValue, isPressed)
+                        }
+                    }
 
                     // ── 元素触控回调（处理所有类型） ──
                     val onElementAction: (EditorElement, Boolean, Float, Float) -> Unit = remember(engine) {
@@ -230,37 +338,41 @@ class StreamActivity : ComponentActivity() {
                                     when {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
-                                        value.startsWith("k0x") || value.startsWith("g") -> {
+                                        value.startsWith("k") -> sendKeyboardKey(value, isPressed)
+                                        value.startsWith("g") -> {
                                             val flag = parseValueToFlag(value)
                                             if (flag != 0) {
                                                 btnState.value = if (isPressed) btnState.value or flag
                                                     else btnState.value and flag.inv()
                                             }
                                         }
+                                        value.startsWith("m") -> {
+                                            // 鼠标按键 — 直接通过连接发送
+                                            val btnId = value.substring(1).toIntOrNull()
+                                            if (btnId != null) {
+                                                if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                            }
+                                        }
                                     }
                                     sendFullState()
                                 }
                                 ElementType.DIGITAL_PAD -> {
-                                    if (isPressed) {
-                                        val dir = computeDpadDirection(relX, relY, el.width, el.height)
-                                        dpadUp.value = dir == 3
-                                        dpadDown.value = dir == 4
-                                        dpadLeft.value = dir == 1
-                                        dpadRight.value = dir == 2
-                                    } else {
-                                        dpadUp.value = false
-                                        dpadDown.value = false
-                                        dpadLeft.value = false
-                                        dpadRight.value = false
+                                    // 旧 Crown 方式：位掩码检测，支持对角线（左上 = LEFT|UP）
+                                    val newMask = if (isPressed) computeDpadBitmask(relX, relY, el.width, el.height) else 0
+                                    val oldMask = activeDpadDirections[el.elementId] ?: 0
+                                    if (newMask != oldMask) {
+                                        processDpadBitmaskChange(oldMask, newMask, el)
+                                        if (newMask != 0) activeDpadDirections[el.elementId] = newMask
+                                        else activeDpadDirections.remove(el.elementId)
                                     }
-                                    sendFullState()
                                 }
                                 ElementType.ANALOG_STICK,
                                 ElementType.DIGITAL_STICK,
                                 ElementType.INVISIBLE_ANALOG_STICK,
                                 ElementType.INVISIBLE_DIGITAL_STICK -> {
-                                    val rad = el.radius.coerceAtLeast(el.width.coerceAtMost(el.height) / 2)
-                                    val (sx, sy) = computeStickAxis(relX, relY, rad.toFloat())
+                                    val rad = el.radius.coerceAtLeast(el.width.coerceAtMost(el.height) / 2).toFloat()
+                                    val (sx, sy) = computeStickAxis(relX, relY, rad)
                                     // 根据 upValue/downValue/leftValue/rightValue 判断左/右摇杆
                                     val isRightStick = el.leftValue == "a2" || el.rightValue == "a2"
                                     if (isRightStick) {
@@ -268,10 +380,52 @@ class StreamActivity : ComponentActivity() {
                                     } else {
                                         lsX.value = sx; lsY.value = sy
                                     }
-                                    // 双击摇杆 = 摇杆点击 (L3/R3)，这里只在按下且偏移很小时触发
+                                    // 摇杆方向键值处理（参考旧 Crown DigitalStick）
+                                    // 每个方向独立检测，支持对角线同时触发
+                                    val deadZone = (el.sense.coerceIn(1, 100) / 100f) * rad
+                                    val nx = relX / rad.coerceAtLeast(1f)
+                                    val ny = relY / rad.coerceAtLeast(1f)
+                                    val leftActive = nx < -deadZone / rad.coerceAtLeast(1f)
+                                    val rightActive = nx > deadZone / rad.coerceAtLeast(1f)
+                                    val upActive = ny < -deadZone / rad.coerceAtLeast(1f)
+                                    val downActive = ny > deadZone / rad.coerceAtLeast(1f)
+                                    // 获取当前元素各方向状态
+                                    val dirState = activeStickDirections.getOrPut(el.elementId) {
+                                        mutableSetOf<String>()
+                                    }
+                                    // 左方向
+                                    if (leftActive && "left" !in dirState) {
+                                        dirState.add("left"); sendStickDirection(el, "left", true)
+                                    } else if (!leftActive && "left" in dirState) {
+                                        dirState.remove("left"); sendStickDirection(el, "left", false)
+                                    }
+                                    // 右方向
+                                    if (rightActive && "right" !in dirState) {
+                                        dirState.add("right"); sendStickDirection(el, "right", true)
+                                    } else if (!rightActive && "right" in dirState) {
+                                        dirState.remove("right"); sendStickDirection(el, "right", false)
+                                    }
+                                    // 上方向
+                                    if (upActive && "up" !in dirState) {
+                                        dirState.add("up"); sendStickDirection(el, "up", true)
+                                    } else if (!upActive && "up" in dirState) {
+                                        dirState.remove("up"); sendStickDirection(el, "up", false)
+                                    }
+                                    // 下方向
+                                    if (downActive && "down" !in dirState) {
+                                        dirState.add("down"); sendStickDirection(el, "down", true)
+                                    } else if (!downActive && "down" in dirState) {
+                                        dirState.remove("down"); sendStickDirection(el, "down", false)
+                                    }
+                                    // 双击摇杆 = 摇杆点击 (L3/R3)，只在释放且偏移很小时触发
                                     if (!isPressed) {
                                         if (isRightStick) { rsX.value = 0; rsY.value = 0 }
                                         else { lsX.value = 0; lsY.value = 0 }
+                                        // 释放所有方向
+                                        for (dir in dirState.toList()) {
+                                            sendStickDirection(el, dir, false)
+                                        }
+                                        dirState.clear()
                                     }
                                     sendFullState()
                                 }

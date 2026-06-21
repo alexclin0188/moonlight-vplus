@@ -29,6 +29,7 @@ import com.alexclin.moonlink.device.overview.DeviceOverviewScreen
 import com.alexclin.moonlink.home.DeviceListScreen
 import com.alexclin.moonlink.navigation.MoonLinkRoute
 import com.alexclin.moonlink.settings.*
+import com.alexclin.moonlink.stream.engine.DeviceStateManager
 import com.alexclin.moonlink.vpn.VpnScreen
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -52,11 +53,11 @@ private val TOP_LEVEL_ROUTES = TOP_TABS.map { it.route }
 
 // ── Title helper ──────────────────────────────────────────────────
 
-private fun computeTitle(route: String?, computers: List<ComputerDetails>, uuid: String?): String = when (route) {
+private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid: String?): String = when (route) {
     MoonLinkRoute.DeviceList.route       -> "我的设备"
     "tab_vpn"                            -> "虚拟局域网"
     "tab_settings"                       -> "设置"
-    MoonLinkRoute.DeviceOverview.route   -> computers.find { it.uuid == uuid }?.name ?: "设备概要"
+    MoonLinkRoute.DeviceOverview.route   -> deviceManager.getDevice(uuid ?: "")?.name ?: "设备概要"
     MoonLinkRoute.DeviceDetail.route     -> "设备详情"
     MoonLinkRoute.SettingsUi.route       -> "界面设置"
     MoonLinkRoute.SettingsAudio.route    -> "音频设置"
@@ -92,7 +93,7 @@ private fun navigateToTab(navController: androidx.navigation.NavController, curr
 @Composable
 fun MoonLinkApp(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
-    computers: List<ComputerDetails>,
+    deviceManager: DeviceStateManager,
     onComputerRemoved: ((String) -> Unit)? = null,
 ) {
     val navController = rememberNavController()
@@ -110,7 +111,7 @@ fun MoonLinkApp(
     val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
     // Top bar configuration derived from current route
-    val topBarTitle = computeTitle(currentRoute, computers, currentUuid)
+    val topBarTitle = computeTitle(currentRoute, deviceManager, currentUuid)
     val showBack = currentRoute != null && currentRoute !in TOP_LEVEL_ROUTES
 
     // External refresh trigger for VPN screen
@@ -131,7 +132,7 @@ fun MoonLinkApp(
             composable(MoonLinkRoute.DeviceList.route) {
                 DeviceListScreen(
                     managerBinder = managerBinder,
-                    computers     = computers,
+                    computers     = deviceManager.devices,
                     snackbarHostState = snackbarHostState,
                     onNavigateToOverview = { uuid ->
                         navController.navigate(MoonLinkRoute.DeviceOverview.createRoute(uuid))
@@ -157,7 +158,7 @@ fun MoonLinkApp(
                         navController.navigate(route)
                     },
                     managerBinder = managerBinder,
-                    computers = computers,
+                    computers = deviceManager.devices,
                 )
             }
 
@@ -194,7 +195,7 @@ fun MoonLinkApp(
             composable(MoonLinkRoute.SettingsWidget.route) {
                 WidgetSettingsScreen(
                     managerBinder = managerBinder,
-                    computers = computers,
+                    computers = deviceManager.devices,
                 )
             }
 
@@ -214,7 +215,7 @@ fun MoonLinkApp(
                 DeviceOverviewScreen(
                     uuid          = uuid,
                     managerBinder = managerBinder,
-                    computers     = computers,
+                    computers     = deviceManager.devices,
                     onBack        = { navController.popBackStack() },
                     onNavigateToDetail = {
                         navController.navigate(MoonLinkRoute.DeviceDetail.createRoute(uuid))
@@ -232,7 +233,7 @@ fun MoonLinkApp(
                 val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceDetail.ARG_UUID) ?: return@composable
                 DeviceDetailScreen(
                     uuid          = uuid,
-                    computers     = computers,
+                    computers     = deviceManager.devices,
                     onBack        = { navController.popBackStack() },
                 )
             }

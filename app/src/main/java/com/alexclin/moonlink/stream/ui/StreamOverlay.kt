@@ -291,6 +291,7 @@ fun StreamOverlay(
                     initialOffsetY = fabOffset.y,
                     onToggle = onToggle,
                     onPositionChanged = { x, y -> fabOffset = Offset(x, y) },
+                    opacity = engine.fabOpacity,
                 )
             }
         }
@@ -589,7 +590,7 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
         engine.onPerfInfoUpdate = { perfInfo = it }
     }
 
-    val visible = engine.prefConfig.enablePerfOverlay
+    val visible = engine.perfOverlayEnabled
             && perfInfo != null
             && perfInfo!!.renderedFps > 0f
 

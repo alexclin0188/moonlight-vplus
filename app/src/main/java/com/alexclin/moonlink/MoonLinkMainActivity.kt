@@ -24,20 +24,17 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.stream.engine.DeviceStateManager
 import com.alexclin.moonlink.theme.MoonLinkTheme
 import com.limelight.computers.ComputerManagerService
-import com.limelight.nvstream.http.ComputerDetails
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
  * MoonLink 新版主页 Activity — 替代 PcView 作为 App 入口。
  *
- * 负责绑定 [ComputerManagerService]，收集设备更新 Flow，
- * 然后把 binder 和 computers 列表向下传递给 Compose UI 树。
+ * 负责绑定 [ComputerManagerService]，通过 [DeviceStateManager] 维护设备列表，
+ * 然后将设备管理器向下传递给 Compose UI 树。
  */
 class MoonLinkMainActivity : ComponentActivity() {
 
@@ -48,37 +45,21 @@ class MoonLinkMainActivity : ComponentActivity() {
 
         setContent {
             val binderState = remember { mutableStateOf<ComputerManagerService.ComputerManagerBinder?>(null) }
-            val computers   = remember { mutableStateListOf<ComputerDetails>() }
-
-            // Track the collection scope so it can be cancelled on dispose
-            val collectionScope = remember { mutableStateOf<kotlinx.coroutines.CoroutineScope?>(null) }
+            val deviceManager = remember { DeviceStateManager() }
+            var binderReady by remember { mutableStateOf(false) }
 
             DisposableEffect(Unit) {
                 val connection = object : ServiceConnection {
                     override fun onServiceConnected(name: ComponentName, service: IBinder) {
                         val b = service as ComputerManagerService.ComputerManagerBinder
                         binderState.value = b
-                        val snapshot = b.getAllComputers()
-                        computers.addAll(snapshot)
-                        b.startPolling()
-
-                        // Collect on a scope that lives as long as the effect
-                        val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.Main)
-                        collectionScope.value = scope
-                        scope.launch {
-                            b.computerUpdates.collectLatest { details ->
-                                val idx = computers.indexOfFirst { it.uuid == details.uuid }
-                                if (idx >= 0) {
-                                    computers[idx] = details
-                                } else {
-                                    computers.add(details)
-                                }
-                            }
-                        }
+                        deviceManager.bind(b, b.getAllComputers())
+                        binderReady = true
                     }
 
                     override fun onServiceDisconnected(name: ComponentName) {
                         binderState.value = null
+                        binderReady = false
                     }
                 }
 
@@ -90,7 +71,6 @@ class MoonLinkMainActivity : ComponentActivity() {
 
                 onDispose {
                     binderState.value?.stopPolling()
-                    collectionScope.value?.cancel()
                     unbindService(connection)
                 }
             }
@@ -100,7 +80,7 @@ class MoonLinkMainActivity : ComponentActivity() {
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_RESUME) {
-                        binderState.value?.forceRefresh()
+                        deviceManager.forceRefresh()
                     }
                 }
                 lifecycleOwner.lifecycle.addObserver(observer)
@@ -123,12 +103,10 @@ class MoonLinkMainActivity : ComponentActivity() {
                 onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
             }
 
-            // ── 运行时权限：Android 10-13 需要 ACCESS_COARSE_LOCATION 才能创建
-            //    WifiManager.MulticastLock（JmDNS 路径必须）。Android 14+ 使用 NsdManager 不需此权限。
-            //    JmDNSDiscoveryAgent 已有 SecurityException 兜底，静默降级。
+            // ── 运行时权限：Android 10-13 需要 ACCESS_COARSE_LOCATION ──
             val locationPermissionLauncher = rememberLauncherForActivityResult(
                 ActivityResultContracts.RequestPermission()
-            ) { /* 权限结果由 JmDNSDiscoveryAgent 的 SecurityException 处理，无需额外通知 */ }
+            ) { /* 权限结果由 JmDNSDiscoveryAgent 的 SecurityException 处理 */ }
 
             LaunchedEffect(Unit) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
@@ -152,9 +130,9 @@ class MoonLinkMainActivity : ComponentActivity() {
             MoonLinkTheme(darkTheme = darkTheme) {
                 MoonLinkApp(
                     managerBinder = binderState.value,
-                    computers     = computers,
+                    deviceManager = deviceManager,
                     onComputerRemoved = { uuid ->
-                        computers.removeAll { it.uuid == uuid }
+                        deviceManager.devices.removeAll { it.uuid == uuid }
                     },
                 )
             }

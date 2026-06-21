@@ -54,6 +54,8 @@ fun KeyMappingOverlay(
     val pressedIds = remember { mutableStateMapOf<Long, Boolean>() }
     // 记录每个元素的触摸偏移，用于 MOVE 时更新摇杆
     val touchOffsets = remember { mutableStateMapOf<Long, Offset>() }
+    // 多指跟踪：pointerId → elementId
+    val pointerToElement = remember { mutableStateMapOf<Int, Long>() }
 
     Box(
         modifier = modifier
@@ -62,26 +64,40 @@ fun KeyMappingOverlay(
             .then(
                 if (enabled) Modifier.pointerInteropFilter { motionEvent ->
                 val touchMargin = computeTouchMargin(touchSense, enhancedTouch)
-                val position = Offset(motionEvent.x, motionEvent.y)
+                val actionMasked = motionEvent.actionMasked
+                val pointerIndex = motionEvent.actionIndex
+                val pointerId = motionEvent.getPointerId(pointerIndex)
+                val position = Offset(
+                    motionEvent.getX(pointerIndex),
+                    motionEvent.getY(pointerIndex),
+                )
                 val hitIdx = findHitElement(elements, position, touchMargin)
 
-                when (motionEvent.action) {
-                    MotionEvent.ACTION_DOWN -> {
+                when (actionMasked) {
+                    MotionEvent.ACTION_DOWN,
+                    MotionEvent.ACTION_POINTER_DOWN -> {
                         if (hitIdx != null) {
-                            pressedIds[hitIdx.elementId] = true
-                            val rel = Offset(
-                                position.x - hitIdx.centralX,
-                                position.y - hitIdx.centralY
-                            )
-                            touchOffsets[hitIdx.elementId] = rel
-                            onElementAction?.invoke(hitIdx, true, rel.x, rel.y)
-                            true
+                            // 如果该元素已被其他手指按住（同一元素），不再重复触发
+                            if (pointerToElement.containsValue(hitIdx.elementId)) {
+                                true
+                            } else {
+                                pressedIds[hitIdx.elementId] = true
+                                pointerToElement[pointerId] = hitIdx.elementId
+                                val rel = Offset(
+                                    position.x - hitIdx.centralX,
+                                    position.y - hitIdx.centralY
+                                )
+                                touchOffsets[hitIdx.elementId] = rel
+                                onElementAction?.invoke(hitIdx, true, rel.x, rel.y)
+                                true
+                            }
                         } else {
-                            false
+                            // ACTION_DOWN 未命中时不消费（透传），POINTER_DOWN 未命中直接消费
+                            actionMasked == MotionEvent.ACTION_POINTER_DOWN
                         }
                     }
-                    MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
-                        // 释放所有被按下的元素
+                    MotionEvent.ACTION_UP -> {
+                        // 最后一指抬起：释放所有
                         for ((id, _) in pressedIds.toMap()) {
                             pressedIds[id] = false
                             val el = elements.find { it.elementId == id }
@@ -90,34 +106,73 @@ fun KeyMappingOverlay(
                             }
                         }
                         touchOffsets.clear()
-                        // 如果当前触摸位置命中某元素则消费，否则透传
+                        pointerToElement.clear()
+                        // 如果抬起位置命中某元素则消费，否则透传
                         hitIdx != null
                     }
-                    MotionEvent.ACTION_MOVE -> {
-                        // 找到当前触摸命中的元素
-                        if (hitIdx != null) {
-                            // 如果该元素已在跟踪中，更新其偏移（用于摇杆）
-                            if (touchOffsets.containsKey(hitIdx.elementId)) {
-                                val rel = Offset(
-                                    position.x - hitIdx.centralX,
-                                    position.y - hitIdx.centralY
-                                )
-                                touchOffsets[hitIdx.elementId] = rel
-                                onElementAction?.invoke(hitIdx, true, rel.x, rel.y)
-                            } else {
-                                // 新元素被触摸（手指滑入）
-                                pressedIds[hitIdx.elementId] = true
-                                val rel = Offset(
-                                    position.x - hitIdx.centralX,
-                                    position.y - hitIdx.centralY
-                                )
-                                touchOffsets[hitIdx.elementId] = rel
-                                onElementAction?.invoke(hitIdx, true, rel.x, rel.y)
+                    MotionEvent.ACTION_POINTER_UP -> {
+                        // 某一指抬起：释放对应的元素
+                        val releasedElId = pointerToElement.remove(pointerId)
+                        if (releasedElId != null) {
+                            pressedIds[releasedElId] = false
+                            touchOffsets.remove(releasedElId)
+                            val el = elements.find { it.elementId == releasedElId }
+                            if (el != null) {
+                                onElementAction?.invoke(el, false, 0f, 0f)
                             }
-                            true
-                        } else {
-                            false
                         }
+                        true
+                    }
+                    MotionEvent.ACTION_CANCEL -> {
+                        for ((id, _) in pressedIds.toMap()) {
+                            pressedIds[id] = false
+                            val el = elements.find { it.elementId == id }
+                            if (el != null) {
+                                onElementAction?.invoke(el, false, 0f, 0f)
+                            }
+                        }
+                        touchOffsets.clear()
+                        pointerToElement.clear()
+                        true
+                    }
+                    MotionEvent.ACTION_MOVE -> {
+                        var consumed = false
+                        // 遍历所有活跃指针，处理每个指针的状态变化
+                        for (i in 0 until motionEvent.pointerCount) {
+                            val pid = motionEvent.getPointerId(i)
+                            val elId = pointerToElement[pid]
+                            if (elId == null) {
+                                // 该指针未关联任何元素 — 检查是否滑入新元素
+                                val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
+                                val hit = findHitElement(elements, pos, touchMargin)
+                                if (hit != null && !pointerToElement.containsValue(hit.elementId) && !pressedIds.containsKey(hit.elementId)) {
+                                    // 手指滑入新元素
+                                    pressedIds[hit.elementId] = true
+                                    pointerToElement[pid] = hit.elementId
+                                    val rel = Offset(
+                                        pos.x - hit.centralX,
+                                        pos.y - hit.centralY
+                                    )
+                                    touchOffsets[hit.elementId] = rel
+                                    onElementAction?.invoke(hit, true, rel.x, rel.y)
+                                    consumed = true
+                                }
+                                continue
+                            }
+                            // 更新已有元素的偏移（摇杆用）
+                            val el = elements.find { it.elementId == elId }
+                            if (el != null) {
+                                val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
+                                val rel = Offset(
+                                    pos.x - el.centralX,
+                                    pos.y - el.centralY
+                                )
+                                touchOffsets[elId] = rel
+                                onElementAction?.invoke(el, true, rel.x, rel.y)
+                                consumed = true
+                            }
+                        }
+                        consumed
                     }
                     else -> false
                 }

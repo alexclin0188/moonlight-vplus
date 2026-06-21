@@ -276,6 +276,11 @@ class EditorState(
                 ElementType.WHEEL_PAD -> "k29"
                 else -> ""
             },
+            // DIGITAL_PAD 默认方向值为键盘上下左右键
+            upValue = if (type == ElementType.DIGITAL_PAD) "k19" else "",
+            downValue = if (type == ElementType.DIGITAL_PAD) "k20" else "",
+            leftValue = if (type == ElementType.DIGITAL_PAD) "k21" else "",
+            rightValue = if (type == ElementType.DIGITAL_PAD) "k22" else "",
             width = 100,
             height = 100,
             centralX = 100,

@@ -100,6 +100,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 缓存 SurfaceView（用于触控处理器初始化） */
     private var cachedSurfaceView: SurfaceView? = null
 
+    // ── 设备在线状态管理 ──
+
+    /** 设备在线状态管理器：维护所有设备的 Compose 可观察列表，后台扫描结果自动更新到此 */
+    val deviceManager = DeviceStateManager()
+
     // ── 流时长统计 ──
     private var accumulatedStreamTime: Long = 0
     private var streamStartTime: Long = 0
@@ -212,6 +217,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         return try {
             // 1. 读取全局串流偏好
             prefConfig = PreferenceConfiguration.readPreferences(activity)
+
+            // 同步运行时 Compose 状态
+            perfOverlayEnabled = prefConfig.enablePerfOverlay
+            fabOpacity = prefConfig.fabOpacity
 
             // 默认触摸模式：增强式多点触控
             prefConfig.enableEnhancedTouch = true
@@ -867,6 +876,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
     var isFullScreenPageActive: Boolean by mutableStateOf(false)
+
+    // ── 运行时 Compose 状态（由 UI 设置，引擎消费） ──
+
+    /** 性能监控图层开关 — 由 MoreDetail 设置，PerformanceOverlay 消费 */
+    var perfOverlayEnabled: Boolean by mutableStateOf(false)
+
+    /** 悬浮按钮不透明度 (10-100) — 由 MoreDetail 设置，FloatingActionButton 消费 */
+    var fabOpacity: Int by mutableStateOf(50)
 
     /**
      * 从 DB 读取当前方案的配置面板设置并同步到运行时状态。

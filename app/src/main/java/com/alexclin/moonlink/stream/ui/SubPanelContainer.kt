@@ -755,6 +755,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                 SettingSwitch("启用性能图层", perfEnabled) {
                     perfEnabled = it
                     engine.prefConfig.enablePerfOverlay = it
+                    engine.perfOverlayEnabled = it  // 立即生效
                     engine.prefConfig.writePreferences(context)
                 }
                 AnimatedVisibility(visible = perfEnabled) {
@@ -776,6 +777,26 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                         )
                     }
                 }
+            }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+
+            item {
+                // 悬浮按钮不透明度
+                val initOpacity = engine.prefConfig.fabOpacity
+                var fabAlpha by remember { mutableFloatStateOf(initOpacity / 100f) }
+                Text("悬浮按钮不透明度: ${(fabAlpha * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium)
+                Slider(
+                    value = fabAlpha,
+                    onValueChange = { fabAlpha = it },
+                    onValueChangeFinished = {
+                        val intVal = (fabAlpha * 100).toInt().coerceIn(10, 100)
+                        engine.prefConfig.fabOpacity = intVal
+                        engine.fabOpacity = intVal  // 立即生效
+                        engine.prefConfig.writePreferences(context)
+                    },
+                    valueRange = 0.1f..1.0f,
+                )
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }

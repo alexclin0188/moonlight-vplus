@@ -207,6 +207,9 @@ class PreferenceConfiguration {
 
     var useExternalDisplay = false
 
+    // 悬浮按钮不透明度 (10-100)
+    var fabOpacity = 50
+
     // 悬浮球设置
     var enableFloatBall = false
     var floatBallAutoHideDelay = 0
@@ -280,6 +283,7 @@ class PreferenceConfiguration {
                 .putBoolean(FORCE_MTK_MAX_OPERATING_RATE_PREF_STRING, forceMtkMaxOperatingRate)
                 .putBoolean(ENABLE_DOUBLE_CLICK_DRAG_PREF_STRING, enableDoubleClickDrag)
                 .putBoolean(ENABLE_LOCAL_CURSOR_RENDERING_PREF_STRING, enableLocalCursorRendering)
+                .putInt(FAB_OPACITY_PREF_STRING, fabOpacity)
                 .putFloat(GYRO_SENSITIVITY_MULTIPLIER_PREF_STRING, gyroSensitivityMultiplier)
                 .putBoolean(GYRO_INVERT_X_AXIS_PREF_STRING, gyroInvertXAxis)
                 .putBoolean(GYRO_INVERT_Y_AXIS_PREF_STRING, gyroInvertYAxis)
@@ -456,6 +460,9 @@ class PreferenceConfiguration {
         private const val ENABLE_ESC_MENU_PREF_STRING = "checkbox_enable_esc_menu"
         private const val ESC_MENU_KEY_PREF_STRING = "list_esc_menu_key"
         private const val ENABLE_START_KEY_MENU_PREF_STRING = "checkbox_enable_start_key_menu"
+
+        // 悬浮按钮不透明度
+        private const val FAB_OPACITY_PREF_STRING = "seekbar_fab_opacity"
 
         // 悬浮球设置
         private const val ENABLE_FLOAT_BALL_PREF_STRING = "checkbox_enable_float_ball"
@@ -638,6 +645,9 @@ class PreferenceConfiguration {
         private const val DEFAULT_ENABLE_ESC_MENU = true // 默认启用ESC菜单
         private val DEFAULT_ESC_MENU_KEY = KeyEvent.KEYCODE_ESCAPE
         private const val DEFAULT_ENABLE_START_KEY_MENU = true // 默认启用长按start键菜单
+
+        // 悬浮按钮不透明度默认值
+        private const val DEFAULT_FAB_OPACITY = 50
 
         // 悬浮球设置默认值
         private const val DEFAULT_ENABLE_FLOAT_BALL = true // 默认启用悬浮球
@@ -1267,6 +1277,9 @@ class PreferenceConfiguration {
             config.screenOffsetY = prefs.getInt(SCREEN_OFFSET_Y_PREF_STRING, DEFAULT_SCREEN_OFFSET_Y)
 
             config.useExternalDisplay = prefs.getBoolean("use_external_display", false)
+
+            // 读取悬浮按钮不透明度
+            config.fabOpacity = prefs.getInt(FAB_OPACITY_PREF_STRING, DEFAULT_FAB_OPACITY).coerceIn(10, 100)
 
             // 读取悬浮球设置
             config.enableFloatBall = prefs.getBoolean(ENABLE_FLOAT_BALL_PREF_STRING, DEFAULT_ENABLE_FLOAT_BALL)

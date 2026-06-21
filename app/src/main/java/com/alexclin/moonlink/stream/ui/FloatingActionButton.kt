@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -36,6 +37,7 @@ fun FloatingActionButton(
     initialOffsetX: Float = 0f,
     initialOffsetY: Float = 0f,
     onPositionChanged: (Float, Float) -> Unit = { _, _ -> },
+    opacity: Int = 100,  // 10-100
     modifier: Modifier = Modifier,
 ) {
     if (!visible) return
@@ -84,6 +86,7 @@ fun FloatingActionButton(
                 modifier = Modifier
                     .size(36.dp)
                     .shadow(6.dp, CircleShape)
+                    .graphicsLayer(alpha = opacity.coerceIn(10, 100) / 100f)
                     .background(MaterialTheme.colorScheme.primary, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
