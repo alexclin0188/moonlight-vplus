@@ -20,6 +20,12 @@ sealed class MoonLinkRoute(val route: String) {
         fun createRoute(uuid: String) = "device_detail/$uuid"
     }
 
+    /** 串流设置页 — 需要 uuid 参数 */
+    data object DeviceStreamSettings : MoonLinkRoute("device_stream_settings/{uuid}") {
+        const val ARG_UUID = "uuid"
+        fun createRoute(uuid: String) = "device_stream_settings/$uuid"
+    }
+
     // ── Settings sub-pages ─────────────────────────────────────────
 
     data object SettingsUi : MoonLinkRoute("settings_ui")

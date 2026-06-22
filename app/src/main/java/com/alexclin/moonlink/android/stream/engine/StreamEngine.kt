@@ -227,6 +227,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             // 1. 读取全局串流偏好
             prefConfig = PreferenceConfiguration.readPreferences(activity)
 
+            // 恢复客户端声音开关状态
+            isAudioMuted = prefConfig.muteClientAudio
+
             // 同步运行时 Compose 状态
             perfOverlayEnabled = prefConfig.enablePerfOverlay
             fabOpacity = prefConfig.fabOpacity
@@ -610,6 +613,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         )
         this.audioRenderer = audioRenderer
 
+        // 按持久化的声音开关状态设置 mute
+        audioRenderer.setMuted(isAudioMuted)
+
         // 启动连接
         conn.start(audioRenderer, decoder, this)
 
@@ -885,6 +891,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun toggleAudioMute() {
         isAudioMuted = !isAudioMuted
         audioRenderer?.setMuted(isAudioMuted)
+        // 持久化客户端声音开关状态
+        prefConfig.muteClientAudio = isAudioMuted
+        prefConfig.writePreferences(activity)
         displayTransientMessage(if (isAudioMuted) "声音已关闭" else "声音已开启")
     }
 
@@ -951,7 +960,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             configTouchEnabled = java.lang.Boolean.parseBoolean(
                 (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
             )
-            configTouchSense = ((db.queryConfigAttribute(configId, "touch_sense", 100L) as? Long) ?: 100L).toInt()
             configGameVibrator = java.lang.Boolean.parseBoolean(
                 (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
             )

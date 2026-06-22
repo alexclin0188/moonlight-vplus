@@ -26,6 +26,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alexclin.moonlink.android.device.detail.DeviceDetailScreen
 import com.alexclin.moonlink.android.device.overview.DeviceOverviewScreen
+import com.alexclin.moonlink.android.device.streamsettings.DeviceStreamSettingsScreen
 import com.alexclin.moonlink.android.home.DeviceListScreen
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
@@ -59,6 +60,7 @@ private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid
     "tab_settings"                       -> "设置"
     MoonLinkRoute.DeviceOverview.route   -> deviceManager.getDevice(uuid ?: "")?.name ?: "设备概要"
     MoonLinkRoute.DeviceDetail.route     -> "设备详情"
+    MoonLinkRoute.DeviceStreamSettings.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "串流设置"
     MoonLinkRoute.SettingsUi.route       -> "界面设置"
     MoonLinkRoute.SettingsAudio.route    -> "音频设置"
     MoonLinkRoute.SettingsGamepad.route  -> "手柄设置"
@@ -100,8 +102,9 @@ fun MoonLinkApp(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
-    // Extract uuid from backStack arguments for overview/detail routes
+    // Extract uuid from backStack arguments for routes that need it
     val currentUuid = backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceOverview.ARG_UUID)
+        ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID)
 
     // Show bottom bar only on the top-level tabs
     val showBottomBar = currentRoute in TOP_LEVEL_ROUTES
@@ -220,6 +223,22 @@ fun MoonLinkApp(
                     onNavigateToDetail = {
                         navController.navigate(MoonLinkRoute.DeviceDetail.createRoute(uuid))
                     },
+                    onNavigateToStreamSettings = {
+                        navController.navigate(MoonLinkRoute.DeviceStreamSettings.createRoute(uuid))
+                    },
+                )
+            }
+
+            // ── 串流设置页 ────────────────────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettings.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettings.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID) ?: return@composable
+                DeviceStreamSettingsScreen(
+                    hostname = deviceManager.getDevice(uuid)?.name ?: "",
                 )
             }
 

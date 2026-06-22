@@ -67,7 +67,6 @@ fun isSchemeNameDuplicate(context: Context, name: String): Boolean {
 fun syncConfigToEngine(
     engine: StreamEngine,
     touchEnabled: Boolean,
-    touchSense: Int,
     gameVibrator: Boolean,
     buttonVibrator: Boolean,
     wheelSpeed: Int,
@@ -75,7 +74,6 @@ fun syncConfigToEngine(
     globalOpacity: Int,
 ) {
     engine.configTouchEnabled = touchEnabled
-    engine.configTouchSense = touchSense
     engine.configGameVibrator = gameVibrator
     engine.configButtonVibrator = buttonVibrator
     engine.configWheelSpeed = wheelSpeed

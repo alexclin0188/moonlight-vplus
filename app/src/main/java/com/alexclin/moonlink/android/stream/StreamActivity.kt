@@ -247,6 +247,8 @@ class StreamActivity : ComponentActivity() {
                     val trackpadLastPos = remember { HashMap<Long, Pair<Float, Float>>() }
                     // MovableButton 摇杆模式（mode=1）：记录首次触摸偏移（元素ID → Pair(relX, relY)）
                     val joystickFirstTouch = remember { HashMap<Long, Pair<Float, Float>>() }
+                    // 震动防重复：记录已触发震动的元素（元素ID → true），只在首次按下时震动，抬起清除
+                    val elementVibrationFired = remember { HashMap<Long, Boolean>() }
 
                     // ── 键盘按键翻译器（用于 kXX 格式按键值） ──
                     val keyboardTranslator = remember { KeyboardTranslator() }
@@ -448,7 +450,13 @@ class StreamActivity : ComponentActivity() {
                             when (el.type) {
                                 ElementType.DIGITAL_COMMON_BUTTON,
                                 ElementType.DIGITAL_SWITCH_BUTTON -> {
-                                    if (isPressed) triggerVibration()
+                                    if (isPressed) {
+                                        if (elementVibrationFired.put(el.elementId, true) == null) {
+                                            triggerVibration()
+                                        }
+                                    } else {
+                                        elementVibrationFired.remove(el.elementId)
+                                    }
                                     when {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
@@ -537,7 +545,13 @@ class StreamActivity : ComponentActivity() {
                                         }
                                     } else {
                                         // 按钮模式（mode=0）：同普通按键
-                                        if (isPressed) triggerVibration()
+                                        if (isPressed) {
+                                            if (elementVibrationFired.put(el.elementId, true) == null) {
+                                                triggerVibration()
+                                            }
+                                        } else {
+                                            elementVibrationFired.remove(el.elementId)
+                                        }
                                         when {
                                             value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                             value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
@@ -578,7 +592,13 @@ class StreamActivity : ComponentActivity() {
                                 }
                                 ElementType.DIGITAL_COMBINE_BUTTON -> {
                                     // 组合键：同时触发全部5个方向键值（参照旧 Crown）
-                                    if (isPressed) triggerVibration()
+                                    if (isPressed) {
+                                        if (elementVibrationFired.put(el.elementId, true) == null) {
+                                            triggerVibration()
+                                        }
+                                    } else {
+                                        elementVibrationFired.remove(el.elementId)
+                                    }
                                     val values = listOfNotNull(
                                         value.takeIf { it.isNotEmpty() },
                                         el.upValue.takeIf { it.isNotEmpty() },
@@ -590,7 +610,13 @@ class StreamActivity : ComponentActivity() {
                                     sendFullState()
                                 }
                                 ElementType.DIGITAL_PAD -> {
-                                    if (isPressed) triggerVibration()
+                                    if (isPressed) {
+                                        if (elementVibrationFired.put(el.elementId, true) == null) {
+                                            triggerVibration()
+                                        }
+                                    } else {
+                                        elementVibrationFired.remove(el.elementId)
+                                    }
                                     // 旧 Crown 方式：位掩码检测，支持对角线（左上 = LEFT|UP）
                                     val newMask = if (isPressed) computeDpadBitmask(relX, relY, el.width, el.height) else 0
                                     val oldMask = activeDpadDirections[el.elementId] ?: 0

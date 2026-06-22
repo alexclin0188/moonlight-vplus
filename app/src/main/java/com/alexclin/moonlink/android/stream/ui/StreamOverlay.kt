@@ -392,7 +392,7 @@ fun StreamOverlay(
                         keyboardInitialTab = 1
                     },
                     onOpenFullScreenPage = { fullScreenPage = it },
-                    modifier = Modifier.offset(x = (-60).dp),
+                    modifier = Modifier.offset(x = (-50).dp),
                 )
             }
         }

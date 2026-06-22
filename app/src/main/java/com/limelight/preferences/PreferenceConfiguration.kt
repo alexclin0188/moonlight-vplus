@@ -94,6 +94,7 @@ class PreferenceConfiguration {
     var stretchVideo = false
     var enableSops = false
     var playHostAudio = false
+    var muteClientAudio = false
     var disableWarnings = false
     var language: String = ""
     var smallIconMode = false
@@ -142,6 +143,10 @@ class PreferenceConfiguration {
     /** Sync local clipboard images (PNG) with the host. */
     var enableClipboardSyncImage = false
     var touchscreenTrackpad = false
+
+    /** 触控板灵敏度（1-200），用于触控板模式下的触摸命中区域弹性边距 */
+    var touchpadSensitivity: Int = 100
+
     var audioConfiguration: MoonBridge.AudioConfiguration = MoonBridge.AUDIO_CONFIGURATION_STEREO
     /** Negotiated audio codec preference — see [MoonBridge.AUDIO_CODEC_OPUS] etc. */
     var audioCodec: Int = MoonBridge.AUDIO_CODEC_OPUS
@@ -289,12 +294,14 @@ class PreferenceConfiguration {
                 .putBoolean(GYRO_INVERT_Y_AXIS_PREF_STRING, gyroInvertYAxis)
                 .putInt(GYRO_ACTIVATION_KEY_CODE_PREF_STRING, gyroActivationKeyCode)
                 .putBoolean(HOST_AUDIO_PREF_STRING, playHostAudio)
+                .putBoolean(MUTE_CLIENT_AUDIO_PREF_STRING, muteClientAudio)
                 .putBoolean(SOPS_PREF_STRING, enableSops)
                 .putBoolean(STRETCH_PREF_STRING, stretchVideo)
                 .putBoolean(LOCK_SCREEN_AFTER_DISCONNECT_PREF_STRING, lockScreenAfterDisconnect)
                 .putBoolean(CLIPBOARD_SYNC_TEXT_PREF_STRING, enableClipboardSyncText)
                 .putBoolean(CLIPBOARD_SYNC_IMAGE_PREF_STRING, enableClipboardSyncImage)
                 .putBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, touchscreenTrackpad)
+                .putInt(TOUCHPAD_SENSITIVITY_PREF_STRING, touchpadSensitivity)
                 .putBoolean(ENABLE_ENHANCED_TOUCH_PREF_STRING, enableEnhancedTouch)
                 .putBoolean(KEY_MAPPING_ENABLED_PREF_STRING, keyMappingEnabled)
                 .putBoolean(ADAPTIVE_BITRATE_PREF_STRING, enableAdaptiveBitrate)
@@ -360,6 +367,8 @@ class PreferenceConfiguration {
         copy.showGyroCard = this.showGyroCard
         copy.showQuickKeyCard = this.showQuickKeyCard
         copy.keyMappingEnabled = this.keyMappingEnabled
+        copy.touchpadSensitivity = this.touchpadSensitivity
+        copy.muteClientAudio = this.muteClientAudio
         return copy
     }
 
@@ -381,6 +390,7 @@ class PreferenceConfiguration {
         private const val SOPS_PREF_STRING = "checkbox_enable_sops"
         private const val DISABLE_TOASTS_PREF_STRING = "checkbox_disable_warnings"
         private const val HOST_AUDIO_PREF_STRING = "checkbox_host_audio"
+        private const val MUTE_CLIENT_AUDIO_PREF_STRING = "checkbox_mute_client_audio"
         private const val DEADZONE_PREF_STRING = "seekbar_deadzone"
         private const val OSC_OPACITY_PREF_STRING = "seekbar_osc_opacity"
         private const val LANGUAGE_PREF_STRING = "list_languages"
@@ -497,6 +507,7 @@ class PreferenceConfiguration {
         // ---- Public pref key constants ----
         const val RESOLUTION_PREF_STRING = "list_resolution"
         const val TOUCHSCREEN_TRACKPAD_PREF_STRING = "checkbox_touchscreen_trackpad"
+        const val TOUCHPAD_SENSITIVITY_PREF_STRING = "seekbar_touchpad_sensitivity"
         const val ENABLE_NATIVE_MOUSE_POINTER_PREF_STRING = "checkbox_enable_native_mouse_pointer"
         const val NATIVE_MOUSE_MODE_PRESET_PREF_STRING = "list_native_mouse_mode_preset"
         const val ENABLE_ENHANCED_TOUCH_PREF_STRING = "checkbox_enable_enhanced_touch"
@@ -531,6 +542,7 @@ class PreferenceConfiguration {
         private const val DEFAULT_SOPS = true
         private const val DEFAULT_DISABLE_TOASTS = false
         private const val DEFAULT_HOST_AUDIO = false
+        private const val DEFAULT_MUTE_CLIENT_AUDIO = false
         private const val DEFAULT_DEADZONE = 7
         private const val DEFAULT_OPACITY = 90
         const val DEFAULT_LANGUAGE = "default"
@@ -616,6 +628,7 @@ class PreferenceConfiguration {
         private const val DEFAULT_AUDIO_VIBRATION_SCENE = 0 // Game/Movie
         private const val DEFAULT_FLIP_FACE_BUTTONS = false
         private const val DEFAULT_TOUCHSCREEN_TRACKPAD = true
+        private const val DEFAULT_TOUCHPAD_SENSITIVITY = 100
         private const val DEFAULT_AUDIO_CONFIG = "2" // Stereo
         private const val DEFAULT_LATENCY_TOAST = false
         private const val DEFAULT_TOOL_PANEL_AUTO_HIDE_MODE = 2
@@ -1107,6 +1120,7 @@ class PreferenceConfiguration {
             config.enableSops = prefs.getBoolean(SOPS_PREF_STRING, DEFAULT_SOPS)
             config.stretchVideo = prefs.getBoolean(STRETCH_PREF_STRING, DEFAULT_STRETCH)
             config.playHostAudio = prefs.getBoolean(HOST_AUDIO_PREF_STRING, DEFAULT_HOST_AUDIO)
+            config.muteClientAudio = prefs.getBoolean(MUTE_CLIENT_AUDIO_PREF_STRING, DEFAULT_MUTE_CLIENT_AUDIO)
             config.smallIconMode = prefs.getBoolean(SMALL_ICONS_PREF_STRING, getDefaultSmallMode(context))
             config.multiController = prefs.getBoolean(MULTI_CONTROLLER_PREF_STRING, DEFAULT_MULTI_CONTROLLER)
             config.usbDriver = prefs.getBoolean(USB_DRIVER_PREF_SRING, DEFAULT_USB_DRIVER)
@@ -1162,6 +1176,7 @@ class PreferenceConfiguration {
             config.audioVibrationScene = (prefs.getString(AUDIO_VIBRATION_SCENE_PREF_STRING, DEFAULT_AUDIO_VIBRATION_SCENE.toString()) ?: DEFAULT_AUDIO_VIBRATION_SCENE.toString()).toInt()
             config.flipFaceButtons = prefs.getBoolean(FLIP_FACE_BUTTONS_PREF_STRING, DEFAULT_FLIP_FACE_BUTTONS)
             config.touchscreenTrackpad = prefs.getBoolean(TOUCHSCREEN_TRACKPAD_PREF_STRING, DEFAULT_TOUCHSCREEN_TRACKPAD)
+            config.touchpadSensitivity = prefs.getInt(TOUCHPAD_SENSITIVITY_PREF_STRING, DEFAULT_TOUCHPAD_SENSITIVITY)
             config.enableLatencyToast = prefs.getBoolean(LATENCY_TOAST_PREF_STRING, DEFAULT_LATENCY_TOAST)
             config.toolPanelAutoHideMode = prefs.getInt(TOOL_PANEL_AUTO_HIDE_MODE_PREF_STRING, DEFAULT_TOOL_PANEL_AUTO_HIDE_MODE)
             config.enableStun = prefs.getBoolean(ENABLE_STUN_PREF_STRING, DEFAULT_ENABLE_STUN)

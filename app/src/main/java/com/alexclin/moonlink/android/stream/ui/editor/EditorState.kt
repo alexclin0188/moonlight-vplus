@@ -277,24 +277,24 @@ class EditorState(
                 ElementType.WHEEL_PAD -> "k51,k32,k47,k29,k45,k33,k46,k31"
                 else -> ""
             },
-            // 方向值（旧 Crown 默认：DIGITAL_PAD=WASD, DIGITAL_STICK=WASD+Shift）
+            // 方向值（默认：DIGITAL_PAD=方向键↑↓←→, DIGITAL_STICK=WASD+Shift）
             upValue = when (type) {
-                ElementType.DIGITAL_PAD -> "k51"
+                ElementType.DIGITAL_PAD -> "k19"
                 ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k51"
                 else -> ""
             },
             downValue = when (type) {
-                ElementType.DIGITAL_PAD -> "k47"
+                ElementType.DIGITAL_PAD -> "k20"
                 ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k47"
                 else -> ""
             },
             leftValue = when (type) {
-                ElementType.DIGITAL_PAD -> "k29"
+                ElementType.DIGITAL_PAD -> "k21"
                 ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k29"
                 else -> ""
             },
             rightValue = when (type) {
-                ElementType.DIGITAL_PAD -> "k32"
+                ElementType.DIGITAL_PAD -> "k22"
                 ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k32"
                 else -> ""
             },

@@ -146,8 +146,8 @@ object DefaultElements {
                 w = DPAD_SIZE.screenScale(height),
                 h = DPAD_SIZE.screenScale(height),
                 radius = 6,
-                upValue = "k51", downValue = "k47",
-                leftValue = "k29", rightValue = "k32",
+                upValue = "k19", downValue = "k20",
+                leftValue = "k21", rightValue = "k22",
                 layer = 60,
             ))
 

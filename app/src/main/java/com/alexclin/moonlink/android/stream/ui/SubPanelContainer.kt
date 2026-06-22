@@ -73,7 +73,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
@@ -116,8 +115,7 @@ fun SubPanelContainer(
 ) {
     val context = LocalContext.current
     var configIds: List<String> by remember { mutableStateOf(QuickActionRegistry.loadConfig(context)) }
-    val configuration = LocalConfiguration.current
-    val panelWidth = (configuration.screenWidthDp.dp * 0.45f).coerceIn(280.dp, 400.dp)
+    val panelWidth = 316.dp
 
     Surface(
         modifier = modifier
@@ -441,14 +439,6 @@ private fun KeyMappingSection(
     }
 }
 
-@Composable
-private fun ExpandableOtherSettings(engine: StreamEngine) {
-    val context = LocalContext.current
-    Text("触控开关、灵敏度、滚轮、震动等设置（待完善）",
-         style = MaterialTheme.typography.bodySmall,
-         color = MaterialTheme.colorScheme.onSurfaceVariant)
-}
-
 private enum class TouchMode(val label: String) {
     ENHANCED("增强式\n多点触控"),
     TRACKPAD("触控板\n模式"),
@@ -504,6 +494,26 @@ private fun TouchModeSection(engine: StreamEngine) {
             Column {
                 var doubleClickDrag by remember { mutableStateOf(engine.prefConfig.enableDoubleClickDrag) }
                 var localCursor by remember { mutableStateOf(engine.prefConfig.enableLocalCursorRendering) }
+                // 触控灵敏度：单行展示 灵敏度 + Slider
+                var sensitivity by remember { mutableIntStateOf(engine.prefConfig.touchpadSensitivity) }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("灵敏度", style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.width(8.dp))
+                    Slider(
+                        value = sensitivity.toFloat(),
+                        onValueChange = { sensitivity = it.toInt() },
+                        onValueChangeFinished = {
+                            engine.prefConfig.touchpadSensitivity = sensitivity
+                            engine.configTouchSense = sensitivity
+                            engine.prefConfig.writePreferences(context)
+                        },
+                        valueRange = 1f..200f,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text("$sensitivity", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                         modifier = Modifier.padding(start = 4.dp))
+                }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("双击按住", Modifier.weight(1f))
                     Switch(checked = doubleClickDrag, onCheckedChange = {

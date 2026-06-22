@@ -56,9 +56,6 @@ fun KeyMappingConfigPanel(
             (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
         )
     ) }
-    var touchSense by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, "touch_sense", 100L) as? Long) ?: 100L).toInt()
-    ) }
     var gameVibrator by remember { mutableStateOf(
         java.lang.Boolean.parseBoolean(
             (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
@@ -83,14 +80,13 @@ fun KeyMappingConfigPanel(
 
     // ── 运行时同步：将 DB 值同步到 engine 运行时状态（打开面板时执行一次） ──
     LaunchedEffect(Unit) {
-        syncConfigToEngine(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
+        syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
     }
 
     // ── 保存到 DB 并同步到控制器 ──
     fun saveToDb() {
         val cv = ContentValues()
         cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, touchEnabled.toString())
-        cv.put("touch_sense", touchSense.toLong())
         cv.put(PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, gameVibrator.toString())
         cv.put(PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, buttonVibrator.toString())
         cv.put("mouse_wheel_speed", wheelSpeed.toLong())
@@ -98,7 +94,7 @@ fun KeyMappingConfigPanel(
         cv.put(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
         db.updateConfig(configId, cv)
 
-        syncConfigToEngine(engine, touchEnabled, touchSense, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
+        syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
     }
 
     DetailScaffold(title = "按键映射方案配置", onBack = onBack) {
@@ -111,23 +107,6 @@ fun KeyMappingConfigPanel(
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("触控开关", Modifier.weight(1f))
                     Switch(checked = touchEnabled, onCheckedChange = { touchEnabled = it; saveToDb() })
-                }
-            }
-
-            // 触控灵敏度
-            item {
-                Column(Modifier.padding(vertical = 4.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("触控灵敏度", Modifier.weight(1f))
-                        Text("$touchSense", style = MaterialTheme.typography.bodySmall,
-                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Slider(
-                        value = touchSense.toFloat(),
-                        onValueChange = { touchSense = it.toInt() },
-                        onValueChangeFinished = { saveToDb() },
-                        valueRange = 1f..200f,
-                    )
                 }
             }
 

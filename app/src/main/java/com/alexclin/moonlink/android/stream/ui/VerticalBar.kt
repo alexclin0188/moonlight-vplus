@@ -60,7 +60,7 @@ fun VerticalBar(
     Surface(
         modifier = modifier
             .fillMaxHeight()
-            .width(60.dp)
+            .width(50.dp)
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() },
