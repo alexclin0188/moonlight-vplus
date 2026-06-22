@@ -120,7 +120,7 @@ fun StreamOverlay(
     engine: StreamEngine,
     connectionStage: String? = null,
 ) {
-    var panelState by remember { mutableStateOf(PanelState.VERTICAL_BAR) }
+    var panelState by remember { mutableStateOf(PanelState.HIDDEN) }
     var activeEntry by remember { mutableStateOf<String?>(null) }
     var keyboardInitialTab by remember { mutableIntStateOf(0) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }

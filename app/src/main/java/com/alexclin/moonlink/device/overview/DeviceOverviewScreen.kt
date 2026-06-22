@@ -26,6 +26,7 @@ import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
 import com.alexclin.moonlink.home.fetchAndCacheAppListAndBoxArt
 import com.alexclin.moonlink.stream.StreamActivity
+import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.limelight.AppView
 import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
@@ -1024,6 +1025,20 @@ private fun launchStreamFromOverview(
 ) {
     if (managerBinder == null) return
     val activity = context as? android.app.Activity ?: return
+
+    // ── PiP 模式检测 ────────────────────────────────────
+    if (StreamEngine.currentPipActivity != null && !StreamEngine.currentPipActivity!!.isFinishing) {
+        val pipUuid = StreamEngine.currentPipUuid
+        if (pipUuid != null && pipUuid == computer.uuid) {
+            // 同一设备：关闭 PiP Activity，然后启动新流
+            Toast.makeText(context, "从画中画恢复串流…", Toast.LENGTH_SHORT).show()
+            StreamEngine.currentPipActivity!!.finish()
+        } else {
+            // 不同设备：关闭 PiP Activity 停止旧流
+            Toast.makeText(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT).show()
+            StreamEngine.currentPipActivity!!.finish()
+        }
+    }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
         Toast.makeText(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT).show()

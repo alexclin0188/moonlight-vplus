@@ -202,6 +202,15 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         /** 当前方案的 SharedPreference key，与旧 PageConfigController 互通 */
         const val PREF_CURRENT_CONFIG_ID = "current_config_id"
+
+        // ── PiP 跨 Activity 状态跟踪 ──
+
+        /** 当前 PiP 串流对应的主机 UUID，用于检测是否同一设备 */
+        @Volatile
+        var currentPipUuid: String? = null
+        /** 当前 PiP 串流对应的连接 Activity，用于从首页关闭 PiP */
+        @Volatile
+        var currentPipActivity: android.app.Activity? = null
     }
 
     // ========================================================================
@@ -229,6 +238,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
             // 默认关闭按键映射（不持久化上次状态）
             prefConfig.keyMappingEnabled = false
+
+            // 同步拉伸视频状态
+            stretchVideo = prefConfig.stretchVideo
 
             // 初始化 NativeTouchContext 静态参数
             NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
@@ -561,6 +573,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
 
         if (isExtremeResumeEnabled && connected) {
+            if (isInPipMode) {
+                // PiP 模式下跳过解码器恢复 — 解码器保持存活无需恢复，surface 正在重建，
+                // 此时 resumeProcessing() 可能因 surface 未就绪而触发 NPE。
+                // 直接清除标志位，退出 PiP 后恢复音频即可。
+                LimeLog.info("StreamEngine: PiP 中跳过极速恢复")
+                isExtremeResumeEnabled = false
+                return
+            }
             LimeLog.info("StreamEngine: 极速恢复，重新设置渲染目标并恢复")
             decoder.setRenderTarget(holder)
             audioRenderer?.resumeProcessing()
@@ -916,6 +936,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 触控灵敏度 */
     var configTouchSense: Int by mutableStateOf(100)
+
+    /** 拉伸视频：纯客户端渲染，即时生效无需重启串流 */
+    var stretchVideo: Boolean by mutableStateOf(false)
 
     /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
     var isFullScreenPageActive: Boolean by mutableStateOf(false)
@@ -1374,7 +1397,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         override fun surfaceDestroyed(holder: SurfaceHolder) {
             LimeLog.info("StreamEngine: surfaceDestroyed")
-            if (attemptedConnection && connected && !activity.isFinishing) {
+            if (attemptedConnection && connected && !activity.isFinishing && !isInPipMode) {
                 // 极速恢复：暂停渲染但不中断串流，surface 重建后 resume
                 isExtremeResumeEnabled = true
                 audioRenderer?.pauseProcessing()
@@ -1608,6 +1631,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 退出 PiP 时恢复全量资源 */
     fun restoreFullStreaming() {
         LimeLog.info("StreamEngine: 恢复全量串流资源")
+        audioRenderer?.resumeProcessing()
+        decoderRenderer?.resumeProcessing()
     }
 
     fun onResume() {
@@ -1658,6 +1683,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun onPause() {
         // 切换分辨率时不能断连远端，新 Activity 会接管串流
         if (isChangingResolution) return
+        // PiP 模式下保持串流连接和解码器存活，让画中画窗口继续显示视频画面
+        if (isInPipMode) {
+            LimeLog.info("StreamEngine: PiP 模式，保持连接和解码器存活")
+            // 仅暂停音频以节省资源，解码器保持运行以便持续渲染画面供 PiP 使用
+            audioRenderer?.pauseProcessing()
+            return
+        }
         // 关闭对话框（Activity 即将不可见，防止 WindowLeaked）
         activeDialog?.dismiss()
         activeDialog = null

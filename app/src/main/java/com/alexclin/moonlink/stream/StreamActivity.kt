@@ -4,8 +4,8 @@ import android.content.pm.ActivityInfo
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
-import android.view.SurfaceView
 import android.view.View
+import com.limelight.ui.StreamView
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.core.view.WindowCompat
@@ -14,6 +14,8 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -70,6 +72,8 @@ class StreamActivity : ComponentActivity() {
             }
         }
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        // 设置窗口背景为黑色，非视频区域（letterbox/pillarbox）显示纯黑
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK))
         window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
@@ -123,26 +127,47 @@ class StreamActivity : ComponentActivity() {
             }
 
             MoonLinkTheme(darkTheme = darkTheme) {
-                Box(modifier = Modifier.fillMaxSize()) {
-                    // 串流画面 SurfaceView
+                // 视频画面居中容器：StreamView 的 onMeasure() 根据 desiredAspectRatio
+                // 约束自身大小，实现原始宽高比；非视频区域显示窗口黑色背景。
+                Box(modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center) {
+                    // 串流画面 StreamView（自定义 SurfaceView，支持 aspect ratio onMeasure）
+                    // 触摸事件监听器引用（供 update 复用）
+                    val touchListener = remember { View.OnTouchListener { view, event ->
+                        if (engine.isFullScreenPageActive) false
+                        else engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                    }}
+                    val genericMotionListener = remember { View.OnGenericMotionListener { view, event ->
+                        if (engine.isFullScreenPageActive) false
+                        else engine.touchHandler?.handleMotionEvent(view, event) ?: false
+                    }}
+
                     AndroidView(
                         factory = { ctx ->
-                            SurfaceView(ctx).also { sv ->
+                            StreamView(ctx).also { sv ->
                                 sv.id = R.id.surfaceView
                                 engine.surfaceView = sv
                                 engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
-                                // 触控事件监听（全屏页面打开时阻断穿透到远端）
-                                sv.setOnTouchListener { view, event ->
-                                    if (engine.isFullScreenPageActive) false
-                                    else engine.touchHandler?.handleMotionEvent(view, event) ?: false
-                                }
-                                // 鼠标/触控笔事件监听（全屏页面打开时阻断穿透到远端）
-                                sv.setOnGenericMotionListener { view, event ->
-                                    if (engine.isFullScreenPageActive) false
-                                    else engine.touchHandler?.handleMotionEvent(view, event) ?: false
-                                }
+                                sv.setOnTouchListener(touchListener)
+                                sv.setOnGenericMotionListener(genericMotionListener)
                             }
+                        },
+                        update = { sv ->
+                            // 根据 stretchVideo 即时更新画面比例（纯客户端，无需重启串流）
+                            if (engine.stretchVideo) {
+                                sv.setDesiredAspectRatio(0.0)
+                                sv.holder.setFixedSize(
+                                    engine.prefConfig.width.coerceAtLeast(1),
+                                    engine.prefConfig.height.coerceAtLeast(1)
+                                )
+                            } else {
+                                val aspect = engine.prefConfig.width.toFloat() /
+                                    engine.prefConfig.height.toFloat()
+                                sv.setDesiredAspectRatio(aspect.toDouble())
+                                sv.holder.setSizeFromLayout()
+                            }
+                            sv.requestLayout()
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -772,8 +797,10 @@ class StreamActivity : ComponentActivity() {
                         )
                     }
 
-                    // 面板 overlay（阶段 0 为空，后续阶段实现）
-                    StreamOverlay(engine = engine, connectionStage = connectionStage)
+                    // 面板 overlay（PiP 模式下隐藏所有面板）
+                    if (!engine.isInPipMode) {
+                        StreamOverlay(engine = engine, connectionStage = connectionStage)
+                    }
                 }
             }
         }
@@ -822,8 +849,8 @@ class StreamActivity : ComponentActivity() {
 
     override fun onUserLeaveHint() {
         super.onUserLeaveHint()
-        // 实时评估 PiP 条件，而非依赖缓存状态
-        if (engine.connected && engine.prefConfig.enablePip) {
+        // 仅当串流画面本身显示时进入 PiP（全屏页面如编辑器/方案选择器打开时不触发）
+        if (engine.connected && engine.prefConfig.enablePip && !engine.isFullScreenPageActive) {
             enterPip()
         }
     }
@@ -835,6 +862,33 @@ class StreamActivity : ComponentActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         engine.onPiPModeChanged(isInPictureInPictureMode)
+
+        // 跟踪 PiP 状态供跨 Activity 使用
+        if (isInPictureInPictureMode) {
+            // 进入 PiP：记录当前 Activity 和设备 UUID
+            StreamEngine.currentPipActivity = this
+            StreamEngine.currentPipUuid = intent.getStringExtra(com.limelight.Game.EXTRA_PC_UUID)
+        } else {
+            // 退出 PiP（用户点击 PiP 窗口恢复或关闭 PiP）
+            // 如果 Activity 未被 finish（即用户点击 PiP 窗口恢复），不清除引用
+            // 如果 Activity 正在 finish（用户点击 X 关闭 PiP），在 onDestroy 中清理
+            if (isFinishing || isDestroyed) {
+                clearPipReference()
+            }
+        }
+    }
+
+    private fun clearPipReference() {
+        if (StreamEngine.currentPipActivity === this) {
+            StreamEngine.currentPipActivity = null
+            StreamEngine.currentPipUuid = null
+        }
+    }
+
+    override fun onDestroy() {
+        clearPipReference()
+        super.onDestroy()
+        engine.release()
     }
 
     override fun onPause() {
@@ -890,18 +944,17 @@ class StreamActivity : ComponentActivity() {
         engine.onWindowFocusChanged(hasFocus)
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        engine.release()
-    }
-
     @Suppress("DEPRECATION")
     override fun onBackPressed() {
         // 防抖
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackPressTime < backPressDebounceMs) return
         lastBackPressTime = now
-        // 当所有面板都已隐藏时，退出串流
-        engine.disconnect()
+        // 如果 PiP 已开启且串流已连接 → 进入画中画而非断开串流
+        if (engine.connected && engine.prefConfig.enablePip) {
+            enterPip()
+        } else {
+            engine.disconnect()
+        }
     }
 }

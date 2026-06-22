@@ -45,6 +45,7 @@ import com.alexclin.moonlink.theme.statusOffline
 import com.alexclin.moonlink.theme.statusOnline
 import com.alexclin.moonlink.theme.windowsBlue
 import com.alexclin.moonlink.stream.StreamActivity
+import com.alexclin.moonlink.stream.engine.StreamEngine
 import com.limelight.R
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -905,6 +906,21 @@ private fun launchStream(
 ) {
     if (managerBinder == null) return
     val activity = context as? android.app.Activity ?: return
+
+    // ── PiP 模式检测 ────────────────────────────────────
+    if (StreamEngine.currentPipActivity != null && !StreamEngine.currentPipActivity!!.isFinishing) {
+        val pipUuid = StreamEngine.currentPipUuid
+        if (pipUuid != null && pipUuid == computer.uuid) {
+            // 同一设备：关闭 PiP Activity（它会清理流），然后启动新流
+            android.widget.Toast.makeText(context, "从画中画恢复串流…", android.widget.Toast.LENGTH_SHORT).show()
+            StreamEngine.currentPipActivity!!.finish()
+            // Activity finish 后继续执行下面的正常启动逻辑
+        } else {
+            // 不同设备：关闭 PiP Activity 停止旧流，然后启动新流
+            android.widget.Toast.makeText(context, "已停止另一台设备的画中画串流…", android.widget.Toast.LENGTH_SHORT).show()
+            StreamEngine.currentPipActivity!!.finish()
+        }
+    }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
         android.widget.Toast.makeText(context, "设备离线，正在尝试唤醒…", android.widget.Toast.LENGTH_SHORT).show()

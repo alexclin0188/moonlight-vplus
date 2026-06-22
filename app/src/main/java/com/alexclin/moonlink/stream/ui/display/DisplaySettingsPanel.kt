@@ -21,9 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -39,7 +36,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -118,7 +114,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             }
 
             // ── 分组一：帧率与画面 ──
-            item { SectionTitle("帧率与画面") }
+            item { SectionTitle("画面") }
 
             // DB-1: 码率选择行(含智能码率 & 流量估算)
             item {
@@ -190,13 +186,20 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // DC-2: 画面设置开关组
             item { VideoSwitches(engine) }
 
+            // ── 画中画（放在 MTK 上方，统一 SettingSwitch 样式） ──
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                item { PipSwitch(engine) }
+            }
+
             // DC-2: MTK
             item { MtkSwitch(engine) }
 
             item { HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp)) }
 
-            // ── 分组二：显示器 ──
-            item { SectionTitle("显示器") }
+            // ── 分组二：显示器（仅在检测到显示器时显示标题） ──
+            if (engine.currentDisplayName != null || engine.currentDeviceId != null) {
+                item { SectionTitle("显示器") }
+            }
 
             // DD-1: 显示器信息 + 分辨率 + DPI缩放 + 切换
             item { DisplaySection(engine) }
@@ -919,13 +922,12 @@ private fun MtkSwitch(engine: StreamEngine) {
 private fun VideoSwitches(engine: StreamEngine) {
     val context = LocalContext.current
     val pref = engine.prefConfig
-    var stretch by remember { mutableStateOf(pref.stretchVideo) }
+    var stretch by remember { mutableStateOf(engine.stretchVideo) }
     var reverse by remember { mutableStateOf(pref.reverseResolution) }
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; 
-                    ; engine.displaySettingsRestartPending = true }
+        SettingSwitch("拉伸视频", stretch) { stretch = it; engine.stretchVideo = it }
         SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; 
                     ; engine.displaySettingsRestartPending = true }
         SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; 
@@ -1090,23 +1092,35 @@ private fun DisplaySection(engine: StreamEngine) {
              color = MaterialTheme.colorScheme.primary,
              modifier = Modifier.padding(bottom = 4.dp))
 
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(4),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            items(allResolutions) { res ->
-                val cleanRes = res.replace("Native (", "").replace(")", "")
-                FilterChip(
-                    selected = selectedRes == cleanRes,
-                    onClick = {
-                        selectedRes = cleanRes
-                        onResolutionSelected(engine, context, cleanRes)
-                    },
-                    label = { Text(res, style = MaterialTheme.typography.labelSmall) },
+        // 使用 Row + chunked(3) 手动排成 3 列，避免 LazyVerticalGrid 在 LazyColumn 内崩溃
+        // 因为分辨率为少量固定选项，无需懒加载
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            allResolutions.chunked(3).forEach { rowItems ->
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier.fillMaxWidth(),
-                )
+                ) {
+                    rowItems.forEach { res ->
+                        val cleanRes = res.replace("Native (", "").replace(")", "")
+                        FilterChip(
+                            selected = selectedRes == cleanRes,
+                            onClick = {
+                                selectedRes = cleanRes
+                                onResolutionSelected(engine, context, cleanRes)
+                            },
+                            label = {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    Text(res, style = MaterialTheme.typography.labelSmall)
+                                }
+                            },
+                            modifier = Modifier.weight(1f).height(40.dp),
+                        )
+                    }
+                    // 补齐不足 3 列的空位，保持对齐
+                    repeat(3 - rowItems.size) {
+                        Spacer(Modifier.weight(1f))
+                    }
+                }
             }
         }
 
@@ -1212,33 +1226,6 @@ private fun DisplaySection(engine: StreamEngine) {
             }
         }
 
-        // ── PiP（画中画） ──
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            HorizontalDivider(Modifier.padding(vertical = 8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth()
-                    .clickable {
-                        pref.enablePip = !pref.enablePip
-                        
-                    }
-                    .padding(vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Checkbox(
-                    checked = pref.enablePip,
-                    onCheckedChange = {
-                        pref.enablePip = it
-                        
-                    },
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    "画中画 (PiP)",
-                    modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        }
     }
 }
 
@@ -1329,6 +1316,19 @@ private fun VddSection(engine: StreamEngine) {
             pref.useExternalDisplay = it
             
                     }
+    }
+}
+
+@Composable
+private fun PipSwitch(engine: StreamEngine) {
+    val pref = engine.prefConfig
+    var checked by remember { mutableStateOf(pref.enablePip) }
+    SettingSwitch("画中画 (PiP)", checked) {
+        checked = it
+        pref.enablePip = it
+        if (it) {
+            Toast.makeText(engine.activity, "离开应用时将自动进入画中画模式", Toast.LENGTH_SHORT).show()
+        }
     }
 }
 
