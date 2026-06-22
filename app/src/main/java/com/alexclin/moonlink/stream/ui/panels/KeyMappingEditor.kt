@@ -154,7 +154,7 @@ private fun doExit(
 
         // 设为当前方案
         prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newId).apply()
-        engine.setCrownFeatureEnabled(true)
+        engine.setKeyMappingEnabled(true)
         engine.reloadOverlay()
         Toast.makeText(context, "方案「$name」已创建", Toast.LENGTH_SHORT).show()
         onClose()

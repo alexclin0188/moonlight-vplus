@@ -1,18 +1,17 @@
 package com.alexclin.moonlink.stream.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,8 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
@@ -81,21 +79,26 @@ fun FloatingActionButton(
                 },
             contentAlignment = Alignment.Center,
         ) {
-            // 实际显示的按钮（36dp）
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .shadow(6.dp, CircleShape)
-                    .graphicsLayer(alpha = opacity.coerceIn(10, 100) / 100f)
-                    .background(MaterialTheme.colorScheme.primary, CircleShape),
-                contentAlignment = Alignment.Center,
+            // 实际显示的按钮（36dp），使用 Surface 确保圆形阴影无八边形伪像
+            val btnAlpha = opacity.coerceIn(10, 100) / 100f
+            Surface(
+                modifier = Modifier.size(36.dp).alpha(btnAlpha),
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primary,
+                tonalElevation = 0.dp,
+                shadowElevation = 6.dp,
             ) {
-                Icon(
-                    Icons.Default.Menu,
-                    contentDescription = "菜单",
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(20.dp),
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Default.Menu,
+                        contentDescription = "菜单",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         }
     }

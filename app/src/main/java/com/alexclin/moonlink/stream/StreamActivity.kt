@@ -745,7 +745,7 @@ class StreamActivity : ComponentActivity() {
 
                     // 确保按键映射元素在 UI 就绪后加载（避免初始化时序问题）
                     LaunchedEffect(Unit) {
-                        if (engine.isCrownFeatureEnabled && overlayElements.isEmpty()) {
+                        if (engine.isKeyMappingFucEnabled && overlayElements.isEmpty()) {
                             engine.reloadOverlay()
                         }
                     }

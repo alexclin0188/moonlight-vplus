@@ -915,7 +915,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。 */
     fun reloadOverlay() {
-        if (!prefConfig.keyMappingEnabled) {
+        if (!keyMappingState) {
             currentOverlayElements.value = emptyList()
             return
         }
@@ -931,9 +931,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     // ── 按键映射开关（Crown → MoonLink） ──
 
-    /** 按键映射是否启用，读取新 Pref key [PreferenceConfiguration.KEY_MAPPING_ENABLED_PREF_STRING]。 */
-    val isCrownFeatureEnabled: Boolean
-        get() = prefConfig.keyMappingEnabled
+    /** 按键映射是否启用（Compose 可观察状态） */
+    var keyMappingState: Boolean by mutableStateOf(false)
+
+    /** 按键映射是否启用 */
+    val isKeyMappingFucEnabled: Boolean
+        get() = keyMappingState
 
     /** 当前选中的方案 configId，从 SharedPreferences 读取。 */
     val currentSchemeConfigId: Long
@@ -960,8 +963,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
 
     /** 设置按键映射开关（不持久化，重启后默认为关闭）。同时加载当前方案的覆盖层元素和配置状态。由 Compose UI（KeyMappingSection）调用。 */
-    fun setCrownFeatureEnabled(enabled: Boolean) {
-        prefConfig.keyMappingEnabled = enabled
+    fun setKeyMappingEnabled(enabled: Boolean) {
+        keyMappingState = enabled
         if (enabled) {
             reloadOverlay()
         } else {

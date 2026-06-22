@@ -85,7 +85,7 @@ fun KeyMappingSchemeSelector(
         currentConfigId = configId
         prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, configId).apply()
         try {
-            engine.setCrownFeatureEnabled(true)
+            engine.setKeyMappingEnabled(true)
         } catch (_: Exception) { }
         onClose()
     }

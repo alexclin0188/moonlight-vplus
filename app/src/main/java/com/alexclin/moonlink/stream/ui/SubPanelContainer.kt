@@ -370,7 +370,7 @@ private fun KeyMappingSection(
     onNavigateToConfig: (DetailPage) -> Unit = {},
 ) {
     val context = LocalContext.current
-    val enabled by remember { derivedStateOf { engine.isCrownFeatureEnabled } }
+    val enabled by remember { derivedStateOf { engine.isKeyMappingFucEnabled } }
     val expanded = enabled
 
     Column {
@@ -383,13 +383,11 @@ private fun KeyMappingSection(
             Text("启用按键映射", style = MaterialTheme.typography.bodyLarge,
                  color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Switch(checked = enabled, onCheckedChange = { newValue ->
-                engine.setCrownFeatureEnabled(newValue)
+                engine.setKeyMappingEnabled(newValue)
                 if (newValue) {
-                    // 自动切换触控板模式
-                    engine.prefConfig.enableEnhancedTouch = false
-                    engine.prefConfig.enableNativeMousePointer = false
+                    // 自动切换触控板模式并立即生效
+                    engine.applyTouchMode(2)  // 2 = 触控板模式
                     engine.prefConfig.touchscreenTrackpad = true
-                    engine.prefConfig.writePreferences(context)
                     Toast.makeText(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT).show()
                 }
             })

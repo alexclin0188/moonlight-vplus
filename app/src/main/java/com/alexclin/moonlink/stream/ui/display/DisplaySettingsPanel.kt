@@ -265,9 +265,6 @@ private fun FpsSelector(
                     Switch(checked = unlockFps, onCheckedChange = {
                         unlockFps = it
                         pref.unlockFps = it
-                        pref.writePreferences(context)
-                        PreferenceManager.getDefaultSharedPreferences(context)
-                            .edit().putBoolean(PreferenceConfiguration.UNLOCK_FPS_STRING, it).apply()
                     }, modifier = Modifier.height(24.dp))  // 调小Switch
                 }
                 baseFpsOptions.forEach { fps ->
@@ -275,7 +272,6 @@ private fun FpsSelector(
                     FpsRadioItem(fps, label, selectedFps == fps) {
                         selectedFps = it
                         pref.fps = it
-                        pref.writePreferences(context)
                         engine.displaySettingsRestartPending = true
                         expanded = false
                     }
@@ -285,8 +281,8 @@ private fun FpsSelector(
                         FpsRadioItem(fps, "${fps} FPS", selectedFps == fps) {
                             selectedFps = it
                             pref.fps = it
-                            pref.writePreferences(context)
-                            engine.displaySettingsRestartPending = true
+                            
+                    engine.displaySettingsRestartPending = true
                             expanded = false
                         }
                     }
@@ -563,8 +559,8 @@ private fun onBitratePresetSelected(
     when (preset) {
         BitrateUtils.BitratePreset.AUTO -> {
             pref.enableAdaptiveBitrate = true
-            pref.writePreferences(context)
-            // 运行时切换 AUTO：如果连接已建立但服务未创建，立即启动
+            
+                    // 运行时切换 AUTO：如果连接已建立但服务未创建，立即启动
             engine.startAdaptiveBitrateIfEnabled()
         }
         BitrateUtils.BitratePreset.M2 -> setFixedBitrate(engine, pref, BitrateUtils.BITRATE_2M, context)
@@ -589,8 +585,8 @@ private fun setFixedBitrate(
         conn.setBitrate(kbps, object : com.limelight.nvstream.NvConnection.BitrateAdjustmentCallback {
             override fun onSuccess(newBitrate: Int) {
                 pref.bitrate = newBitrate
-                pref.writePreferences(context)
-            }
+                
+                    }
             override fun onFailure(errorMessage: String) {
                 // 服务端拒绝，恢复之前的状态
                 Toast.makeText(context, "码率设置失败: $errorMessage", Toast.LENGTH_SHORT).show()
@@ -604,8 +600,8 @@ private fun onAbrModeSelected(
 ) {
     val pref = engine.prefConfig
     pref.abrMode = mode
-    pref.writePreferences(context)
-}
+    
+                    }
 
 // ══════════════════════════════════════════
 // DE-1: VideoFormatSelector
@@ -668,8 +664,8 @@ private fun VideoFormatSelector(
                         modifier = Modifier.fillMaxWidth()
                             .clickable {
                                 pref.videoFormat = option
-                                pref.writePreferences(context)
-                                engine.displaySettingsRestartPending = true
+                                
+                    engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
                             .padding(vertical = 2.dp),
@@ -678,8 +674,8 @@ private fun VideoFormatSelector(
                             selected = pref.videoFormat == option,
                             onClick = {
                                 pref.videoFormat = option
-                                pref.writePreferences(context)
-                                engine.displaySettingsRestartPending = true
+                                
+                    engine.displaySettingsRestartPending = true
                                 expanded = false
                             }
                         )
@@ -706,13 +702,13 @@ private fun HdrSection(engine: StreamEngine) {
 
     Column {
         SettingSwitch("HDR", hdrEnabled) {
-            hdrEnabled = it; pref.enableHdr = it; pref.writePreferences(context)
-            engine.displaySettingsRestartPending = true
+            hdrEnabled = it; pref.enableHdr = it; 
+                    engine.displaySettingsRestartPending = true
         }
         AnimatedVisibility(visible = hdrEnabled) {
             Column(modifier = Modifier.padding(start = 24.dp)) {
                 SettingSwitch("HDR高亮度", highBrightness) {
-                    highBrightness = it; pref.enableHdrHighBrightness = it; pref.writePreferences(context)
+                    highBrightness = it; pref.enableHdrHighBrightness = it; 
                     engine.displaySettingsRestartPending = true
                 }
                 Spacer(Modifier.height(4.dp))
@@ -812,8 +808,8 @@ private fun ResolutionScaleSelector(
                     onValueChangeFinished = {
                         engine.applyDisplaySettings = true
                         pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
-                        pref.writePreferences(context)
-                        engine.displaySettingsRestartPending = true
+                        
+                    engine.displaySettingsRestartPending = true
                         // 调整完毕自动收起
                         expanded = false
                     },
@@ -884,8 +880,8 @@ private fun OutputBufferSlider(
                     onValueChange = { sliderValue = it },
                     onValueChangeFinished = {
                         pref.outputBufferQueueLimit = sliderValue.toInt().coerceIn(1, 5)
-                        pref.writePreferences(context)
-                        expanded = false
+                        
+                    expanded = false
                     },
                     valueRange = 1f..5f, steps = 3,
                 )
@@ -906,8 +902,8 @@ private fun MtkSwitch(engine: StreamEngine) {
     Column {
         var checked by remember { mutableStateOf(pref.forceMtkMaxOperatingRate) }
         SettingSwitch("MTK专属选项", checked) {
-            checked = it; pref.forceMtkMaxOperatingRate = it; pref.writePreferences(context)
-            engine.displaySettingsRestartPending = true
+            checked = it; pref.forceMtkMaxOperatingRate = it; 
+                    engine.displaySettingsRestartPending = true
         }
         Text(
             "强制MTK解码器高频运行以降低延迟，其它设备可能异常，默认关闭。",
@@ -927,9 +923,12 @@ private fun VideoSwitches(engine: StreamEngine) {
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
-        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+        SettingSwitch("拉伸视频", stretch) { stretch = it; pref.stretchVideo = it; 
+                    ; engine.displaySettingsRestartPending = true }
+        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; 
+                    ; engine.displaySettingsRestartPending = true }
+        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; 
+                    ; engine.displaySettingsRestartPending = true }
     }
 }
 
@@ -998,8 +997,8 @@ private fun FramePacingSelector(
                             .clickable {
                                 expanded = false
                                 pref.framePacing = option.value
-                                pref.writePreferences(context)
-                            }
+                                
+                    }
                             .padding(vertical = 3.dp),
                     ) {
                         RadioButton(
@@ -1075,7 +1074,7 @@ private fun DisplaySection(engine: StreamEngine) {
             })
         }
 
-        var customResSet by remember { mutableStateOf(loadCustomResolutions(context)) }
+        val customResSet = remember { loadCustomResolutions(context) }
 
         val allResolutions = remember {
             val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
@@ -1085,7 +1084,6 @@ private fun DisplaySection(engine: StreamEngine) {
         }
 
         var selectedRes by remember { mutableStateOf("${pref.width}x${pref.height}") }
-        var showCustomDialog by remember { mutableStateOf(false) }
 
         Text("切换分辨率", style = MaterialTheme.typography.labelLarge,
              color = MaterialTheme.colorScheme.primary,
@@ -1093,7 +1091,7 @@ private fun DisplaySection(engine: StreamEngine) {
 
         LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             items(allResolutions) { res ->
-                val cleanRes = res.replace(" (自定义)", "").replace("Native (", "").replace(")", "")
+                val cleanRes = res.replace("Native (", "").replace(")", "")
                 FilterChip(
                     selected = selectedRes == cleanRes,
                     onClick = {
@@ -1103,21 +1101,6 @@ private fun DisplaySection(engine: StreamEngine) {
                     label = { Text(res, style = MaterialTheme.typography.labelSmall) },
                 )
             }
-        }
-
-        TextButton(onClick = { showCustomDialog = true }) {
-            Text("+ 添加自定义分辨率")
-        }
-
-        if (showCustomDialog) {
-            CustomResolutionDialog(
-                onDismiss = { showCustomDialog = false },
-                onConfirm = { width, height ->
-                    saveCustomResolution(context, width, height)
-                    customResSet = loadCustomResolutions(context)
-                    showCustomDialog = false
-                },
-            )
         }
 
         HorizontalDivider(Modifier.padding(vertical = 8.dp))
@@ -1236,7 +1219,7 @@ private fun DisplaySection(engine: StreamEngine) {
                 modifier = Modifier.fillMaxWidth()
                     .clickable {
                         pref.enablePip = !pref.enablePip
-                        pref.writePreferences(context)
+                        
                     }
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -1245,7 +1228,7 @@ private fun DisplaySection(engine: StreamEngine) {
                     checked = pref.enablePip,
                     onCheckedChange = {
                         pref.enablePip = it
-                        pref.writePreferences(context)
+                        
                     },
                 )
                 Spacer(Modifier.width(8.dp))
@@ -1259,37 +1242,19 @@ private fun DisplaySection(engine: StreamEngine) {
     }
 }
 
-private fun loadCustomResolutions(context: Context): List<String> {
-    return context.getSharedPreferences(
-        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
-    ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
-        ?.sortedBy { it } ?: emptyList()
-}
-
 private fun onResolutionSelected(
     engine: StreamEngine, context: android.content.Context,
     res: String,
 ) {
-    // 始终存实际分辨率字符串（如 "2560x1600"），避免旧解析代码对 "Native" 字符串崩溃
-    val actualRes = res
-    val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-    prefs.edit().putString(PreferenceConfiguration.RESOLUTION_PREF_STRING, actualRes).apply()
-    // 标记需要重启，退出面板时统一触发 activity.recreate()
+    // 分辨率切换仅影响当前串流，不持久化
     engine.displaySettingsRestartPending = true
 }
 
-private fun saveCustomResolution(context: android.content.Context, width: Int, height: Int) {
-    val prefs = context.getSharedPreferences(
-        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
-    )
-    val set = prefs.getStringSet(
-        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, mutableSetOf()
-    )?.toMutableSet() ?: mutableSetOf()
-    set.add("${width}x${height}")
-    prefs.edit().putStringSet(
-        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, set
-    ).apply()
-    Toast.makeText(context, "自定义分辨率已保存，请重新选择", Toast.LENGTH_SHORT).show()
+private fun loadCustomResolutions(context: android.content.Context): List<String> {
+    return context.getSharedPreferences(
+        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, android.content.Context.MODE_PRIVATE
+    ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
+        ?.sortedBy { it } ?: emptyList()
 }
 
 @Composable
@@ -1362,8 +1327,8 @@ private fun VddSection(engine: StreamEngine) {
         SettingSwitch("使用外接显示器", useExternal) {
             useExternal = it
             pref.useExternalDisplay = it
-            pref.writePreferences(context)
-        }
+            
+                    }
     }
 }
 
