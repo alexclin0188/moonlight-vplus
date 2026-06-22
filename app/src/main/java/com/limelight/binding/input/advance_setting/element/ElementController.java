@@ -285,16 +285,6 @@ public class ElementController {
                 addElement(contentValues);
             }
         });
-        pageEdit.findViewById(R.id.page_edit_add_simplify_performance).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
-                ContentValues contentValues = SimplifyPerformance.getInitialInfo();
-                contentValues.put(Element.COLUMN_INT_ELEMENT_CENTRAL_X, displayMetrics.widthPixels / 2);
-                contentValues.put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, 30);
-                addElement(contentValues);
-            }
-        });
         pageEdit.findViewById(R.id.page_edit_add_digital_combine_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -505,8 +495,6 @@ public class ElementController {
         } else if (element instanceof WheelPad) {
             ((WheelPad) element).setElementNormalTextColor(color);
             ((WheelPad) element).setElementPressedTextColor(color);
-        } else if (element instanceof SimplifyPerformance) {
-            ((SimplifyPerformance) element).setElementTextColor(color);
         }
     }
 
@@ -584,11 +572,6 @@ public class ElementController {
                 element = new InvisibleDigitalStick(attributesMap,
                         this,
                         pageDeviceController,
-                        context);
-                break;
-            case Element.ELEMENT_TYPE_SIMPLIFY_PERFORMANCE:
-                element = new SimplifyPerformance(attributesMap,
-                        this,
                         context);
                 break;
             case Element.ELEMENT_TYPE_DIGITAL_COMBINE_BUTTON:

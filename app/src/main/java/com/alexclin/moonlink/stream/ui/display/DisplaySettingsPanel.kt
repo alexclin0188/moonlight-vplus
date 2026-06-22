@@ -21,8 +21,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -1089,7 +1090,12 @@ private fun DisplaySection(engine: StreamEngine) {
              color = MaterialTheme.colorScheme.primary,
              modifier = Modifier.padding(bottom = 4.dp))
 
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(4),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             items(allResolutions) { res ->
                 val cleanRes = res.replace("Native (", "").replace(")", "")
                 FilterChip(
@@ -1099,6 +1105,7 @@ private fun DisplaySection(engine: StreamEngine) {
                         onResolutionSelected(engine, context, cleanRes)
                     },
                     label = { Text(res, style = MaterialTheme.typography.labelSmall) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
@@ -1186,21 +1193,14 @@ private fun DisplaySection(engine: StreamEngine) {
                 otherDisplays.forEach { display ->
                     Row(
                         modifier = Modifier.fillMaxWidth()
-                            .clickable {
-                                engine.changeDisplay(display.name, display.guid)
-                            }
                             .padding(vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        RadioButton(selected = false,
-                            onClick = {
-                                engine.changeDisplay(display.name, display.guid)
-                            })
-                        Spacer(Modifier.width(8.dp))
                         Text(display.name, modifier = Modifier.weight(1f))
                         if (display.isPrimary) {
                             Text("[主]", style = MaterialTheme.typography.labelSmall,
-                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                 modifier = Modifier.padding(end = 8.dp))
                         }
                         TextButton(onClick = {
                             engine.changeDisplay(display.name, display.guid)

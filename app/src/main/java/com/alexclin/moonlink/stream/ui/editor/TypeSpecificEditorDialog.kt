@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -84,10 +85,6 @@ fun TypeSpecificEditorDialog(
     var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
     var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
 
-    // SimplifyPerformance 专属状态
-    var perfText by remember(element.elementId) { mutableStateOf(element.text) }
-    var perfTextSize by remember(element.elementId) { mutableStateOf(element.thick.toString()) }
-
     var showKeyPicker by remember { mutableStateOf(false) }
     var directionPickerTarget by remember { mutableStateOf<String?>(null) }
 
@@ -104,15 +101,7 @@ fun TypeSpecificEditorDialog(
             flag1 = flag1.toIntOrNull() ?: element.flag1,
             extraAttributesJson = extraAttributesJson,
         )
-        // SimplifyPerformance 特殊字段
-        return if (element.type == ElementType.SIMPLIFY_PERFORMANCE) {
-            base.copy(
-                text = perfText,
-                thick = perfTextSize.toIntOrNull()?.coerceIn(10, 50) ?: element.thick,
-            )
-        } else {
-            base
-        }
+        return base
     }
 
     Dialog(
@@ -127,7 +116,7 @@ fun TypeSpecificEditorDialog(
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 12.dp,
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
                 // ── 标题行 ──
                 Row(
                     modifier = Modifier
@@ -156,59 +145,6 @@ fun TypeSpecificEditorDialog(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    // ── 简化信息：模板文本编辑 ──
-                    if (element.type == ElementType.SIMPLIFY_PERFORMANCE) {
-                        Text("性能信息模板", style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary)
-                        Spacer(Modifier.height(4.dp))
-                        Text("支持 ##占位符##：##带宽## ##帧率## ##网络延时## ##主机延时## ##解码时间## ##丢帧率## ##渲染延迟##",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(Modifier.height(4.dp))
-                        BasicTextField(
-                            value = perfText,
-                            onValueChange = { perfText = it },
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 12.sp,
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            keyboardOptions = KeyboardOptions.Default,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = 80.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("文字大小", style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.width(56.dp))
-                            Slider(
-                                value = (perfTextSize.toIntOrNull() ?: 30).toFloat(),
-                                onValueChange = { perfTextSize = it.roundToInt().toString() },
-                                valueRange = 10f..50f,
-                                modifier = Modifier.weight(1f).height(20.dp),
-                            )
-                            Text("${perfTextSize.toIntOrNull() ?: 30}",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.width(24.dp))
-                        }
-                        TextButton(onClick = {
-                            perfText = DEFAULT_PERF_TEMPLATE
-                        }) {
-                            Icon(Icons.Default.Refresh, contentDescription = null,
-                                modifier = Modifier.size(14.dp))
-                            Spacer(Modifier.width(4.dp))
-                            Text("恢复默认模板", style = MaterialTheme.typography.labelSmall)
-                        }
-                        Spacer(Modifier.height(8.dp))
-                    }
 
                     // 方向值（十字键/组合键/键盘摇杆）
                     val showDirections = element.type in listOf(
@@ -458,7 +394,6 @@ private fun getDialogTitle(type: ElementType): String = when (type) {
     ElementType.DIGITAL_MOVABLE_BUTTON -> "可移动按键设置"
     ElementType.GROUP_BUTTON -> "组按键设置"
     ElementType.WHEEL_PAD -> "轮盘按键设置"
-    ElementType.SIMPLIFY_PERFORMANCE -> "性能信息设置"
     else -> "专属属性设置"
 }
 

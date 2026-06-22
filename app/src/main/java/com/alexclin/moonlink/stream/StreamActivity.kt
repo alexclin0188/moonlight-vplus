@@ -33,7 +33,6 @@ import com.alexclin.moonlink.stream.ui.StreamOverlay
 import com.alexclin.moonlink.stream.ui.overlay.KeyMappingOverlay
 import com.alexclin.moonlink.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.stream.ui.editor.ElementType
-import com.alexclin.moonlink.stream.ui.editor.buildPerformanceAttrs
 import com.alexclin.moonlink.theme.MoonLinkTheme
 import com.limelight.LimeLog
 import com.limelight.binding.input.KeyboardTranslator
@@ -750,22 +749,6 @@ class StreamActivity : ComponentActivity() {
                         }
                     }
 
-                    // ── SIMPLIFY_PERFORMANCE 性能数据状态 + 定时刷新 ──
-                    var perfMap by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
-                    LaunchedEffect(Unit) {
-                        // 性能数据更新回调
-                        engine.onPerfInfoUpdate = { info ->
-                            perfMap = buildPerformanceAttrs(info)
-                        }
-                        // 每秒刷新（确保 HH:MM:SS 时钟更新）
-                        while (isActive) {
-                            delay(1000)
-                            val info = engine.latestPerfInfo
-                            if (info != null) {
-                                perfMap = buildPerformanceAttrs(info)
-                            }
-                        }
-                    }
 
                     val globalOpacity = engine.configGlobalOpacity
                     val touchEnabled = engine.configTouchEnabled
@@ -782,7 +765,6 @@ class StreamActivity : ComponentActivity() {
                             elements = visibleElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
-                            performanceAttrs = perfMap,
                             globalOpacity = globalOpacity,
                             enabled = touchEnabled,
                             touchSense = touchSense,

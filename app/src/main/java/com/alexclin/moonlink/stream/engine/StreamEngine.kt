@@ -271,14 +271,21 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 Game.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
             )
 
-            // 如果没有指定显示器（Intent 未传、SP 也未恢复），强制关闭 VDD、分辨率缩放和屏幕组合模式
-            // 防止 Sunshine 尝试变更显示拓扑失败 (HTTP 503)
+            // 如果没有指定显示器（Intent 未传、SP 也未恢复），尝试自动选择远端显示器
             if (currentDisplayName == null && displayName == null) {
-                pcUseVdd = false
-                prefConfig.resolutionScale = 100
-                prefConfig.screenCombinationMode = -1
-                prefConfig.vddScreenCombinationMode = -1
-                applyDisplaySettings = false
+                // 查询远端显示器列表，自动选择合适的显示器
+                autoSelectDisplayFromHost()
+                if (currentDisplayName == null) {
+                    // 查询失败或无显示器，强制关闭 VDD、分辨率缩放和屏幕组合模式
+                    pcUseVdd = false
+                    prefConfig.resolutionScale = 100
+                    prefConfig.screenCombinationMode = -1
+                    prefConfig.vddScreenCombinationMode = -1
+                    applyDisplaySettings = false
+                } else {
+                    // 自动选到了显示器，应用显示设置
+                    applyDisplaySettings = true
+                }
             } else {
                 // 有显示器配置：应用用户的分辨率/缩放等显示设置到 Sunshine
                 applyDisplaySettings = true
@@ -802,6 +809,42 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         applyDisplaySettings = true
         isChangingResolution = true
         handler.post { activity.recreate() }
+    }
+
+    /**
+     * 自动从远端主机查询显示器列表，选择合适的显示器设为当前显示器。
+     *
+     * 规则：
+     * - 如果主机只有一台显示器 → 自动选中该显示器
+     * - 如果主机有多台显示器 → 自动选中 is_primary=true 的主显示器
+     * - 查询失败或无显示器 → currentDisplayName 保持 null
+     *
+     * 注意：此方法在 createConnection() 之前调用，因此不能依赖 conn，
+     * 而是使用 Intent 参数直接创建 NvHTTP 实例。
+     */
+    private fun autoSelectDisplayFromHost() {
+        try {
+            val http = NvHTTP(
+                ComputerDetails.AddressTuple(host, port),
+                httpsPort,
+                uniqueId,
+                "",
+                serverCert,
+                PlatformBinding.getCryptoProvider(activity),
+            )
+            val displays = http.getDisplays()
+            if (displays.isEmpty()) return
+
+            val target = when {
+                displays.size == 1 -> displays[0]
+                else -> displays.find { it.isPrimary } ?: displays[0]
+            }
+            currentDisplayName = target.name
+            currentDeviceId = target.guid
+            LimeLog.info("StreamEngine: 自动选择显示器: ${target.name} (isPrimary=${target.isPrimary})")
+        } catch (e: Exception) {
+            LimeLog.warning("StreamEngine: 自动选择显示器失败: ${e.message}")
+        }
     }
 
     /** 切换串流目标显示器，保存选择并重启串流。*/

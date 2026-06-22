@@ -20,7 +20,6 @@ enum class ElementType(val value: Int, val displayName: String) {
     DIGITAL_STICK(31, "数字摇杆"),
     INVISIBLE_ANALOG_STICK(32, "隐形模拟摇杆"),
     INVISIBLE_DIGITAL_STICK(33, "隐形数字摇杆"),
-    SIMPLIFY_PERFORMANCE(50, "性能信息"),
     WHEEL_PAD(54, "滚轮面板"),
     UNKNOWN(-1, "未知");
 
@@ -266,7 +265,6 @@ class EditorState(
             configId = configId,
             type = type,
             text = when (type) {
-                ElementType.SIMPLIFY_PERFORMANCE -> DEFAULT_PERF_TEMPLATE
                 ElementType.WHEEL_PAD -> ""
                 else -> ""
             },
@@ -335,17 +333,13 @@ class EditorState(
             normalColor = 0xF0888888.toInt(),
             pressedColor = 0xF00000FF.toInt(),
             backgroundColor = when (type) {
-                ElementType.SIMPLIFY_PERFORMANCE -> 0xF0555555.toInt()
                 ElementType.WHEEL_PAD -> 0xAA444444.toInt()
                 else -> 0x00FFFFFF
             },
             normalTextColor = 0xFFFFFFFF.toInt(),
             pressedTextColor = 0xFFCCCCCC.toInt(),
             textSizePercent = 25,
-            thick = when (type) {
-                ElementType.SIMPLIFY_PERFORMANCE -> 30
-                else -> 5
-            },
+            thick = 5,
             sense = when {
                 type == ElementType.GROUP_BUTTON -> 1
                 isStick -> 30
@@ -353,7 +347,6 @@ class EditorState(
                 else -> 100
             },
             radius = when {
-                type == ElementType.SIMPLIFY_PERFORMANCE -> 19
                 isStick -> 100
                 else -> 0
             },

@@ -1,7 +1,9 @@
 package com.alexclin.moonlink.stream.ui.panels
 
+import android.app.Activity
 import android.content.ContentValues
 import android.view.KeyEvent
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,7 +75,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.stream.engine.StreamEngine
-import com.alexclin.moonlink.stream.ui.editor.applyResize
 import com.alexclin.moonlink.stream.ui.panels.isSchemeNameDuplicate
 import com.alexclin.moonlink.stream.ui.editor.CanvasCallbacks
 import com.alexclin.moonlink.stream.ui.editor.ColorEditorDialog
@@ -327,6 +329,18 @@ fun KeyMappingEditor(
         editorState.saveElement(finalEl)
     }
 
+    // ── 键盘弹出时仅属性面板上移，画布不动 ──
+    // 临时将窗口 softInputMode 设为 adjustNothing，防止系统自动调整画布大小；
+    // 由 imePadding 仅为属性面板所在的覆盖层添加内边距。
+    val activity = LocalContext.current as? Activity
+    DisposableEffect(Unit) {
+        val originalMode = activity?.window?.attributes?.softInputMode
+        activity?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
+        onDispose {
+            originalMode?.let { activity?.window?.setSoftInputMode(it) }
+        }
+    }
+
     // ── 键盘 Delete 键处理 ──
     DisposableEffect(Unit) {
         val rootView = (context as? android.app.Activity)?.window?.decorView
@@ -426,14 +440,7 @@ fun KeyMappingEditor(
                             }
                         },
                         elementDragEnd = { saveElementOnInteractionEnd(it, snap = true) },
-                        elementResizeStart = { id, _ -> selectedIds = setOf(id) },
-                        elementResize = { id, handle, delta ->
-                            elements = elements.map { el ->
-                                if (el.elementId == id) applyResize(el, handle, delta)
-                                else el
-                            }
-                        },
-                        elementResizeEnd = { saveElementOnInteractionEnd(it, snap = false) },
+
                         canvasTap = {
                             selectedIds = emptySet()
                             showGridSlider = false
@@ -454,7 +461,8 @@ fun KeyMappingEditor(
         //     IDLE（无选中）→ 显示工具栏
         //     SELECTED（有选中）→ 显示精简属性面板，工具栏隐藏
         //     属性面板在屏幕上方或下方取决于按键位置
-        Column(modifier = Modifier.fillMaxSize()) {
+        //     imePadding(): 键盘弹出时属性面板跟随上移，画布不动
+        Column(modifier = Modifier.fillMaxSize().imePadding()) {
             if (hasSelection) {
                 // ── 选中状态：工具栏隐藏，显示属性面板 ──
                 // 按钮在上半屏 → 面板在底部；按钮在下半屏 → 面板在顶部
@@ -1071,7 +1079,6 @@ private fun AddElementMenu(
         MenuItem(ElementType.DIGITAL_STICK, "键盘摇杆"),
         MenuItem(ElementType.INVISIBLE_ANALOG_STICK, "隐藏手柄摇杆"),
         MenuItem(ElementType.INVISIBLE_DIGITAL_STICK, "隐藏键盘摇杆"),
-        MenuItem(ElementType.SIMPLIFY_PERFORMANCE, "简化信息"),
         MenuItem(ElementType.WHEEL_PAD, "轮盘按键"),
         MenuItem(ElementType.GROUP_BUTTON, "组按键"),
         MenuItem(ElementType.DIGITAL_COMBINE_BUTTON, "组合键"),
