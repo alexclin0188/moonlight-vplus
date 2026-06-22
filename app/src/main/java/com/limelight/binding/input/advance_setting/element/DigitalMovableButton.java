@@ -23,7 +23,7 @@ import android.widget.TextView;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.limelight.Game;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.advance_setting.PageDeviceController;
 import com.limelight.binding.input.advance_setting.TouchController;
 import com.limelight.binding.input.advance_setting.superpage.ElementEditText;

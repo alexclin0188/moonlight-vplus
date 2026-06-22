@@ -5,7 +5,7 @@ import androidx.preference.ListPreference
 import android.util.AttributeSet
 
 import com.limelight.Game
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import androidx.core.content.withStyledAttributes
 
 class IconListPreference(context: Context, attrs: AttributeSet?) : ListPreference(context, attrs) {

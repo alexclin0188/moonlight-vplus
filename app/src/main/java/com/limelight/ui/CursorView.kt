@@ -7,7 +7,7 @@ import android.graphics.Paint
 import android.util.AttributeSet
 import android.view.View
 import androidx.core.content.ContextCompat
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class CursorView : View {
 

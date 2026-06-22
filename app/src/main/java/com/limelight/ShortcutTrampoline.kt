@@ -36,6 +36,7 @@ import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
 import java.io.StringReader
 import java.util.UUID
+import com.alexclin.moonlink.android.R
 
 class ShortcutTrampoline : Activity() {
     private var uuidString: String? = null

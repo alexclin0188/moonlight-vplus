@@ -24,7 +24,7 @@ import android.widget.Toast;
 
 import com.limelight.Game;
 import com.limelight.LimeLog;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.ControllerHandler;
 import com.limelight.binding.input.advance_setting.ControllerManager;
 import com.limelight.binding.input.advance_setting.PageDeviceController;

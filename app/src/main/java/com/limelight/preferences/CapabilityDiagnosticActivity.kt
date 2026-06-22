@@ -25,7 +25,7 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.utils.HdrCapabilityHelper
 import com.limelight.utils.UiHelper
 

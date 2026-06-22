@@ -5,7 +5,7 @@ import android.content.Intent
 import android.widget.Toast
 import com.limelight.AppView
 import com.limelight.Game
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.ShortcutTrampoline
 import com.limelight.binding.PlatformBinding
 import com.limelight.computers.ComputerManagerService

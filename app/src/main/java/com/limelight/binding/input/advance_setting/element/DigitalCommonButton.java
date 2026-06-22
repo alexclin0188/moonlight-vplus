@@ -19,7 +19,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.limelight.Game;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.advance_setting.superpage.ElementEditText;
 import com.limelight.binding.input.advance_setting.superpage.NumberSeekbar;
 import com.limelight.binding.input.advance_setting.PageDeviceController;

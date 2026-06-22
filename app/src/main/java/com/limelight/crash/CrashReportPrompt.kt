@@ -17,7 +17,7 @@ import android.widget.Toast
 
 import androidx.core.content.FileProvider
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.preferences.BackgroundSource
 
 import java.security.MessageDigest

@@ -4,7 +4,7 @@ import android.content.Context
 import android.view.View
 import android.widget.FrameLayout
 import com.limelight.Game
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.element.ElementController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper

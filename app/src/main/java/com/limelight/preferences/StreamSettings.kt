@@ -63,7 +63,7 @@ import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.limelight.LimeLog
 import com.limelight.PcView
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.ExternalDisplayManager
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper

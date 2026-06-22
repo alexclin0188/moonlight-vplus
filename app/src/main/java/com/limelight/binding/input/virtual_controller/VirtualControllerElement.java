@@ -14,7 +14,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 
 import org.json.JSONException;
 import org.json.JSONObject;

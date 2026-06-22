@@ -10,7 +10,7 @@ import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import java.util.concurrent.Executors
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 /**
  * 背景图片管理器，用于处理AppView背景图片的平滑切换。

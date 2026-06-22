@@ -9,7 +9,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class AdapterFragment : Fragment() {
     private lateinit var callbacks: AdapterFragmentCallbacks

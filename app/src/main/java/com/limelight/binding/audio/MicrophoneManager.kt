@@ -12,7 +12,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.NvConnection
 import com.limelight.preferences.PreferenceConfiguration
 

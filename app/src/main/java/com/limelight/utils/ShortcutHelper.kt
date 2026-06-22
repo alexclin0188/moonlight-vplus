@@ -9,7 +9,7 @@ import android.graphics.Canvas
 import android.graphics.Rect
 import android.os.Build
 import android.graphics.drawable.Icon
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import java.util.Collections

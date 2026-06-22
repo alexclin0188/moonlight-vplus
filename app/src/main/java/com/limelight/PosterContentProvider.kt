@@ -11,6 +11,7 @@ import android.os.ParcelFileDescriptor
 import com.limelight.grid.assets.DiskAssetLoader
 
 import java.io.FileNotFoundException
+import com.alexclin.moonlink.android.BuildConfig
 
 class PosterContentProvider : ContentProvider() {
 

@@ -6,7 +6,7 @@ import android.util.AttributeSet
 
 import androidx.preference.DialogPreference
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import java.util.Locale
 import kotlin.math.exp

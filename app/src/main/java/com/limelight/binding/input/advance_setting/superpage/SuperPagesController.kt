@@ -7,7 +7,7 @@ import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class SuperPagesController(
     private val superPagesBox: FrameLayout,

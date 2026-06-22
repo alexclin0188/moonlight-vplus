@@ -11,6 +11,7 @@ import java.util.Locale
 
 import com.limelight.binding.input.ControllerHandler
 import kotlin.math.roundToInt
+import com.alexclin.moonlink.android.R
 
 /**
  * Encapsulates the gyro control card logic (right-stick mode and mouse mode).

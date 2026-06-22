@@ -28,6 +28,7 @@ import java.io.ByteArrayInputStream
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import com.alexclin.moonlink.android.R
 
 /**
  * 内嵌 WebView 打开 Sunshine 主机的 Web 管理界面。

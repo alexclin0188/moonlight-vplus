@@ -9,7 +9,7 @@ import android.widget.RemoteViews
 import android.widget.RemoteViewsService
 
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.utils.AppCacheManager

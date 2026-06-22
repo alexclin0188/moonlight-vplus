@@ -2,6 +2,7 @@ package com.limelight
 
 import android.content.Context
 import org.json.JSONArray
+import com.alexclin.moonlink.android.R
 
 /**
  * 快捷按钮动作注册表。

@@ -13,7 +13,7 @@ import android.widget.ListView
 
 import androidx.preference.PreferenceDialogFragmentCompat
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class CustomResolutionsPreferenceDialogFragment : PreferenceDialogFragmentCompat() {
 

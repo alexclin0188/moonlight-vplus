@@ -19,7 +19,7 @@ import android.view.View
 import android.view.WindowManager
 import android.view.animation.OvershootInterpolator
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import java.lang.ref.WeakReference
 import kotlin.math.abs

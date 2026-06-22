@@ -14,7 +14,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.computers.ComputerDatabaseManager
 import com.limelight.nvstream.http.ComputerDetails
 

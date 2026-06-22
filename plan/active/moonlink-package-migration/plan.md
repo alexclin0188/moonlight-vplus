@@ -2,145 +2,233 @@
 
 ## 一、需求概述
 
-将 MoonLink 从原有的 `com.limelight` + `com.alexclin.moonlink` 双包体系迁移到独立的 **`com.alexclin.moonlink.android`** 单包体系，同时：
+将 MoonLink 的构建标识和 `com.alexclin.moonlink` 主包迁移到 `com.alexclin.moonlink.android` 新命名空间，同时：
 
-1. **包名变更**：重新申请全新的 applicationId，作为独立 App 安装（不与旧版共存升级）
-2. **数据库清理**：去掉所有版本升级路径，安装即创建当前 schema
-3. **兼容代码移除**：去掉旧 Crown 桥接层（ControllerManager、syncToControllers 等）
-4. **导入导出精简**：只保留新 `.mkmp` 方案导入导出 + 旧 Crown 按键配置兼容导入
+1. **`com.limelight.*` 保持不动** — 不迁移包名，只处理必要的构建配置和资源文件
+2. **`com.alexclin.moonlink` → `com.alexclin.moonlink.android`** — 主包名迁移
+3. **applicationId 更新** — 全新独立 applicationId
+4. **数据库重置** — 版本号改为 1，删除所有升级路径和导入兼容代码
+5. **兼容代码移除** — 移除旧 Crown 桥接层残留
 
 ---
 
 ## 二、技术方案
 
-### 2.1 包名重命名策略
+### 2.1 构建配置变更
 
-| 旧包名 | 新包名 | 说明 |
-|--------|--------|------|
-| `com.limelight` | `com.alexclin.moonlink.android.limelight` | Moonlight 核心包整体移入新命名空间 |
-| `com.alexclin.moonlink` | `com.alexclin.moonlink.android` | 主包名直接迁移 |
+| 配置项 | 当前值 | 新值 |
+|--------|-------|------|
+| `namespace` | `com.limelight` | `com.alexclin.moonlink.android` |
+| nonRoot `applicationId` | `com.limelight` | `com.alexclin.moonlink.android` |
+| root `applicationId` | `com.limelight.root` | `com.alexclin.moonlink.android.root` |
 
-**涉及文件**：
-- `app/build.gradle` → applicationId、namespace
-- `app/src/main/AndroidManifest.xml` → activity/service/ContentProvider 全类名
-- 各 flavor 的 AndroidManifest（root/nonRoot）
-- 全部 `.kt` / `.java` 源文件（~218 个）的 package 声明 + import
-- `proguard-rules.pro` 中的 -keep 规则（com.limelight / com.alexclin.moonlink 类）
-- `app/src/main/res/xml/` 中涉及包名的配置
+**`namespace` 变更的关键影响**：
+- `R` 资源类将从 `com.limelight.R` 变为 `com.alexclin.moonlink.android.R`
+- 所有 `import com.limelight.R` 必须同步更新为 `import com.alexclin.moonlink.android.R`
+- `AndroidManifest.xml` 中的 `.ClassName` 相对引用将解析到新 namespace 下，需改为全限定类名
 
-**策略**：用 AS Refactor → Rename Package 或手动批量替换，优先保证 R 符号引用正确。
+### 2.2 AndroidManifest 处理
 
-### 2.2 Application ID 设计
+**问题**：`namespace = 'com.alexclin.moonlink.android'` 后，Manifest 中形如 `.Game`、`.PcView` 的引用会解析到新 namespace 下，但实际类仍在 `com.limelight.*` 包中。
 
-| Flavor | 当前 applicationId | 新 applicationId |
-|--------|-------------------|-----------------|
-| nonRoot (主线) | `com.limelight` | `com.alexclin.moonlink.android` |
-| root | `com.limelight.root` | `com.alexclin.moonlink.android.root` |
+**处理方案**：将所有 `.ClassName` 相对引用改为全限定类名。
 
-- 移除 `sharedUserId`（旧版共享 UID 已无意义）
-- 不同 flavor 通过不同的 applicationId 后缀区分
+#### 需要改为全限定类名的条目（共 21 处）
 
-### 2.3 数据库清理
+| # | 当前相对写法 | 目标全限定类名 |
+|---|-------------|--------------|
+| 1 | `.LimelightApplication` | `com.limelight.LimelightApplication` |
+| 2 | `.PosterContentProvider` | `com.limelight.PosterContentProvider` |
+| 3 | `.PcView` | `com.limelight.PcView` |
+| 4 | `.ShortcutTrampoline` | `com.limelight.ShortcutTrampoline` |
+| 5 | `.AppView` | `com.limelight.AppView` |
+| 6 | `.SunshineWebUiActivity` | `com.limelight.SunshineWebUiActivity` |
+| 7 | `.preferences.StreamSettings` | `com.limelight.preferences.StreamSettings` |
+| 8 | `.preferences.CapabilityDiagnosticActivity` | `com.limelight.preferences.CapabilityDiagnosticActivity` |
+| 9 | `.preferences.AddComputerManually` | `com.limelight.preferences.AddComputerManually` |
+| 10 | `.Game` | `com.limelight.Game` |
+| 11 | `.discovery.DiscoveryService` | `com.limelight.discovery.DiscoveryService` |
+| 12 | `.computers.ComputerManagerService` | `com.limelight.computers.ComputerManagerService` |
+| 13 | `.binding.input.driver.UsbDriverService` | `com.limelight.binding.input.driver.UsbDriverService` |
+| 14 | `.services.KeyboardAccessibilityService` | `com.limelight.services.KeyboardAccessibilityService` |
+| 15 | `.services.StreamNotificationService` | `com.limelight.services.StreamNotificationService` |
+| 16 | `.utils.UpdateDownloadReceiver` | `com.limelight.utils.UpdateDownloadReceiver` |
+| 17 | `.HelpActivity` | `com.limelight.HelpActivity` |
+| 18 | `.AppSelectionActivity` | `com.limelight.AppSelectionActivity` |
+| 19 | `.widget.GameListWidgetProvider` | `com.limelight.widget.GameListWidgetProvider` |
+| 20 | `.widget.GameListWidgetService` | `com.limelight.widget.GameListWidgetService` |
+| 21 | `.widget.WidgetConfigurationActivity` | `com.limelight.widget.WidgetConfigurationActivity` |
+
+#### 已为全限定类名无需改的（5 处）
+
+| 当前写法 | 说明 |
+|---------|------|
+| `com.alexclin.moonlink.MoonLinkMainActivity` | 随主包迁移 → `com.alexclin.moonlink.android.MoonLinkMainActivity` |
+| `com.alexclin.moonlink.stream.StreamActivity` | 随主包迁移 → `com.alexclin.moonlink.android.stream.StreamActivity` |
+| `com.google.firebase.provider.FirebaseInitProvider` | 第三方库，不动 |
+| `androidx.core.content.FileProvider` | 平台类，不动 |
+| `com.easytier.jni.EasyTierVpnService` | 独立包，不动 |
+
+#### Flavor manifest
+
+- `app/src/nonRoot/AndroidManifest.xml` — 只有 `android:label`，无类引用，无需修改
+- `app/src/root/AndroidManifest.xml` — 只有 `android:label` + `extractNativeLibs`，无需修改
+
+### 2.3 `com.alexclin.moonlink` 主包迁移
+
+**`com.alexclin.moonlink` → `com.alexclin.moonlink.android`**
+
+- 涉及 ~68 个 Kotlin 源文件
+- 包括：按键映射 UI/引擎、StreamEngine、StreamActivity、新版 Compose 首页等
+- 这些文件原本就在 `com.alexclin.moonlink` 包下，迁移到 `com.alexclin.moonlink.android` 子包
+
+### 2.4 `import com.limelight.R` → `import com.alexclin.moonlink.android.R`
+
+`namespace` 改为 `com.alexclin.moonlink.android` 后，`R` 资源类生成在新包下。
+
+**全局替换即可**，共 **72 处**引用，涉及 **62 个文件**：
+
+#### `com.alexclin.moonlink.*`（4 个文件）
+
+| 文件 | 行号 |
+|------|------|
+| `.../moonlink/home/DeviceListScreen.kt` | 49 |
+| `.../moonlink/home/PairingHelper.kt` | 4 |
+| `.../moonlink/settings/WidgetSettingsScreen.kt` | 21 |
+| `.../moonlink/stream/StreamActivity.kt` | 28 |
+
+#### `com.limelight` 根包（2 个文件）
+
+`CrashReportPrompt.kt:20`, `.../nvstream/NvConnection.kt:28`
+
+#### `com.limelight.binding.*`（16 个文件）
+
+`AudioDiagnostics.kt`, `MicrophoneManager.kt`, `ControllerContext.kt`, `InputCaptureManager.kt`, `UsbDriverService.kt`, `VirtualController.java`, `VirtualControllerElement.java`, `ControllerManager.kt`, `KeyboardUIController.kt`, `ItemPageSuperMenu.kt`, `PageSuperMenuController.kt`, `PageDeviceController.kt`, `PageConfigController.java`, `SuperPagesController.kt`, `NumberSeekbar.kt`, 以及 `ElementController.java`, `DigitalCommonButton.java`, `DigitalSwitchButton.java`, `DigitalMovableButton.java`, `DigitalPad.java`, `DigitalStick.java`, `DigitalCombineButton.java`, `AnalogStick.java`, `GroupButton.java`, `WheelPad.java`, `InvisibleAnalogStick.java`, `InvisibleDigitalStick.java`
+
+#### `com.limelight.preferences.*`（11 个文件）
+
+`StreamSettings.kt`, `SeekBarPreference.kt`, `SeekBarPreferenceDialogFragment.kt`, `IconListPreference.kt`, `IconListPreferenceDialogFragment.kt`, `AboutDialogPreference.kt`, `PerfOverlayDisplayItemsPreference.kt`, `CustomResolutionsPreference.kt`, `CustomResolutionsPreferenceDialogFragment.kt`, `ConfirmDeleteOscPreference.kt`, `ConfirmDeleteOscDialogFragment.kt`, `DynamicPerfOverlayPositionPreference.kt`, `AddComputerManually.kt`, `CapabilityDiagnosticActivity.kt`
+
+#### `com.limelight.ui.*`（3 个文件）
+
+`AdapterFragment.kt:12`, `CursorView.kt:10`, `FloatBallManager.kt:22`
+
+#### `com.limelight.utils.*`（13 个文件）
+
+`UpdateManager.kt:27`, `UiHelper.kt:21`, `TvChannelHelper.kt:22`, `SpinnerDialog.kt:8`, `ShortcutHelper.kt:12`, `ServerHelper.kt:8`, `Dialog.kt:16`, `ColorPickerDialog.kt:27`, `BackgroundImageManager.kt:13`, `Iperf3Tester.kt:20`, `FullscreenProgressOverlay.kt:13`, `EasyTierController.kt:23`, `AppSettingsManager.kt:8`
+
+#### 其他
+
+`.../dialogs/AddressSelectionDialog.kt:14`, `.../widget/WidgetConfigurationActivity.kt:17`, `.../widget/GameListWidgetProvider.kt:14`, `.../widget/GameListRemoteViewsFactory.kt:12`, `.../services/StreamNotificationService.kt:20`, `.../grid/GenericGridAdapter.kt:11`, `.../grid/PcGridAdapter.kt:22`, `.../grid/AppGridAdapter.kt:13`, `.../grid/assets/CachedAppAssetLoader.kt:17`
+
+### 2.5 数据库重置
 
 **文件**：`com/limelight/binding/input/advance_setting/sqlite/SuperConfigDatabaseHelper.java`
 
-**变更**：
-```java
-// DATABASE_VERSION 从 11 重置为 1（全新起点）
-// 删除以下旧版本常量：
-//   DATABASE_VERSION_1 ~ DATABASE_VERSION_6
-//   OLD_BUTTON_RELATION_NAME, OLD_ELEMENT_RELATION_NAME 等
-// 删除整个 onUpgrade() 方法
-// onCreate() 保持当前 V11 schema 创建逻辑不变（只是 VERSION 改为 1）
-```
+从旧版本继承的数据库需要全新开始：
 
-**保留**：`upgradeExportedConfig()` 方法（用于导入旧 Crown 配置时进行兼容转换）
+| 项目 | 旧值 | 新值 |
+|------|------|------|
+| `DATABASE_VERSION` | **11** | **1** |
+| `DATABASE_OLD_VERSION_1~6`, `DATABASE_OLD_VERSION_10` | 存在 | 全部删除 |
+| `onUpgrade()` | 完整的 v1→v11 增量升级链（~60 行） | 空方法体 |
+| `upgradeExportedConfig()` | 导入文件版本兼容升级逻辑（~100 行） | **整个方法删除** |
+| `importConfig()`/`mergeConfig()` | 调用 `upgradeExportedConfig()` 兼容旧文件 | 改为校验版本号精确等于 1，否则返回 -3 |
+| `onCreate()` | 已有完整 v11 schema（所有字段） | **保持不变** |
 
-> ⚠️ 注意：删除 `onUpgrade()` 后，如果数据库版本变化需要迁移，新版应使用 `androidx.sqlite.db.SupportSQLiteOpenDB.Callback.onUpgrade` 的 onUpgrade-dispatched 方式，或直接让旧数据不可用。
+**`onCreate()` schema 完整性验证**：逐列比对确认 `onCreate()` 已包含 `onUpgrade()` 中所有增量添加的字段：
 
-### 2.4 兼容代码移除清单
+element 表追加的列：
+- v6 添加 `COLUMN_INT_ELEMENT_FLAG1` → ✅ `onCreate()` 已有
+- v7 添加字体颜色/大小三列 → ✅ `onCreate()` 已有
+- v8 添加 `extra_attributes` → ✅ `onCreate()` 已有
 
-| 文件 | 移除内容 | 影响 |
-|------|---------|------|
-| `ControllerManager.kt` | **整个文件**（~150 行，旧 Crown 桥接器） | `StreamEngine` 中引用需更新 |
-| `StreamEngine.kt` | `controllerManager` 属性 + `initializeControllerManager()` 方法 | 删除后检查调用点 |
-| `SchemeUtils.kt` | `syncToControllers()` 方法 | 删除后检查调用点 |
-| `ElementController.kt` | **整个文件**（旧版控制层） | 如果有其他引用需追查 |
-| `KeyMappingScreen.kt` / 选单相关 | 旧版本选单选项 | 界面选项精简 |
-| 旧列名 fallback 代码 | `getColumnIndex()` 回退逻辑 | 数据库已无旧列名 |
+config 表追加的列：
+- v3 添加 `game_vibrator`, `button_vibrator` → ✅ `onCreate()` 已有
+- v4 添加 `mouse_wheel_speed` → ✅ `onCreate()` 已有
+- v5 添加 `enhanced_touch` → ✅ `onCreate()` 已有
+- v9 添加全局样式三列 → ✅ `onCreate()` 已有
+- v10 添加 `scheme_type` + 6 个 OSC 列 → ✅ `onCreate()` 已有
 
-**甄别原则**：
-- 被 `@Deprecated` 标记且说明"仅避免旧代码编译错误"的 → 删除
-- 旧 Crown 对接代码（controllerManager 桥接） → 删除
-- 旧版本 UI 入口（"旧版本按键映射方案"等） → 删除
-- 按键映射新功能核心代码 → **保留**（`SchemeEngine`, `SubPanelContainer`, `SchemeEditActivity` 等）
+### 2.6 JNI 约束（自动满足）
 
-### 2.5 导入/导出精简
+由于 `com.limelight.*` 下所有类 **不迁移**，JNI 相关文件天然不受影响：
 
-**文件**：`com.alexclin.moonlink.stream.ui.editor.SchemeImportExport.kt`
-
-| 功能 | 处理 |
+| 文件 | 说明 |
 |------|------|
-| 新 `.mkmp` 方案导出 | **保留**（当前实现，JSON 格式） |
-| 新 `.mkmp` 方案导入 | **保留** |
-| 旧 Crown `.mdat` 导入（按键配置部分） | **保留**（兼容旧版本导入） |
-| 旧 Crown `.mdat` 导出 | **删除** |
-| 旧版本 scheme 列表管理 UI | **删除**多余的选单条目 |
+| `.../jni/moonlight-core/callbacks.c` | `Java_com_limelight_nvstream_jni_MoonBridge_*` + `FindClass("com/limelight/...")` → 不动 |
+| `.../jni/moonlight-core/simplejni.c` | 30 个 `Java_com_limelight_nvstream_jni_MoonBridge_*` → 不动 |
+| `.../jni/moonlight-core/OpusEncoder.c` | 3 个 `Java_com_limelight_binding_audio_OpusEncoder_native*` → 不动 |
+| `.../jni/moonlight-core/bass_energy_bridge.cpp` | 纯 C++ 计算，无 JNI 函数签名 → 不动 |
+| `.../nvstream/jni/MoonBridge.java` | 包名 `com.limelight.nvstream.jni` 不变 |
+| `.../binding/audio/OpusEncoder.kt` | 包名 `com.limelight.binding.audio` 不变 |
+| `.../jni/Android.mk` + `Application.mk` | 构建配置 → 不动 |
+| `.../jni/moonlight-core/Android.mk` | 构建配置 → 不动 |
+| `.../jni/evdev_reader/Android.mk` | 构建配置 → 不动 |
+
+### 2.7 兼容代码移除清单
+
+| 文件 | 移除内容 | 说明 |
+|------|---------|------|
+| `StreamEngine.kt` | `controllerManager` 属性 + `initializeControllerManager()` | 已为 `@Deprecated` 空实现 |
+| `SchemeUtils.kt` | `syncToControllers()` 方法 | 已为 `@Deprecated`，有替代方法 |
+| `KeyMappingScreen.kt` / 选单相关 | 旧版本选单选项 | 界面 UI 精简 |
+
+**`com.limelight.*` 下的类（Game.kt、ControllerManager.kt、ElementController.java 等）均保持不动。**
+
+### 2.8 ProGuard 规则更新
+
+`proguard-rules.pro` 中的 `-keep class com.limelight.**` 规则 **不需要修改**（`com.limelight.*` 类未迁移）。但如果 namespace 变更影响到混淆规则中的引用路径，需同步检查。
 
 ---
 
-## 三、执行顺序（按 batch）
+## 三、执行顺序
 
-### Batch 1: 包名重命名基础层
-1. 修改 `app/build.gradle`（applicationId、namespace、依赖 path）
-2. 批量替换 `com.limelight` → `com.alexclin.moonlink.android.limelight`
-3. 批量替换 `com.alexclin.moonlink` → `com.alexclin.moonlink.android`
-4. 更新 AndroidManifest.xml（所有 flavor + 非 root/root）
-5. 更新 proguard-rules.pro
-6. 合并/重建 Application 类
-7. 清理 SharedPreferences keys（旧包名 `com.limelight` 前缀改为新包名）
+### Batch 1: 构建配置 + 包名基础
+1. 修改 `app/build.gradle`：`namespace` → `com.alexclin.moonlink.android`，`applicationId` 按 flavor 更新
+2. 更新 AndroidManifest.xml 中 21 处 `.ClassName` → 全限定名（详见 2.2 清单）
+3. `com.alexclin.moonlink` → `com.alexclin.moonlink.android`（~68 个源文件）
+4. 全局替换 `import com.limelight.R` → `import com.alexclin.moonlink.android.R`（72 处，详见 2.4 清单）
+5. 更新 flavor 的 AndroidManifest（nonRoot/root 中的字符串引用）
 
-### Batch 2: 数据库清理
-1. 删除 `SuperConfigDatabaseHelper.onUpgrade()` + 旧版本常量
-2. 确认 `onCreate()` 正确创建当前 v11 schema
-3. 确认 `upgradeExportedConfig()` 保留且可用
+### Batch 2: 数据库重置
+1. `SuperConfigDatabaseHelper.java`：`DATABASE_VERSION=11` → `1`
+2. 删除旧版本常量 `DATABASE_OLD_VERSION_1~6`、`DATABASE_OLD_VERSION_10`
+3. 删除 `onUpgrade()` 方法体（保留空桩）
+4. 删除 `upgradeExportedConfig()` 整个方法
+5. 修改 `importConfig()`/`mergeConfig()` — 版本校验改为精确等于 1 而不是调用升级逻辑
+6. `onCreate()` 保持原样（已有完整 schema）
 
-### Batch 3: 兼容代码移除
-1. 删除 `ControllerManager.kt`
-2. 清理 `StreamEngine.kt`（controllerManager + initializeControllerManager）
-3. 清理 `SchemeUtils.kt`（syncToControllers）
-4. 清理选单 UI 选项
+### Batch 3: 兼容代码清理
+1. `StreamEngine.kt`：删除 `controllerManager` + `initializeControllerManager()`
+2. `SchemeUtils.kt`：删除 `syncToControllers()`
+3. 精简旧选单 UI
 
-### Batch 4: 导入导出精简
-1. 删除 `.mdat` 导出功能
-2. 精简 `SchemeImportExport.kt`
-3. 精简旧版本方案管理 UI
-
-### Batch 5: 全局验证
+### Batch 4: 全局验证
 1. IDE 编译全项目
-2. 检查 R 资源符号引用
-3. 安装测试
-4. 数据库初始化测试
-5. 旧配置导入测试
+2. 检查 R 资源引用
+3. 检查所有 Manifest 类名引用正确
+4. 安装测试 + 数据库初始化测试
 
 ---
 
 ## 四、风险与注意事项
 
-1. **包名重命名风险**：R 符号在重构后可能失效，建议用 AS 的 Refactor → Rename Package 自动处理
-2. **SharedPreferences 清空**：旧 `com.limelight_preferences` 下的数据在新包名下不可见，用户需要重新配置
-3. **旧配置导入兼容**：旧 Crown 导出的 `.mdat` 文件需要在升级后的 `upgradeExportedConfig()` 中正确转换
-4. **ProGuard 混淆**：如果打开了混淆，需要确保新包名下的所有 GameStream 协议类不被混淆
-5. **不再支持共存升级**：旧版用户如果安装新版，是两个完全独立的 App（新旧 data 目录隔离）
+1. **`R` 资源引用**：`namespace` 变更后所有 `import com.limelight.R` 都必须改为 `com.alexclin.moonlink.android.R`，遗漏将导致编译错误
+2. **Manifest 类名**：所有 activity/service/receiver 的 `android:name` 改为全限定名后，后续新增组件需注意使用全路径
+3. **SharedPreferences 清空**：旧 `com.limelight_preferences` 数据在新 App 中不可见
+4. **不能再覆盖安装**：新的 applicationId 意味着新 App 与旧版完全隔离
+5. **旧导出文件不可导入**：数据库版本重置为 1 后，旧 Crown 导出的文件（version=9/10/11）将因版本号不匹配被拒绝导入
 
 ---
 
 ## 五、验收标准
 
-- [x] 编译通过，无错误
-- [x] 安装到设备后 App 能正常启动
-- [x] 数据库首次创建无异常（`DATABASE_VERSION = 1`，无 `onUpgrade`）
-- [x] 旧 Crown `.mdat` 配置文件可导入新版
-- [x] 新 `.mkmp` 方案可正常导入导出
-- [x] 所有 `@Deprecated` 兼容代码已移除
-- [x] 包名在所有配置（Manifest、ProGuard、flavor、resources）中一致
+- [ ] 编译通过，无错误
+- [ ] 安装到设备后 App 能正常启动
+- [ ] `com.limelight.*` 类未迁移，保持原包名
+- [ ] JNI 入口和 C 函数签名未做任何改动
+- [ ] AndroidManifest 中所有类名使用全限定名
+- [ ] 数据库首次创建无异常（`DATABASE_VERSION = 1`，无 `onUpgrade`，无 `upgradeExportedConfig`）
+- [ ] 所有 `@Deprecated` 兼容代码已移除
+- [ ] `import com.limelight.R` 已全部替换为 `com.alexclin.moonlink.android.R`

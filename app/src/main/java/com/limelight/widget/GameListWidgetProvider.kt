@@ -11,7 +11,7 @@ import android.net.Uri
 import android.widget.RemoteViews
 
 import com.limelight.AppSelectionActivity
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.ShortcutTrampoline
 
 class GameListWidgetProvider : AppWidgetProvider() {

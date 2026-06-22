@@ -12,7 +12,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.widget.TextView
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class AboutDialogPreference : Preference {
 

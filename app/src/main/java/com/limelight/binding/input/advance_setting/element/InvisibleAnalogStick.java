@@ -21,7 +21,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.limelight.Game;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.advance_setting.PageDeviceController;
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper;
 import com.limelight.binding.input.advance_setting.superpage.ElementEditText;

@@ -7,7 +7,7 @@ import android.widget.LinearLayout
 import android.widget.Toast
 
 import com.limelight.Game
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.advance_setting.element.ElementController
 import com.limelight.binding.input.advance_setting.superpage.SuperPageLayout
 import com.limelight.binding.input.advance_setting.superpage.SuperPagesController

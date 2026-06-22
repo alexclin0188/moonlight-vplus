@@ -18,7 +18,7 @@ import android.view.View
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.preferences.PreferenceConfiguration
 import java.util.Locale

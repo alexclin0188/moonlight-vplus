@@ -19,7 +19,7 @@ import androidx.preference.PreferenceManager
 
 import com.limelight.LimeLog
 import com.limelight.PcView
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP

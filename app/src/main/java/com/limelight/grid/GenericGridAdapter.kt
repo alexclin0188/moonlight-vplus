@@ -8,7 +8,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.TextView
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 abstract class GenericGridAdapter<T>(
     protected val context: Context,

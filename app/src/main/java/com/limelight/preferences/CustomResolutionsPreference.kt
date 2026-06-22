@@ -9,7 +9,7 @@ import android.widget.*
 
 import androidx.preference.DialogPreference
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import java.util.regex.Pattern
 

@@ -24,7 +24,7 @@ import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import org.json.JSONObject
 

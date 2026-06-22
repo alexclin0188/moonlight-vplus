@@ -8,7 +8,7 @@ import android.widget.ImageView
 import androidx.appcompat.app.AlertDialog
 import androidx.preference.ListPreference
 import androidx.preference.PreferenceDialogFragmentCompat
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class IconListPreferenceDialogFragment : PreferenceDialogFragmentCompat() {
 

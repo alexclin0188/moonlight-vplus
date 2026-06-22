@@ -6,7 +6,7 @@ import androidx.preference.ListPreference
 import androidx.preference.PreferenceManager
 import android.util.AttributeSet
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class DynamicPerfOverlayPositionPreference : ListPreference {
 

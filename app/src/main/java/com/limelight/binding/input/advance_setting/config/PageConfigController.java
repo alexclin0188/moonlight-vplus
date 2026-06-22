@@ -20,7 +20,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.limelight.Game; // 确保导入 Game 类
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.advance_setting.ControllerManager;
 import com.limelight.binding.input.advance_setting.element.ElementController;
 import com.limelight.binding.input.advance_setting.superpage.ElementEditText;

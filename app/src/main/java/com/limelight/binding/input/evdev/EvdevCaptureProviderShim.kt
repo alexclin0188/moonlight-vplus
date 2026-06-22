@@ -1,7 +1,7 @@
 package com.limelight.binding.input.evdev
 
 import android.app.Activity
-import com.limelight.BuildConfig
+import com.alexclin.moonlink.android.BuildConfig
 import com.limelight.binding.input.capture.InputCaptureProvider
 
 object EvdevCaptureProviderShim {

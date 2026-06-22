@@ -19,7 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import com.limelight.LimeLog;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.ControllerHandler;
 
 import java.util.ArrayList;

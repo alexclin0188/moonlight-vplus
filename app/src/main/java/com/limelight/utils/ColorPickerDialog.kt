@@ -24,7 +24,7 @@ import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import kotlin.math.max
 import kotlin.math.min
 

@@ -3,7 +3,7 @@ package com.limelight.binding.video
 import android.media.MediaCodec.CodecException
 import android.media.MediaCodecInfo
 import android.os.Build
-import com.limelight.BuildConfig
+import com.alexclin.moonlink.android.BuildConfig
 import java.util.Objects
 
 /**

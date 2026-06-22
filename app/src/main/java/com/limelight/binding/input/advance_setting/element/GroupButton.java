@@ -24,7 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.limelight.Game;
-import com.limelight.R;
+import com.alexclin.moonlink.android.R;
 import com.limelight.binding.input.advance_setting.superpage.ElementEditText;
 import com.limelight.binding.input.advance_setting.superpage.NumberSeekbar;
 import com.limelight.binding.input.advance_setting.PageDeviceController;

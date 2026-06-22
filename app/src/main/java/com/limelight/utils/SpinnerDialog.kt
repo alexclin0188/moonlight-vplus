@@ -5,7 +5,7 @@ import android.app.Activity
 import android.app.ProgressDialog
 import android.content.DialogInterface
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class SpinnerDialog private constructor(
     private val activity: Activity,

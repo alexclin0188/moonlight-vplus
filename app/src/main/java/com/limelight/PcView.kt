@@ -1,6 +1,7 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
 
+import com.alexclin.moonlink.android.R
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream

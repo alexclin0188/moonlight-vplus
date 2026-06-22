@@ -1,0 +1,508 @@
+package com.alexclin.moonlink.android.stream.ui.editor
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import org.json.JSONObject
+import kotlin.math.roundToInt
+
+/**
+ * 全屏类型专属属性设置对话框。
+ * 根据 [element] 的 [ElementType] 展示不同类型的属性：
+ * - 十字键/组合键/键盘摇杆：方向值 ↑↓←→
+ * - 摇杆类：中值 + 灵敏度
+ * - 可移动按键：模式 + 灵敏度 + 触控板模式
+ * - 组按键：子按键管理入口 + 子元素可见性 + 隐藏标志 + 可拖拽/永久独立开关
+ * - 轮盘按键：分段数 + 分段编辑入口
+ * - 简化信息：模板文本编辑 + 字号 + 恢复默认
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TypeSpecificEditorDialog(
+    element: EditorElement,
+    allElements: List<EditorElement> = emptyList(),
+    onSave: (EditorElement) -> Unit,
+    onDismiss: () -> Unit,
+    onManageChildren: (() -> Unit)? = null,
+    onManageSegments: (() -> Unit)? = null,
+) {
+    // 本地可编辑状态
+    var mode by remember(element.elementId) { mutableStateOf(element.mode.toString()) }
+    var sense by remember(element.elementId) { mutableStateOf(element.sense.toString()) }
+    var middleValue by remember(element.elementId) { mutableStateOf(element.middleValue) }
+    var upValue by remember(element.elementId) { mutableStateOf(element.upValue) }
+    var downValue by remember(element.elementId) { mutableStateOf(element.downValue) }
+    var leftValue by remember(element.elementId) { mutableStateOf(element.leftValue) }
+    var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
+    var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
+    var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
+
+    var showKeyPicker by remember { mutableStateOf(false) }
+    var directionPickerTarget by remember { mutableStateOf<String?>(null) }
+
+    // 构建更新后的元素
+    fun buildUpdated(): EditorElement {
+        val base = element.copy(
+            mode = mode.toIntOrNull() ?: element.mode,
+            sense = sense.toIntOrNull()?.coerceIn(0, 500) ?: element.sense,
+            middleValue = middleValue,
+            upValue = upValue,
+            downValue = downValue,
+            leftValue = leftValue,
+            rightValue = rightValue,
+            flag1 = flag1.toIntOrNull() ?: element.flag1,
+            extraAttributesJson = extraAttributesJson,
+        )
+        return base
+    }
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.85f)
+                .fillMaxSize(0.6f),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp),
+            shadowElevation = 12.dp,
+        ) {
+            Column(modifier = Modifier.fillMaxSize().imePadding()) {
+                // ── 标题行 ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(getDialogTitle(element.type),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f))
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
+                        Icon(Icons.Default.Close, contentDescription = "关闭",
+                            modifier = Modifier.size(20.dp))
+                    }
+                }
+
+                HorizontalDivider()
+
+                // ── 类型专属属性区域 ──
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+
+                    // 方向值（十字键/组合键/键盘摇杆）
+                    val showDirections = element.type in listOf(
+                        ElementType.DIGITAL_PAD,
+                        ElementType.DIGITAL_COMBINE_BUTTON,
+                        ElementType.DIGITAL_STICK,
+                        ElementType.INVISIBLE_DIGITAL_STICK,
+                    )
+                    if (showDirections) {
+                        Text("方向键值", style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.height(4.dp))
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            DirectionValueField("↑", upValue,
+                                onClick = { directionPickerTarget = "up" })
+                            DirectionValueField("↓", downValue,
+                                onClick = { directionPickerTarget = "down" })
+                            DirectionValueField("←", leftValue,
+                                onClick = { directionPickerTarget = "left" })
+                            DirectionValueField("→", rightValue,
+                                onClick = { directionPickerTarget = "right" })
+                        }
+                        Spacer(Modifier.height(8.dp))
+                    }
+
+                    // 摇杆中值 + 灵敏度
+                    if (element.type in listOf(
+                            ElementType.ANALOG_STICK,
+                            ElementType.DIGITAL_STICK,
+                            ElementType.INVISIBLE_ANALOG_STICK,
+                            ElementType.INVISIBLE_DIGITAL_STICK,
+                        )) {
+                        PropertyRow("中值") {
+                            SmallTextField(value = middleValue, onValueChange = { middleValue = it },
+                                modifier = Modifier.weight(1f))
+                        }
+                        PropertyRow("灵敏度") {
+                            SmallIntField(value = sense, onValueChange = { sense = it },
+                                modifier = Modifier.width(80.dp))
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+
+                    // 可移动按键模式 + 触控板模式
+                    if (element.type == ElementType.DIGITAL_MOVABLE_BUTTON) {
+                        PropertyRow("模式 (0=按钮,1=摇杆)") {
+                            SmallIntField(value = mode, onValueChange = { mode = it },
+                                modifier = Modifier.width(80.dp))
+                        }
+                        PropertyRow("灵敏度") {
+                            SmallIntField(value = sense, onValueChange = { sense = it },
+                                modifier = Modifier.width(80.dp))
+                        }
+                        // 触控板模式开关
+                        PropertyRow("触控板模式") {
+                            val isTrackpad = try {
+                                JSONObject(extraAttributesJson).optBoolean("isTrackpadMode", false)
+                            } catch (_: Exception) { false }
+                            var checked by remember(element.elementId) { mutableStateOf(isTrackpad) }
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    try {
+                                        val jo = JSONObject(extraAttributesJson)
+                                        jo.put("isTrackpadMode", it)
+                                        extraAttributesJson = jo.toString()
+                                        // 触控板模式下 mode 固定为 0
+                                        if (it) mode = "0"
+                                    } catch (_: Exception) {}
+                                },
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+
+                    // 组按键
+                    if (element.type == ElementType.GROUP_BUTTON) {
+                        // 子元素可见性（用 sense 字段存储）
+                        PropertyRow("子元素可见") {
+                            val visible = (sense.toIntOrNull() ?: 1) == 1
+                            var checked by remember(element.elementId) { mutableStateOf(visible) }
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    sense = if (it) "1" else "0"
+                                },
+                            )
+                        }
+                        // 子按键管理
+                        val childCount = element.value
+                            .split(",")
+                            .mapNotNull { it.trim().toLongOrNull() }
+                            .count { it != -1L }
+                        PropertyRow("子按键") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    if (childCount > 0) "${childCount} 个" else "无",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (childCount > 0) MaterialTheme.colorScheme.onSurface
+                                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                if (onManageChildren != null) {
+                                    TextButton(onClick = onManageChildren) {
+                                        Text(
+                                            if (childCount > 0) "管理" else "添加",
+                                            style = MaterialTheme.typography.labelSmall,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        // 隐藏标志（Switch 代替数字输入）
+                        PropertyRow("隐藏本按钮") {
+                            val hidden = (flag1.toIntOrNull() ?: 0) == 1
+                            var checked by remember(element.elementId) { mutableStateOf(hidden) }
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    flag1 = if (it) "1" else "0"
+                                },
+                            )
+                        }
+                        // 可拖拽
+                        PropertyRow("可拖拽") {
+                            val movable = try {
+                                JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
+                            } catch (_: Exception) { false }
+                            var checked by remember(element.elementId) { mutableStateOf(movable) }
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    try {
+                                        val jo = JSONObject(extraAttributesJson)
+                                        jo.put("movableInNormalMode", it)
+                                        extraAttributesJson = jo.toString()
+                                    } catch (_: Exception) {}
+                                },
+                            )
+                        }
+                        // 永久独立
+                        PropertyRow("永久独立") {
+                            val independent = try {
+                                JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
+                            } catch (_: Exception) { false }
+                            var checked by remember(element.elementId) { mutableStateOf(independent) }
+                            Switch(
+                                checked = checked,
+                                onCheckedChange = {
+                                    checked = it
+                                    try {
+                                        val jo = JSONObject(extraAttributesJson)
+                                        jo.put("isPermanentlyIndependent", it)
+                                        extraAttributesJson = jo.toString()
+                                    } catch (_: Exception) {}
+                                },
+                            )
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+
+                    // 轮盘按键
+                    if (element.type == ElementType.WHEEL_PAD) {
+                        PropertyRow("分段数") {
+                            Column {
+                                Slider(
+                                    value = (mode.toIntOrNull() ?: 8).toFloat(),
+                                    onValueChange = { mode = it.roundToInt().toString() },
+                                    valueRange = 2f..24f,
+                                    steps = 21,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text("${mode.toIntOrNull() ?: 8} 段",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        if (onManageSegments != null) {
+                            PropertyRow("分段编辑") {
+                                TextButton(onClick = onManageSegments) {
+                                    Text("编辑分段", style = MaterialTheme.typography.labelSmall)
+                                }
+                            }
+                        }
+                        Spacer(Modifier.height(4.dp))
+                    }
+                }
+
+                HorizontalDivider()
+
+                // ── 底部按钮 ──
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("取消", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    TextButton(onClick = { onSave(buildUpdated()) }) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("保存", style = MaterialTheme.typography.labelMedium)
+                    }
+                }
+            }
+        }
+    }
+
+    // ── 键值选择器弹窗（方向值用） ──
+    val directionTarget = directionPickerTarget
+    if (directionTarget != null) {
+        KeyValuePickerDialog(
+            onSelect = { selectedValue, _ ->
+                when (directionTarget) {
+                    "up" -> upValue = selectedValue
+                    "down" -> downValue = selectedValue
+                    "left" -> leftValue = selectedValue
+                    "right" -> rightValue = selectedValue
+                }
+                directionPickerTarget = null
+            },
+            onDismiss = { directionPickerTarget = null },
+        )
+    }
+}
+
+private fun getDialogTitle(type: ElementType): String = when (type) {
+    ElementType.DIGITAL_PAD -> "方向键设置"
+    ElementType.ANALOG_STICK, ElementType.DIGITAL_STICK,
+    ElementType.INVISIBLE_ANALOG_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "摇杆设置"
+    ElementType.DIGITAL_COMBINE_BUTTON -> "组合键设置"
+    ElementType.DIGITAL_MOVABLE_BUTTON -> "可移动按键设置"
+    ElementType.GROUP_BUTTON -> "组按键设置"
+    ElementType.WHEEL_PAD -> "轮盘按键设置"
+    else -> "专属属性设置"
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// 辅助组件（与 EditorPropertiesPanel.kt 中相同，同包下 internal 化以便复用）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** 带标签的行布局 */
+@Composable
+internal fun PropertyRow(
+    label: String,
+    content: @Composable () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(64.dp))
+        content()
+    }
+}
+
+/** 小型文字输入框 */
+@Composable
+internal fun SmallTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions.Default,
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    )
+}
+
+/** 小型整数输入框 */
+@Composable
+internal fun SmallIntField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BasicTextField(
+        value = value,
+        onValueChange = { newVal ->
+            if (newVal.isEmpty() || newVal.all { it.isDigit() || it == '-' }) {
+                onValueChange(newVal)
+            }
+        },
+        singleLine = true,
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = 13.sp,
+        ),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        modifier = modifier
+            .clip(RoundedCornerShape(4.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    )
+}
+
+/** 可点击的方向值字段（↑↓←→），点击后打开键值选择器 */
+@Composable
+internal fun DirectionValueField(
+    label: String,
+    value: String,
+    onClick: () -> Unit,
+) {
+    val keyLabel = getKeyLabelByValue(value)
+    Column(modifier = Modifier.width(64.dp)) {
+        Text(label, style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 6.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (value.isNotEmpty()) (keyLabel ?: value) else "-",
+                style = TextStyle(
+                    color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                ),
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}

@@ -12,6 +12,7 @@ import com.limelight.utils.Dialog
 import com.limelight.utils.ServerHelper
 import com.limelight.utils.ShortcutHelper
 import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.R
 
 /**
  * NvConnectionListener 回调实现和连接停止逻辑。

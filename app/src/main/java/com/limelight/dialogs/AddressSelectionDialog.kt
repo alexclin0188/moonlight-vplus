@@ -11,7 +11,7 @@ import android.widget.BaseAdapter
 import android.widget.ImageView
 import android.widget.ListView
 import android.widget.TextView
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 
 class AddressSelectionDialog(

@@ -2,7 +2,7 @@ package com.limelight.binding.audio
 
 import android.content.Context
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import java.util.concurrent.atomic.AtomicLong
 

@@ -19,7 +19,7 @@ import androidx.tvprovider.media.tv.TvContractCompat
 
 import com.limelight.LimeLog
 import com.limelight.PosterContentProvider
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 

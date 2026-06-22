@@ -18,7 +18,7 @@ import android.view.InputDevice
 import android.widget.Toast
 
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.preferences.PreferenceConfiguration
 
 class UsbDriverService : Service(), UsbDriverListener {

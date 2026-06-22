@@ -14,6 +14,7 @@ import android.widget.Toast
 
 import com.limelight.nvstream.NvConnection
 import androidx.core.content.edit
+import com.alexclin.moonlink.android.R
 
 /**
  * Encapsulates the bitrate adjustment card logic shown in the Game Menu dialog.

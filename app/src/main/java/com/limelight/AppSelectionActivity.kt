@@ -1,5 +1,6 @@
 package com.limelight
 
+import com.alexclin.moonlink.android.R
 import android.app.Activity
 import android.content.ComponentName
 import android.content.Intent

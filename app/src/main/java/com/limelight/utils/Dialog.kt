@@ -13,7 +13,7 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class Dialog private constructor(
     private val activity: Activity,

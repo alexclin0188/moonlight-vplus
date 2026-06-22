@@ -5,7 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.os.Vibrator;
+
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -18,21 +18,16 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 import com.limelight.binding.input.advance_setting.config.PageConfigController;
-import com.limelight.binding.input.advance_setting.element.DigitalSwitchButton;
 import com.limelight.binding.input.advance_setting.element.Element;
 import com.limelight.utils.MathUtils;
 
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
-import android.preference.PreferenceManager;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.Iterator;
 
 public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
     private final Context context;
@@ -164,14 +159,7 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
 
 
     private static final String DATABASE_NAME = "super_config.db";
-    private static final int DATABASE_OLD_VERSION_1 = 1;
-    private static final int DATABASE_OLD_VERSION_2 = 2;
-    private static final int DATABASE_OLD_VERSION_3 = 3;
-    private static final int DATABASE_OLD_VERSION_4 = 4;
-    private static final int DATABASE_OLD_VERSION_5 = 5;
-    private static final int DATABASE_OLD_VERSION_6 = 6;
-    private static final int DATABASE_OLD_VERSION_10 = 10;
-    private static final int DATABASE_VERSION = 11;
+    private static final int DATABASE_VERSION = 1;
     private SQLiteDatabase writableDataBase;
     private SQLiteDatabase readableDataBase;
 
@@ -261,163 +249,10 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        // 更新 onUpgrade，为老用户添加新字段
-        // 升级数据库时执行的操作
-        System.out.println("SuperConfigDatabaseHelper.onUpgrade from " + oldVersion + " to " + newVersion);
-        // 采用更健壮的 fall-through 结构
-        if (oldVersion < 3) {
-            db.execSQL("ALTER TABLE config ADD COLUMN game_vibrator TEXT DEFAULT 'false';");
-            db.execSQL("ALTER TABLE config ADD COLUMN button_vibrator TEXT DEFAULT 'false';");
-        }
-        if (oldVersion < 4) {
-            db.execSQL("ALTER TABLE config ADD COLUMN mouse_wheel_speed INTEGER DEFAULT 20;");
-        }
-        if (oldVersion < 5) {
-            String alterTableSQL = "ALTER TABLE config" + " ADD COLUMN " + PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH + " TEXT DEFAULT 'false'";
-            db.execSQL(alterTableSQL);
-        }
-        if (oldVersion < 6) {
-            db.execSQL("ALTER TABLE element ADD COLUMN " + Element.COLUMN_INT_ELEMENT_FLAG1 + " INTEGER DEFAULT 1;");
-        }
-        // 新增的升级逻辑
-        if (oldVersion < 7) {
-            // 为 element 表添加字体颜色和大小的列，并设置默认值
-            db.execSQL("ALTER TABLE element ADD COLUMN " + DigitalSwitchButton.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR + " INTEGER DEFAULT -1;"); // 0xFFFFFFFF
-            db.execSQL("ALTER TABLE element ADD COLUMN " + DigitalSwitchButton.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR + " INTEGER DEFAULT -3355444;"); // 0xFFCCCCCC
-            db.execSQL("ALTER TABLE element ADD COLUMN " + DigitalSwitchButton.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT + " INTEGER DEFAULT 25;");
-        }
-        if (oldVersion < 8) {
-            db.execSQL("ALTER TABLE element ADD COLUMN extra_attributes TEXT;");
-        }
-        if (oldVersion < 9) {
-            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_OPACITY + " INTEGER DEFAULT 100;");
-            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " INTEGER;");
-            db.execSQL("ALTER TABLE config ADD COLUMN " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER;");
-        }
-        db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR + " = -1;");
-        db.execSQL("UPDATE config SET " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = NULL WHERE " + PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR + " = -1;");
-        if (oldVersion < 10) {
-            db.execSQL("ALTER TABLE config ADD COLUMN scheme_type TEXT DEFAULT 'game_key_mapping';");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_vibrate INTEGER DEFAULT 1;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_opacity INTEGER DEFAULT 90;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_only_l3r3 INTEGER DEFAULT 0;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_show_guide INTEGER DEFAULT 1;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_half_height INTEGER DEFAULT 1;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_flip_face_buttons INTEGER DEFAULT 0;");
-            db.execSQL("ALTER TABLE config ADD COLUMN osc_element_layout TEXT;");
-        }
-        if (oldVersion < 11) {
-            // 清理内置方案的遗留记录（configId=0 的 config 和 element 行）
-            db.delete("config", "config_id = ?", new String[]{"0"});
-            db.delete("element", "config_id = ?", new String[]{"0"});
-            // 清理 SP 迁移标记，不再需要
-            try {
-                android.content.SharedPreferences prefs =
-                    PreferenceManager.getDefaultSharedPreferences(context);
-                prefs.edit().remove("sp_to_db_migrated").apply();
-            } catch (Exception ignored) { }
-        }
+        // MoonLink 重新开始，版本号从 1 开始，无升级路径
     }
 
-    /**
-     * 辅助方法，用于升级导入导出的配置文件JSON数据
-     *
-     * @param exportFile 从文件中解析出的对象
-     * @param gson       用于JSON操作的实例
-     * @return 如果成功升级则返回true，否则返回false
-     */
-    private boolean upgradeExportedConfig(ExportFile exportFile, Gson gson) {
-        int version = exportFile.getVersion();
-        String settings = exportFile.getSettings();
-        String elements = exportFile.getElements();
 
-        // 如果版本已经是最新，则无需操作
-        if (version == DATABASE_VERSION) {
-            return true;
-        }
-
-        // 如果版本比已知的最老兼容版本还老，则拒绝
-        if (version < DATABASE_OLD_VERSION_1) {
-            return false;
-        }
-
-        // 使用 fall-through (无break) 的 switch 结构模拟 onUpgrade 升级过程
-        // 关键：将JSON字符串转换为可操作的JsonObject和JsonArray
-        JsonObject settingsJson = gson.fromJson(settings, JsonObject.class);
-        JsonElement elementsJsonElement = gson.fromJson(elements, JsonElement.class);
-
-        switch (version) {
-            case DATABASE_OLD_VERSION_1:
-                // 版本1 -> 2: 特殊的正则表达式替换
-                String regex = "(\"element_type\":)\\s*51";
-                Pattern pattern = Pattern.compile(regex);
-                Matcher matcher = pattern.matcher(elements);
-                if (matcher.find()) {
-                    elements = matcher.replaceAll("$13");
-                    // 重新解析被修改过的 elements 字符串
-                    elementsJsonElement = gson.fromJson(elements, JsonElement.class);
-                }
-                // Fall-through to next case
-            case DATABASE_OLD_VERSION_2:
-                // 版本2 -> 3: 在 config 表中添加 game_vibrator 和 button_vibrator
-                settingsJson.addProperty("game_vibrator", "false");
-                settingsJson.addProperty("button_vibrator", "false");
-                // Fall-through to next case
-            case DATABASE_OLD_VERSION_3:
-                // 版本3 -> 4: 在 config 表中添加 mouse_wheel_speed
-                settingsJson.addProperty("mouse_wheel_speed", 20);
-                // Fall-through to next case
-            case DATABASE_OLD_VERSION_4:
-                // 版本4 -> 5: 在 config 表中添加 enhanced_touch
-                settingsJson.addProperty(PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false");
-                // Fall-through to next case
-            case DATABASE_OLD_VERSION_5:
-                // 版本5 -> 6: 在 element 表中添加 flag1
-                if (elementsJsonElement.isJsonArray()) {
-                    for (JsonElement element : elementsJsonElement.getAsJsonArray()) {
-                        element.getAsJsonObject().addProperty(Element.COLUMN_INT_ELEMENT_FLAG1, 1);
-                    }
-                }
-                // 更新 import/export 升级逻辑
-            case DATABASE_OLD_VERSION_6:
-                // 版本6 -> 7: 在 element 中添加字体颜色和大小
-                if (elementsJsonElement.isJsonArray()) {
-                    for (JsonElement element : elementsJsonElement.getAsJsonArray()) {
-                        JsonObject elementObject = element.getAsJsonObject();
-                        // 添加新属性并设置合理的默认值
-                        elementObject.addProperty(DigitalSwitchButton.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, 0xFFFFFFFF);
-                        elementObject.addProperty(DigitalSwitchButton.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, 0xFFCCCCCC);
-                        elementObject.addProperty(DigitalSwitchButton.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25);
-                    }
-                }
-                // Fall-through to final version
-            case 7:
-                if (elementsJsonElement.isJsonArray()) {
-                    for (JsonElement element : elementsJsonElement.getAsJsonArray()) {
-                        // 对于旧配置，这个字段可以是 null 或空json对象
-                        element.getAsJsonObject().addProperty("extra_attributes", "{}");
-                    }
-                }
-            case 8:
-                settingsJson.addProperty(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100);
-                settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
-                settingsJson.remove(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR);
-            case DATABASE_OLD_VERSION_10:
-                // 版本10 → 11: 无 schema 变更，清理内置方案遗留数据由 onUpgrade 处理
-            case DATABASE_VERSION:
-                break; // 到达最新版本，停止
-            default:
-                // 未知版本，无法升级
-                return false;
-        }
-
-        // 将修改后的Json对象转换回字符串，并更新到exportFile中
-        exportFile.setSettings(gson.toJson(settingsJson));
-        exportFile.setElements(gson.toJson(elementsJsonElement));
-        exportFile.setVersion(DATABASE_VERSION); // 版本号也更新为最新的
-
-        return true;
-    }
 
     private void normalizeGlobalStyleSettings(ContentValues settingValues) {
         Long borderColor = settingValues.getAsLong(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR);
@@ -917,12 +752,12 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
             return -2; // -2: 文件被篡改或损坏
         }
 
-        // 调用升级逻辑以兼容旧版本配置
-        if (!upgradeExportedConfig(exportFile, gson)) {
-            return -3; // -3: 版本不匹配且无法升级
+        // 仅接受当前版本（DATABASE_VERSION=1）的配置文件
+        if (exportFile.getVersion() != DATABASE_VERSION) {
+            return -3; // -3: 版本不匹配
         }
 
-        // 从可能已升级的 exportFile 获取最新的数据
+        // 从 exportFile 获取数据
         String settingString = exportFile.getSettings();
         String elementsString = exportFile.getElements();
 
@@ -1020,8 +855,6 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         return 0; // 成功
     }
 
-
-
     public int mergeConfig(String configString, Long existConfigId) {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(ContentValues.class, new ContentValuesSerializer());
@@ -1039,12 +872,12 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
             return -2; // -2: 文件被篡改或损坏
         }
 
-        // 调用升级逻辑
-        if (!upgradeExportedConfig(exportFile, gson)) {
-            return -3; // -3: 版本不匹配且无法升级
+        // 仅接受当前版本（DATABASE_VERSION=1）的配置文件
+        if (exportFile.getVersion() != DATABASE_VERSION) {
+            return -3; // -3: 版本不匹配
         }
 
-        // 从升级后的 exportFile 获取最新的数据 (mergeConfig不需要settings)
+        // 从 exportFile 获取数据 (mergeConfig不需要settings)
         String elementsString = exportFile.getElements();
 
         ContentValues[] elements = gson.fromJson(elementsString, ContentValues[].class);

@@ -5,7 +5,7 @@ import android.content.Context
 import android.os.Bundle
 import android.util.Log
 import com.google.firebase.analytics.FirebaseAnalytics
-import com.limelight.BuildConfig
+import com.alexclin.moonlink.android.BuildConfig
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

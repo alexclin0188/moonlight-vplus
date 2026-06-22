@@ -17,7 +17,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.limelight.Game
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import androidx.core.content.edit
 
 class StreamNotificationService : Service() {

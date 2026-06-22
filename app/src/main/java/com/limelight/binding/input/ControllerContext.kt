@@ -16,7 +16,7 @@ import android.view.MotionEvent
 import android.widget.Toast
 
 import com.limelight.GameMenu
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.driver.AbstractController
 import com.limelight.nvstream.input.ControllerPacket
 import com.limelight.nvstream.jni.MoonBridge

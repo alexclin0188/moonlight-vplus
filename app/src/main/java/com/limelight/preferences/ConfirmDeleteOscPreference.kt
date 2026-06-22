@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.preference.DialogPreference
 import android.util.AttributeSet
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.virtual_controller.VirtualControllerConfigurationLoader.OSC_PREFERENCE
 
 class ConfirmDeleteOscPreference : DialogPreference {

@@ -23,6 +23,7 @@ import com.limelight.nvstream.NvConnection
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.StreamView
 import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.R
 
 /**
  * 外接显示器管理器

@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.view.KeyEvent
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp

@@ -17,7 +17,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import java.io.BufferedReader
 import java.io.File

@@ -6,7 +6,7 @@ import android.view.View
 import android.widget.LinearLayout
 import android.widget.TextView
 
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class ItemPageSuperMenu(text: String, onClickListener: View.OnClickListener, context: Context) {
     private val item: LinearLayout =

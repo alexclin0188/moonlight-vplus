@@ -12,7 +12,7 @@ import android.widget.FrameLayout
 import android.widget.SeekBar
 import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 class KeyboardUIController(
     private val parentContainer: FrameLayout,

@@ -1,6 +1,7 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
 
+import com.alexclin.moonlink.android.R
 import com.limelight.binding.PlatformBinding
 import com.limelight.binding.audio.AndroidAudioRenderer
 import com.limelight.binding.audio.AudioDiagnostics

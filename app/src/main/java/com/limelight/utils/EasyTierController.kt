@@ -20,7 +20,7 @@ import android.widget.Toast
 
 import com.easytier.jni.EasyTierManager
 import com.limelight.LimeLog
-import com.limelight.R
+import com.alexclin.moonlink.android.R
 
 import org.json.JSONArray
 import org.json.JSONObject
