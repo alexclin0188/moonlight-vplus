@@ -54,31 +54,31 @@ fun KeyMappingScreen() {
 
     LaunchedEffect(Unit) { schemes = loadUserSchemes(context) }
 
-    // ── .mkmp 导出 ──
-    var showExportMkmpDialog by remember { mutableStateOf(false) }
-    var exportMkmpTarget by remember { mutableLongStateOf(0L) }
+    // ── .mlk 导出 ──
+    var showExportMlkDialog by remember { mutableStateOf(false) }
+    var exportMlkTarget by remember { mutableLongStateOf(0L) }
 
-    val mkmpCreateLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
+    val mlkCreateLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream")
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         try {
             val db = SuperConfigDatabaseHelper(context)
-            val scheme = schemes.find { it.configId == exportMkmpTarget } ?: return@rememberLauncherForActivityResult
-            val json = buildMkmpJson(context, db, scheme)
+            val scheme = schemes.find { it.configId == exportMlkTarget } ?: return@rememberLauncherForActivityResult
+            val json = buildMlkJson(context, db, scheme)
             context.contentResolver.openOutputStream(uri)?.use {
                 it.write(json.toByteArray(Charsets.UTF_8))
             }
-            Toast.makeText(context, "按键方案已导出 (.mkmp)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "按键方案已导出 (.mlk)", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
             Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
-    // ── .mkmp 导入 ──
-    var showImportMkmpDialog by remember { mutableStateOf(false) }
-    var importMkmpJson by remember { mutableStateOf("") }
-    val mkmpOpenLauncher = rememberLauncherForActivityResult(
+    // ── .mlk 导入 ──
+    var showImportMlkDialog by remember { mutableStateOf(false) }
+    var importMlkJson by remember { mutableStateOf("") }
+    val mlkOpenLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
@@ -88,8 +88,8 @@ fun KeyMappingScreen() {
                 Toast.makeText(context, "文件内容为空", Toast.LENGTH_SHORT).show()
                 return@rememberLauncherForActivityResult
             }
-            importMkmpJson = json
-            showImportMkmpDialog = true
+            importMlkJson = json
+            showImportMlkDialog = true
         } catch (e: Exception) {
             Toast.makeText(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT).show()
         }
@@ -128,22 +128,22 @@ fun KeyMappingScreen() {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
 
-            // ── 导出按键方案 (.mkmp) ──
+            // ── 导出按键映射方案 (.mlk) ──
             item {
                 ClickablePreference(
-                    title = "导出按键方案",
-                    summary = "将按键方案导出为 .mkmp 文件（简化格式）",
-                    onClick = { if (schemes.isNotEmpty()) showExportMkmpDialog = true },
+                    title = "导出按键映射方案",
+                    summary = "将按键映射方案导出为 .mlk 文件",
+                    onClick = { if (schemes.isNotEmpty()) showExportMlkDialog = true },
                 )
             }
 
-            // ── 导入按键方案 (.mkmp) ──
+            // ── 导入按键映射方案 (.mlk) ──
             item {
                 ClickablePreference(
-                    title = "导入按键方案",
-                    summary = "从 .mkmp 文件导入按键方案",
+                    title = "导入按键映射方案",
+                    summary = "从 .mlk 文件导入按键映射方案",
                     onClick = {
-                        mkmpOpenLauncher.launch(arrayOf("application/json", "*/*"))
+                        mlkOpenLauncher.launch(arrayOf("application/json", "*/*"))
                     },
                 )
             }
@@ -164,40 +164,40 @@ fun KeyMappingScreen() {
     }
 
     // ════════════════════════════════════════════
-    // Dialog：导出 .mkmp
+    // Dialog：导出 .mlk
     // ════════════════════════════════════════════
-    if (showExportMkmpDialog) {
+    if (showExportMlkDialog) {
         SchemeSelectionDialog(
-            title = "导出按键方案 (.mkmp)",
+            title = "导出按键映射方案 (.mlk)",
             schemes = schemes,
             onSelect = { scheme ->
-                exportMkmpTarget = scheme.configId
-                showExportMkmpDialog = false
+                exportMlkTarget = scheme.configId
+                showExportMlkDialog = false
                 val safeName = scheme.name.replace(Regex("[\\\\/:*?\"<>|]"), "_")
-                mkmpCreateLauncher.launch("${safeName}.mkmp")
+                mlkCreateLauncher.launch("${safeName}.mlk")
             },
-            onDismiss = { showExportMkmpDialog = false },
+            onDismiss = { showExportMlkDialog = false },
         )
     }
 
     // ════════════════════════════════════════════
-    // Dialog：导入 .mkmp
+    // Dialog：导入 .mlk
     // ════════════════════════════════════════════
-    if (showImportMkmpDialog) {
-        ImportMkmpDialog(
-            json = importMkmpJson,
+    if (showImportMlkDialog) {
+        ImportMlkDialog(
+            json = importMlkJson,
             schemes = schemes,
             onConfirm = { name, overrideTargetId ->
                 try {
-                    importMkmpFromJson(context, importMkmpJson, name, overrideTargetId)
+                    importMlkFromJson(context, importMlkJson, name, overrideTargetId)
                     schemes = loadUserSchemes(context)
                     Toast.makeText(context, "方案「$name」已导入", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
                     Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-                showImportMkmpDialog = false
+                showImportMlkDialog = false
             },
-            onDismiss = { showImportMkmpDialog = false },
+            onDismiss = { showImportMlkDialog = false },
         )
     }
 
@@ -272,11 +272,11 @@ private fun SchemeSelectionDialog(
 }
 
 // ════════════════════════════════════════════════════════════
-//  .mkmp 导入弹窗
+//  .mlk 导入弹窗
 // ════════════════════════════════════════════════════════════
 
 @Composable
-private fun ImportMkmpDialog(
+private fun ImportMlkDialog(
     json: String,
     schemes: List<SchemeInfo>,
     onConfirm: (name: String, overrideTargetId: Long) -> Unit,
@@ -293,7 +293,7 @@ private fun ImportMkmpDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("导入按键方案") },
+        title = { Text("导入按键映射方案") },
         text = {
             Column {
                 OutlinedTextField(
@@ -352,14 +352,14 @@ private fun ImportMkmpDialog(
 }
 
 // ════════════════════════════════════════════════════════════
-//  .mkmp 构建与解析（T-14）
+//  .mlk 构建与解析（T-14）
 // ════════════════════════════════════════════════════════════
 
 /**
- * 构建 .mkmp 简化 JSON。
+ * 构建 .mlk 简化 JSON。
  * 不含 MD5/版本号等内部元数据。
  */
-private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: SchemeInfo): String {
+private fun buildMlkJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: SchemeInfo): String {
     val configJson = JSONObject()
     val configAttrs = listOf(
         "touch_enable" to "boolean",
@@ -399,7 +399,7 @@ private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatab
     }
 
     val root = JSONObject().apply {
-        put("format", "mkmp")
+        put("format", "mlk")
         put("version", 2)  // v2: 增加 sourceWidth/sourceHeight 用于屏幕参数换算
         put("name", scheme.name)
         put("created", SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()))
@@ -416,10 +416,10 @@ private fun buildMkmpJson(context: android.content.Context, db: SuperConfigDatab
 }
 
 /**
- * 从 .mkmp JSON 导入方案到数据库。
+ * 从 .mlk JSON 导入方案到数据库。
  * @param overrideTargetId 不为 0L 时覆盖该已有方案，否则创建新方案。
  */
-private fun importMkmpFromJson(context: android.content.Context, json: String, newName: String, overrideTargetId: Long = 0L) {
+private fun importMlkFromJson(context: android.content.Context, json: String, newName: String, overrideTargetId: Long = 0L) {
     val root = JSONObject(json)
     val configObj = root.optJSONObject("config") ?: JSONObject()
     val elementsArray = root.optJSONArray("elements") ?: JSONArray()
@@ -468,6 +468,8 @@ private fun importMkmpFromJson(context: android.content.Context, json: String, n
         elValues.put("config_id", newConfigId)
         elValues.put("element_id", elementIdCounter++)
         for (key in elObj.keys()) {
+            // 跳过已由代码设置的内部ID字段，防止覆盖新分配的ID值
+            if (key == "config_id" || key == "element_id" || key == "_id") continue
             val v = elObj.opt(key)
             when (v) {
                 is Boolean -> elValues.put(key, v)

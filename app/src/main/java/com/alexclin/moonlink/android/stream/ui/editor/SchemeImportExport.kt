@@ -27,10 +27,10 @@ import java.io.InputStreamReader
 object SchemeExporter {
 
     /** 导出文件的 MIME 类型 */
-    const val MIME_TYPE = "application/json"
+    const val MIME_TYPE = "application/octet-stream"
 
     /** 导出的默认文件名 */
-    const val DEFAULT_FILENAME = "moonlink_scheme.json"
+    const val DEFAULT_FILENAME = "moonlink_scheme.mlk"
 
     /**
      * 将当前方案导出到指定 URI。

@@ -41,7 +41,7 @@ val SETTINGS_CATEGORIES = listOf(
     SettingsCategory("multitouch",  "多点触控设置",        Icons.Default.TouchApp,        "settings_multitouch"),
     SettingsCategory("connection",  "连接设置",           Icons.Default.Cable,           "settings_connection"),
     SettingsCategory("scene",       "场景预设",           Icons.Default.Slideshow,       "settings_scene"),
-    SettingsCategory("keymapping",  "按键配置管理",        Icons.Default.Tune,            "settings_keymapping"),
+    SettingsCategory("keymapping",  "按键映射管理",        Icons.Default.Tune,            "settings_keymapping"),
     SettingsCategory("widget",      "桌面小部件",         Icons.Default.Widgets,         "_widget"),
     SettingsCategory("help",        "帮助",              Icons.Default.HelpOutline,     "settings_help"),
 )

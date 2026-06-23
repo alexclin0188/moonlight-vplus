@@ -405,7 +405,7 @@ fun StreamOverlay(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(Color(0xCC000000))
+                            .background(Color(0xFF000000))
                             .clickable(
                                 indication = null,
                                 interactionSource = remember { MutableInteractionSource() },

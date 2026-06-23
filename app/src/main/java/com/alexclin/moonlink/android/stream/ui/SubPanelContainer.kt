@@ -123,7 +123,7 @@ fun SubPanelContainer(
             .width(panelWidth),
         shape = RoundedCornerShape(0.dp),
         color = MaterialTheme.colorScheme.surface,
-        shadowElevation = 8.dp,
+        shadowElevation = 2.dp,
     ) {
         AnimatedContent(
             targetState = detailPage,
