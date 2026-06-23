@@ -77,7 +77,8 @@ import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.panels.isSchemeNameDuplicate
 import com.alexclin.moonlink.android.stream.ui.editor.CanvasCallbacks
-import com.alexclin.moonlink.android.stream.ui.editor.ColorEditorDialog
+import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
+import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
 import com.alexclin.moonlink.android.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.EditorCanvas
 import com.alexclin.moonlink.android.stream.ui.editor.GroupChildListDialog
@@ -555,9 +556,25 @@ fun KeyMappingEditor(
 
         // ── 颜色自定义对话框 ──
         if (showColorEditor && pendingColorEditorElement != null) {
-            ColorEditorDialog(
-                element = pendingColorEditorElement!!,
-                onSave = { updated: EditorElement ->
+            val el = pendingColorEditorElement!!
+            ColorPickerDialog(
+                title = "颜色自定义",
+                items = listOf(
+                    ColorPickerItem("正常色", "normal", el.normalColor),
+                    ColorPickerItem("按下色", "pressed", el.pressedColor),
+                    ColorPickerItem("背景色", "bg", el.backgroundColor),
+                    ColorPickerItem("文字色", "normalText", el.normalTextColor),
+                    ColorPickerItem("按下文字色", "pressedText", el.pressedTextColor),
+                ),
+                onSave = { result ->
+                    val map = result.toMap()
+                    val updated = el.copy(
+                        normalColor = map["normal"] ?: el.normalColor,
+                        pressedColor = map["pressed"] ?: el.pressedColor,
+                        backgroundColor = map["bg"] ?: el.backgroundColor,
+                        normalTextColor = map["normalText"] ?: el.normalTextColor,
+                        pressedTextColor = map["pressedText"] ?: el.pressedTextColor,
+                    )
                     elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                     editorState.saveElement(updated)
                     // 编辑了单个元素颜色 → 关闭该方案的全局颜色开关
@@ -572,9 +589,6 @@ fun KeyMappingEditor(
                     Toast.makeText(context, "颜色已更新", Toast.LENGTH_SHORT).show()
                 },
                 onDismiss = { showColorEditor = false; pendingColorEditorElement = null },
-                onElementChanged = { updated ->
-                    elements = elements.map { if (it.elementId == updated.elementId) updated else it }
-                },
             )
         }
 

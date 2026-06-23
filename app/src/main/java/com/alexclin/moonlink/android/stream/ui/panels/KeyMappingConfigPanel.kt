@@ -40,9 +40,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
-import com.alexclin.moonlink.android.stream.ui.editor.ColorEditorDialog
-import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
-import com.alexclin.moonlink.android.stream.ui.editor.ElementType
+import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
+import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 
@@ -273,14 +272,13 @@ fun KeyMappingConfigPanel(
 
     // ── 全局边框颜色选择器 ──
     if (showGlobalBorderPicker) {
-        ColorEditorDialog(
-            element = EditorElement(elementId = -1L, configId = configId, type = ElementType.DIGITAL_COMMON_BUTTON,
-                normalColor = globalBorderColor,
-                pressedColor = globalBorderColor,
-                normalTextColor = globalTextColor,
-                pressedTextColor = globalTextColor),
-            onSave = { updated ->
-                globalBorderColor = updated.normalColor
+        ColorPickerDialog(
+            title = "全局边框颜色",
+            items = listOf(
+                ColorPickerItem("边框颜色", "border", globalBorderColor),
+            ),
+            onSave = { result ->
+                globalBorderColor = result.firstOrNull()?.second ?: globalBorderColor
                 showGlobalBorderPicker = false
                 saveToDb()
                 engine.reloadOverlay()
@@ -291,14 +289,13 @@ fun KeyMappingConfigPanel(
 
     // ── 全局文字颜色选择器 ──
     if (showGlobalTextPicker) {
-        ColorEditorDialog(
-            element = EditorElement(elementId = -1L, configId = configId, type = ElementType.DIGITAL_COMMON_BUTTON,
-                normalColor = globalTextColor,
-                pressedColor = globalTextColor,
-                normalTextColor = globalTextColor,
-                pressedTextColor = globalTextColor),
-            onSave = { updated ->
-                globalTextColor = updated.normalColor
+        ColorPickerDialog(
+            title = "全局文字颜色",
+            items = listOf(
+                ColorPickerItem("文字颜色", "text", globalTextColor),
+            ),
+            onSave = { result ->
+                globalTextColor = result.firstOrNull()?.second ?: globalTextColor
                 showGlobalTextPicker = false
                 saveToDb()
                 engine.reloadOverlay()
