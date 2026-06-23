@@ -265,6 +265,7 @@ fun MoonLinkApp(
         NavigationRail(
             modifier = Modifier.fillMaxHeight().width(80.dp),
             containerColor = MaterialTheme.colorScheme.surface,
+            windowInsets = WindowInsets(0.dp),
         ) {
             Column(
                 modifier = Modifier.fillMaxHeight(),
@@ -374,8 +375,13 @@ fun MoonLinkApp(
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { innerPadding ->
         if (isLandscape && showBottomBar) {
-            // ── 横屏：左栏 NavigationRail + 右侧内容 ──────────
-            Row(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+            // ── 横屏主页：左栏 NavigationRail + 右侧内容 ──────────
+            // 顶部统一避让状态栏，内部不再有单个组件的避让设置
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding()),
+            ) {
                 LandscapeNavigationRail()
                 // Right: content area
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -383,7 +389,7 @@ fun MoonLinkApp(
                 }
             }
         } else {
-            // ── 竖屏：传统布局 ───────────────────────────────
+            // ── 竖屏 / 横屏非主页：全方向避让 ─────────────────
             Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
                 NavHostContent()
             }
