@@ -178,6 +178,7 @@ fun SubPanelContainer(
                 }
                 DetailPage.PERIPHERALS -> {
                     PeripheralsDetail(
+                        engine = engine,
                         onBack = { onDetailPageChange(DetailPage.MAIN_LIST) },
                     )
                 }
@@ -902,8 +903,12 @@ private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
 // 注意：ShortcutActionsSection 已删除 — "快捷操作"入口已改向到键盘面板快捷键标签
 
 @Composable
-private fun PeripheralsDetail(onBack: () -> Unit) {
+private fun PeripheralsDetail(
+    engine: StreamEngine,
+    onBack: () -> Unit,
+) {
     var subPage by remember { mutableStateOf<String?>(null) }
+    val devices = engine.peripheralDevices
 
     if (subPage == null) {
         DetailScaffold(title = "外设", onBack = onBack) {
@@ -911,10 +916,30 @@ private fun PeripheralsDetail(onBack: () -> Unit) {
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                item { PeripheralEntry("手柄", Icons.Default.VideogameAsset) { subPage = "gamepad" } }
-                item { PeripheralEntry("键盘", Icons.Default.Keyboard) { subPage = "keyboard" } }
-                item { PeripheralEntry("鼠标", Icons.Default.Mouse) { subPage = "mouse" } }
-                item { PeripheralEntry("麦克风", Icons.Default.Mic) { subPage = "mic" } }
+                val gamepadCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.GAMEPAD }
+                val keyboardCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.KEYBOARD }
+                val mouseCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.MOUSE }
+                fun countText(n: Int) = if (n == 0) "无" else n.toString()
+                item { PeripheralEntry("手柄", Icons.Default.VideogameAsset, countText(gamepadCount)) { subPage = "gamepad" } }
+                item { PeripheralEntry("键盘", Icons.Default.Keyboard, countText(keyboardCount)) { subPage = "keyboard" } }
+                item { PeripheralEntry("鼠标", Icons.Default.Mouse, countText(mouseCount)) { subPage = "mouse" } }
+                // 麦克风：直接开关，不进入子页面
+                item {
+                    Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Mic, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+                        Spacer(Modifier.width(12.dp))
+                        Text("麦克风", Modifier.weight(1f))
+                        Switch(
+                            checked = engine.prefConfig.enableMic,
+                            onCheckedChange = { enabled ->
+                                engine.prefConfig.enableMic = enabled
+                                engine.prefConfig.writePreferences(engine.activity)
+                                engine.toggleMicrophoneButton()
+                            },
+                        )
+                    }
+                }
             }
         }
     } else {
@@ -922,20 +947,94 @@ private fun PeripheralsDetail(onBack: () -> Unit) {
             "gamepad" -> "手柄设置"
             "keyboard" -> "键盘设置"
             "mouse" -> "鼠标设置"
-            else -> "麦克风设置"
+            else -> ""
         }, onBack = { subPage = null }) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             ) {
-                item { Text("${subPage}设置项（待完善）", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                when (subPage) {
+                    "keyboard" -> {
+                        val keyboards = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.KEYBOARD }
+                        val activeId = engine.activeKeyboardId
+                        if (keyboards.isEmpty()) {
+                            item { Text("未检测到键盘", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        } else {
+                            keyboards.forEach { dev ->
+                                item {
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        if (keyboards.size > 1) {
+                                            RadioButton(
+                                                selected = dev.deviceId == activeId,
+                                                onClick = { engine.activeKeyboardId = dev.deviceId },
+                                            )
+                                        }
+                                        Text(if (keyboards.size > 1) "${dev.name}" else "已连接: ${dev.name}",
+                                            Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "mouse" -> {
+                        val mice = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.MOUSE }
+                        val activeId = engine.activeMouseId
+                        if (mice.isEmpty()) {
+                            item { Text("未检测到鼠标", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        } else {
+                            mice.forEach { dev ->
+                                item {
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        if (mice.size > 1) {
+                                            RadioButton(
+                                                selected = dev.deviceId == activeId,
+                                                onClick = { engine.activeMouseId = dev.deviceId },
+                                            )
+                                        }
+                                        Text(if (mice.size > 1) "${dev.name}" else "已连接: ${dev.name}",
+                                            Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    "gamepad" -> {
+                        val gamepads = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.GAMEPAD }
+                        if (gamepads.isEmpty()) {
+                            item { Text("未检测到手柄", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                        } else {
+                            gamepads.forEach { dev ->
+                                item {
+                                    Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Text(dev.name, Modifier.weight(1f))
+                                        Switch(
+                                            checked = dev.isEnabled,
+                                            onCheckedChange = { enabled ->
+                                                val idx = engine.peripheralDevices.indexOfFirst { it.deviceId == dev.deviceId }
+                                                if (idx >= 0) {
+                                                    engine.peripheralDevices[idx] = dev.copy(isEnabled = enabled)
+                                                    engine.peripheralDevices = engine.peripheralDevices.toMutableList()
+                                                }
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-private fun PeripheralEntry(label: String, icon: ImageVector, onClick: () -> Unit) {
+private fun PeripheralEntry(
+    label: String,
+    icon: ImageVector,
+    countText: String,
+    onClick: () -> Unit,
+) {
     Row(
         Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 12.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -943,6 +1042,10 @@ private fun PeripheralEntry(label: String, icon: ImageVector, onClick: () -> Uni
         Icon(icon, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(12.dp))
         Text(label, Modifier.weight(1f))
+        Text(countText, style = MaterialTheme.typography.bodySmall,
+            color = if (countText == "无") MaterialTheme.colorScheme.onSurfaceVariant
+                    else MaterialTheme.colorScheme.primary)
+        Spacer(Modifier.width(4.dp))
         Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

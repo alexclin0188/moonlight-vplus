@@ -27,6 +27,8 @@ import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.ui.GameGestures
 import com.limelight.ui.StreamView
 import android.net.ConnectivityManager
+import android.hardware.input.InputManager
+import android.view.InputDevice
 import android.net.wifi.WifiManager
 import com.limelight.binding.video.CrashListener
 import com.limelight.binding.video.MediaCodecDecoderRenderer
@@ -621,6 +623,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         LimeLog.info("StreamEngine: conn.start() 已调用")
 
+        // 初始化外设监听
+        initPeripheralMonitoring()
+
         // 初始化触控处理器（需 conn 已就绪 + SurfaceView 已设置）
         val sv = cachedSurfaceView
         if (sv != null) {
@@ -735,6 +740,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         } catch (e: Exception) {
             LimeLog.warning("StreamEngine: disconnect stop 失败 ${e.message}")
         }
+        stopPeripheralMonitoring()
         activity.finish()
     }
 
@@ -940,6 +946,112 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
     var isFullScreenPageActive: Boolean by mutableStateOf(false)
+
+    // ── 外设管理 ──
+
+    data class PeripheralDevice(
+        val deviceId: Int,
+        val name: String,
+        val type: PeripheralType,
+        var isEnabled: Boolean = true,
+    )
+
+    enum class PeripheralType { MOUSE, KEYBOARD, GAMEPAD }
+
+    /** 当前已连接的外设列表 */
+    var peripheralDevices: MutableList<PeripheralDevice> by mutableStateOf(mutableListOf())
+
+    /** 当前生效的鼠标设备 ID（多个鼠标时用户可切换） */
+    var activeMouseId: Int? by mutableStateOf(null)
+
+    /** 当前生效的键盘设备 ID（多个键盘时用户可切换） */
+    var activeKeyboardId: Int? by mutableStateOf(null)
+
+    /** 扫描并更新外设列表 */
+    fun scanPeripherals() {
+        val newList = mutableListOf<PeripheralDevice>()
+        var newMouseId = activeMouseId
+        var newKeyboardId = activeKeyboardId
+        val seenDescriptors = mutableSetOf<String>()
+
+        for (id in InputDevice.getDeviceIds()) {
+            val device = InputDevice.getDevice(id) ?: continue
+            // 仅识别外部设备（USB/蓝牙等外接，排除内置）
+            if (!device.isExternal) continue
+            val name = device.name ?: "未知设备"
+            val descriptor = try { device.descriptor } catch (_: Exception) { null }
+            // 使用 descriptor 去重：同一物理设备可能被识别为多个逻辑设备
+            if (descriptor != null && !seenDescriptors.add(descriptor)) continue
+            when {
+                // 鼠标：外部 + 鼠标输入源
+                device.supportsSource(InputDevice.SOURCE_MOUSE) ||
+                device.supportsSource(InputDevice.SOURCE_MOUSE_RELATIVE) -> {
+                    newList.add(PeripheralDevice(id, name, PeripheralType.MOUSE))
+                    if (activeMouseId == null) newMouseId = id
+                }
+                // 键盘：外部 + 全字母键盘（优先级高于手柄，避免键盘被误认为手柄）
+                device.keyboardType == InputDevice.KEYBOARD_TYPE_ALPHABETIC -> {
+                    newList.add(PeripheralDevice(id, name, PeripheralType.KEYBOARD))
+                    if (activeKeyboardId == null) newKeyboardId = id
+                }
+                // 手柄：外部 + 摇杆/手柄输入源（排除名称含 Keyboard 的设备）
+                device.supportsSource(InputDevice.SOURCE_JOYSTICK) ||
+                device.supportsSource(InputDevice.SOURCE_GAMEPAD) -> {
+                    if (!name.contains("Keyboard", ignoreCase = true)) {
+                        val existing = peripheralDevices.find { it.deviceId == id }
+                        newList.add(PeripheralDevice(id, name, PeripheralType.GAMEPAD, existing?.isEnabled ?: true))
+                    }
+                }
+            }
+        }
+        peripheralDevices = newList
+        activeMouseId = newMouseId
+        activeKeyboardId = newKeyboardId
+    }
+
+    /** 注册外设插拔监听 */
+    private var peripheralInputManager: InputManager? = null
+    private val peripheralDeviceListener = object : InputManager.InputDeviceListener {
+        override fun onInputDeviceAdded(id: Int) {
+            scanPeripherals()
+            // 仅在被过滤条件接受进入列表时才提示
+            val accepted = peripheralDevices.any { it.deviceId == id }
+            if (accepted) {
+                val device = InputDevice.getDevice(id)
+                val deviceName = device?.name ?: "外设"
+                activity.runOnUiThread {
+                    Toast.makeText(activity, "$deviceName 已连接", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        override fun onInputDeviceRemoved(id: Int) {
+            // 先记录是否在列表内，再扫描
+            val wasInList = peripheralDevices.find { it.deviceId == id }
+            val deviceName = wasInList?.name ?: "外设"
+            scanPeripherals()
+            if (wasInList != null) {
+                activity.runOnUiThread {
+                    Toast.makeText(activity, "$deviceName 已断开", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        override fun onInputDeviceChanged(id: Int) {
+            scanPeripherals()
+        }
+    }
+
+    /** 初始化外设监听（在串流启动时调用） */
+    fun initPeripheralMonitoring() {
+        peripheralInputManager = activity.getSystemService(android.content.Context.INPUT_SERVICE) as InputManager
+        peripheralInputManager?.registerInputDeviceListener(peripheralDeviceListener, null)
+        scanPeripherals()
+    }
+
+    /** 停止外设监听 */
+    fun stopPeripheralMonitoring() {
+        peripheralInputManager?.unregisterInputDeviceListener(peripheralDeviceListener)
+        peripheralInputManager = null
+    }
 
     // ── 运行时 Compose 状态（由 UI 设置，引擎消费） ──
 
