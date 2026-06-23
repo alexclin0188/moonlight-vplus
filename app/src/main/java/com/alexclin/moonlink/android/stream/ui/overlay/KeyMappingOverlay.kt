@@ -34,7 +34,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.drawWheelPad
  * 虚拟手柄和游戏按键映射共用此覆盖层，仅数据来源不同。
  *
  * @param globalOpacity  全局透明度（0-100），叠加到所有元素的渲染透明度上
- * @param enabled        false 时跳过所有触摸处理，元素仍渲染但不可交互
+ * @param enabled        true=元素交互正常+非元素区域透传下层；false=元素交互正常+非元素区域消费(阻止透传)
  * @param touchSense     触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
  * @param enhancedTouch  增强触控：启用时扩大触摸命中区域边距，提升触摸响应
  */
@@ -58,8 +58,7 @@ fun KeyMappingOverlay(
         modifier = modifier
             .fillMaxSize()
             .alpha(globalOpacity.coerceIn(0, 100) / 100f)
-            .then(
-                if (enabled) Modifier.pointerInteropFilter { motionEvent ->
+            .pointerInteropFilter { motionEvent ->
                 val touchMargin = computeTouchMargin(touchSense, enhancedTouch)
                 val actionMasked = motionEvent.actionMasked
                 val pointerIndex = motionEvent.actionIndex
@@ -89,8 +88,8 @@ fun KeyMappingOverlay(
                                 true
                             }
                         } else {
-                            // ACTION_DOWN 未命中时不消费（透传），POINTER_DOWN 未命中直接消费
-                            actionMasked == MotionEvent.ACTION_POINTER_DOWN
+                            // enabled=false 时消费所有触摸阻止透传；否则透传（仅 POINTER_DOWN 消费）
+                            !enabled || actionMasked == MotionEvent.ACTION_POINTER_DOWN
                         }
                     }
                     MotionEvent.ACTION_UP -> {
@@ -104,8 +103,8 @@ fun KeyMappingOverlay(
                         }
                         touchOffsets.clear()
                         pointerToElement.clear()
-                        // 如果抬起位置命中某元素则消费，否则透传
-                        hitIdx != null
+                        // enabled=false 时消费所有触摸阻止透传；否则仅命中元素时消费
+                        !enabled || hitIdx != null
                     }
                     MotionEvent.ACTION_POINTER_UP -> {
                         // 某一指抬起：释放对应的元素
@@ -169,13 +168,12 @@ fun KeyMappingOverlay(
                                 consumed = true
                             }
                         }
-                        consumed
+                        // enabled=false 时始终消费 MOVE 事件，阻止透传
+                        consumed || !enabled
                     }
                     else -> false
                 }
             }
-                else Modifier
-            )
     ) {
         Canvas(modifier = Modifier.fillMaxSize(), contentDescription = "keymap") {
             val sorted = elements.sortedBy { it.layer }

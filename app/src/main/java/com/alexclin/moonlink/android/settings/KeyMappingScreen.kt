@@ -363,18 +363,19 @@ private fun buildMlkJson(context: android.content.Context, db: SuperConfigDataba
     val configJson = JSONObject()
     val configAttrs = listOf(
         "touch_enable" to "boolean",
-        "touch_mode" to "boolean",
         "mouse_wheel_speed" to "int",
         "game_vibrator" to "boolean",
         "button_vibrator" to "boolean",
         "enhanced_touch" to "boolean",
         "global_opacity" to "int",
+        "global_border_color" to "int",
+        "global_text_color" to "int",
     )
     for ((key, type) in configAttrs) {
         val value = db.queryConfigAttribute(scheme.configId, key, null)
         if (value != null) {
             when (type) {
-                "boolean" -> configJson.put(key, java.lang.Boolean.parseBoolean(value.toString()))
+                "boolean" -> configJson.put(key, value.toString())
                 "int" -> configJson.put(key, (value as Number).toInt())
                 else -> configJson.put(key, value.toString())
             }
@@ -450,12 +451,16 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
         for (key in configObj.keys()) {
             val v = configObj.opt(key)
             when (v) {
-                is Boolean -> put(key, v)
+                is Boolean -> put(key, v.toString())
                 is Int -> put(key, v)
                 is String -> put(key, v)
                 is Long -> put(key, v)
                 is Double -> put(key, v.toFloat())
             }
+        }
+        // 如果导出的配置中没有触控开关值，默认打开
+        if (!containsKey(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE)) {
+            put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
         }
     }
     db.insertConfig(configValues)
@@ -473,9 +478,7 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
             val v = elObj.opt(key)
             when (v) {
                 is Boolean -> elValues.put(key, v)
-                is Int -> elValues.put(key, v.toLong())
-                is Long -> elValues.put(key, v)
-                is Double -> elValues.put(key, v)
+                is Number -> elValues.put(key, (v as Number).toLong())
                 is String -> elValues.put(key, v)
             }
         }

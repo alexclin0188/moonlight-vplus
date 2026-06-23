@@ -2,6 +2,11 @@ package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.content.ContentValues
 import android.widget.Toast
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -10,12 +15,17 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,10 +35,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
+import com.alexclin.moonlink.android.stream.ui.editor.ColorEditorDialog
+import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
+import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 
@@ -78,6 +92,19 @@ fun KeyMappingConfigPanel(
         ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
     ) }
 
+    // ── 全局颜色 ──
+    var useGlobalColors by remember { mutableStateOf(
+        db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) != null
+    ) }
+    var globalBorderColor by remember { mutableIntStateOf(
+        ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long) ?: 0xF0888888L).toInt()
+    ) }
+    var globalTextColor by remember { mutableIntStateOf(
+        ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long) ?: 0xFFFFFFFFL).toInt()
+    ) }
+    var showGlobalBorderPicker by remember { mutableStateOf(false) }
+    var showGlobalTextPicker by remember { mutableStateOf(false) }
+
     // ── 运行时同步：将 DB 值同步到 engine 运行时状态（打开面板时执行一次） ──
     LaunchedEffect(Unit) {
         syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
@@ -92,6 +119,14 @@ fun KeyMappingConfigPanel(
         cv.put("mouse_wheel_speed", wheelSpeed.toLong())
         cv.put(PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, enhancedTouch.toString())
         cv.put(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
+        // 全局颜色
+        if (useGlobalColors) {
+            cv.put(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, globalBorderColor.toLong())
+            cv.put(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, globalTextColor.toLong())
+        } else {
+            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
+            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+        }
         db.updateConfig(configId, cv)
 
         syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
@@ -175,16 +210,101 @@ fun KeyMappingConfigPanel(
                 }
             }
 
-            // 颜色配置提示
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+
+            // 统一边框和文字颜色
             item {
-                Text(
-                    "全局边框颜色和全局文字颜色请在编辑器中逐个元素设置",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 16.dp),
-                )
+                Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("统一边框和文字颜色", Modifier.weight(1f))
+                    Switch(checked = useGlobalColors, onCheckedChange = {
+                        useGlobalColors = it
+                        if (!it) {
+                            // 关闭时清除 DB 中的全局颜色值
+                            val cv = ContentValues()
+                            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
+                            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                            db.updateConfig(configId, cv)
+                        } else {
+                            saveToDb()
+                        }
+                    })
+                }
+            }
+
+            // 全局颜色选择器（仅开关打开时显示）
+            if (useGlobalColors) {
+                item {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text("全局边框颜色", Modifier.weight(1f))
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                                .background(Color(globalBorderColor), RoundedCornerShape(4.dp))
+                                .clickable { showGlobalBorderPicker = true }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = { showGlobalBorderPicker = true }) {
+                            Text("选择颜色", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                item {
+                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text("全局文字颜色", Modifier.weight(1f))
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
+                                .background(Color(globalTextColor), RoundedCornerShape(4.dp))
+                                .clickable { showGlobalTextPicker = true }
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(onClick = { showGlobalTextPicker = true }) {
+                            Text("选择颜色", style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
             }
         }
+    }
+
+    // ── 全局边框颜色选择器 ──
+    if (showGlobalBorderPicker) {
+        ColorEditorDialog(
+            element = EditorElement(elementId = -1L, configId = configId, type = ElementType.DIGITAL_COMMON_BUTTON,
+                normalColor = globalBorderColor,
+                pressedColor = globalBorderColor,
+                normalTextColor = globalTextColor,
+                pressedTextColor = globalTextColor),
+            onSave = { updated ->
+                globalBorderColor = updated.normalColor
+                showGlobalBorderPicker = false
+                saveToDb()
+                engine.reloadOverlay()
+            },
+            onDismiss = { showGlobalBorderPicker = false },
+        )
+    }
+
+    // ── 全局文字颜色选择器 ──
+    if (showGlobalTextPicker) {
+        ColorEditorDialog(
+            element = EditorElement(elementId = -1L, configId = configId, type = ElementType.DIGITAL_COMMON_BUTTON,
+                normalColor = globalTextColor,
+                pressedColor = globalTextColor,
+                normalTextColor = globalTextColor,
+                pressedTextColor = globalTextColor),
+            onSave = { updated ->
+                globalTextColor = updated.normalColor
+                showGlobalTextPicker = false
+                saveToDb()
+                engine.reloadOverlay()
+            },
+            onDismiss = { showGlobalTextPicker = false },
+        )
     }
 }
 

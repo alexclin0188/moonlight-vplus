@@ -560,6 +560,13 @@ fun KeyMappingEditor(
                 onSave = { updated: EditorElement ->
                     elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                     editorState.saveElement(updated)
+                    // 编辑了单个元素颜色 → 关闭该方案的全局颜色开关
+                    try {
+                        val cv = android.content.ContentValues()
+                        cv.putNull(com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
+                        cv.putNull(com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                        db.updateConfig(editorState.configId, cv)
+                    } catch (_: Exception) { }
                     showColorEditor = false
                     pendingColorEditorElement = null
                     Toast.makeText(context, "颜色已更新", Toast.LENGTH_SHORT).show()
