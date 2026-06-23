@@ -206,6 +206,20 @@ fun DeviceOverviewScreen(
                                     }
                                 }
 
+                                // Bottom overlay: "进入桌面 >"（仅在线时显示）
+                                if (isOnline) {
+                                    Text(
+                                        "进入桌面 >",
+                                        style = MaterialTheme.typography.titleMedium.copy(
+                                            fontWeight = FontWeight.SemiBold,
+                                        ),
+                                        color = Color.White,
+                                        modifier = Modifier
+                                            .align(Alignment.BottomCenter)
+                                            .padding(bottom = 16.dp),
+                                    )
+                                }
+
                                 // Offline overlay
                                 if (!isOnline) {
                                     Box(
@@ -426,6 +440,20 @@ fun DeviceOverviewScreen(
                                         maxLines = 1,
                                     )
                                 }
+                            }
+
+                            // Bottom overlay: "进入桌面 >"（仅在线时显示）
+                            if (isOnline) {
+                                Text(
+                                    "进入桌面 >",
+                                    style = MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.SemiBold,
+                                    ),
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .align(Alignment.BottomCenter)
+                                        .padding(bottom = 16.dp),
+                                )
                             }
 
                             // Offline overlay

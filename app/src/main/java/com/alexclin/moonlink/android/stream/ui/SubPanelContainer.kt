@@ -956,21 +956,13 @@ private fun PeripheralsDetail(
                 when (subPage) {
                     "keyboard" -> {
                         val keyboards = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.KEYBOARD }
-                        val activeId = engine.activeKeyboardId
                         if (keyboards.isEmpty()) {
                             item { Text("未检测到键盘", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         } else {
                             keyboards.forEach { dev ->
                                 item {
                                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        if (keyboards.size > 1) {
-                                            RadioButton(
-                                                selected = dev.deviceId == activeId,
-                                                onClick = { engine.activeKeyboardId = dev.deviceId },
-                                            )
-                                        }
-                                        Text(if (keyboards.size > 1) "${dev.name}" else "已连接: ${dev.name}",
-                                            Modifier.weight(1f))
+                                        Text(dev.name, Modifier.weight(1f))
                                     }
                                 }
                             }
@@ -978,21 +970,13 @@ private fun PeripheralsDetail(
                     }
                     "mouse" -> {
                         val mice = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.MOUSE }
-                        val activeId = engine.activeMouseId
                         if (mice.isEmpty()) {
                             item { Text("未检测到鼠标", color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         } else {
                             mice.forEach { dev ->
                                 item {
                                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                                        if (mice.size > 1) {
-                                            RadioButton(
-                                                selected = dev.deviceId == activeId,
-                                                onClick = { engine.activeMouseId = dev.deviceId },
-                                            )
-                                        }
-                                        Text(if (mice.size > 1) "${dev.name}" else "已连接: ${dev.name}",
-                                            Modifier.weight(1f))
+                                        Text(dev.name, Modifier.weight(1f))
                                     }
                                 }
                             }
@@ -1007,16 +991,6 @@ private fun PeripheralsDetail(
                                 item {
                                     Row(Modifier.fillMaxWidth().padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                                         Text(dev.name, Modifier.weight(1f))
-                                        Switch(
-                                            checked = dev.isEnabled,
-                                            onCheckedChange = { enabled ->
-                                                val idx = engine.peripheralDevices.indexOfFirst { it.deviceId == dev.deviceId }
-                                                if (idx >= 0) {
-                                                    engine.peripheralDevices[idx] = dev.copy(isEnabled = enabled)
-                                                    engine.peripheralDevices = engine.peripheralDevices.toMutableList()
-                                                }
-                                            },
-                                        )
                                     }
                                 }
                             }
