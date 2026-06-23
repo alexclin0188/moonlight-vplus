@@ -17,7 +17,7 @@ import kotlin.math.roundToLong
  *
  * 缩放策略：
  * - 位置用独立 X/Y 缩放（保持相对位置百分比）
- * - 尺寸用宽/高缩放的比例平均值（保持视觉比例，不因奇偶差异失真）
+ * - 尺寸（width/height/radius）用统一缩放因子 min(scaleX,scaleY)，保持按钮宽高比不变，防止变形
  */
 object ScreenScaleHelper {
 
@@ -51,8 +51,12 @@ object ScreenScaleHelper {
         if (sourceWidth <= 0 || sourceHeight <= 0 || targetWidth <= 0 || targetHeight <= 0) return
         if (sourceWidth == targetWidth && sourceHeight == targetHeight) return
 
-        val scaleX = targetWidth.toFloat() / sourceWidth.toFloat()
-        val scaleY = targetHeight.toFloat() / sourceHeight.toFloat()
+        // X 坐标：使用 Max(宽,高) 的比例（横屏时映射到宽，竖屏时映射到高）
+        val scaleX = kotlin.math.max(targetWidth, targetHeight).toFloat() /
+                kotlin.math.max(sourceWidth, sourceHeight).toFloat()
+        // Y 坐标：使用 Min(宽,高) 的比例（横屏时映射到高，竖屏时映射到宽）
+        val scaleY = kotlin.math.min(targetWidth, targetHeight).toFloat() /
+                kotlin.math.min(sourceWidth, sourceHeight).toFloat()
 
         // 位置：独立 X/Y 缩放（用 roundToLong 与 Java Math.round() 保持一致）
         val cx = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_CENTRAL_X)
@@ -64,20 +68,20 @@ object ScreenScaleHelper {
             elementCv.put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, (cy * scaleY).roundToLong())
         }
 
-        // 尺寸：用各自方向的缩放，但保证至少 1px
+        // 尺寸：用统一缩放因子 min(scaleX,scaleY)，保持按钮宽高比不变
+        val uniformScale = kotlin.math.min(scaleX, scaleY)
         val w = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_WIDTH)
         if (w != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_WIDTH, kotlin.math.max(1L, (w * scaleX).roundToLong()))
+            elementCv.put(Element.COLUMN_INT_ELEMENT_WIDTH, kotlin.math.max(1L, (w * uniformScale).roundToLong()))
         }
         val h = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_HEIGHT)
         if (h != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_HEIGHT, kotlin.math.max(1L, (h * scaleY).roundToLong()))
+            elementCv.put(Element.COLUMN_INT_ELEMENT_HEIGHT, kotlin.math.max(1L, (h * uniformScale).roundToLong()))
         }
 
-        // 半径（DigitalPad 等使用）：用 min 缩放比例防止变形
+        // 半径（DigitalPad 等使用）：用统一缩放因子
         val radius = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_RADIUS)
         if (radius != null) {
-            val uniformScale = kotlin.math.min(scaleX, scaleY)
             elementCv.put(Element.COLUMN_INT_ELEMENT_RADIUS, kotlin.math.max(1L, (radius * uniformScale).roundToLong()))
         }
     }

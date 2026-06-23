@@ -252,14 +252,17 @@ fun DeviceListScreen(
                         .fillMaxSize()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    // Left: paired devices（空列表时仅留空列，不撑满）
-                    LazyColumn(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxHeight(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        if (paired.isNotEmpty()) {
+                    // 可控设备为空且未配对设备不为空 → 未配对设备移到左侧展示
+                    val showUnpairedLeft = paired.isEmpty() && unpaired.isNotEmpty()
+
+                    if (!showUnpairedLeft) {
+                        // Left: paired devices（空列表时仅留空列，不撑满）
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
                             item { SectionHeader("可控设备") }
                             items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
                                 DeviceCard(
@@ -276,11 +279,14 @@ fun DeviceListScreen(
                                 )
                             }
                         }
+
+                        Spacer(Modifier.width(16.dp))
                     }
 
-                    Spacer(Modifier.width(16.dp))
 
-                    // Right: unpaired devices（空列表时仅留空列，不撑满）
+
+                    // Right: unpaired devices
+                    // 当 showUnpairedLeft 时，此列占据左侧位置（weight 放在 Spacer 前的第一列）
                     LazyColumn(
                         modifier = Modifier
                             .weight(1f)
@@ -290,7 +296,7 @@ fun DeviceListScreen(
                         if (unpaired.isNotEmpty()) {
                             item {
                                 SectionHeader(
-                                    title = "未配对设备",
+                                    title = if (showUnpairedLeft) "未配对设备" else "未配对设备",
                                 )
                             }
                             items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
@@ -307,6 +313,18 @@ fun DeviceListScreen(
                                     onComputerRemoved = onComputerRemoved,
                                 )
                             }
+                        }
+                    }
+
+                    // showUnpairedLeft 时，左测已隐藏，右测占了左侧位置，需补一个空列占右侧位置
+                    if (showUnpairedLeft) {
+                        LazyColumn(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            // 空列，保持布局对称
                         }
                     }
                 }

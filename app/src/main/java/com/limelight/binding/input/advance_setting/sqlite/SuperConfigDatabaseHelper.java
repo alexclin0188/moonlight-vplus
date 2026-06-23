@@ -697,8 +697,8 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
         // 如果源和目标尺寸完全相同，跳过缩放
         if (sourceWidth == targetWidth && sourceHeight == targetHeight) return;
 
-        float scaleX = (float) targetWidth / (float) sourceWidth;
-        float scaleY = (float) targetHeight / (float) sourceHeight;
+        float scaleX = (float) Math.max(targetWidth, targetHeight) / (float) Math.max(sourceWidth, sourceHeight);
+        float scaleY = (float) Math.min(targetWidth, targetHeight) / (float) Math.min(sourceWidth, sourceHeight);
 
         for (ContentValues el : elements) {
             // 位置
@@ -710,19 +710,19 @@ public class SuperConfigDatabaseHelper extends SQLiteOpenHelper {
             if (cy != null) {
                 el.put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, Math.round(cy * scaleY));
             }
-            // 尺寸
+            // 尺寸：用统一缩放因子 min(scaleX,scaleY)，保持按钮宽高比不变
+            float uniformScale = Math.min(scaleX, scaleY);
             Long w = el.getAsLong(Element.COLUMN_INT_ELEMENT_WIDTH);
             if (w != null) {
-                el.put(Element.COLUMN_INT_ELEMENT_WIDTH, Math.max(1L, Math.round(w * scaleX)));
+                el.put(Element.COLUMN_INT_ELEMENT_WIDTH, Math.max(1L, Math.round(w * uniformScale)));
             }
             Long h = el.getAsLong(Element.COLUMN_INT_ELEMENT_HEIGHT);
             if (h != null) {
-                el.put(Element.COLUMN_INT_ELEMENT_HEIGHT, Math.max(1L, Math.round(h * scaleY)));
+                el.put(Element.COLUMN_INT_ELEMENT_HEIGHT, Math.max(1L, Math.round(h * uniformScale)));
             }
-            // 半径
+            // 半径：用统一缩放因子
             Long radius = el.getAsLong(Element.COLUMN_INT_ELEMENT_RADIUS);
             if (radius != null) {
-                float uniformScale = Math.min(scaleX, scaleY);
                 el.put(Element.COLUMN_INT_ELEMENT_RADIUS, Math.max(1L, Math.round(radius * uniformScale)));
             }
         }

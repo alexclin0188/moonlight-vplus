@@ -66,52 +66,6 @@ fun SettingsScreen(
     }
 }
 
-// ── Portrait: single-column list (existing behavior) ──────────────
-
-@Composable
-private fun PortraitSettingsList(
-    onNavigate: (String) -> Unit,
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxSize(),
-    ) {
-        items(SETTINGS_CATEGORIES.size) { index ->
-            val cat = SETTINGS_CATEGORIES[index]
-            ListItem(
-                headlineContent = {
-                    Text(cat.title, style = MaterialTheme.typography.bodyLarge)
-                },
-                leadingContent = {
-                    Icon(
-                        cat.icon,
-                        contentDescription = cat.title,
-                        tint = MaterialTheme.colorScheme.onSurface,
-                    )
-                },
-                trailingContent = {
-                    Icon(
-                        Icons.AutoMirrored.Filled.NavigateNext,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        if (cat.route == "_widget") {
-                            onNavigate(MoonLinkRoute.SettingsWidget.route)
-                        } else {
-                            onNavigate(cat.route)
-                        }
-                    },
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-        }
-    }
-}
-
 // ── Landscape: animated two-pane ────────────────────────────
 //   - 无子页面时左栏占满内容区
 //   - 展开子页面时左栏收缩到 200.dp，右栏从右侧滑入
@@ -170,6 +124,13 @@ private fun LandscapeSettingsContent(
                                     MaterialTheme.colorScheme.onSurface,
                             )
                         },
+                        trailingContent = {
+                            Icon(
+                                Icons.AutoMirrored.Filled.NavigateNext,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        },
                         colors = ListItemDefaults.colors(
                             containerColor = Color.Transparent,
                         ),
@@ -215,6 +176,50 @@ private fun LandscapeSettingsContent(
             if (expandedKey == null) {
                 cachedKey = null
             }
+        }
+    }
+}
+
+@Composable
+private fun PortraitSettingsList(
+    onNavigate: (String) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize(),
+    ) {
+        items(SETTINGS_CATEGORIES.size) { index ->
+            val cat = SETTINGS_CATEGORIES[index]
+            ListItem(
+                headlineContent = {
+                    Text(cat.title, style = MaterialTheme.typography.bodyLarge)
+                },
+                leadingContent = {
+                    Icon(
+                        cat.icon,
+                        contentDescription = cat.title,
+                        tint = MaterialTheme.colorScheme.onSurface,
+                    )
+                },
+                trailingContent = {
+                    Icon(
+                        Icons.AutoMirrored.Filled.NavigateNext,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        if (cat.route == "_widget") {
+                            onNavigate(MoonLinkRoute.SettingsWidget.route)
+                        } else {
+                            onNavigate(cat.route)
+                        }
+                    },
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
         }
     }
 }
