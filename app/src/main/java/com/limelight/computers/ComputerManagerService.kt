@@ -519,6 +519,14 @@ class ComputerManagerService : Service() {
     fun removeComputer(computer: ComputerDetails) {
         if (!getLocalDatabaseReference()) return
 
+        // 同步清理主机级串流配置
+        try {
+            val hostSettingsManager = com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager(this)
+            computer.uuid?.let { hostSettingsManager.deleteSettings(it) }
+        } catch (_: Exception) {
+            // 清理失败不影响主流程
+        }
+
         dbManager.deleteComputer(computer)
 
         synchronized(pollingTuples) {

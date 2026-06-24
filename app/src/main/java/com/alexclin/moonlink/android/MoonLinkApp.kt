@@ -32,6 +32,7 @@ import androidx.navigation.navArgument
 import com.alexclin.moonlink.android.device.detail.DeviceDetailScreen
 import com.alexclin.moonlink.android.device.overview.DeviceOverviewScreen
 import com.alexclin.moonlink.android.device.streamsettings.DeviceStreamSettingsScreen
+import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import com.alexclin.moonlink.android.home.DeviceListScreen
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
@@ -250,8 +251,13 @@ fun MoonLinkApp(
                 }),
             ) { backStack ->
                 val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
                 DeviceStreamSettingsScreen(
                     hostname = deviceManager.getDevice(uuid)?.name ?: "",
+                    uuid = uuid,
+                    settingsManager = settingsManager,
+                    onBack = { navController.popBackStack() },
                 )
             }
 

@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.theme.windowsBlue
 import com.alexclin.moonlink.android.home.DeviceBoxArt
 import com.alexclin.moonlink.android.theme.statusOffline
@@ -64,6 +65,7 @@ fun DeviceOverviewScreen(
 
     val computer = findComputer(computers, uuid)
     var appList by remember(uuid) { mutableStateOf(loadCachedAppList(context, uuid)) }
+    var displaysInfo by remember(uuid) { mutableStateOf<List<NvHTTP.DisplayInfo>?>(null) }
 
     // ── 主动拉取 app list & box art ─────────────────────
     // 如果缓存中没有 app list 且设备在线+已配对，则异步从主机拉取并缓存。
@@ -78,6 +80,41 @@ fun DeviceOverviewScreen(
             if (fetched != null && fetched.isNotEmpty()) {
                 appList = fetched
             }
+        }
+    }
+
+    // ── 主动拉取 Sunshine displays 列表 ─────────────────
+    // 设备在线时尝试调用 Sunshine 扩展 API /displays，
+    // 成功则在桌面缩略图中间展示显示器矩形块，点击以该 displayName 启动。
+    LaunchedEffect(uuid, computer?.state) {
+        val comp = computer
+        if (comp != null && comp.state == ComputerDetails.State.ONLINE &&
+            managerBinder != null && comp.activeAddress != null && !comp.nvidiaServer
+        ) {
+            withContext(Dispatchers.IO) {
+                try {
+                    val address = ServerHelper.getCurrentAddressFromComputer(comp)
+                    val httpConn = NvHTTP(
+                        address,
+                        comp.httpsPort,
+                        managerBinder.getUniqueId(),
+                        android.os.Build.MODEL,
+                        comp.serverCert,
+                        PlatformBinding.getCryptoProvider(context)
+                    )
+                    val displays = httpConn.getDisplays()
+                    if (displays.isNotEmpty()) {
+                        displaysInfo = displays
+                    } else {
+                        displaysInfo = null
+                    }
+                } catch (_: Exception) {
+                    // 调用失败则忽略，不展示矩形小方块
+                    displaysInfo = null
+                }
+            }
+        } else {
+            displaysInfo = null
         }
     }
 
@@ -204,6 +241,27 @@ fun DeviceOverviewScreen(
                                             color = Color.White.copy(alpha = 0.9f),
                                             maxLines = 1,
                                         )
+                                    }
+                                }
+
+                                // Display selector blocks (Sunshine displays API)
+                                val displayInfoList = displaysInfo
+                                if (displayInfoList != null && displayInfoList.isNotEmpty()) {
+                                    Row(
+                                        modifier = Modifier
+                                            .align(Alignment.Center)
+                                            .padding(top = 12.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        displayInfoList.forEach { display ->
+                                            DisplayBlock(
+                                                display = display,
+                                                computer = computer,
+                                                managerBinder = managerBinder,
+                                                context = context,
+                                            )
+                                        }
                                     }
                                 }
 
@@ -440,6 +498,27 @@ fun DeviceOverviewScreen(
                                         color = Color.White.copy(alpha = 0.9f),
                                         maxLines = 1,
                                     )
+                                }
+                            }
+
+                            // Display selector blocks (Sunshine displays API)
+                            val displayInfoList = displaysInfo
+                            if (displayInfoList != null && displayInfoList.isNotEmpty()) {
+                                Row(
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .padding(top = 12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    displayInfoList.forEach { display ->
+                                        DisplayBlock(
+                                            display = display,
+                                            computer = computer,
+                                            managerBinder = managerBinder,
+                                            context = context,
+                                        )
+                                    }
                                 }
                             }
 
@@ -889,6 +968,74 @@ private fun DialogActionRow(text: String, onClick: () -> Unit) {
     }
 }
 
+// ── Enhanced display block (Sunshine displays API) ─────────────────
+
+@Composable
+private fun DisplayBlock(
+    display: NvHTTP.DisplayInfo,
+    computer: ComputerDetails,
+    managerBinder: ComputerManagerService.ComputerManagerBinder?,
+    context: Context,
+) {
+    val isPrimary = display.isPrimary
+    val bgColor = if (isPrimary) Color(0xFFFFF3CD) else Color.White.copy(alpha = 0.85f)
+    val borderMod = if (isPrimary) {
+        Modifier.border(1.5.dp, Color(0xFFFFC107), RoundedCornerShape(4.dp))
+    } else {
+        Modifier
+    }
+
+    Box(
+        modifier = Modifier
+            .wrapContentWidth()
+            .height(52.dp)
+            .clip(RoundedCornerShape(4.dp))
+            .background(bgColor)
+            .then(borderMod)
+            .clickable {
+                launchStreamFromOverview(context, computer, managerBinder, displayName = display.name)
+            },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxHeight()
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                if (isPrimary) {
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = "主显示器",
+                        modifier = Modifier.size(14.dp),
+                        tint = Color(0xFFFF8F00),
+                    )
+                }
+                Text(
+                    text = display.name,
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Medium,
+                    ),
+                    color = if (isPrimary) Color(0xFF5D4037) else Color.Black,
+                    maxLines = 2,
+                )
+            }
+            Text(
+                text = "${display.currentScalePercent}%",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 10.sp,
+                ),
+                color = if (isPrimary) Color(0xFF8D6E63) else Color.Black.copy(alpha = 0.5f),
+                maxLines = 1,
+            )
+        }
+    }
+}
+
 // ── Stream launcher (overview page) ───────────────────────────────
 
 /**
@@ -914,6 +1061,7 @@ private fun launchStreamFromOverview(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     app: NvApp? = null,
     forceResume: Boolean = false,
+    displayName: String? = null,
 ) {
     if (managerBinder == null) return
     val activity = context as? android.app.Activity ?: return
@@ -926,9 +1074,13 @@ private fun launchStreamFromOverview(
             Toast.makeText(context, "从画中画恢复串流…", Toast.LENGTH_SHORT).show()
             StreamEngine.currentPipActivity!!.finish()
         } else {
-            // 不同设备：关闭 PiP Activity 停止旧流
+            // 不同设备：关闭 PiP Activity 停止旧流。
+            // finish() 会触发旧 Activity 的 onDestroy → engine.release() 完整清理。
+            // 但 onDestroy 是异步执行的，主动清除静态引用避免新流启动时读到脏数据。
             Toast.makeText(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT).show()
             StreamEngine.currentPipActivity!!.finish()
+            StreamEngine.currentPipActivity = null
+            StreamEngine.currentPipUuid = null
         }
     }
 
@@ -946,7 +1098,7 @@ private fun launchStreamFromOverview(
     // ── 使用新版 StreamActivity ──
     // useLastSettings 标志传递给 StreamActivity，由 StreamEngine 在初始化时应用
     val useLastSettings = AppSettingsManager(context).isUseLastSettingsEnabled
-    val intent = createStreamIntent(context, computer, targetApp, managerBinder, useLastSettings, forceResume)
+    val intent = createStreamIntent(context, computer, targetApp, managerBinder, useLastSettings, forceResume, displayName)
     context.startActivity(intent)
 }
 
@@ -962,6 +1114,7 @@ private fun createStreamIntent(
     managerBinder: ComputerManagerService.ComputerManagerBinder,
     useLastSettings: Boolean,
     forceResume: Boolean = false,
+    displayName: String? = null,
 ): Intent {
     return Intent(context, StreamActivity::class.java).apply {
         putExtra("Host", computer.activeAddress?.address)
@@ -978,6 +1131,9 @@ private fun createStreamIntent(
         putExtra("ForceResumeCurrentSession", forceResume)
         putExtra("PairName", computer.getPairName(context))
         putExtra("usevdd", computer.useVdd)
+        if (!displayName.isNullOrEmpty()) {
+            putExtra("DisplayName", displayName)
+        }
         if (useLastSettings) {
             val uuid = computer.uuid
             if (uuid != null) {

@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -201,7 +202,7 @@ fun DeviceListScreen(
             var needsRefresh = false
             for (deferred in results) {
                 val (uuid, result) = deferred.await()
-                if (result != null) {
+                if (result != null && uuid != null) {
                     invalidateBoxArtCache(uuid)
                     needsRefresh = true
                 }
