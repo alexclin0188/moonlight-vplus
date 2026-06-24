@@ -61,6 +61,8 @@ import com.limelight.utils.CacheHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import com.alexclin.moonlink.android.device.overview.loadCachedAppList
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -154,45 +156,57 @@ fun DeviceListScreen(
     }
 
     // ── 回到主页时强制刷新设备在线状态 ──
-    // Activity.onResume 已触发 forceRefresh，但同一 Activity 内的 Compose 导航
-    // （主页→概要页→主页）不会再次触发 onResume，因此需要在此显式刷新。
-    LaunchedEffect(managerBinder) {
-        managerBinder?.forceRefresh()
+    // 仅首次绑定后执行一次；tab 切换不再重复触发。
+    var hasRefreshed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (!hasRefreshed && managerBinder != null) {
+            managerBinder?.forceRefresh()
+            hasRefreshed = true
+        }
     }
 
-    // ── 主动获取 box art 缩略图 ──────────────────────────
-    // 为所有在线+已配对且无缓存的设备，自动拉取应用列表并下载缩略图到磁盘，
-    // 这样 DeviceBoxArt 在首页就能直接展示桌面图片，无需先进入设备概要页。
-    LaunchedEffect(computers, managerBinder) {
+    // ── 主动获取 box art 缩略图（异步并发展）──────────────
+    // 为所有在线+已配对且无缓存的设备，自动拉取应用列表并下载缩略图到磁盘。
+    // 使用 rememberSaveable 避免 tab 切换时重复执行。
+    var hasPrefetched by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (hasPrefetched || managerBinder == null) return@LaunchedEffect
+
         val targets = computers.filter {
             it.state == ComputerDetails.State.ONLINE &&
             it.pairState == PairingManager.PairState.PAIRED &&
             it.uuid != null
         }
-        if (targets.isEmpty() || managerBinder == null) return@LaunchedEffect
+        if (targets.isEmpty()) return@LaunchedEffect
 
-        var needsRefresh = false
-        for (computer in targets) {
-            val uuid = computer.uuid!!
-            // 检查磁盘上是否已有 box art（轻量文件 I/O，但避免在 main 线程执行）
-            val hasCached = withContext(Dispatchers.IO) {
-                val boxArtDir = CacheHelper.openPath(false, context.cacheDir, "boxart", uuid)
-                val appListFile = CacheHelper.openPath(false, context.cacheDir, "applist", uuid)
-                boxArtDir.isDirectory() &&
-                    (boxArtDir.listFiles()?.isNotEmpty() == true || appListFile.exists())
+        hasPrefetched = true
+
+        // 并发检查所有设备的缓存，跳过已有缓存的
+        val uncached = withContext(Dispatchers.IO) {
+            targets.filter { computer ->
+                val dir = CacheHelper.openPath(false, context.cacheDir, "boxart", computer.uuid!!)
+                val appListFile = CacheHelper.openPath(false, context.cacheDir, "applist", computer.uuid!!)
+                !(dir.isDirectory() && (dir.listFiles()?.isNotEmpty() == true || appListFile.exists()))
             }
-            if (hasCached) continue
-
-            // 主动拉取（fetchAndCacheAppListAndBoxArt 内部已切到 Dispatchers.IO）
-            val result = fetchAndCacheAppListAndBoxArt(context, computer, managerBinder)
-            if (result != null) needsRefresh = true
         }
-        if (needsRefresh) {
-            // 清除所有目标设备的内存缓存，使 DeviceBoxArt 下次从磁盘重载
-            for (computer in targets) {
-                computer.uuid?.let { invalidateBoxArtCache(it) }
+        if (uncached.isEmpty()) return@LaunchedEffect
+
+        // 异步并发拉取所有无缓存的设备
+        coroutineScope {
+            val results = uncached.map { computer ->
+                async(Dispatchers.IO) {
+                    computer.uuid to fetchAndCacheAppListAndBoxArt(context, computer, managerBinder!!)
+                }
             }
-            refreshTrigger++
+            var needsRefresh = false
+            for (deferred in results) {
+                val (uuid, result) = deferred.await()
+                if (result != null) {
+                    invalidateBoxArtCache(uuid)
+                    needsRefresh = true
+                }
+            }
+            if (needsRefresh) refreshTrigger++
         }
     }
 

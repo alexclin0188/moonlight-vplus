@@ -1,16 +1,24 @@
 package com.alexclin.moonlink.android.device.detail
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.device.overview.findComputer
+import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.PairingManager
 
@@ -18,7 +26,10 @@ import com.limelight.nvstream.http.PairingManager
 fun DeviceDetailScreen(
     uuid: String,
     computers: List<ComputerDetails>,
+    managerBinder: ComputerManagerService.ComputerManagerBinder? = null,
     onBack: () -> Unit = {},
+    editTrigger: Int = 0,
+    copyTrigger: Int = 0,
 ) {
     val computer = findComputer(computers, uuid)
     if (computer == null) {
@@ -28,8 +39,33 @@ fun DeviceDetailScreen(
         return
     }
 
+    val context = LocalContext.current
+    var showEditDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(editTrigger) {
+        if (editTrigger > 0) showEditDialog = true
+    }
+
+    LaunchedEffect(copyTrigger) {
+        if (copyTrigger > 0) {
+            val detailText = deviceDetailsToText(computer)
+            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("设备详情", detailText)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(context, "详情已复制到剪贴板", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
+
+    if (showEditDialog) {
+        EditRemoteAddressDialog(
+            computer = computer,
+            managerBinder = managerBinder,
+            onDismiss = { showEditDialog = false },
+        )
+    }
 
     if (isLandscape) {
         // ── 横屏：全宽可滚动内容 ─────────────────────
@@ -89,21 +125,11 @@ private fun DetailContentCards(computer: ComputerDetails) {
     DetailCard {
         SectionTitle("网络信息")
 
-        computer.activeAddress?.let {
-            DetailRow("当前活跃地址", it.toString())
-        }
-        computer.localAddress?.let {
-            DetailRow("局域网地址", it.toString())
-        }
-        computer.remoteAddress?.let {
-            DetailRow("远程地址", it.toString())
-        }
-        computer.manualAddress?.let {
-            DetailRow("手动地址", it.toString())
-        }
-        computer.ipv6Address?.let {
-            DetailRow("IPv6 地址", it.toString())
-        }
+        DetailRow("当前活跃地址", computer.activeAddress?.toString() ?: "—")
+        DetailRow("局域网地址", computer.localAddress?.toString() ?: "—")
+        DetailRow("远程地址", computer.remoteAddress?.toString() ?: "—")
+        DetailRow("手动地址", computer.manualAddress?.toString() ?: "—")
+        DetailRow("IPv6 地址", computer.ipv6Address?.toString() ?: "—")
         DetailRow("HTTPS 端口", if (computer.httpsPort > 0) computer.httpsPort.toString() else "—")
         DetailRow("MAC 地址", computer.macAddress ?: "—")
         DetailRow("IPv6", if (computer.ipv6Disabled) "已禁用" else "已启用")
@@ -115,7 +141,92 @@ private fun DetailContentCards(computer: ComputerDetails) {
         DetailRow("Sunshine 版本", computer.getSunshineVersionDisplay().ifBlank { "—" })
         DetailRow("NVIDIA Server", if (computer.nvidiaServer) "是" else "否")
         DetailRow("支持多地址", if (computer.hasMultipleAddresses()) "是" else "否")
+        DetailRow("支持桌面快速启动", if (computer.supportsDesktopSpecialApp) "是" else "否")
     }
+}
+
+// ── Edit remote address dialog ─────────────────────────────────────
+
+@Composable
+private fun EditRemoteAddressDialog(
+    computer: ComputerDetails,
+    managerBinder: ComputerManagerService.ComputerManagerBinder?,
+    onDismiss: () -> Unit,
+) {
+    val context = LocalContext.current
+    val currentAddr = computer.remoteAddress?.toString() ?: ""
+    var addressText by remember { mutableStateOf(currentAddr) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("编辑远程地址") },
+        text = {
+            OutlinedTextField(
+                value = addressText,
+                onValueChange = { addressText = it },
+                label = { Text("host:port") },
+                placeholder = { Text("192.168.1.100:47989") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val text = addressText.trim()
+                if (text.isNotEmpty()) {
+                    val host: String
+                    val port: Int
+                    val colonIdx = text.lastIndexOf(':')
+                    if (colonIdx > 0 && colonIdx > text.indexOf('[')) {
+                        host = text.substring(0, colonIdx)
+                        port = text.substring(colonIdx + 1).toIntOrNull() ?: fallbackPort(computer)
+                    } else if (text.indexOf('[') != -1) {
+                        host = text.trim('[', ']')
+                        port = fallbackPort(computer)
+                    } else {
+                        host = text
+                        port = fallbackPort(computer)
+                    }
+                    computer.remoteAddress = ComputerDetails.AddressTuple(host, port)
+                    managerBinder?.updateComputer(computer)
+                    Toast.makeText(context, "远程地址已更新", Toast.LENGTH_SHORT).show()
+                }
+                onDismiss()
+            }) { Text("确定") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("取消") }
+        },
+    )
+}
+
+private fun fallbackPort(computer: ComputerDetails): Int {
+    return computer.remoteAddress?.port
+        ?: computer.localAddress?.port
+        ?: computer.manualAddress?.port
+        ?: 47989
+}
+
+private fun deviceDetailsToText(computer: ComputerDetails): String {
+    val sb = StringBuilder()
+    fun add(label: String, value: String) { sb.append("$label: $value\n") }
+    add("Name", computer.name ?: "null")
+    add("State", computer.state.toString())
+    add("Active Address", computer.activeAddress?.toString() ?: "null")
+    add("UUID", computer.uuid ?: "null")
+    add("Local Address", computer.localAddress?.toString() ?: "null")
+    add("Remote Address", computer.remoteAddress?.toString() ?: "null")
+    add("IPv6 Address", if (computer.ipv6Disabled) "Disabled" else (computer.ipv6Address?.toString() ?: "null"))
+    add("Manual Address", computer.manualAddress?.toString() ?: "null")
+    add("MAC Address", computer.macAddress ?: "null")
+    add("Pair State", computer.pairState.toString())
+    if (computer.runningGameId != 0) add("Running Game ID", computer.runningGameId.toString())
+    add("HTTPS Port", if (computer.httpsPort > 0) computer.httpsPort.toString() else "null")
+    add("Sunshine Version", computer.getSunshineVersionDisplay())
+    add("Desktop Special App Support", computer.supportsDesktopSpecialApp.toString())
+    add("NVIDIA Server", computer.nvidiaServer.toString())
+    return sb.toString().trimEnd()
 }
 
 // ── Reusable components ───────────────────────────────────────────

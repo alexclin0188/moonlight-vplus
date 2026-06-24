@@ -111,6 +111,7 @@ fun DeviceOverviewScreen(
     val isOnline = computer.state == ComputerDetails.State.ONLINE
     val isPaired = computer.pairState == PairingManager.PairState.PAIRED
     val canShowActions = isOnline && isPaired
+    val showQuickActionButton = isPaired // 离线时也展示快捷操作按钮，但仅隐藏部分选项
 
     Scaffold(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
@@ -236,7 +237,7 @@ fun DeviceOverviewScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 8.dp, vertical = 8.dp),
                             ) {
-                                if (canShowActions) {
+                                if (showQuickActionButton) {
                                     OverviewActionButton(
                                         icon = Icons.Default.Bolt,
                                         label = "快捷操作",
@@ -470,7 +471,7 @@ fun DeviceOverviewScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                         ) {
-                            if (canShowActions) {
+                            if (showQuickActionButton) {
                                 OverviewActionButton(
                                     icon = Icons.Default.Bolt,
                                     label = "快捷操作",
@@ -731,7 +732,8 @@ private fun QuickActionsDialog(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                DialogActionRow("重启") {
+                if (isOnline) {
+                    DialogActionRow("重启") {
                     if (activity != null && managerBinder != null) {
                         scope.launch {
                             try {
@@ -759,7 +761,9 @@ private fun QuickActionsDialog(
                     }
                     onDismiss()
                 }
-                DialogActionRow("关机") {
+                }
+                if (isOnline) {
+                    DialogActionRow("关机") {
                     if (activity != null && managerBinder != null) {
                         scope.launch {
                             try {
@@ -787,13 +791,17 @@ private fun QuickActionsDialog(
                     }
                     onDismiss()
                 }
-                DialogActionRow("睡眠") {
+                }
+                if (isOnline) {
+                    DialogActionRow("睡眠") {
                     if (activity != null && managerBinder != null) {
                         ServerHelper.pcSleep(activity, computer, managerBinder, null)
                     }
                     onDismiss()
                 }
-                DialogActionRow("打开 Web 管理（Sunshine）") {
+                }
+                if (isOnline) {
+                    DialogActionRow("打开 Web 管理（Sunshine）") {
                     val addr = computer.activeAddress?.address
                     val url = if (addr != null) "https://$addr:${computer.httpsPort}" else ""
                     val intent = Intent(context, SunshineWebUiActivity::class.java).apply {
@@ -803,6 +811,7 @@ private fun QuickActionsDialog(
                     }
                     context.startActivity(intent)
                     onDismiss()
+                }
                 }
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 if (!isOnline) {

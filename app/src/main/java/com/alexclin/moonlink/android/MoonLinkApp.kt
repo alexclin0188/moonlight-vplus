@@ -1,9 +1,14 @@
 package com.alexclin.moonlink.android
 
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Devices
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Wifi
@@ -120,6 +125,10 @@ fun MoonLinkApp(
     // External refresh trigger for VPN screen
     val vpnRefreshTrigger = remember { mutableIntStateOf(0) }
 
+    // Device detail page action triggers (copies → triggers → Int increments)
+    val detailCopyTrigger = remember { mutableIntStateOf(0) }
+    val detailEditTrigger = remember { mutableIntStateOf(0) }
+
     // Snackbar host state shared across screens
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -130,6 +139,10 @@ fun MoonLinkApp(
             navController = navController,
             startDestination = MoonLinkRoute.DeviceList.route,
             modifier = Modifier.fillMaxSize(),
+            enterTransition = { fadeIn(animationSpec = tween(0)) },
+            exitTransition = { fadeOut(animationSpec = tween(0)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(0)) },
+            popExitTransition = { fadeOut(animationSpec = tween(0)) },
         ) {
             // ── Tab 1: 我的设备 ──────────────────────────────
             composable(MoonLinkRoute.DeviceList.route) {
@@ -253,7 +266,10 @@ fun MoonLinkApp(
                 DeviceDetailScreen(
                     uuid          = uuid,
                     computers     = deviceManager.devices,
+                    managerBinder = managerBinder,
                     onBack        = { navController.popBackStack() },
+                    copyTrigger   = detailCopyTrigger.intValue,
+                    editTrigger   = detailEditTrigger.intValue,
                 )
             }
         }
@@ -323,6 +339,14 @@ fun MoonLinkApp(
                             "tab_vpn" -> {
                                 IconButton(onClick = { vpnRefreshTrigger.intValue++ }) {
                                     Icon(Icons.Default.Refresh, contentDescription = "刷新状态")
+                                }
+                            }
+                            MoonLinkRoute.DeviceDetail.route -> {
+                                IconButton(onClick = { detailCopyTrigger.intValue++ }) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "复制详情")
+                                }
+                                IconButton(onClick = { detailEditTrigger.intValue++ }) {
+                                    Icon(Icons.Default.Edit, contentDescription = "编辑远程地址")
                                 }
                             }
                         }
