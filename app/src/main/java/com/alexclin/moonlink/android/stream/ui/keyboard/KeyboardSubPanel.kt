@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -113,7 +114,11 @@ fun KeyboardSubPanel(
             val screenHeight = rootView.height
             val keyboardHeight = screenHeight - rect.bottom
             if (keyboardHeight > 0 && keyboardHeight != cachedKeyboardHeightPx) {
-                cachedKeyboardHeightPx = keyboardHeight
+                // 只在键盘高度增长时（弹出过程）更新缓存，
+                // 避免键盘收起过程中的中间态值覆盖正确的缓存高度
+                if (keyboardHeight > cachedKeyboardHeightPx) {
+                    cachedKeyboardHeightPx = keyboardHeight
+                }
             } else if (keyboardHeight == 0 && cachedKeyboardHeightPx > 0 && selectedTab == 0) {
                 // 系统键盘被手动收起且当前仍在输入法标签 → 隐藏面板
                 cachedKeyboardHeightPx = 0
@@ -156,11 +161,13 @@ fun KeyboardSubPanel(
                         hideKeyboard()
                     }
                     if (tab == 3) {
-                        // 主机键盘：发送 Win+Ctrl+O 唤起远端系统屏幕键盘，然后关闭面板
+                        // 主机键盘：先更新 selectedTab 防止键盘高度监听器误触发 onClose
+                        selectedTab = tab
                         engine.sendToggleHostKeyboard()
                         onCloseToHidden()
                     } else if (tab == 2) {
-                        // 虚拟键盘：关闭面板，然后显示浮动虚拟键盘覆盖层
+                        // 虚拟键盘：先更新 selectedTab 防止键盘高度监听器误触发 onClose
+                        selectedTab = tab
                         onCloseToHidden()
                         onShowFloatingKeyboard()
                     } else {
@@ -449,14 +456,16 @@ private fun ShortcutEditButton(
 ) {
     Surface(
         modifier = Modifier
-            .aspectRatio(1f)
+            .heightIn(min = 56.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = if (isEditMode) MaterialTheme.colorScheme.primary
         else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -488,15 +497,15 @@ private fun PresetShortcutButton(
 ) {
     Surface(
         modifier = Modifier
-            .aspectRatio(1f)
+            .heightIn(min = 56.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -528,7 +537,7 @@ private fun CustomShortcutButton(
 ) {
     Surface(
         modifier = Modifier
-            .aspectRatio(1f)
+            .heightIn(min = 56.dp)
             .clickable(enabled = !isEditMode, onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = if (isEditMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
@@ -536,8 +545,8 @@ private fun CustomShortcutButton(
     ) {
         Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(4.dp),
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -571,13 +580,15 @@ private fun ShortcutActionButton(
 ) {
     Surface(
         modifier = Modifier
-            .aspectRatio(1f)
+            .heightIn(min = 56.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = MaterialTheme.colorScheme.primaryContainer,
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
