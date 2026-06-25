@@ -47,7 +47,6 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.VideogameAsset
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -81,6 +80,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
+import com.alexclin.moonlink.android.stream.ui.common.ChipSelector
+import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.stream.ui.common.MoonLinkQuickActions
 import com.alexclin.moonlink.android.stream.ui.common.RestartHintBanner
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
@@ -474,16 +475,12 @@ private fun TouchModeSection(engine: StreamEngine) {
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             TouchMode.entries.forEach { mode ->
-                FilterChip(
+                CompactChip(
+                    label = mode.label,
                     selected = selectedMode == mode,
                     onClick = {
                         selectedMode = mode
                         applyTouchMode(engine, mode, context)
-                    },
-                    label = {
-                        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                            AutoScaleLabel(text = mode.label)
-                        }
                     },
                     modifier = Modifier.weight(1f),
                 )
@@ -645,6 +642,38 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 }
             }
 
+            // 激活按键
+            item {
+                val keyToIdx = mapOf(
+                    ControllerGyroManager.GYRO_ACTIVATION_ALWAYS to 0,
+                    KeyEvent.KEYCODE_BUTTON_L2 to 1,
+                    KeyEvent.KEYCODE_BUTTON_R2 to 2,
+                )
+                val idxToKey = mapOf(
+                    0 to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS,
+                    1 to KeyEvent.KEYCODE_BUTTON_L2,
+                    2 to KeyEvent.KEYCODE_BUTTON_R2,
+                )
+                val initIdx = keyToIdx[pref.gyroActivationKeyCode] ?: 1
+                var activateKey by remember { mutableIntStateOf(initIdx) }
+
+                Text("激活按键:", style = MaterialTheme.typography.bodyMedium)
+                ChipSelector(
+                    options = listOf(
+                        "始终" to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS.toString(),
+                        "LT" to KeyEvent.KEYCODE_BUTTON_L2.toString(),
+                        "RT" to KeyEvent.KEYCODE_BUTTON_R2.toString(),
+                    ),
+                    selectedValue = pref.gyroActivationKeyCode.toString(),
+                    onSelect = { value ->
+                        val keyCode = value.toIntOrNull() ?: ControllerGyroManager.GYRO_ACTIVATION_ALWAYS
+                        pref.gyroActivationKeyCode = keyCode
+                        pref.writePreferences(context)
+                        engine.recomputeGyroHold()
+                    },
+                )
+            }
+
             // 模式
             item {
                 var gyroMode by remember { mutableIntStateOf(
@@ -694,56 +723,6 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 }
                 SettingSwitch("Y轴反转", invertY) {
                     invertY = it; pref.gyroInvertYAxis = it; pref.writePreferences(context)
-                }
-            }
-
-            // 激活按键
-            item {
-                val keyToIdx = mapOf(
-                    ControllerGyroManager.GYRO_ACTIVATION_ALWAYS to 0,
-                    KeyEvent.KEYCODE_BUTTON_L2 to 1,
-                    KeyEvent.KEYCODE_BUTTON_R2 to 2,
-                )
-                val idxToKey = mapOf(
-                    0 to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS,
-                    1 to KeyEvent.KEYCODE_BUTTON_L2,
-                    2 to KeyEvent.KEYCODE_BUTTON_R2,
-                )
-                val initIdx = keyToIdx[pref.gyroActivationKeyCode] ?: 1
-                var activateKey by remember { mutableIntStateOf(initIdx) }
-
-                Text("激活按键:", style = MaterialTheme.typography.bodyMedium)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    FilterChip(
-                        selected = activateKey == 0,
-                        onClick = {
-                            activateKey = 0
-                            pref.gyroActivationKeyCode = ControllerGyroManager.GYRO_ACTIVATION_ALWAYS
-                            pref.writePreferences(context)
-                            engine.recomputeGyroHold()
-                        },
-                        label = { Text("始终") },
-                    )
-                    FilterChip(
-                        selected = activateKey == 1,
-                        onClick = {
-                            activateKey = 1
-                            pref.gyroActivationKeyCode = KeyEvent.KEYCODE_BUTTON_L2
-                            pref.writePreferences(context)
-                            engine.recomputeGyroHold()
-                        },
-                        label = { Text("LT") },
-                    )
-                    FilterChip(
-                        selected = activateKey == 2,
-                        onClick = {
-                            activateKey = 2
-                            pref.gyroActivationKeyCode = KeyEvent.KEYCODE_BUTTON_R2
-                            pref.writePreferences(context)
-                            engine.recomputeGyroHold()
-                        },
-                        label = { Text("RT") },
-                    )
                 }
             }
         }

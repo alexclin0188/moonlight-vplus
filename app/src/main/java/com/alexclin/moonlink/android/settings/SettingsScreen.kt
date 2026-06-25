@@ -35,11 +35,8 @@ data class SettingsCategory(
 val SETTINGS_CATEGORIES = listOf(
     SettingsCategory("ui",          "界面设置",           Icons.Default.Palette,         "settings_ui"),
     SettingsCategory("performance", "性能与统计分析",      Icons.Default.Speed,           "settings_performance"),
-    SettingsCategory("audio",       "音频设置",           Icons.Default.VolumeUp,        "settings_audio"),
     SettingsCategory("gamepad",     "手柄设置",           Icons.Default.Gamepad,         "settings_gamepad"),
     SettingsCategory("input",       "输入设置",           Icons.Default.Keyboard,        "settings_input"),
-    SettingsCategory("multitouch",  "多点触控设置",        Icons.Default.TouchApp,        "settings_multitouch"),
-    SettingsCategory("connection",  "连接设置",           Icons.Default.Cable,           "settings_connection"),
     SettingsCategory("scene",       "场景预设",           Icons.Default.Slideshow,       "settings_scene"),
     SettingsCategory("keymapping",  "按键映射管理",        Icons.Default.Tune,            "settings_keymapping"),
     SettingsCategory("widget",      "桌面小部件",         Icons.Default.Widgets,         "_widget"),
@@ -235,11 +232,8 @@ private fun SettingsCategoryContent(
     when (key) {
         "ui"          -> UiSettingsScreen()
         "performance" -> PerformanceSettingsScreen()
-        "audio"       -> AudioSettingsScreen()
         "gamepad"     -> GamepadSettingsScreen()
         "input"       -> InputSettingsScreen()
-        "multitouch"  -> MultitouchSettingsScreen()
-        "connection"  -> ConnectionSettingsScreen()
         "scene"       -> ScenePresetsScreen()
         "keymapping"  -> KeyMappingScreen()
         "help"        -> HelpSettingsScreen()

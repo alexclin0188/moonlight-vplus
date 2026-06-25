@@ -30,6 +30,9 @@ class StreamTouchHandler(
     var onCursorVisibilityChanged: ((visible: Boolean) -> Unit)? = null,
 ) {
 
+    /** 本地光标位置变化回调（Compose 光标覆盖层驱动） */
+    var onLocalCursorMoved: ((x: Float, y: Float) -> Unit)? = null
+
     companion object {
         const val TOUCH_CONTEXT_LENGTH = 2
         private const val TWO_FINGER_TAP_THRESHOLD = 100L
@@ -69,7 +72,11 @@ class StreamTouchHandler(
     fun initTouchContexts() {
         for (i in 0 until TOUCH_CONTEXT_LENGTH) {
             absoluteTouchContextMap[i] = AbsoluteTouchContext(conn, i, targetView)
-            relativeTouchContextMap[i] = RelativeTouchContext(conn, i, targetView, prefConfig)
+            RelativeTouchContext(conn, i, targetView, prefConfig).also {
+                it.sense = prefConfig.touchpadSensitivity.coerceIn(1, 200) / 100.0
+                it.onCursorPositionChanged = { x, y -> onLocalCursorMoved?.invoke(x, y) }
+                relativeTouchContextMap[i] = it
+            }
         }
         touchContextMap = if (!prefConfig.touchscreenTrackpad) absoluteTouchContextMap else relativeTouchContextMap
     }
@@ -166,6 +173,10 @@ class StreamTouchHandler(
     // ═════════════════════════════════════════════════════
 
     private fun handleTouchScreen(view: View?, event: MotionEvent): Boolean {
+        // 触摸事件同步设置：false=无缓冲调度（低延迟），true=跟随显示刷新
+        if (!prefConfig.syncTouchEventWithDisplay && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            view?.requestUnbufferedDispatch(event)
+        }
         // 增强触控
         if (!prefConfig.touchscreenTrackpad && prefConfig.enableEnhancedTouch) {
             if (trySendTouchEvent(view, event)) return true
@@ -175,8 +186,9 @@ class StreamTouchHandler(
         val action = event.actionMasked
         val pc = event.pointerCount
 
-        // 三指 → 键盘
-        if (action == MotionEvent.ACTION_POINTER_DOWN && pc == 3) {
+        // 多指 → 键盘（手指数由 prefConfig 控制；0 或负数=禁用）
+        val toggleFingers = prefConfig.nativeTouchFingersToToggleKeyboard
+        if (toggleFingers > 0 && action == MotionEvent.ACTION_POINTER_DOWN && pc == toggleFingers) {
             multiFingerDownTime = event.eventTime
             for (ctx in touchContextMap) ctx?.cancelTouch()
             return true

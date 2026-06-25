@@ -12,9 +12,15 @@ import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.Alignment
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
@@ -171,6 +177,29 @@ class StreamActivity : ComponentActivity() {
                         },
                         modifier = Modifier.fillMaxSize()
                     )
+
+                    // 本地光标覆盖层（触控板模式下绘制）
+                    if (engine.showLocalCursor) {
+                        Canvas(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentSize(unbounded = true, align = Alignment.TopStart)
+                        ) {
+                            val cx = size.width * engine.localCursorAbsX
+                            val cy = size.height * engine.localCursorAbsY
+                            // 绘制一个简单的箭头光标
+                            val path = Path().apply {
+                                moveTo(0f, 0f)
+                                lineTo(20f, 20f)
+                                lineTo(12f, 22f)
+                                lineTo(0f, 10f)
+                                close()
+                            }
+                            drawPath(path, Color.White, style = Fill)
+                            // 光标的暗色描边增强可视性
+                            drawPath(path, Color.Black, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f))
+                        }
+                    }
 
                     // 按键映射覆盖层（Compose 原生，响应式展示）
                     val overlayElements by remember { engine.currentOverlayElements }

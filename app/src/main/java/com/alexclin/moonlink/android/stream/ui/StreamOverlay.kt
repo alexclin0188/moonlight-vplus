@@ -153,7 +153,11 @@ fun StreamOverlay(
     }
 
     val onToggle = {
-        if (panelState == PanelState.HIDDEN) {
+        if (showFloatingKeyboard) {
+            // 虚拟键盘显示时点击悬浮按钮：隐藏键盘，展开窄面板
+            showFloatingKeyboard = false
+            panelState = PanelState.VERTICAL_BAR
+        } else if (panelState == PanelState.HIDDEN) {
             panelState = PanelState.VERTICAL_BAR
         } else {
             panelState = PanelState.HIDDEN
@@ -281,7 +285,7 @@ fun StreamOverlay(
         // ── 悬浮按钮（编辑器打开时隐藏） ──
         if (showFloatingUI) {
             AnimatedVisibility(
-                visible = panelState == PanelState.HIDDEN && !showFloatingKeyboard,
+                visible = panelState == PanelState.HIDDEN || showFloatingKeyboard,
                 enter = PanelAnimations.fabEnter,
                 exit = PanelAnimations.fabExit,
             ) {
@@ -294,47 +298,62 @@ fun StreamOverlay(
                     opacity = engine.fabOpacity,
                 )
             }
-        }
+        }            // ── 浮动虚拟键盘覆盖层 ──
+            // 规则：
+            // 1. 显示时强制隐藏子面板和窄面板（panelState → HIDDEN）
+            // 2. 键盘按键以外的触摸事件（未被键盘消费的）会透传到下层画面
+            //    以便唤醒触摸板/鼠标等交互（keyboard_layout 根节点 clickable=false）
+            // 3. 点击悬浮按钮 → 隐藏键盘并展开窄面板（由 onToggle 处理）
+            if (showFloatingKeyboard) {
+                // 强制关闭面板，确保子面板和窄面板不可见
+                // 只在键盘显示时执行，键盘隐藏时不覆盖 onToggle 设置的 panelState
+                LaunchedEffect(showFloatingKeyboard) {
+                    if (showFloatingKeyboard) {
+                        panelState = PanelState.HIDDEN
+                        activeEntry = null
+                    }
+                }
 
-        // ── 浮动虚拟键盘覆盖层（编辑器打开时也会显示，但编辑器模式下很少触发） ──
-        if (showFloatingKeyboard) {
-            BackHandler {
-                showFloatingKeyboard = false
-            }
-            val bridge = remember { VirtualKeyboardBridge(engine) }
-            val keyboardContainer = remember { mutableStateOf<FrameLayout?>(null) }
+                BackHandler {
+                    showFloatingKeyboard = false
+                }
+                val bridge = remember { VirtualKeyboardBridge(engine) }
+                val keyboardContainer = remember { mutableStateOf<FrameLayout?>(null) }
 
-            LaunchedEffect(showFloatingKeyboard) {
-                if (showFloatingKeyboard) {
-                    while (true) {
-                        delay(500)
-                        val container = keyboardContainer.value
-                        if (container != null && container.visibility != View.VISIBLE) {
-                            showFloatingKeyboard = false
-                            break
+                LaunchedEffect(showFloatingKeyboard) {
+                    if (showFloatingKeyboard) {
+                        while (true) {
+                            delay(500)
+                            val container = keyboardContainer.value
+                            if (container != null && container.visibility != View.VISIBLE) {
+                                showFloatingKeyboard = false
+                                break
+                            }
                         }
                     }
                 }
-            }
 
-            Box(modifier = Modifier.fillMaxSize()) {
-                AndroidView(
-                    factory = { ctx ->
-                        val container = FrameLayout(ctx).apply {
-                            layoutParams = FrameLayout.LayoutParams(
-                                FrameLayout.LayoutParams.MATCH_PARENT,
-                                FrameLayout.LayoutParams.MATCH_PARENT,
-                            )
-                        }
-                        keyboardContainer.value = container
-                        val kUI = KeyboardUIController(container, bridge, ctx)
-                        kUI.show()
-                        container
-                    },
-                    modifier = Modifier.fillMaxSize(),
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    AndroidView(
+                        factory = { ctx ->
+                            val container = FrameLayout(ctx).apply {
+                                layoutParams = FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                )
+                                // 确保容器不消费未处理的触摸事件，透传到下层
+                                isClickable = false
+                                setOnTouchListener { _, _ -> false }
+                            }
+                            keyboardContainer.value = container
+                            val kUI = KeyboardUIController(container, bridge, ctx)
+                            kUI.show()
+                            container
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
-        }
 
         // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向；编辑器打开时隐藏） ──
         if (showFloatingUI) {
@@ -550,9 +569,14 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 trackColor = Color(0x33FFFFFF),
             )
 
-            // 进度文字（连接阶段）
+            // 进度文字（固定前缀 "启动中" + 连接阶段）
+            val progressText = if (!connectionStage.isNullOrEmpty()) {
+                "启动中 $connectionStage"
+            } else {
+                "启动中"
+            }
             Text(
-                text = connectionStage ?: context.getString(com.alexclin.moonlink.android.R.string.conn_establishing_msg),
+                text = progressText,
                 color = Color(0xFFCCCCCC),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Light,

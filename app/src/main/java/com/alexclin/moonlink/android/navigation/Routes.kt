@@ -24,16 +24,40 @@ sealed class MoonLinkRoute(val route: String) {
     data object DeviceStreamSettings : MoonLinkRoute("device_stream_settings/{uuid}") {
         const val ARG_UUID = "uuid"
         fun createRoute(uuid: String) = "device_stream_settings/$uuid"
+        /** 子页路由模板：/touch /display /host /audio /gyro /other */
+        fun subRoute(uuid: String, category: String) = "device_stream_settings/$uuid/$category"
+    }
+
+    /** 串流设置 → 触控模式子页 */
+    data object DeviceStreamSettingsTouch : MoonLinkRoute("device_stream_settings/{uuid}/touch") {
+        const val ARG_UUID = "uuid"
+    }
+    /** 串流设置 → 显示设置子页 */
+    data object DeviceStreamSettingsDisplay : MoonLinkRoute("device_stream_settings/{uuid}/display") {
+        const val ARG_UUID = "uuid"
+    }
+    /** 串流设置 → 主机设置子页 */
+    data object DeviceStreamSettingsHost : MoonLinkRoute("device_stream_settings/{uuid}/host") {
+        const val ARG_UUID = "uuid"
+    }
+    /** 串流设置 → 声音设置子页 */
+    data object DeviceStreamSettingsAudio : MoonLinkRoute("device_stream_settings/{uuid}/audio") {
+        const val ARG_UUID = "uuid"
+    }
+    /** 串流设置 → 体感子页 */
+    data object DeviceStreamSettingsGyro : MoonLinkRoute("device_stream_settings/{uuid}/gyro") {
+        const val ARG_UUID = "uuid"
+    }
+    /** 串流设置 → 其它设置子页 */
+    data object DeviceStreamSettingsOther : MoonLinkRoute("device_stream_settings/{uuid}/other") {
+        const val ARG_UUID = "uuid"
     }
 
     // ── Settings sub-pages ─────────────────────────────────────────
 
     data object SettingsUi : MoonLinkRoute("settings_ui")
-    data object SettingsAudio : MoonLinkRoute("settings_audio")
     data object SettingsGamepad : MoonLinkRoute("settings_gamepad")
     data object SettingsInput : MoonLinkRoute("settings_input")
-    data object SettingsMultitouch : MoonLinkRoute("settings_multitouch")
-    data object SettingsConnection : MoonLinkRoute("settings_connection")
     data object SettingsScene : MoonLinkRoute("settings_scene")
     data object SettingsKeyMapping : MoonLinkRoute("settings_keymapping")
     data object SettingsHelp : MoonLinkRoute("settings_help")

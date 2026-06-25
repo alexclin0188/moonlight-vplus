@@ -76,3 +76,6 @@ app/nonRoot/release/baselineProfiles/
 node_modules/
 package.json
 package-lock.json
+
+# AtomCode local-scope configs (machine-specific)
+.atomcode/local/

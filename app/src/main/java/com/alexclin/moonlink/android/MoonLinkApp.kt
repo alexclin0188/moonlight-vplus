@@ -31,8 +31,14 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alexclin.moonlink.android.device.detail.DeviceDetailScreen
 import com.alexclin.moonlink.android.device.overview.DeviceOverviewScreen
+import com.alexclin.moonlink.android.device.streamsettings.AudioCategory
 import com.alexclin.moonlink.android.device.streamsettings.DeviceStreamSettingsScreen
+import com.alexclin.moonlink.android.device.streamsettings.DisplayCategory
+import com.alexclin.moonlink.android.device.streamsettings.GyroCategory
+import com.alexclin.moonlink.android.device.streamsettings.HostCategory
 import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
+import com.alexclin.moonlink.android.device.streamsettings.OtherCategory
+import com.alexclin.moonlink.android.device.streamsettings.TouchModeCategory
 import com.alexclin.moonlink.android.home.DeviceListScreen
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
@@ -67,12 +73,15 @@ private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid
     MoonLinkRoute.DeviceOverview.route   -> deviceManager.getDevice(uuid ?: "")?.name ?: "设备概要"
     MoonLinkRoute.DeviceDetail.route     -> "设备详情"
     MoonLinkRoute.DeviceStreamSettings.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "串流设置"
+    MoonLinkRoute.DeviceStreamSettingsTouch.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "触控模式"
+    MoonLinkRoute.DeviceStreamSettingsDisplay.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "显示设置"
+    MoonLinkRoute.DeviceStreamSettingsHost.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "主机设置"
+    MoonLinkRoute.DeviceStreamSettingsAudio.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "声音设置"
+    MoonLinkRoute.DeviceStreamSettingsGyro.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "体感"
+    MoonLinkRoute.DeviceStreamSettingsOther.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "其它设置"
     MoonLinkRoute.SettingsUi.route       -> "界面设置"
-    MoonLinkRoute.SettingsAudio.route    -> "音频设置"
     MoonLinkRoute.SettingsGamepad.route  -> "手柄设置"
     MoonLinkRoute.SettingsInput.route    -> "输入设置"
-    MoonLinkRoute.SettingsMultitouch.route -> "多点触控设置"
-    MoonLinkRoute.SettingsConnection.route -> "连接设置"
     MoonLinkRoute.SettingsScene.route    -> "场景预设"
     MoonLinkRoute.SettingsKeyMapping.route -> "按键映射管理"
     MoonLinkRoute.SettingsHelp.route       -> "帮助"
@@ -111,6 +120,7 @@ fun MoonLinkApp(
     // Extract uuid from backStack arguments for routes that need it
     val currentUuid = backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceOverview.ARG_UUID)
         ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID)
+        ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsTouch.ARG_UUID)
 
     // Show bottom bar only on the top-level tabs
     val showBottomBar = currentRoute in TOP_LEVEL_ROUTES
@@ -183,20 +193,11 @@ fun MoonLinkApp(
             composable(MoonLinkRoute.SettingsUi.route) {
                 UiSettingsScreen()
             }
-            composable(MoonLinkRoute.SettingsAudio.route) {
-                AudioSettingsScreen()
-            }
             composable(MoonLinkRoute.SettingsGamepad.route) {
                 GamepadSettingsScreen()
             }
             composable(MoonLinkRoute.SettingsInput.route) {
                 InputSettingsScreen()
-            }
-            composable(MoonLinkRoute.SettingsMultitouch.route) {
-                MultitouchSettingsScreen()
-            }
-            composable(MoonLinkRoute.SettingsConnection.route) {
-                ConnectionSettingsScreen()
             }
             composable(MoonLinkRoute.SettingsScene.route) {
                 ScenePresetsScreen()
@@ -243,7 +244,7 @@ fun MoonLinkApp(
                 )
             }
 
-            // ── 串流设置页 ────────────────────────────────────
+            // ── 串流设置页（分类列表）──────────────────────────
             composable(
                 route = MoonLinkRoute.DeviceStreamSettings.route,
                 arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettings.ARG_UUID) {
@@ -251,13 +252,114 @@ fun MoonLinkApp(
                 }),
             ) { backStack ->
                 val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID) ?: return@composable
-                val ctx = androidx.compose.ui.platform.LocalContext.current
-                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
                 DeviceStreamSettingsScreen(
                     hostname = deviceManager.getDevice(uuid)?.name ?: "",
-                    uuid = uuid,
-                    settingsManager = settingsManager,
+                    onNavigateToCategory = { key ->
+                        navController.navigate(MoonLinkRoute.DeviceStreamSettings.subRoute(uuid, key))
+                    },
                     onBack = { navController.popBackStack() },
+                )
+            }
+
+            // ── 串流设置 → 触控模式子页 ──────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsTouch.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsTouch.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsTouch.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                TouchModeCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 显示设置子页 ──────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsDisplay.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsDisplay.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsDisplay.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                DisplayCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 主机设置子页 ──────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsHost.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsHost.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsHost.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                HostCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 声音设置子页 ──────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsAudio.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsAudio.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsAudio.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                AudioCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 体感子页 ──────────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsGyro.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsGyro.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsGyro.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                GyroCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 其它设置子页 ──────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsOther.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsOther.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsOther.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                OtherCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
                 )
             }
 

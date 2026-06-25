@@ -58,6 +58,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
+import com.alexclin.moonlink.android.stream.ui.common.ChipSelector
+import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.stream.ui.common.RestartHintBanner
 import com.limelight.preferences.CustomResolutionsConsts
 import com.limelight.preferences.PreferenceConfiguration
@@ -68,11 +70,7 @@ import kotlinx.coroutines.withContext
 
 // ── 展开项联动 ID ──
 private const val EXP_SECTION_ABR = 0
-private const val EXP_SECTION_FPS = 1
-private const val EXP_SECTION_VIDEO_FORMAT = 2
-private const val EXP_SECTION_RESOLUTION_SCALE = 3
-private const val EXP_SECTION_OUTPUT_BUFFER = 4
-private const val EXP_SECTION_FRAME_PACING = 5
+private const val EXP_SECTION_OUTPUT_BUFFER = 3
 private val STANDARD_RESOLUTIONS = listOf(
     "640x360", "854x480", "1280x720",
     "1920x1080", "2560x1440", "3840x2160",
@@ -128,34 +126,10 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             }
 
             // DB-1: 帧率选择
-            item {
-                FpsSelector(
-                    engine = engine,
-                    sectionId = EXP_SECTION_FPS,
-                    activeSectionId = activeExpandableId,
-                    onSectionExpand = onSectionExpand,
-                )
-            }
+            item { FpsSelector(engine = engine) }
 
             // DE-1: 视频编码格式
-            item {
-                VideoFormatSelector(
-                    engine = engine,
-                    sectionId = EXP_SECTION_VIDEO_FORMAT,
-                    activeSectionId = activeExpandableId,
-                    onSectionExpand = onSectionExpand,
-                )
-            }
-
-            // DD-3: 分辨率缩放
-            item {
-                ResolutionScaleSelector(
-                    engine = engine,
-                    sectionId = EXP_SECTION_RESOLUTION_SCALE,
-                    activeSectionId = activeExpandableId,
-                    onSectionExpand = onSectionExpand,
-                )
-            }
+            item { VideoFormatSelector(engine = engine) }
 
             // DC-2: 输出缓冲区滑块
             item {
@@ -168,14 +142,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             }
 
             // DE-2: 帧时序模式
-            item {
-                FramePacingSelector(
-                    engine = engine,
-                    sectionId = EXP_SECTION_FRAME_PACING,
-                    activeSectionId = activeExpandableId,
-                    onSectionExpand = onSectionExpand,
-                )
-            }
+            item { FramePacingSelector(engine = engine) }
 
             // DB-3: HDR
             item { HdrSection(engine) }
@@ -208,103 +175,48 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
 }
 
 // ══════════════════════════════════════════
-// DB-1: FpsSelector  (B3 fix: auto mode persisted via SP key)
+// DB-1: FpsSelector — 紧凑芯片布局
 // ══════════════════════════════════════════
 
 @Composable
-private fun FpsSelector(
-    engine: StreamEngine,
-    sectionId: Int = -1,
-    activeSectionId: Int = -1,
-    onSectionExpand: (Int) -> Unit = {},
-) {
-    val context = LocalContext.current
+private fun FpsSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
-    val scope = rememberCoroutineScope()
-
-    var expanded by remember { mutableStateOf(false) }
     var unlockFps by remember { mutableStateOf(pref.unlockFps) }
-    var selectedFps by remember { mutableIntStateOf(pref.fps) }
-
-    val baseFpsOptions = listOf(30, 60, 90, 120)
-    val extraFpsOptions = listOf(144, 165)
-    val currentFpsText = "${selectedFps}FPS"
-
-    // 其它 section 展开时收起自己
-    LaunchedEffect(activeSectionId) {
-        if (activeSectionId != sectionId && expanded) {
-            expanded = false
-        }
-    }
 
     Column {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val willExpand = !expanded
-                    if (willExpand) onSectionExpand(sectionId)
-                    expanded = willExpand
-                }
-                .padding(vertical = 10.dp),
+            modifier = Modifier.padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text("视频帧率", style = MaterialTheme.typography.bodyLarge,
                  modifier = Modifier.weight(1f))
-            Text(currentFpsText, style = MaterialTheme.typography.bodyMedium,
+            Text("解锁帧率", style = MaterialTheme.typography.bodySmall,
                  color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null, modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            Spacer(Modifier.width(4.dp))
+            Switch(
+                checked = unlockFps,
+                onCheckedChange = {
+                    unlockFps = it
+                    pref.unlockFps = it
+                },
+                modifier = Modifier.height(20.dp),
             )
         }
 
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 8.dp)) {
-                // 解锁帧率 — 放在RadioButton上面
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("解锁帧率", Modifier.weight(1f),
-                         style = MaterialTheme.typography.bodySmall)
-                    Switch(checked = unlockFps, onCheckedChange = {
-                        unlockFps = it
-                        pref.unlockFps = it
-                    }, modifier = Modifier.height(24.dp))  // 调小Switch
-                }
-                baseFpsOptions.forEach { fps ->
-                    val label = "${fps} FPS"
-                    FpsRadioItem(fps, label, selectedFps == fps) {
-                        selectedFps = it
-                        pref.fps = it
-                        engine.displaySettingsRestartPending = true
-                        expanded = false
-                    }
-                }
-                if (unlockFps) {
-                    extraFpsOptions.forEach { fps ->
-                        FpsRadioItem(fps, "${fps} FPS", selectedFps == fps) {
-                            selectedFps = it
-                            pref.fps = it
-                            
-                    engine.displaySettingsRestartPending = true
-                            expanded = false
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun FpsRadioItem(value: Int, label: String, selected: Boolean, onClick: (Int) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().clickable { onClick(value) }.padding(vertical = 3.dp),
-    ) {
-        RadioButton(selected = selected, onClick = {})  // 由 Row.clickable 统一处理
-        Spacer(Modifier.width(8.dp))
-        Text(label, style = MaterialTheme.typography.bodyMedium)
+        val baseFps = listOf(30, 60, 90, 120)
+        val extraFps = listOf(144, 165)
+        val allFps = baseFps + if (unlockFps) extraFps else emptyList()
+        ChipSelector(
+            options = allFps.map { fps ->
+                "${fps}FPS" to fps.toString()
+            },
+            selectedValue = pref.fps.toString(),
+            onSelect = { value ->
+                val newFps = value.toIntOrNull() ?: 60
+                pref.fps = newFps
+                engine.displaySettingsRestartPending = true
+            },
+        )
     }
 }
 
@@ -367,7 +279,7 @@ private fun BitrateSelector(
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp),
              modifier = Modifier.fillMaxWidth()) {
             presets.forEach { preset ->
-                BitrateChip(
+                CompactChip(
                     label = customLabels[preset] ?: preset.label,
                     selected = selectedPreset == preset,
                     onClick = {
@@ -394,7 +306,7 @@ private fun BitrateSelector(
                         displayBitrate = engine.adaptiveBitrateService?.currentBitrate?.takeIf { it > 0 }
                             ?: configuredBitrate
                     },
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                 )
             }
         }
@@ -504,42 +416,6 @@ private fun BitrateSelector(
     }
 }
 
-// ══════════════════════════════════════════
-// BitrateChip: 自定义轻量芯片（替代 FilterChip，零内边距可控）
-// ══════════════════════════════════════════
-
-@Composable
-private fun BitrateChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = onClick,
-        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-        color = if (selected) MaterialTheme.colorScheme.secondaryContainer
-                else MaterialTheme.colorScheme.surfaceVariant,
-        contentColor = if (selected) MaterialTheme.colorScheme.onSecondaryContainer
-                       else MaterialTheme.colorScheme.onSurfaceVariant,
-        border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                 else null,
-        modifier = modifier.heightIn(min = 48.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 2.dp)
-        ) {
-            Text(
-                text = label,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                maxLines = 2,
-            )
-        }
-    }
-}
-
 @Composable
 private fun TrafficEstimateLine(bitrateKbps: Int) {
     val text = if (bitrateKbps > 0) {
@@ -608,87 +484,29 @@ private fun onAbrModeSelected(
                     }
 
 // ══════════════════════════════════════════
-// DE-1: VideoFormatSelector
+// DE-1: VideoFormatSelector — 紧凑芯片布局
 // ══════════════════════════════════════════
 
 @Composable
-private fun VideoFormatSelector(
-    engine: StreamEngine,
-    sectionId: Int = -1,
-    activeSectionId: Int = -1,
-    onSectionExpand: (Int) -> Unit = {},
-) {
-    val context = LocalContext.current
+private fun VideoFormatSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
-    val formats = listOf(
-        Triple(PreferenceConfiguration.FormatOption.AUTO, "自动", "auto"),
-        Triple(PreferenceConfiguration.FormatOption.FORCE_AV1, "AV1", "forceav1"),
-        Triple(PreferenceConfiguration.FormatOption.FORCE_HEVC, "HEVC", "forceh265"),
-        Triple(PreferenceConfiguration.FormatOption.FORCE_H264, "H264", "neverh265"),
-    )
-
-    val currentLabel = formats.find { it.first == pref.videoFormat }?.second ?: "自动"
-    var expanded by remember { mutableStateOf(false) }
-
-    // 其它 section 展开时收起自己
-    LaunchedEffect(activeSectionId) {
-        if (activeSectionId != sectionId && expanded) {
-            expanded = false
-        }
-    }
 
     Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val willExpand = !expanded
-                    if (willExpand) onSectionExpand(sectionId)
-                    expanded = willExpand
-                }
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
-                 modifier = Modifier.weight(1f))
-            Text(currentLabel, style = MaterialTheme.typography.bodyMedium,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null, modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 8.dp)) {
-                formats.forEach { (option, label, spValue) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                            .clickable {
-                                pref.videoFormat = option
-                                
-                    engine.displaySettingsRestartPending = true
-                                expanded = false
-                            }
-                            .padding(vertical = 2.dp),
-                    ) {
-                        RadioButton(
-                            selected = pref.videoFormat == option,
-                            onClick = {
-                                pref.videoFormat = option
-                                
-                    engine.displaySettingsRestartPending = true
-                                expanded = false
-                            }
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        }
+        Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
+             modifier = Modifier.padding(vertical = 6.dp))
+        ChipSelector(
+            options = listOf(
+                "自动" to PreferenceConfiguration.FormatOption.AUTO.name,
+                "AV1" to PreferenceConfiguration.FormatOption.FORCE_AV1.name,
+                "HEVC" to PreferenceConfiguration.FormatOption.FORCE_HEVC.name,
+                "H264" to PreferenceConfiguration.FormatOption.FORCE_H264.name,
+            ),
+            selectedValue = pref.videoFormat.name,
+            onSelect = { value ->
+                pref.videoFormat = PreferenceConfiguration.FormatOption.valueOf(value)
+                engine.displaySettingsRestartPending = true
+            },
+        )
     }
 }
 
@@ -718,112 +536,18 @@ private fun HdrSection(engine: StreamEngine) {
                 Spacer(Modifier.height(4.dp))
                 Text("HDR模式", style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.primary)
-                // PQ / HLG 用列表迭代消除重复代码
-                val hdrModes = listOf(1 to "HDR10/PQ", 2 to "HLG")
-                hdrModes.forEach { (mode, label) ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { selectHdrMode(engine, context, mode) { hdrMode = mode } }
-                            .padding(vertical = 2.dp),
-                    ) {
-                        RadioButton(
-                            selected = hdrMode == mode,
-                            onClick = {},  // 由 Row.clickable 统一处理
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(label, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * 选中 HDR 模式：持久化到 prefConfig + SP，标记待重启。
- * 闭包 [onSelected] 在写入完成后回调，用于更新 Composable 本地状态。
- */
-private fun selectHdrMode(
-    engine: StreamEngine, context: android.content.Context,
-    mode: Int, onSelected: () -> Unit,
-) {
-    engine.prefConfig.hdrMode = mode
-    engine.prefConfig.writePreferences(context)
-    engine.displaySettingsRestartPending = true
-    onSelected()
-}
-
-// ══════════════════════════════════════════
-// DD-3: ResolutionScaleSelector (移入分组一)
-// ══════════════════════════════════════════
-
-@Composable
-private fun ResolutionScaleSelector(
-    engine: StreamEngine,
-    sectionId: Int = -1,
-    activeSectionId: Int = -1,
-    onSectionExpand: (Int) -> Unit = {},
-) {
-    val context = LocalContext.current
-    val pref = engine.prefConfig
-    val defaultScale = 100
-    val initScale = if (pref.resolutionScale in 50..400) pref.resolutionScale else defaultScale
-    var expanded by remember { mutableStateOf(false) }
-    var resScaleSlider by remember { mutableFloatStateOf(initScale.toFloat()) }
-    val scope = rememberCoroutineScope()
-
-    // 其它 section 展开时收起自己
-    LaunchedEffect(activeSectionId) {
-        if (activeSectionId != sectionId && expanded) {
-            expanded = false
-        }
-    }
-
-    Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val willExpand = !expanded
-                    if (willExpand) onSectionExpand(sectionId)
-                    expanded = willExpand
-                }
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("分辨率缩放", style = MaterialTheme.typography.bodyLarge,
-                 modifier = Modifier.weight(1f))
-            Text("${resScaleSlider.toInt()}%", style = MaterialTheme.typography.bodyMedium,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null, modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(modifier = Modifier.padding(start = 8.dp)) {
-                Slider(
-                    value = resScaleSlider,
-                    onValueChange = { resScaleSlider = it },
-                    onValueChangeFinished = {
-                        engine.applyDisplaySettings = true
-                        pref.resolutionScale = resScaleSlider.toInt().coerceIn(50, 400)
-                        
-                    engine.displaySettingsRestartPending = true
-                        // 调整完毕自动收起
-                        expanded = false
+                ChipSelector(
+                    options = listOf("HDR10/PQ" to "1", "HLG" to "2"),
+                    selectedValue = hdrMode.toString(),
+                    onSelect = { value ->
+                        val mode = value.toIntOrNull() ?: 1
+                        hdrMode = mode
+                        pref.hdrMode = mode
+                        pref.writePreferences(context)
+                        engine.displaySettingsRestartPending = true
                     },
-                    valueRange = 50f..400f, steps = 35,
+                    columns = 2,
                 )
-                Row(Modifier.fillMaxWidth()) {
-                    Text("50%", style = MaterialTheme.typography.labelSmall)
-                    Spacer(Modifier.weight(1f))
-                    Text("400%", style = MaterialTheme.typography.labelSmall)
-                }
             }
         }
     }
@@ -936,84 +660,27 @@ private fun VideoSwitches(engine: StreamEngine) {
 }
 
 // ══════════════════════════════════════════
-// DE-2: FramePacingSelector
+// DE-2: FramePacingSelector — 紧凑芯片布局
 // ══════════════════════════════════════════
 
 @Composable
-private fun FramePacingSelector(
-    engine: StreamEngine,
-    sectionId: Int = -1,
-    activeSectionId: Int = -1,
-    onSectionExpand: (Int) -> Unit = {},
-) {
-    val context = LocalContext.current
+private fun FramePacingSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
-    var expanded by remember { mutableStateOf(false) }
-
-    data class PacingOption(val value: Int, val spKey: String, val label: String)
-    val options = listOf(
-        PacingOption(PreferenceConfiguration.FRAME_PACING_MIN_LATENCY, "latency", "最低延迟"),
-        PacingOption(PreferenceConfiguration.FRAME_PACING_BALANCED, "balanced", "均衡"),
-        PacingOption(PreferenceConfiguration.FRAME_PACING_CAP_FPS, "cap-fps", "均衡+FPS限制"),
-        PacingOption(PreferenceConfiguration.FRAME_PACING_MAX_SMOOTHNESS, "smoothness", "最高流畅度"),
-        PacingOption(PreferenceConfiguration.FRAME_PACING_EXPERIMENTAL_LOW_LATENCY, "experimental-low-latency", "超低延迟(实验)"),
-        PacingOption(PreferenceConfiguration.FRAME_PACING_PRECISE_SYNC, "precise-sync", "精确同步"),
-    )
-    val currentLabel = options.find { it.value == pref.framePacing }?.label ?: "最低延迟"
-
-    // 其它 section 展开时收起自己
-    LaunchedEffect(activeSectionId) {
-        if (activeSectionId != sectionId && expanded) {
-            expanded = false
-        }
-    }
 
     Column {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val willExpand = !expanded
-                    if (willExpand) onSectionExpand(sectionId)
-                    expanded = willExpand
-                }
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text("帧时序模式", style = MaterialTheme.typography.bodyLarge,
-                 modifier = Modifier.weight(1f))
-            Text(currentLabel, style = MaterialTheme.typography.bodyMedium,
-                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(
-                if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
-                contentDescription = null, modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        AnimatedVisibility(visible = expanded) {
-            Column(Modifier.padding(start = 8.dp)) {
-                options.forEach { option ->
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                            .clickable {
-                                expanded = false
-                                pref.framePacing = option.value
-                                
-                    }
-                            .padding(vertical = 3.dp),
-                    ) {
-                        RadioButton(
-                            selected = pref.framePacing == option.value,
-                            onClick = {},  // 由 Row.clickable 统一处理，避免双重写入
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(option.label, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
-            }
-        }
+        Text("帧时序模式", style = MaterialTheme.typography.bodyLarge,
+             modifier = Modifier.padding(vertical = 6.dp))
+        ChipSelector(
+            options = listOf(
+                "最低延迟" to "0", "均衡" to "1", "均衡+FPS限制" to "2",
+                "最高流畅度" to "3", "超低延迟(实验)" to "4", "精确同步" to "5",
+            ),
+            selectedValue = pref.framePacing.toString(),
+            onSelect = { value ->
+                pref.framePacing = value.toIntOrNull() ?: 0
+            },
+            columns = 2,
+        )
     }
 }
 
@@ -1101,17 +768,13 @@ private fun DisplaySection(engine: StreamEngine) {
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     rowItems.forEach { res ->
-                        val cleanRes = res.replace("Native (", "").replace(")", "")
-                        FilterChip(
+                        val cleanRes = res.replace(" (自定义)", "").replace("Native (", "").replace(")", "")
+                        CompactChip(
+                            label = res,
                             selected = selectedRes == cleanRes,
                             onClick = {
                                 selectedRes = cleanRes
                                 onResolutionSelected(engine, context, cleanRes)
-                            },
-                            label = {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Text(res, style = MaterialTheme.typography.labelSmall)
-                                }
                             },
                             modifier = Modifier.weight(1f).height(40.dp),
                         )
@@ -1233,6 +896,16 @@ private fun onResolutionSelected(
     engine: StreamEngine, context: android.content.Context,
     res: String,
 ) {
+    val parts = res.split("x")
+    if (parts.size == 2) {
+        val w = parts[0].toIntOrNull() ?: engine.prefConfig.width
+        val h = parts[1].toIntOrNull() ?: engine.prefConfig.height
+        if (w > 0 && h > 0) {
+            engine.prefConfig.width = w
+            engine.prefConfig.height = h
+            engine.applyDisplaySettings = true
+        }
+    }
     // 分辨率切换仅影响当前串流，不持久化
     engine.displaySettingsRestartPending = true
 }

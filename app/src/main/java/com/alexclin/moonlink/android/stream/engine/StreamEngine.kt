@@ -47,8 +47,11 @@ import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.preferences.GlPreferences
 import com.limelight.utils.AppSettingsManager
 import com.limelight.utils.NetHelper
+import com.alexclin.moonlink.android.device.streamsettings.HostSettings
+import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import android.net.TrafficStats
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlin.math.roundToInt
@@ -248,18 +251,45 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             stretchVideo = prefConfig.stretchVideo
 
             // 初始化 NativeTouchContext 静态参数
-            NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
-            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
-            NativeTouchContext.ENHANCED_TOUCH_ZONE_DIVIDER = prefConfig.enhanceTouchZoneDivider * 0.01f
-            NativeTouchContext.POINTER_VELOCITY_FACTOR = prefConfig.pointerVelocityFactor * 0.01f
-            NativeTouchContext.INTIAL_ZONE_PIXELS = prefConfig.longPressflatRegionPixels.toFloat()
+            syncNativeTouchContext()
 
-            // 2. 应用"以最近一次配置启动"（若 Intent 中包含）
+            // 2a. 应用主机级串流配置（覆盖全局默认值）
+            // 注意：Intent 中的"最近配置"在第 2b 步执行，但第 2c 步会重新应用主机级配置以保持优先级。
+            val pcUuidFromIntent = intent.getStringExtra(Game.EXTRA_PC_UUID)
+            var hostSettingsForReapply: HostSettings? = null
+            if (pcUuidFromIntent != null) {
+                try {
+                    val hostSettingsManager = HostSettingsManager(activity)
+                    hostSettingsManager.getSettings(pcUuidFromIntent)?.let { hostSettings ->
+                        hostSettingsForReapply = hostSettings
+                        applyHostSettingsToPrefConfig(prefConfig, hostSettings)
+                    }
+                    // 重新同步运行时状态（第一次同步在步骤 1 基于全局 SP 执行）
+                    isAudioMuted = prefConfig.muteClientAudio
+                    perfOverlayEnabled = prefConfig.enablePerfOverlay
+                    fabOpacity = prefConfig.fabOpacity
+                    stretchVideo = prefConfig.stretchVideo
+                } catch (_: Exception) {
+                    // 忽略 - 降级到全局配置
+                }
+            }
+
+            // 2b. 应用"以最近一次配置启动"（若 Intent 中包含）
             AppSettingsManager(activity).applyLastSettingsFromIntent(intent, prefConfig)
 
-            // 2b. 用 Intent 覆盖后的值重新同步 NativeTouchContext（触摸板模式）
-            NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
-            NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
+            // 2c. 如果存在主机级配置，重新应用使其优先级高于"最近配置"
+            //     这样用户在主机的"串流设置"中明确设置的值不会被 per-app 历史记录覆盖。
+            if (hostSettingsForReapply != null) {
+                applyHostSettingsToPrefConfig(prefConfig, hostSettingsForReapply)
+                // 重新同步运行时状态
+                isAudioMuted = prefConfig.muteClientAudio
+                perfOverlayEnabled = prefConfig.enablePerfOverlay
+                fabOpacity = prefConfig.fabOpacity
+                stretchVideo = prefConfig.stretchVideo
+            }
+
+            // 2d. 用最终值重新同步 NativeTouchContext 静态参数
+            syncNativeTouchContext()
 
             // 3. 从 Intent 提取参数
             host = intent.getStringExtra(Game.EXTRA_HOST) ?: return fail("缺少 host")
@@ -552,7 +582,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             .setControlOnly(prefConfig.controlOnly)
             .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
             .setUseVdd(pcUseVdd)
-            .setCustomScreenMode(prefConfig.screenCombinationMode)
+            .setCustomScreenMode(if (prefConfig.width == 0 && prefConfig.height == 0) 0 else prefConfig.screenCombinationMode)
             .setCustomVddScreenMode(prefConfig.vddScreenCombinationMode)
             .setAttachedGamepadMask(computeGamepadMask())
             .build()
@@ -656,6 +686,15 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 if (connected) setInputGrabState(!visible)
             },
         )
+        handler.onLocalCursorMoved = { x, y ->
+            // 将像素坐标转换为比例坐标（0.0~1.0），供 Compose 光标覆盖层使用
+            val w = view.width.coerceAtLeast(1)
+            val h = view.height.coerceAtLeast(1)
+            localCursorAbsX = (x / w).coerceIn(0f, 1f)
+            localCursorAbsY = (y / h).coerceIn(0f, 1f)
+        }
+        // 根据 prefConfig 更新光标可见性
+        showLocalCursor = prefConfig.enableLocalCursorRendering && prefConfig.touchscreenTrackpad
         handler.initTouchContexts()
         touchHandler = handler
         LimeLog.info("StreamEngine: 触控处理器已初始化")
@@ -668,7 +707,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.enableNativeMousePointer = (mode == 3)
         prefConfig.touchscreenTrackpad = (mode == 2)
 
-        NativeTouchContext.ENABLE_ENHANCED_TOUCH = (mode == 0)
+        // 同步 NativeTouchContext 确保与最新 prefConfig 一致
+        syncNativeTouchContext()
+
+        // 同步本地光标可见性（触控板模式下显示本地光标）
+        showLocalCursor = prefConfig.enableLocalCursorRendering && prefConfig.touchscreenTrackpad
 
         touchHandler?.let { handler ->
             handler.setTouchMode(mode == 2)       // 相对坐标（触控板）
@@ -752,6 +795,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun prepareConnection() {
         LimeLog.info("StreamEngine: prepareConnection 开始")
         StreamLogger.log(activity, "RECONNECT", "重连准备开始")
+
+        // 0. 先终止旧连接（防止 display_name 变化时新旧连接冲突）
+        if (connected) {
+            try { conn?.stop() } catch (_: Exception) {}
+            connected = false
+        }
 
         // 1. 销毁旧解码器和音频渲染器
         try { decoderRenderer?.prepareForStop() } catch (_: Exception) {}
@@ -840,6 +889,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun changeResolution() {
         applyDisplaySettings = true
         isChangingResolution = true
+        // 先终止旧串流连接，再重建 Activity，避免 display_name 变化时新旧连接冲突
+        try { conn?.stop() } catch (_: Exception) {}
+        connected = false
         handler.post { activity.recreate() }
     }
 
@@ -940,6 +992,15 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 触控灵敏度 */
     var configTouchSense: Int by mutableStateOf(100)
+
+    /** 本地光标显示状态（触控板模式下由 enableLocalCursorRendering 控制） */
+    var showLocalCursor: Boolean by mutableStateOf(false)
+
+    /** 本地光标 X 坐标（相对于 StreamView 宽度的比例，0.0~1.0） */
+    var localCursorAbsX: Float by mutableFloatStateOf(0.5f)
+
+    /** 本地光标 Y 坐标（相对于 StreamView 高度的比例，0.0~1.0） */
+    var localCursorAbsY: Float by mutableFloatStateOf(0.5f)
 
     /** 拉伸视频：纯客户端渲染，即时生效无需重启串流 */
     var stretchVideo: Boolean by mutableStateOf(false)
@@ -1546,7 +1607,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     override fun stageComplete(stage: String) {
         LimeLog.info("StreamEngine: stageComplete $stage")
         StreamLogger.log(activity, "STAGE", "完成: $stage")
-        handler.post { onStageUpdate?.invoke(stage, true, false) }
+        // 不传递 complete=true，避免 stage 级别完成就隐藏进度 overlay
+        // 进度 overlay 由 firstFrameCallback 触发隐藏，确保首帧到达后才消失
+        handler.post { onStageUpdate?.invoke(stage, false, false) }
     }
 
     override fun stageFailed(stage: String, portFlags: Int, errorCode: Int) {
@@ -1602,6 +1665,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 停止智能码率
         stopAdaptiveBitrate()
         handler.post {
+            // 如果正在切换分辨率/显示器，跳过 UI 提示和 finish，新 Activity 会接管
+            if (isChangingResolution) return@post
+
             activity.window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
             if (!activity.isFinishing) {
                 // 延迟统计信息 Toast（在 finish 之前显示）
@@ -1848,5 +1914,209 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         audioRenderer = null
         decoderRenderer = null
         conn = null
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 主机级串流配置映射
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * 将 [HostSettings] 的各字段覆盖到 [prefConfig]。
+     *
+     * 处理类型差异（String → Enum、String → Int 等），
+     * 确保主机级配置能正确传递到 [StreamConfiguration]。
+     * 注意：主机级配置在第 2c 步重新应用，拥有最高优先级，覆盖 Intent 中的"最近配置"。
+     */
+    private fun applyHostSettingsToPrefConfig(
+        prefConfig: PreferenceConfiguration,
+        settings: HostSettings,
+    ) {
+        // ── 触控模式 ──
+        prefConfig.enableEnhancedTouch = settings.enableEnhancedTouch
+        prefConfig.enhancedTouchOnWhichSide = settings.enhancedTouchOnWhichSide
+        prefConfig.enhanceTouchZoneDivider = settings.enhanceTouchZoneDivider
+        prefConfig.pointerVelocityFactor = settings.pointerVelocityFactor.toFloat()
+        prefConfig.touchscreenTrackpad = settings.touchscreenTrackpad
+        prefConfig.touchpadSensitivity = settings.touchpadSensitivity
+        prefConfig.enableNativeMousePointer = settings.enableNativeMousePointer
+        prefConfig.enableDoubleClickDrag = settings.enableDoubleClickDrag
+        prefConfig.doubleTapTimeThreshold = settings.doubleTapTimeThreshold
+        prefConfig.enableLocalCursorRendering = settings.enableLocalCursorRendering
+        prefConfig.nativeTouchFingersToToggleKeyboard = settings.nativeTouchFingersToToggleKeyboard
+        prefConfig.longPressflatRegionPixels = settings.longPressFlatRegionPixels
+        prefConfig.syncTouchEventWithDisplay = settings.syncTouchEventWithDisplay
+
+        // ── 显示设置 ──
+        prefConfig.width = settings.width
+        prefConfig.height = settings.height
+        prefConfig.fps = settings.fps
+        prefConfig.bitrate = settings.bitrate
+        prefConfig.enableAdaptiveBitrate = settings.enableAdaptiveBitrate
+        prefConfig.abrMode = settings.abrMode
+        prefConfig.videoFormat = parseFormatOption(settings.videoFormat)
+        prefConfig.enableHdr = settings.enableHdr
+        prefConfig.enableHdrHighBrightness = settings.enableHdrHighBrightness
+        prefConfig.hdrMode = settings.hdrMode
+        prefConfig.resolutionScale = settings.resolutionScale
+        prefConfig.framePacing = settings.framePacing
+        prefConfig.stretchVideo = settings.stretchVideo
+        prefConfig.reverseResolution = settings.reverseResolution
+        prefConfig.rotableScreen = settings.rotableScreen
+        prefConfig.outputBufferQueueLimit = settings.outputBufferQueueLimit
+        prefConfig.forceMtkMaxOperatingRate = settings.forceMtkMaxOperatingRate
+        prefConfig.unlockFps = settings.unlockFps
+        prefConfig.enablePip = settings.enablePip
+        prefConfig.useExternalDisplay = settings.useExternalDisplay
+        prefConfig.screenPosition = parseScreenPosition(settings.screenPosition)
+        prefConfig.screenOffsetX = settings.screenOffsetX
+        prefConfig.screenOffsetY = settings.screenOffsetY
+        prefConfig.reduceRefreshRate = settings.reduceRefreshRate
+        prefConfig.fullRange = settings.fullRange
+        prefConfig.screenCombinationMode = settings.screenCombinationMode
+
+        // ── 主机设置 ──
+        prefConfig.enableSops = settings.enableSops
+        prefConfig.lockScreenAfterDisconnect = settings.lockScreenAfterDisconnect
+        prefConfig.playHostAudio = settings.playHostAudio
+        prefConfig.muteClientAudio = settings.muteClientAudio
+        prefConfig.controlOnly = settings.controlOnly
+        prefConfig.enableClipboardSyncText = settings.enableClipboardSyncText
+        prefConfig.enableClipboardSyncImage = settings.enableClipboardSyncImage
+        prefConfig.enableEscMenu = settings.enableEscMenu
+        prefConfig.escMenuKey = settings.escMenuKey
+        prefConfig.enableStartKeyMenu = settings.enableStartKeyMenu
+
+        // ── 声音设置 ──
+        prefConfig.audioConfiguration = parseAudioConfiguration(settings.audioConfiguration)
+        prefConfig.audioCodec = parseAudioCodec(settings.audioCodec)
+        prefConfig.audioCodecBitrate = settings.audioCodecBitrate
+        prefConfig.enableAudioFx = settings.enableAudioFx
+        prefConfig.enableSpatializer = settings.enableSpatializer
+        prefConfig.enableAudioPassthrough = settings.enableAudioPassthrough
+        prefConfig.audioPassthroughBufferBytes = parseAudioPassthroughBuffer(settings.audioPassthroughBuffer)
+        prefConfig.enableAudioVibration = settings.enableAudioVibration
+        prefConfig.audioVibrationStrength = settings.audioVibrationStrength
+        prefConfig.audioVibrationMode = settings.audioVibrationMode
+        prefConfig.audioVibrationScene = settings.audioVibrationScene
+        prefConfig.enableMic = settings.enableMic
+        prefConfig.micBitrate = settings.micBitrate
+        prefConfig.micIconColor = settings.micIconColor
+
+        // ── 体感 ──
+        prefConfig.gyroToRightStick = settings.gyroToRightStick
+        prefConfig.gyroToMouse = settings.gyroToMouse
+        prefConfig.gyroFullDeflectionDps = settings.gyroFullDeflectionDps
+        prefConfig.gyroSensitivityMultiplier = settings.gyroSensitivityMultiplier
+        prefConfig.gyroInvertXAxis = settings.gyroInvertXAxis
+        prefConfig.gyroInvertYAxis = settings.gyroInvertYAxis
+        prefConfig.gyroActivationKeyCode = settings.gyroActivationKeyCode
+        prefConfig.showGyroCard = settings.showGyroCard
+
+        // ── 其它 ──
+        prefConfig.enablePerfOverlay = settings.enablePerfOverlay
+        prefConfig.perfOverlayLocked = settings.perfOverlayLocked
+        prefConfig.perfOverlayBgOpacity = settings.perfOverlayBgOpacity
+        prefConfig.perfOverlayOrientation = parsePerfOverlayOrientation(settings.perfOverlayOrientation)
+        prefConfig.perfOverlayPosition = parsePerfOverlayPosition(settings.perfOverlayPosition)
+        prefConfig.enableSimplifyPerfOverlay = settings.enableSimplifyPerfOverlay
+        prefConfig.enableLatencyToast = settings.enableLatencyToast
+        prefConfig.fabOpacity = settings.fabOpacity
+        prefConfig.toolPanelAutoHideMode = settings.toolPanelAutoHideMode
+        prefConfig.enableFloatBall = settings.enableFloatBall
+        prefConfig.floatBallAutoHideDelay = settings.floatBallAutoHideDelay
+        prefConfig.floatBallSingleClickAction = settings.floatBallSingleClickAction
+        prefConfig.floatBallDoubleClickAction = settings.floatBallDoubleClickAction
+        prefConfig.floatBallLongClickAction = settings.floatBallLongClickAction
+        prefConfig.floatBallSwipeUpAction = settings.floatBallSwipeUpAction
+        prefConfig.floatBallSwipeDownAction = settings.floatBallSwipeDownAction
+        prefConfig.floatBallSwipeLeftAction = settings.floatBallSwipeLeftAction
+        prefConfig.floatBallSwipeRightAction = settings.floatBallSwipeRightAction
+        prefConfig.showBitrateCard = settings.showBitrateCard
+        prefConfig.showQuickKeyCard = settings.showQuickKeyCard
+        prefConfig.keyMappingEnabled = settings.keyMappingEnabled
+        prefConfig.disableWarnings = settings.disableWarnings
+    }
+
+    /**
+     * 将 [prefConfig] 中触控模式的各项值同步到 [NativeTouchContext] 静态参数。
+     * 每次应用主机配置后必须调用，确保运行时使用的参数与持久化配置一致。
+     */
+    private fun syncNativeTouchContext() {
+        NativeTouchContext.ENABLE_ENHANCED_TOUCH = prefConfig.enableEnhancedTouch
+        NativeTouchContext.ENHANCED_TOUCH_ON_RIGHT = if (prefConfig.enhancedTouchOnWhichSide) -1 else 1
+        NativeTouchContext.ENHANCED_TOUCH_ZONE_DIVIDER = prefConfig.enhanceTouchZoneDivider * 0.01f
+        NativeTouchContext.POINTER_VELOCITY_FACTOR = prefConfig.pointerVelocityFactor * 0.01f
+        NativeTouchContext.INTIAL_ZONE_PIXELS = prefConfig.longPressflatRegionPixels.toFloat()
+    }
+
+    // ── 类型转换辅助函数 ─────────────────────────────────
+
+    private fun parseFormatOption(value: String): PreferenceConfiguration.FormatOption {
+        return when (value.lowercase()) {
+            "forceav1", "force_av1", "av1" -> PreferenceConfiguration.FormatOption.FORCE_AV1
+            "forcehevc", "force_hevc", "hevc" -> PreferenceConfiguration.FormatOption.FORCE_HEVC
+            "neverh265", "force_h264", "h264" -> PreferenceConfiguration.FormatOption.FORCE_H264
+            else -> PreferenceConfiguration.FormatOption.AUTO
+        }
+    }
+
+    private fun parseAudioConfiguration(value: String): MoonBridge.AudioConfiguration {
+        return when (value) {
+            "714" -> MoonBridge.AUDIO_CONFIGURATION_714_SURROUND
+            "71" -> MoonBridge.AUDIO_CONFIGURATION_71_SURROUND
+            "51" -> MoonBridge.AUDIO_CONFIGURATION_51_SURROUND
+            else -> MoonBridge.AUDIO_CONFIGURATION_STEREO
+        }
+    }
+
+    private fun parseAudioCodec(value: String): Int {
+        return when (value.lowercase()) {
+            "ac3" -> MoonBridge.AUDIO_CODEC_AC3
+            "eac3" -> MoonBridge.AUDIO_CODEC_EAC3
+            "pcm" -> MoonBridge.AUDIO_CODEC_PCM_S16
+            "opus" -> MoonBridge.AUDIO_CODEC_OPUS
+            else -> MoonBridge.AUDIO_CODEC_OPUS
+        }
+    }
+
+    private fun parseAudioPassthroughBuffer(value: String): Int {
+        return when (value.lowercase()) {
+            "low" -> 8 * 1024
+            "high" -> 32 * 1024
+            else -> 16 * 1024
+        }
+    }
+
+    private fun parsePerfOverlayOrientation(value: String): PreferenceConfiguration.PerfOverlayOrientation {
+        return if (value.lowercase() == "vertical") {
+            PreferenceConfiguration.PerfOverlayOrientation.VERTICAL
+        } else {
+            PreferenceConfiguration.PerfOverlayOrientation.HORIZONTAL
+        }
+    }
+
+    private fun parsePerfOverlayPosition(value: String): PreferenceConfiguration.PerfOverlayPosition {
+        return when (value.lowercase()) {
+            "bottom" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM
+            "top_left" -> PreferenceConfiguration.PerfOverlayPosition.TOP_LEFT
+            "top_right" -> PreferenceConfiguration.PerfOverlayPosition.TOP_RIGHT
+            "bottom_left" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM_LEFT
+            "bottom_right" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT
+            else -> PreferenceConfiguration.PerfOverlayPosition.TOP
+        }
+    }
+
+    private fun parseScreenPosition(value: String): PreferenceConfiguration.ScreenPosition {
+        return when (value.lowercase()) {
+            "top_left" -> PreferenceConfiguration.ScreenPosition.TOP_LEFT
+            "top_center" -> PreferenceConfiguration.ScreenPosition.TOP_CENTER
+            "top_right" -> PreferenceConfiguration.ScreenPosition.TOP_RIGHT
+            "center_left" -> PreferenceConfiguration.ScreenPosition.CENTER_LEFT
+            "center_right" -> PreferenceConfiguration.ScreenPosition.CENTER_RIGHT
+            "bottom_left" -> PreferenceConfiguration.ScreenPosition.BOTTOM_LEFT
+            "bottom_center" -> PreferenceConfiguration.ScreenPosition.BOTTOM_CENTER
+            "bottom_right" -> PreferenceConfiguration.ScreenPosition.BOTTOM_RIGHT
+            else -> PreferenceConfiguration.ScreenPosition.CENTER
+        }
     }
 }

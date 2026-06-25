@@ -1,19 +1,16 @@
 package com.alexclin.moonlink.android.device.streamsettings
 
+import android.content.Context
+import android.graphics.Point
+import android.os.Build
 import android.view.KeyEvent
-import androidx.compose.animation.AnimatedContent
+import android.view.WindowManager
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ContentTransform
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -21,8 +18,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.alexclin.moonlink.android.stream.ui.DetailScaffold
+import com.alexclin.moonlink.android.stream.ui.common.ChipSelector
+import com.alexclin.moonlink.android.stream.ui.common.CompactChip
+import com.alexclin.moonlink.android.stream.ui.panels.SchemeInfo
+import com.alexclin.moonlink.android.stream.ui.panels.loadUserSchemes
+import com.alexclin.moonlink.android.stream.engine.StreamEngine
+import androidx.preference.PreferenceManager
+import com.limelight.preferences.CustomResolutionsConsts
 
 // ═══════════════════════════════════════════
 // 分类定义
@@ -44,78 +49,26 @@ private val CATEGORIES = listOf(
 )
 
 // ═══════════════════════════════════════════
-// 主页面
+// 主页面（分类列表）
 // ═══════════════════════════════════════════
 
 /**
- * 主机串流配置页面。
+ * 主机串流配置分类列表页。
  *
- * 从设备概要页点击"串流设置"进入，将子面板中快捷键以外的设置以六分类展示，
- * 配置持久化到主机级 SharedPreferences（由 [HostSettingsManager] 管理）。
+ * 从设备概要页点击"串流设置"进入，展示六个配置分类入口。
+ * 各分类子页为独立 NavHost 路由，由 [MoonLinkApp] 统一管理导航和标题栏。
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceStreamSettingsScreen(
     hostname: String,
-    uuid: String,
-    settingsManager: HostSettingsManager,
+    onNavigateToCategory: (String) -> Unit,
     onBack: () -> Unit,
 ) {
-    // 加载当前主机的配置
-    var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
-
-    // 当前选中的分类子页（null = 主页）
-    var currentCategory by remember { mutableStateOf<String?>(null) }
-
-    // 页面切换动画
-    Box(modifier = Modifier.fillMaxSize()) {
-        AnimatedContent(
-            targetState = currentCategory,
-            transitionSpec = {
-                if (targetState == null) {
-                    // 返回主页
-                    ContentTransform(
-                        targetContentEnter = slideInHorizontally(
-                            initialOffsetX = { -it / 3 },
-                            animationSpec = tween(250, easing = FastOutSlowInEasing)
-                        ) + fadeIn(animationSpec = tween(200)),
-                        initialContentExit = slideOutHorizontally(
-                            targetOffsetX = { it },
-                            animationSpec = tween(250, easing = FastOutSlowInEasing)
-                        ) + fadeOut(animationSpec = tween(200)),
-                    )
-                } else {
-                    // 进入子页
-                    ContentTransform(
-                        targetContentEnter = slideInHorizontally(
-                            initialOffsetX = { it },
-                            animationSpec = tween(250, easing = FastOutSlowInEasing)
-                        ) + fadeIn(animationSpec = tween(200)),
-                        initialContentExit = slideOutHorizontally(
-                            targetOffsetX = { -it / 3 },
-                            animationSpec = tween(250, easing = FastOutSlowInEasing)
-                        ) + fadeOut(animationSpec = tween(200)),
-                    )
-                }
-            }
-        ) { category ->
-            when (category) {
-                "touch" -> TouchModeCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                "display" -> DisplayCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                "host" -> HostCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                "audio" -> AudioCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                "gyro" -> GyroCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                "other" -> OtherCategory(settings, { settings = it; settingsManager.saveSettings(uuid, it) }, { currentCategory = null })
-                // 主页
-                null -> MainCategoryList(
-                    hostname = hostname,
-                    categories = CATEGORIES,
-                    onSelectCategory = { currentCategory = it },
-                    onBack = onBack,
-                )
-            }
-        }
-    }
+    MainCategoryList(
+        hostname = hostname,
+        categories = CATEGORIES,
+        onSelectCategory = onNavigateToCategory,
+    )
 }
 
 // ═══════════════════════════════════════════
@@ -127,30 +80,18 @@ private fun MainCategoryList(
     hostname: String,
     categories: List<CategoryEntry>,
     onSelectCategory: (String) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "${hostname}串流设置", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            item {
-                Text(
-                    "选择要调整的配置分类",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                )
-            }
-
-            items(categories) { category ->
-                CategoryEntryRow(
-                    icon = category.icon,
-                    label = category.label,
-                    onClick = { onSelectCategory(category.key) },
-                )
-                HorizontalDivider(modifier = Modifier.padding(horizontal = 4.dp))
-            }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        items(categories) { category ->
+            CategoryEntryRow(
+                icon = category.icon,
+                label = category.label,
+                onClick = { onSelectCategory(category.key) },
+            )
+            HorizontalDivider(modifier = Modifier.padding(horizontal = 4.dp))
         }
     }
 }
@@ -227,32 +168,6 @@ private fun SectionTitle(title: String) {
     )
 }
 
-/** 单选芯片组 */
-@Composable
-private fun ChipSelector(
-    options: List<Pair<String, String>>, // (label, value)
-    selectedValue: String,
-    onSelect: (String) -> Unit,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        options.forEach { (label, value) ->
-            FilterChip(
-                selected = value == selectedValue,
-                onClick = { onSelect(value) },
-                label = {
-                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Text(label, style = MaterialTheme.typography.labelMedium)
-                    }
-                },
-                modifier = Modifier.weight(1f),
-            )
-        }
-    }
-}
-
 /** 展开/收起选择行（带下拉箭头） */
 @Composable
 private fun ExpandableSelectorRow(
@@ -312,26 +227,6 @@ private fun SettingSlider(
     }
 }
 
-/** Radio 选项 */
-@Composable
-private fun RadioOption(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(vertical = 3.dp),
-    ) {
-        RadioButton(selected = selected, onClick = null)
-        Spacer(Modifier.width(8.dp))
-        Text(label, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
 /** 分隔线 */
 @Composable
 private fun Divider() {
@@ -343,18 +238,16 @@ private fun Divider() {
 // ═══════════════════════════════════════════
 
 @Composable
-private fun TouchModeCategory(
+fun TouchModeCategory(
     settings: HostSettings,
     onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "触控模式", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // 触控模式选择（三选一）
-            item {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        // 触控模式选择（三选一）
+        item {
                 SectionTitle("触控模式选择")
                 var selectedMode by remember(settings) { mutableStateOf(
                     when {
@@ -385,7 +278,6 @@ private fun TouchModeCategory(
             item {
                 AnimatedVisibility(visible = settings.touchscreenTrackpad) {
                     Column {
-                        Divider()
                         SectionTitle("触控板设置")
 
                         var sensitivity by remember { mutableFloatStateOf(settings.touchpadSensitivity.toFloat()) }
@@ -417,7 +309,6 @@ private fun TouchModeCategory(
             item {
                 AnimatedVisibility(visible = !settings.touchscreenTrackpad && !settings.enableEnhancedTouch) {
                     Column {
-                        Divider()
                         SectionTitle("鼠标设置")
                         SettingSwitchRow(
                             label = "本地鼠标指针",
@@ -432,7 +323,6 @@ private fun TouchModeCategory(
             item {
                 AnimatedVisibility(visible = settings.enableEnhancedTouch) {
                     Column {
-                        Divider()
                         SectionTitle("增强触控设置")
                         SettingSwitchRow(
                             label = "增强触控区在右侧",
@@ -459,6 +349,109 @@ private fun TouchModeCategory(
                                 onSettingsChange(settings.copy(pointerVelocityFactor = velocity.toInt()))
                             },
                         )
+                        var flatRegion by remember { mutableFloatStateOf(settings.longPressFlatRegionPixels.toFloat()) }
+                        SettingSlider(
+                            value = flatRegion,
+                            valueRange = 0f..250f,
+                            valueLabel = "长按抖动消除: ${flatRegion.toInt()}px",
+                            onValueChange = { flatRegion = it },
+                            onValueChangeFinished = {
+                                onSettingsChange(settings.copy(longPressFlatRegionPixels = flatRegion.toInt()))
+                            },
+                        )
+                    }
+                }
+            }
+
+            // ── 按键映射 ──
+            item {
+                Divider()
+                SectionTitle("按键映射")
+                SettingSwitchRow("启用按键映射", settings.keyMappingEnabled) {
+                    onSettingsChange(settings.copy(keyMappingEnabled = it))
+                }
+                AnimatedVisibility(visible = settings.keyMappingEnabled) {
+                    Column(Modifier.padding(start = 16.dp)) {
+                        val context = LocalContext.current
+                        var schemes by remember { mutableStateOf<List<SchemeInfo>>(emptyList()) }
+                        var showSchemeDialog by remember { mutableStateOf(false) }
+                        val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
+                        var currentConfigId by remember {
+                            mutableLongStateOf(prefs.getLong(StreamEngine.PREF_CURRENT_CONFIG_ID, 0L))
+                        }
+                        var currentSchemeName by remember { mutableStateOf("加载中...") }
+
+                        LaunchedEffect(Unit) {
+                            val loaded = loadUserSchemes(context)
+                            schemes = loaded
+                            currentSchemeName = if (currentConfigId == 0L) "内置虚拟手柄方案"
+                                else loaded.find { it.configId == currentConfigId }?.name ?: "未知"
+                        }
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showSchemeDialog = true }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("当前方案", style = MaterialTheme.typography.bodyMedium,
+                                 modifier = Modifier.weight(1f))
+                            Text(currentSchemeName, style = MaterialTheme.typography.bodySmall,
+                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.width(4.dp))
+                            Icon(Icons.Default.ChevronRight, contentDescription = null,
+                                 modifier = Modifier.size(18.dp),
+                                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+
+                        TextButton(onClick = { showSchemeDialog = true }) {
+                            Text("切换方案")
+                        }
+
+                        if (showSchemeDialog) {
+                            val allSchemes = listOf(
+                                SchemeInfo(configId = 0L, name = "内置虚拟手柄方案")
+                            ) + schemes
+                            AlertDialog(
+                                onDismissRequest = { showSchemeDialog = false },
+                                title = { Text("选择按键映射方案") },
+                                text = {
+                                    Column {
+                                        allSchemes.forEach { scheme ->
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clickable {
+                                                        currentConfigId = scheme.configId
+                                                        currentSchemeName = scheme.name
+                                                        prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, scheme.configId).apply()
+                                                        showSchemeDialog = false
+                                                    }
+                                                    .padding(vertical = 8.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                RadioButton(
+                                                    selected = scheme.configId == currentConfigId,
+                                                    onClick = {
+                                                        currentConfigId = scheme.configId
+                                                        currentSchemeName = scheme.name
+                                                        prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, scheme.configId).apply()
+                                                        showSchemeDialog = false
+                                                    },
+                                                )
+                                                Spacer(Modifier.width(8.dp))
+                                                Text(scheme.name, style = MaterialTheme.typography.bodyMedium)
+                                            }
+                                        }
+                                    }
+                                },
+                                confirmButton = {
+                                    TextButton(onClick = { showSchemeDialog = false }) { Text("关闭") }
+                                },
+                            )
+                        }
+
                     }
                 }
             }
@@ -472,20 +465,10 @@ private fun TouchModeCategory(
                     checked = settings.syncTouchEventWithDisplay,
                     onToggle = { onSettingsChange(settings.copy(syncTouchEventWithDisplay = it)) },
                 )
-                var flatRegion by remember { mutableFloatStateOf(settings.longPressFlatRegionPixels.toFloat()) }
-                SettingSlider(
-                    value = flatRegion,
-                    valueRange = 0f..100f,
-                    valueLabel = "长按平坦区: ${flatRegion.toInt()}px",
-                    onValueChange = { flatRegion = it },
-                    onValueChangeFinished = {
-                        onSettingsChange(settings.copy(longPressFlatRegionPixels = flatRegion.toInt()))
-                    },
-                )
                 var toggleFingers by remember { mutableFloatStateOf(settings.nativeTouchFingersToToggleKeyboard.toFloat()) }
                 SettingSlider(
                     value = toggleFingers,
-                    valueRange = 0f..5f,
+                    valueRange = 0f..10f,
                     valueLabel = "切换键盘手指数: ${toggleFingers.toInt()} (0=禁用)",
                     onValueChange = { toggleFingers = it },
                     onValueChangeFinished = {
@@ -496,108 +479,89 @@ private fun TouchModeCategory(
 
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
 }
 
 @Composable
-private fun DisplayCategory(
+fun DisplayCategory(
     settings: HostSettings,
     onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "显示设置", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // ── 画面 ──
-            item { SectionTitle("画面") }
+    val presets = listOf(
+        "自动" to "auto",
+        "2M" to "2M",
+        "8M" to "8M",
+        "20M" to "20M",
+        "自定义" to "custom",
+    )
+    var selectedPreset by remember(settings) {
+        mutableStateOf(
+            when {
+                settings.enableAdaptiveBitrate -> "auto"
+                settings.bitrate <= 0 -> "auto"
+                settings.bitrate <= 2000 -> "2M"
+                settings.bitrate <= 8000 -> "8M"
+                settings.bitrate <= 20000 -> "20M"
+                else -> "custom"
+            }
+        )
+    }
 
-            // 码率预设
-            item {
-                val presets = listOf(
-                    "自动" to "auto",
-                    "2M" to "2M",
-                    "8M" to "8M",
-                    "20M" to "20M",
-                    "自定义" to "custom",
-                )
-                var selectedPreset by remember { mutableStateOf(
-                    when {
-                        settings.enableAdaptiveBitrate -> "auto"
-                        settings.bitrate <= 0 -> "auto"
-                        settings.bitrate <= 2000 -> "2M"
-                        settings.bitrate <= 8000 -> "8M"
-                        settings.bitrate <= 20000 -> "20M"
-                        else -> "custom"
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        // ── 画面 ──
+        item { SectionTitle("画面") }
+
+        // 码率预设
+        item {
+            Text("码率设置", style = MaterialTheme.typography.bodyLarge,
+                 modifier = Modifier.padding(vertical = 6.dp))
+            ChipSelector(
+                options = presets,
+                selectedValue = selectedPreset,
+                onSelect = { value ->
+                    selectedPreset = value
+                    val newBitrate = when (value) {
+                        "auto" -> { onSettingsChange(settings.copy(enableAdaptiveBitrate = true, bitrate = 0)); return@ChipSelector }
+                        "2M" -> 2000; "8M" -> 8000; "20M" -> 20000; else -> settings.bitrate
                     }
+                    onSettingsChange(settings.copy(enableAdaptiveBitrate = false, bitrate = newBitrate))
+                },
+            )
+        }
+
+        // 自定义码率滑块
+        item {
+            AnimatedVisibility(visible =
+                selectedPreset == "custom" || settings.bitrate > 20000) {
+                var customKbps by remember { mutableFloatStateOf(
+                    if (settings.bitrate > 20000) settings.bitrate.toFloat() else 50000f
                 ) }
-                Text("码率设置", style = MaterialTheme.typography.bodyLarge,
-                     modifier = Modifier.padding(vertical = 6.dp))
-                ChipSelector(
-                    options = presets,
-                    selectedValue = selectedPreset,
-                    onSelect = { value ->
-                        selectedPreset = value
-                        val newBitrate = when (value) {
-                            "auto" -> { onSettingsChange(settings.copy(enableAdaptiveBitrate = true, bitrate = 0)); return@ChipSelector }
-                            "2M" -> 2000; "8M" -> 8000; "20M" -> 20000; else -> settings.bitrate
-                        }
-                        onSettingsChange(settings.copy(enableAdaptiveBitrate = false, bitrate = newBitrate))
+                SettingSlider(
+                    value = customKbps,
+                    valueRange = 1000f..800000f,
+                    valueLabel = "码率: ${(customKbps / 1000).toInt()} Mbps (${customKbps.toInt()} kbps)",
+                    onValueChange = { customKbps = it },
+                    onValueChangeFinished = {
+                        onSettingsChange(settings.copy(enableAdaptiveBitrate = false, bitrate = customKbps.toInt()))
                     },
                 )
             }
+        }
 
-            // 自定义码率滑块
-            item {
-                AnimatedVisibility(visible = selectedPreset == "custom" || settings.bitrate > 20000) {
-                    var customKbps by remember { mutableFloatStateOf(
-                        if (settings.bitrate > 20000) settings.bitrate.toFloat() else 50000f
-                    ) }
-                    SettingSlider(
-                        value = customKbps,
-                        valueRange = 1000f..800000f,
-                        valueLabel = "码率: ${(customKbps / 1000).toInt()} Mbps (${customKbps.toInt()} kbps)",
-                        onValueChange = { customKbps = it },
-                        onValueChangeFinished = {
-                            onSettingsChange(settings.copy(enableAdaptiveBitrate = false, bitrate = customKbps.toInt()))
-                        },
-                    )
-                }
-            }
-
-            // ABR 模式
+        // ABR 模式
             item {
                 AnimatedVisibility(visible = settings.enableAdaptiveBitrate) {
                     Column {
                         Text("智能码率模式", style = MaterialTheme.typography.bodyMedium,
                              modifier = Modifier.padding(vertical = 4.dp))
-                        val abrModes = listOf("画质优先" to "quality", "均衡" to "balanced", "低延迟" to "lowLatency")
-                        abrModes.forEach { (label, value) ->
-                            RadioOption(
-                                label = label,
-                                selected = settings.abrMode == value,
-                                onClick = { onSettingsChange(settings.copy(abrMode = value)) },
-                            )
-                        }
+                        ChipSelector(
+                            options = listOf("画质优先" to "quality", "均衡" to "balanced", "低延迟" to "lowLatency"),
+                            selectedValue = settings.abrMode,
+                            onSelect = { onSettingsChange(settings.copy(abrMode = it)) },
+                        )
                     }
-                }
-            }
-
-            // 帧率
-            item {
-                Divider()
-                var unlocked by remember { mutableStateOf(settings.unlockFps) }
-                SettingSwitchRow("解锁帧率", unlocked) { unlocked = it; onSettingsChange(settings.copy(unlockFps = it)) }
-                val fpsOptions = if (unlocked) listOf(30, 60, 90, 120, 144, 165) else listOf(30, 60, 90, 120)
-                Text("视频帧率", style = MaterialTheme.typography.bodyMedium,
-                     modifier = Modifier.padding(vertical = 4.dp))
-                fpsOptions.forEach { fps ->
-                    RadioOption(
-                        label = "${fps} FPS",
-                        selected = settings.fps == fps,
-                        onClick = { onSettingsChange(settings.copy(fps = fps)) },
-                    )
                 }
             }
 
@@ -618,37 +582,176 @@ private fun DisplayCategory(
                 )
             }
 
-            // 分辨率缩放
+            // 帧率
             item {
                 Divider()
-                var scale by remember { mutableFloatStateOf(settings.resolutionScale.toFloat()) }
-                SettingSlider(
-                    value = scale,
-                    valueRange = 50f..400f,
-                    valueLabel = "分辨率缩放: ${scale.toInt()}%",
-                    onValueChange = { scale = it },
-                    onValueChangeFinished = {
-                        onSettingsChange(settings.copy(resolutionScale = scale.toInt()))
+                val unlocked = settings.unlockFps
+                Row(
+                    modifier = Modifier.padding(vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("视频帧率", style = MaterialTheme.typography.bodyLarge,
+                         modifier = Modifier.weight(1f))
+                    Text("解锁帧率", style = MaterialTheme.typography.bodySmall,
+                         color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(Modifier.width(4.dp))
+                    Switch(
+                        checked = unlocked,
+                        onCheckedChange = { onSettingsChange(settings.copy(unlockFps = it)) },
+                        modifier = Modifier.height(20.dp),
+                    )
+                }
+                val baseFps = listOf(30, 60, 90, 120)
+                val extraFps = listOf(144, 165)
+                val allFps = baseFps + if (unlocked) extraFps else emptyList()
+                ChipSelector(
+                    options = allFps.map { fps ->
+                        "${fps}FPS" to fps.toString()
                     },
+                    selectedValue = settings.fps.toString(),
+                    onSelect = { value ->
+                        val newFps = value.toIntOrNull() ?: 60
+                        onSettingsChange(settings.copy(fps = newFps))
+                    },
+                    columns = 5,
                 )
             }
 
             // 帧时序模式
             item {
                 Divider()
-                val pacingModes = listOf(
-                    "最低延迟" to 0, "均衡" to 1, "均衡+FPS限制" to 2,
-                    "最高流畅度" to 3, "超低延迟(实验)" to 4, "精确同步" to 5,
-                )
                 Text("帧时序模式", style = MaterialTheme.typography.bodyLarge,
                      modifier = Modifier.padding(vertical = 6.dp))
-                pacingModes.forEach { (label, value) ->
-                    RadioOption(
-                        label = label,
-                        selected = settings.framePacing == value,
-                        onClick = { onSettingsChange(settings.copy(framePacing = value)) },
+                ChipSelector(
+                    options = listOf(
+                        "最低延迟" to "0", "均衡" to "1", "均衡+FPS限制" to "2",
+                        "最高流畅度" to "3", "超低延迟(实验)" to "4", "精确同步" to "5",
+                    ),
+                    selectedValue = settings.framePacing.toString(),
+                    onSelect = { value ->
+                        onSettingsChange(settings.copy(framePacing = value.toIntOrNull() ?: 0))
+                    },
+                    columns = 3,
+                    spacingDp = 6,
+                )
+            }
+
+            // ── 分辨率选择（预设 + 自定义） ──
+            item {
+                Divider()
+                var showCustomDialog by remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "分辨率",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 12.dp, bottom = 4.dp).weight(1f),
+                    )
+                    TextButton(onClick = { showCustomDialog = true }) {
+                        Text("+自定义分辨率", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+                val context = LocalContext.current
+
+                val standardResolutions = listOf(
+                    "640x360", "854x480", "1280x720",
+                    "1920x1080", "2560x1440", "3840x2160",
+                )
+
+                // 获取设备原生分辨率
+                val nativeRes = remember {
+                    val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+                    val size = Point()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        display.getRealSize(size)
+                    } else {
+                        display.getSize(size)
+                    }
+                    val w = maxOf(size.x, size.y)
+                    val h = minOf(size.x, size.y)
+                    "${w}x${h}"
+                }
+
+                // 加载自定义分辨率（与主页设置-自定义分辨率共享数据源）
+                val customResSet = remember {
+                    context.getSharedPreferences(
+                        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
+                    ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
+                        ?.sortedBy { it } ?: emptyList()
+                }
+
+                val allResolutions = remember {
+                    val nativeLabel = if (nativeRes !in standardResolutions) {
+                        listOf("Native ($nativeRes)")
+                    } else emptyList()
+                    standardResolutions + nativeLabel + customResSet.map { "$it (自定义)" }
+                }
+
+                val currentRes = "${settings.width}x${settings.height}"
+                var selectedRes by remember(settings) { mutableStateOf(currentRes) }
+
+                // 3列网格显示分辨率芯片
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    allResolutions.chunked(3).forEach { rowItems ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            rowItems.forEach { res ->
+                                val cleanRes = res
+                                    .replace(" (自定义)", "")
+                                    .replace("Native (", "").replace(")", "")
+                                val isSelected = selectedRes == cleanRes
+                                CompactChip(
+                                    label = res,
+                                    selected = isSelected,
+                                    onClick = {
+                                        selectedRes = cleanRes
+                                        val parts = cleanRes.split("x")
+                                        if (parts.size == 2) {
+                                            val w = parts[0].toIntOrNull() ?: settings.width
+                                            val h = parts[1].toIntOrNull() ?: settings.height
+                                            onSettingsChange(settings.copy(width = w, height = h))
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
+                                )
+                            }
+                            // 补齐不足3列的空位
+                            repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                        }
+                    }
+                }
+
+                if (showCustomDialog) {
+                    CustomResolutionInputDialog(
+                        onDismiss = { showCustomDialog = false },
+                        onConfirm = { w, h ->
+                            val prefs = context.getSharedPreferences(
+                                CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
+                            )
+                            val existing = prefs.getStringSet(
+                                CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, mutableSetOf()
+                            )?.toMutableSet() ?: mutableSetOf()
+                            existing.add("${w}x${h}")
+                            prefs.edit().putStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, existing).apply()
+                            onSettingsChange(settings.copy(width = w, height = h))
+                            showCustomDialog = false
+                        },
                     )
                 }
+            }
+
+            // 屏幕组合模式
+            item {
+                Divider()
+                ScreenCombinationModeSelector(
+                    settings = settings,
+                    onSettingsChange = onSettingsChange,
+                )
             }
 
             // 输出缓冲区
@@ -666,9 +769,10 @@ private fun DisplayCategory(
                 )
             }
 
-            // HDR
+            // ── 开关组 ──
             item {
                 Divider()
+                SectionTitle("画面开关")
                 SettingSwitchRow("HDR", settings.enableHdr) {
                     onSettingsChange(settings.copy(enableHdr = it))
                 }
@@ -678,29 +782,15 @@ private fun DisplayCategory(
                             onSettingsChange(settings.copy(enableHdrHighBrightness = it))
                         }
                         Text("HDR模式", style = MaterialTheme.typography.bodyMedium)
-                        RadioOption("HDR10/PQ", settings.hdrMode == 1) {
-                            onSettingsChange(settings.copy(hdrMode = 1))
-                        }
-                        RadioOption("HLG", settings.hdrMode == 2) {
-                            onSettingsChange(settings.copy(hdrMode = 2))
-                        }
+                        ChipSelector(
+                            options = listOf("HDR10/PQ" to "1", "HLG" to "2"),
+                            selectedValue = settings.hdrMode.toString(),
+                            onSelect = { onSettingsChange(settings.copy(hdrMode = it.toIntOrNull() ?: 1)) },
+                            columns = 2,
+                        )
                     }
                 }
-            }
-
-            // PiP
-            item {
-                Divider()
-                SettingSwitchRow("画中画 (PiP)", settings.enablePip) {
-                    onSettingsChange(settings.copy(enablePip = it))
-                }
-            }
-
-            // ── 开关组 ──
-            item {
-                Divider()
-                SectionTitle("画面开关")
-                SettingSwitchRow("拉伸视频", settings.stretchVideo) {
+                SettingSwitchRow("全屏拉伸画面", settings.stretchVideo) {
                     onSettingsChange(settings.copy(stretchVideo = it))
                 }
                 SettingSwitchRow("反转分辨率", settings.reverseResolution) {
@@ -723,55 +813,24 @@ private fun DisplayCategory(
                 }
             }
 
-            // 画面位置
+            // PiP
             item {
                 Divider()
-                SectionTitle("画面位置")
-                val positions = listOf(
-                    "左上" to "top_left", "中上" to "top_center", "右上" to "top_right",
-                    "左中" to "center_left", "居中" to "center", "右中" to "center_right",
-                    "左下" to "bottom_left", "中下" to "bottom_center", "右下" to "bottom_right",
-                )
-                ChipSelector(
-                    options = positions,
-                    selectedValue = settings.screenPosition,
-                    onSelect = { onSettingsChange(settings.copy(screenPosition = it)) },
-                )
-                var offsetX by remember { mutableFloatStateOf(settings.screenOffsetX.toFloat()) }
-                SettingSlider(
-                    value = offsetX,
-                    valueRange = -100f..100f,
-                    valueLabel = "X 偏移: ${offsetX.toInt()}",
-                    onValueChange = { offsetX = it },
-                    onValueChangeFinished = {
-                        onSettingsChange(settings.copy(screenOffsetX = offsetX.toInt()))
-                    },
-                )
-                var offsetY by remember { mutableFloatStateOf(settings.screenOffsetY.toFloat()) }
-                SettingSlider(
-                    value = offsetY,
-                    valueRange = -100f..100f,
-                    valueLabel = "Y 偏移: ${offsetY.toInt()}",
-                    onValueChange = { offsetY = it },
-                    onValueChangeFinished = {
-                        onSettingsChange(settings.copy(screenOffsetY = offsetY.toInt()))
-                    },
-                )
+                SettingSwitchRow("画中画 (PiP)", settings.enablePip) {
+                    onSettingsChange(settings.copy(enablePip = it))
+                }
             }
 
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
 }
 
 @Composable
-private fun HostCategory(
+fun HostCategory(
     settings: HostSettings,
     onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "主机设置", onBack = onBack) {
-        LazyColumn(
+    LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
         ) {
@@ -780,20 +839,11 @@ private fun HostCategory(
                 SettingSwitchRow("断开串流时锁定屏幕", settings.lockScreenAfterDisconnect) {
                     onSettingsChange(settings.copy(lockScreenAfterDisconnect = it))
                 }
-            }
-
-            // 需重启串流生效的选项
-            item {
-                Divider()
-                SectionTitle("需重启串流生效")
                 SettingSwitchRow("自动优化主机设置 (SOPS)", settings.enableSops) {
                     onSettingsChange(settings.copy(enableSops = it))
                 }
                 SettingSwitchRow("在电脑上播放声音", settings.playHostAudio) {
                     onSettingsChange(settings.copy(playHostAudio = it))
-                }
-                SettingSwitchRow("静音客户端音频", settings.muteClientAudio) {
-                    onSettingsChange(settings.copy(muteClientAudio = it))
                 }
                 SettingSwitchRow("仅控制模式", settings.controlOnly) {
                     onSettingsChange(settings.copy(controlOnly = it))
@@ -806,35 +856,20 @@ private fun HostCategory(
                 }
             }
 
-            // 菜单设置
-            item {
-                Divider()
-                SectionTitle("菜单设置")
-                SettingSwitchRow("启用 ESC 菜单", settings.enableEscMenu) {
-                    onSettingsChange(settings.copy(enableEscMenu = it))
-                }
-                SettingSwitchRow("启用 Start 键菜单", settings.enableStartKeyMenu) {
-                    onSettingsChange(settings.copy(enableStartKeyMenu = it))
-                }
-            }
-
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
 }
 
 @Composable
-private fun AudioCategory(
+fun AudioCategory(
     settings: HostSettings,
     onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "声音设置", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // 环绕声
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        // 环绕声
             item {
                 SectionTitle("输出设置")
                 Text("环绕声", style = MaterialTheme.typography.bodyMedium,
@@ -854,6 +889,9 @@ private fun AudioCategory(
             // 均衡器 / 空间音频
             item {
                 Divider()
+                SettingSwitchRow("播放串流音频", !settings.muteClientAudio) {
+                    onSettingsChange(settings.copy(muteClientAudio = !it))
+                }
                 SettingSwitchRow("均衡器", settings.enableAudioFx) {
                     onSettingsChange(settings.copy(enableAudioFx = it))
                 }
@@ -872,12 +910,12 @@ private fun AudioCategory(
                 AnimatedVisibility(visible = settings.enableAudioPassthrough) {
                     Column(Modifier.padding(start = 16.dp)) {
                         Text("直通编解码器", style = MaterialTheme.typography.bodyMedium)
-                        val codecOptions = listOf("自动" to "auto", "Opus" to "opus", "AC3" to "ac3", "E-AC3" to "eac3")
-                        codecOptions.forEach { (label, value) ->
-                            RadioOption(label, settings.audioCodec == value) {
-                                onSettingsChange(settings.copy(audioCodec = value))
-                            }
-                        }
+                        ChipSelector(
+                            options = listOf("自动" to "auto", "Opus" to "opus", "AC3" to "ac3", "E-AC3" to "eac3"),
+                            selectedValue = settings.audioCodec,
+                            onSelect = { onSettingsChange(settings.copy(audioCodec = it)) },
+                            columns = 2,
+                        )
                         Text("直通缓冲区", style = MaterialTheme.typography.bodyMedium)
                         val bufOptions = listOf("低延迟" to "low", "正常" to "normal", "高兼容" to "high")
                         ChipSelector(
@@ -916,12 +954,12 @@ private fun AudioCategory(
                             onSelect = { onSettingsChange(settings.copy(audioVibrationMode = it)) },
                         )
                         Text("场景模式", style = MaterialTheme.typography.bodyMedium)
-                        val sceneOptions = listOf("通用" to 0, "游戏" to 1, "电影" to 2, "音乐" to 3)
-                        sceneOptions.forEach { (label, value) ->
-                            RadioOption(label, settings.audioVibrationScene == value) {
-                                onSettingsChange(settings.copy(audioVibrationScene = value))
-                            }
-                        }
+                        ChipSelector(
+                            options = listOf("通用" to "0", "游戏" to "1", "电影" to "2", "音乐" to "3"),
+                            selectedValue = settings.audioVibrationScene.toString(),
+                            onSelect = { onSettingsChange(settings.copy(audioVibrationScene = it.toIntOrNull() ?: 0)) },
+                            columns = 2,
+                        )
                     }
                 }
             }
@@ -958,21 +996,18 @@ private fun AudioCategory(
 
             item { Spacer(Modifier.height(24.dp)) }
         }
-    }
 }
 
 @Composable
-private fun GyroCategory(
+fun GyroCategory(
     settings: HostSettings,
     onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
 ) {
-    DetailScaffold(title = "体感", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
-            // 体感总开关（当前激活的模式）
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        // 体感总开关（当前激活的模式）
             item {
                 val gyroActive = settings.gyroToRightStick || settings.gyroToMouse
                 SettingSwitchRow("体感开关", gyroActive) { enabled ->
@@ -985,15 +1020,35 @@ private fun GyroCategory(
                 }
             }
 
+            // 激活按键
+            item {
+                Divider()
+                SectionTitle("激活按键")
+                val keyOptions = listOf("始终" to 0, "LT" to KeyEvent.KEYCODE_BUTTON_L2, "RT" to KeyEvent.KEYCODE_BUTTON_R2)
+                ChipSelector(
+                    options = keyOptions.map { (label, value) -> label to value.toString() },
+                    selectedValue = settings.gyroActivationKeyCode.toString(),
+                    onSelect = { value ->
+                        onSettingsChange(settings.copy(gyroActivationKeyCode = value.toIntOrNull() ?: KeyEvent.KEYCODE_BUTTON_L2))
+                    },
+                )
+            }
+
             item {
                 Divider()
                 SectionTitle("模式")
-                RadioOption("右摇杆", settings.gyroToRightStick && !settings.gyroToMouse) {
-                    onSettingsChange(settings.copy(gyroToRightStick = true, gyroToMouse = false))
-                }
-                RadioOption("鼠标", settings.gyroToMouse) {
-                    onSettingsChange(settings.copy(gyroToRightStick = false, gyroToMouse = true))
-                }
+                val currentMode = if (settings.gyroToMouse) "mouse" else "right_stick"
+                ChipSelector(
+                    options = listOf("右摇杆" to "right_stick", "鼠标" to "mouse"),
+                    selectedValue = currentMode,
+                    onSelect = { value ->
+                        onSettingsChange(settings.copy(
+                            gyroToRightStick = value == "right_stick",
+                            gyroToMouse = value == "mouse",
+                        ))
+                    },
+                    columns = 2,
+                )
             }
 
             // 灵敏度
@@ -1023,46 +1078,38 @@ private fun GyroCategory(
                 }
             }
 
-            // 激活按键
+            item { Spacer(Modifier.height(24.dp)) }
+        }
+}
+
+@Composable
+fun OtherCategory(
+    settings: HostSettings,
+    onSettingsChange: (HostSettings) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        // 操作面板自动隐藏
             item {
-                Divider()
-                SectionTitle("激活按键")
-                val keyOptions = listOf("始终" to 0, "LT" to KeyEvent.KEYCODE_BUTTON_L2, "RT" to KeyEvent.KEYCODE_BUTTON_R2)
+                SectionTitle("操作面板自动隐藏")
                 ChipSelector(
-                    options = keyOptions.map { (label, value) -> label to value.toString() },
-                    selectedValue = settings.gyroActivationKeyCode.toString(),
+                    options = listOf(
+                        "按键映射时隐藏" to "0",
+                        "2秒后自动隐藏" to "1",
+                        "不自动隐藏" to "2",
+                    ),
+                    selectedValue = settings.toolPanelAutoHideMode.toString(),
                     onSelect = { value ->
-                        onSettingsChange(settings.copy(gyroActivationKeyCode = value.toIntOrNull() ?: KeyEvent.KEYCODE_BUTTON_L2))
+                        onSettingsChange(settings.copy(toolPanelAutoHideMode = value.toIntOrNull() ?: 0))
                     },
                 )
             }
 
-            // 显示体感卡片
-            item {
-                Divider()
-                SettingSwitchRow("在串流中显示体感卡片", settings.showGyroCard) {
-                    onSettingsChange(settings.copy(showGyroCard = it))
-                }
-            }
-
-            item { Spacer(Modifier.height(24.dp)) }
-        }
-    }
-}
-
-@Composable
-private fun OtherCategory(
-    settings: HostSettings,
-    onSettingsChange: (HostSettings) -> Unit,
-    onBack: () -> Unit,
-) {
-    DetailScaffold(title = "其它设置", onBack = onBack) {
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-        ) {
             // 性能监控图层
             item {
+                Divider()
                 SectionTitle("性能与显示")
                 var perfEnabled by remember { mutableStateOf(settings.enablePerfOverlay) }
                 SettingSwitchRow("启用性能图层", perfEnabled) {
@@ -1099,6 +1146,14 @@ private fun OtherCategory(
                 }
             }
 
+            // 禁用警告
+            item {
+                Divider()
+                SettingSwitchRow("禁用警告提示", settings.disableWarnings) {
+                    onSettingsChange(settings.copy(disableWarnings = it))
+                }
+            }
+
             // 悬浮按钮不透明度
             item {
                 Divider()
@@ -1115,104 +1170,170 @@ private fun OtherCategory(
                 )
             }
 
-            // 操作面板自动隐藏
-            item {
-                Divider()
-                Text("操作面板自动隐藏", style = MaterialTheme.typography.bodyMedium)
-                val hideOptions = listOf(
-                    "开启按键映射时隐藏" to 0,
-                    "2秒后自动隐藏" to 1,
-                    "不自动隐藏" to 2,
-                )
-                hideOptions.forEach { (label, value) ->
-                    RadioOption(label, settings.toolPanelAutoHideMode == value) {
-                        onSettingsChange(settings.copy(toolPanelAutoHideMode = value))
-                    }
-                }
-            }
-
-            // 悬浮球设置
-            item {
-                Divider()
-                SectionTitle("悬浮球")
-                SettingSwitchRow("启用悬浮球", settings.enableFloatBall) {
-                    onSettingsChange(settings.copy(enableFloatBall = it))
-                }
-                AnimatedVisibility(visible = settings.enableFloatBall) {
-                    Column(Modifier.padding(start = 16.dp)) {
-                        var hideDelay by remember { mutableFloatStateOf(settings.floatBallAutoHideDelay.toFloat()) }
-                        SettingSlider(
-                            value = hideDelay,
-                            valueRange = 500f..10000f,
-                            valueLabel = "自动隐藏延迟: ${hideDelay.toInt()} ms",
-                            onValueChange = { hideDelay = it },
-                            onValueChangeFinished = {
-                                onSettingsChange(settings.copy(floatBallAutoHideDelay = hideDelay.toInt()))
-                            },
-                        )
-
-                        Text("单击动作", style = MaterialTheme.typography.bodySmall)
-                        val actionOptions = listOf(
-                            "打开键盘" to "open_keyboard",
-                            "打开菜单" to "open_menu",
-                            "切换可见性" to "toggle_visibility",
-                            "无操作" to "none",
-                        )
-                        ChipSelector(
-                            options = actionOptions,
-                            selectedValue = settings.floatBallSingleClickAction,
-                            onSelect = { onSettingsChange(settings.copy(floatBallSingleClickAction = it)) },
-                        )
-
-                        // 双击/长按/滑动保持简洁，使用 Radio 列表
-                        Text("双击动作", style = MaterialTheme.typography.bodySmall,
-                             modifier = Modifier.padding(top = 8.dp))
-                        actionOptions.forEach { (label, value) ->
-                            RadioOption(label, settings.floatBallDoubleClickAction == value) {
-                                onSettingsChange(settings.copy(floatBallDoubleClickAction = value))
-                            }
-                        }
-                        Text("长按动作", style = MaterialTheme.typography.bodySmall,
-                             modifier = Modifier.padding(top = 4.dp))
-                        actionOptions.forEach { (label, value) ->
-                            RadioOption(label, settings.floatBallLongClickAction == value) {
-                                onSettingsChange(settings.copy(floatBallLongClickAction = value))
-                            }
-                        }
-                    }
-                }
-            }
-
-            // 卡片可见性
-            item {
-                Divider()
-                SectionTitle("快速信息卡片")
-                SettingSwitchRow("显示码率卡片", settings.showBitrateCard) {
-                    onSettingsChange(settings.copy(showBitrateCard = it))
-                }
-                SettingSwitchRow("显示快捷卡片", settings.showQuickKeyCard) {
-                    onSettingsChange(settings.copy(showQuickKeyCard = it))
-                }
-            }
-
-            // 按键映射
-            item {
-                Divider()
-                SectionTitle("按键映射")
-                SettingSwitchRow("启用按键映射", settings.keyMappingEnabled) {
-                    onSettingsChange(settings.copy(keyMappingEnabled = it))
-                }
-            }
-
-            // 禁用警告
-            item {
-                Divider()
-                SettingSwitchRow("禁用警告提示", settings.disableWarnings) {
-                    onSettingsChange(settings.copy(disableWarnings = it))
-                }
-            }
-
             item { Spacer(Modifier.height(24.dp)) }
         }
+}
+
+// ═══════════════════════════════════════════
+// 自定义分辨率输入对话框
+// ═══════════════════════════════════════════
+
+@Composable
+private fun ScreenCombinationModeSelector(
+    settings: HostSettings,
+    onSettingsChange: (HostSettings) -> Unit,
+) {
+    val context = LocalContext.current
+    val modeNames = remember {
+        context.resources.getStringArray(com.alexclin.moonlink.android.R.array.screen_combination_mode_names)
     }
+    val modeValues = remember {
+        context.resources.getStringArray(com.alexclin.moonlink.android.R.array.screen_combination_mode_values)
+    }
+
+    // 找到当前值对应的名称
+    val targetValue = settings.screenCombinationMode.toString()
+    val currentName = remember(modeValues, modeNames, targetValue) {
+        val idx = modeValues.indexOf(targetValue)
+        if (idx >= 0) modeNames[idx] else modeNames.firstOrNull() ?: "使用主机端配置"
+    }
+
+    var showDialog by remember { mutableStateOf(false) }
+
+    Column {
+        SectionTitle("屏幕组合模式")
+        Text(
+            "控制主机在启动串流时如何管理屏幕组合，此处配置将覆盖主机端配置。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+
+        // 当前选中模式的可点击行
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    showDialog = true
+                }
+                .padding(vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "组合模式",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                currentName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Spacer(Modifier.width(4.dp))
+            Icon(
+                Icons.Default.ChevronRight,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("屏幕组合模式") },
+            text = {
+                Column {
+                    modeNames.forEachIndexed { index, name ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    val value = try {
+                                        modeValues[index].toInt()
+                                    } catch (_: Exception) { -1 }
+                                    onSettingsChange(settings.copy(screenCombinationMode = value))
+                                    showDialog = false
+                                }
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            RadioButton(
+                                selected = modeValues[index] == settings.screenCombinationMode.toString(),
+                                onClick = {
+                                    val value = try {
+                                        modeValues[index].toInt()
+                                    } catch (_: Exception) { -1 }
+                                    onSettingsChange(settings.copy(screenCombinationMode = value))
+                                    showDialog = false
+                                },
+                            )
+                            Spacer(Modifier.width(8.dp))
+                            Text(name, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showDialog = false }) { Text("关闭") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun CustomResolutionInputDialog(
+    onDismiss: () -> Unit,
+    onConfirm: (Int, Int) -> Unit,
+) {
+    var widthText by remember { mutableStateOf("") }
+    var heightText by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("自定义分辨率") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = widthText,
+                    onValueChange = { widthText = it },
+                    label = { Text("宽度 (320-7680)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = heightText,
+                    onValueChange = { heightText = it },
+                    label = { Text("高度 (240-4320)") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                if (error != null) {
+                    Text(
+                        error!!,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                val w = widthText.toIntOrNull() ?: 0
+                val h = heightText.toIntOrNull() ?: 0
+                when {
+                    w < 320 || w > 7680 -> error = "宽度超出范围 (320-7680)"
+                    h < 240 || h > 4320 -> error = "高度超出范围 (240-4320)"
+                    w % 2 != 0 -> error = "宽度必须为偶数"
+                    h % 2 != 0 -> error = "高度必须为偶数"
+                    else -> onConfirm(w, h)
+                }
+            }) { Text("添加") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+    )
 }

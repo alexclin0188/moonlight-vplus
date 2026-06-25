@@ -676,9 +676,12 @@ class NvHTTP(
             }
         }
 
-        var queryParams = "appid=$appId" +
-            (if (streamConfig.reqWidth > 0 && streamConfig.reqHeight > 0)
-                "&mode=${streamConfig.reqWidth}x${streamConfig.reqHeight}x$fps" else "") +
+        val modePart = if (streamConfig.reqWidth > 0 && streamConfig.reqHeight > 0) {
+            if (fps > 0) "&mode=${streamConfig.reqWidth}x${streamConfig.reqHeight}x$fps"
+            else "&mode=${streamConfig.reqWidth}x${streamConfig.reqHeight}"
+        } else ""
+
+        var queryParams = "appid=$appId" + modePart +
             "&additionalStates=1&sops=${if (enableSops) 1 else 0}" +
             (if (streamConfig.reqWidth > 0) "&resolutionScale=${streamConfig.resolutionScale}" else "") +
             "&rikey=${bytesToHex(context.riKey.encoded)}" +

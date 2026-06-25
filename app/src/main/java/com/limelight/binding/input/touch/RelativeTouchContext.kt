@@ -28,7 +28,7 @@ class RelativeTouchContext(
     private var distanceMoved = 0.0
     private var xFactor = 0.6
     private var yFactor = 0.6
-    private var sense = 1.0
+    var sense = 1.0
     private var pointerCount = 0
     private var maxPointerCountInGesture = 0
 
@@ -61,6 +61,12 @@ class RelativeTouchContext(
     private var localCursorRenderer: LocalCursorRenderer? = null
     // 是否启用本地光标渲染
     private var enableLocalCursorRendering = true
+    // 本地光标累计位置（当 enableLocalCursorRendering=true 且无 renderer 时使用）
+    private var cursorAccX = 0f
+    private var cursorAccY = 0f
+
+    /** 光标位置更新回调（新版 Compose 串流使用，替代旧的 LocalCursorRenderer） */
+    var onCursorPositionChanged: ((absX: Float, absY: Float) -> Unit)? = null
 
     private val dragTimerRunnable = Runnable {
         // Check if someone already set move
@@ -324,6 +330,17 @@ class RelativeTouchContext(
                         conn.sendMousePosition(
                             absPos[0].toInt().toShort(),
                             absPos[1].toInt().toShort(),
+                            targetView.width.toShort(),
+                            targetView.height.toShort()
+                        )
+                    } else if (this.enableLocalCursorRendering && onCursorPositionChanged != null) {
+                        // 新版 Compose 模式：累计光标位置并通过回调通知
+                        cursorAccX = (cursorAccX + deltaX).coerceIn(0f, targetView.width.toFloat() - 1f)
+                        cursorAccY = (cursorAccY + deltaY).coerceIn(0f, targetView.height.toFloat() - 1f)
+                        onCursorPositionChanged?.invoke(cursorAccX, cursorAccY)
+                        conn.sendMousePosition(
+                            cursorAccX.toInt().toShort(),
+                            cursorAccY.toInt().toShort(),
                             targetView.width.toShort(),
                             targetView.height.toShort()
                         )

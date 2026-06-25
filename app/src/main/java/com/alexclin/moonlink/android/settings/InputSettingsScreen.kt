@@ -28,6 +28,14 @@ fun InputSettingsScreen() {
                 CheckBoxPreference(key = "checkbox_sync_touch_event_with_display", title = "触控事件与显示刷新同步")
             }
             item {
+                Text(
+                    "以下键盘切换设置为全局默认值，可在\"设备串流设置 → 触控模式\"中为每台主机单独配置。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+            }
+            item {
                 CheckBoxPreference(key = "checkbox_enable_keyboard_toggle_in_native_touch", title = "多点触控模式下键盘切换", defaultValue = true)
             }
             item {
