@@ -1652,7 +1652,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             onStageUpdate?.invoke(stage, false, true)
             var msg = "连接失败: $stage (错误码 $errorCode)"
             if (errorCode == 503) {
-                msg = "连接失败: Sunshine 拒绝显示模式设置\n请尝试将分辨率和帧率设为「自动」，或在 Sunshine 面板中检查虚拟显示器 (VDD) 配置。"
+                msg = "连接失败: Sunshine 拒绝显示模式设置\n请检查在 Sunshine 面板中虚拟显示器 (VDD) 配置。"
             }
             if (portFlags != 0) {
                 msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
@@ -1982,7 +1982,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.width = settings.width
         prefConfig.height = settings.height
         prefConfig.fps = settings.fps
-        prefConfig.bitrate = settings.bitrate
+        prefConfig.bitrate = if (settings.bitrate > 0) settings.bitrate
+            else PreferenceConfiguration.getDefaultBitrate("${settings.width}x${settings.height}", settings.fps.toString())
         prefConfig.enableAdaptiveBitrate = settings.enableAdaptiveBitrate
         prefConfig.abrMode = settings.abrMode
         prefConfig.videoFormat = parseFormatOption(settings.videoFormat)

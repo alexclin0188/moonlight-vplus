@@ -19,22 +19,6 @@ data class DeviceOverviewState(
 )
 
 /**
- * Loads the cached app list for a given computer from disk.
- */
-fun loadCachedAppList(context: Context, uuid: String?): List<NvApp> {
-    if (uuid == null) return emptyList()
-    return try {
-        val stream = CacheHelper.openCacheFileForInput(context.cacheDir, "applist", uuid)
-            ?: return emptyList()
-        val rawXml = CacheHelper.readInputStreamToString(stream)
-        if (rawXml.isNullOrBlank()) return emptyList()
-        NvHTTP.getAppListByReader(StringReader(rawXml))
-    } catch (_: Exception) {
-        emptyList()
-    }
-}
-
-/**
  * Finds the computer with the given UUID from the shared list.
  */
 fun findComputer(computers: List<ComputerDetails>, uuid: String): ComputerDetails? {

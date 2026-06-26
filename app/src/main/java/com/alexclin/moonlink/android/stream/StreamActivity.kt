@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android.stream
 
 import android.content.pm.ActivityInfo
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
@@ -97,8 +98,8 @@ class StreamActivity : ComponentActivity() {
             window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
         }
 
-        // 默认横屏
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE
+        // 默认横屏，允许在 landscape / reverse landscape 之间跟随手机反转
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
 
         // 初始化串流引擎
         engine = StreamEngine(this)
@@ -878,6 +879,14 @@ class StreamActivity : ComponentActivity() {
             return
         }
         engine.onResume()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 用户在 landscape / reverse landscape 之间 180° 反转手机时，
+        // Activity 不会重建（Manifest 已声明 configChanges），
+        // Compose UI 自动适配 LocalConfiguration.current 的更新。
+        // 仅需通知 engine 层面刷新显示参数（无实质操作，留作扩展）。
     }
 
     /** 进入 PiP 模式 */

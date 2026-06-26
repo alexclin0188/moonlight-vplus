@@ -45,10 +45,9 @@ data class HostSettings(
     // 显示设置 (DISPLAY)
     // ═══════════════════════════════════════════
     /** 分辨率宽度 */
-    /** 分辨率宽度（0=自动） */
-    val width: Int = 0,
-    /** 分辨率高度（0=自动） */
-    val height: Int = 0,
+    val width: Int = 1920,
+    /** 分辨率高度 */
+    val height: Int = 1080,
     /** 帧率 */
     val fps: Int = 60,
     /** 码率 kbps */

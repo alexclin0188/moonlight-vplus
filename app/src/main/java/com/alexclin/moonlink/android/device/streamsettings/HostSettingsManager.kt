@@ -2,7 +2,6 @@ package com.alexclin.moonlink.android.device.streamsettings
 
 import android.content.Context
 import android.view.KeyEvent
-import androidx.preference.PreferenceManager
 
 /**
  * 主机级串流配置持久化管理器。
@@ -120,136 +119,128 @@ class HostSettingsManager(private val context: Context) {
     }
 
     /**
-     * 获取指定主机的配置。如果该主机尚无配置，从全局默认设置中回退。
+     * 获取指定主机的配置。如果该主机尚无配置，使用 [HostSettings] 的 Kotlin 默认值。
      */
     fun getSettings(uuid: String): HostSettings {
         val sp = context.getSharedPreferences("$SP_PREFIX$uuid", Context.MODE_PRIVATE)
-        val globalSp = PreferenceManager.getDefaultSharedPreferences(context)
 
-        // 辅助函数：如果主机 SP 中没有该 key，则从全局 SP 读取
-        fun bool(key: String, globalKey: String = key, globalDefault: Boolean = false): Boolean =
-            if (sp.contains(key)) sp.getBoolean(key, globalDefault)
-            else globalSp.getBoolean(globalKey, globalDefault)
+        // 辅助函数：如果主机 SP 中有该 key 则读取，否则返回 HostSettings 默认值
+        fun bool(key: String): Boolean = sp.getBoolean(key, false)
 
-        fun int(key: String, globalKey: String = key, globalDefault: Int = 0): Int =
+        fun int(key: String, default: Int = 0): Int =
             try {
-                if (sp.contains(key)) (sp.all[key] as? Number)?.toInt() ?: globalDefault
-                else (globalSp.all[globalKey] as? Number)?.toInt() ?: globalDefault
+                (sp.all[key] as? Number)?.toInt() ?: default
             } catch (_: Exception) {
-                globalDefault
+                default
             }
 
-        fun string(key: String, globalKey: String = key, globalDefault: String = ""): String =
+        fun string(key: String, default: String = ""): String =
             try {
-                if (sp.contains(key)) sp.all[key]?.toString() ?: globalDefault
-                else globalSp.all[globalKey]?.toString() ?: globalDefault
+                sp.all[key]?.toString() ?: default
             } catch (_: Exception) {
-                globalDefault
+                default
             }
 
         return HostSettings(
             // 触控模式
             enableEnhancedTouch = bool(KEY_ENABLE_ENHANCED_TOUCH),
-            enhancedTouchOnWhichSide = bool(KEY_ENHANCED_TOUCH_ON_RIGHT, globalDefault = true),
-            enhanceTouchZoneDivider = int(KEY_ENHANCE_TOUCH_ZONE_DIVIDER, globalDefault = 50),
-            pointerVelocityFactor = int(KEY_POINTER_VELOCITY_FACTOR, globalDefault = 100),
-            touchscreenTrackpad = bool(KEY_TOUCHSCREEN_TRACKPAD, globalDefault = true),
-            touchpadSensitivity = int(KEY_TOUCHPAD_SENSITIVITY, globalDefault = 100),
+            enhancedTouchOnWhichSide = sp.getBoolean(KEY_ENHANCED_TOUCH_ON_RIGHT, true),
+            enhanceTouchZoneDivider = int(KEY_ENHANCE_TOUCH_ZONE_DIVIDER, 50),
+            pointerVelocityFactor = int(KEY_POINTER_VELOCITY_FACTOR, 100),
+            touchscreenTrackpad = sp.getBoolean(KEY_TOUCHSCREEN_TRACKPAD, true),
+            touchpadSensitivity = int(KEY_TOUCHPAD_SENSITIVITY, 100),
             enableNativeMousePointer = bool(KEY_ENABLE_NATIVE_MOUSE_POINTER),
             enableDoubleClickDrag = bool(KEY_ENABLE_DOUBLE_CLICK_DRAG),
-            doubleTapTimeThreshold = int(KEY_DOUBLE_TAP_TIME_THRESHOLD, globalDefault = 125),
-            enableLocalCursorRendering = bool(KEY_ENABLE_LOCAL_CURSOR_RENDERING, globalDefault = true),
-            nativeTouchFingersToToggleKeyboard = int(KEY_NATIVE_TOUCH_FINGERS_TOGGLE_KEYBOARD, globalDefault = 3),
+            doubleTapTimeThreshold = int(KEY_DOUBLE_TAP_TIME_THRESHOLD, 125),
+            enableLocalCursorRendering = sp.getBoolean(KEY_ENABLE_LOCAL_CURSOR_RENDERING, true),
+            nativeTouchFingersToToggleKeyboard = int(KEY_NATIVE_TOUCH_FINGERS_TOGGLE_KEYBOARD, 3),
             longPressFlatRegionPixels = int(KEY_LONG_PRESS_FLAT_REGION_PIXELS),
             syncTouchEventWithDisplay = bool(KEY_SYNC_TOUCH_EVENT_WITH_DISPLAY),
 
             // 显示设置
-            width = parseWidth(string(KEY_RESOLUTION, globalDefault = "0x0")),
-            height = parseHeight(string(KEY_RESOLUTION, globalDefault = "0x0")),
-            fps = parseFps(string(KEY_FPS, globalDefault = "0")),
+            width = parseWidth(string(KEY_RESOLUTION, "1920x1080")),
+            height = parseHeight(string(KEY_RESOLUTION, "1920x1080")),
+            fps = parseFps(string(KEY_FPS, "60")),
             bitrate = int(KEY_BITRATE),
-            enableAdaptiveBitrate = bool(KEY_ADAPTIVE_BITRATE),
-            abrMode = string(KEY_ABR_MODE, globalDefault = "balanced"),
-            videoFormat = string(KEY_VIDEO_FORMAT, globalDefault = "auto"),
+            enableAdaptiveBitrate = sp.getBoolean(KEY_ADAPTIVE_BITRATE, true),
+            abrMode = string(KEY_ABR_MODE, "balanced"),
+            videoFormat = string(KEY_VIDEO_FORMAT, "auto"),
             enableHdr = bool(KEY_ENABLE_HDR),
             enableHdrHighBrightness = bool(KEY_ENABLE_HDR_HIGH_BRIGHTNESS),
-            hdrMode = parseHdrMode(string(KEY_HDR_MODE, globalDefault = "1")),
-            resolutionScale = int(KEY_RESOLUTION_SCALE, globalDefault = 100),
-            framePacing = parseFramePacing(string(KEY_FRAME_PACING, globalDefault = "latency")),
+            hdrMode = string(KEY_HDR_MODE, "1").toIntOrNull() ?: 1,
+            resolutionScale = int(KEY_RESOLUTION_SCALE, 100),
+            framePacing = parseFramePacing(string(KEY_FRAME_PACING, "latency")),
             stretchVideo = bool(KEY_STRETCH_VIDEO),
             reverseResolution = bool(KEY_REVERSE_RESOLUTION),
             rotableScreen = bool(KEY_ROTABLE_SCREEN),
-            outputBufferQueueLimit = int(KEY_OUTPUT_BUFFER_QUEUE_LIMIT, globalDefault = 2).coerceIn(1, 5),
+            outputBufferQueueLimit = int(KEY_OUTPUT_BUFFER_QUEUE_LIMIT, 2).coerceIn(1, 5),
             forceMtkMaxOperatingRate = bool(KEY_FORCE_MTK_MAX_OPERATING_RATE),
             unlockFps = bool(KEY_UNLOCK_FPS),
             enablePip = bool(KEY_ENABLE_PIP),
             useExternalDisplay = bool(KEY_USE_EXTERNAL_DISPLAY),
-            screenPosition = string(KEY_SCREEN_POSITION, globalDefault = "center"),
+            screenPosition = string(KEY_SCREEN_POSITION, "center"),
             screenOffsetX = int(KEY_SCREEN_OFFSET_X),
             screenOffsetY = int(KEY_SCREEN_OFFSET_Y),
             reduceRefreshRate = bool(KEY_REDUCE_REFRESH_RATE),
             fullRange = bool(KEY_FULL_RANGE),
-            screenCombinationMode = parseScreenCombinationMode(string(KEY_SCREEN_COMBINATION_MODE, globalDefault = "-1")),
+            screenCombinationMode = string(KEY_SCREEN_COMBINATION_MODE, "-1").toIntOrNull() ?: -1,
 
             // 主机设置
-            enableSops = bool(KEY_ENABLE_SOPS, globalDefault = true),
+            enableSops = sp.getBoolean(KEY_ENABLE_SOPS, true),
             lockScreenAfterDisconnect = bool(KEY_LOCK_SCREEN_AFTER_DISCONNECT),
             playHostAudio = bool(KEY_PLAY_HOST_AUDIO),
             muteClientAudio = bool(KEY_MUTE_CLIENT_AUDIO),
             controlOnly = bool(KEY_CONTROL_ONLY),
             enableClipboardSyncText = bool(KEY_CLIPBOARD_SYNC_TEXT),
             enableClipboardSyncImage = bool(KEY_CLIPBOARD_SYNC_IMAGE),
-            enableEscMenu = bool(KEY_ENABLE_ESC_MENU, globalDefault = true),
-            escMenuKey = parseKeyCode(string(KEY_ESC_MENU_KEY), KeyEvent.KEYCODE_ESCAPE),
-            enableStartKeyMenu = bool(KEY_ENABLE_START_KEY_MENU, globalDefault = true),
+            enableEscMenu = sp.getBoolean(KEY_ENABLE_ESC_MENU, true),
+            escMenuKey = string(KEY_ESC_MENU_KEY).toIntOrNull() ?: KeyEvent.KEYCODE_ESCAPE,
+            enableStartKeyMenu = sp.getBoolean(KEY_ENABLE_START_KEY_MENU, true),
 
             // 声音设置
-            audioConfiguration = string(KEY_AUDIO_CONFIG, globalDefault = "2"),
-            audioCodec = string(KEY_AUDIO_CODEC, globalDefault = "auto"),
+            audioConfiguration = string(KEY_AUDIO_CONFIG, "2"),
+            audioCodec = string(KEY_AUDIO_CODEC, "auto"),
             audioCodecBitrate = int(KEY_AUDIO_CODEC_BITRATE),
             enableAudioFx = bool(KEY_ENABLE_AUDIO_FX),
             enableSpatializer = bool(KEY_ENABLE_SPATIALIZER),
             enableAudioPassthrough = bool(KEY_ENABLE_AUDIO_PASSTHROUGH),
-            audioPassthroughBuffer = string(KEY_AUDIO_PASSTHROUGH_BUFFER, globalDefault = "normal"),
+            audioPassthroughBuffer = string(KEY_AUDIO_PASSTHROUGH_BUFFER, "normal"),
             enableAudioVibration = bool(KEY_ENABLE_AUDIO_VIBRATION),
-            audioVibrationStrength = int(KEY_AUDIO_VIBRATION_STRENGTH, globalDefault = 80).coerceIn(0, 200),
-            audioVibrationMode = string(KEY_AUDIO_VIBRATION_MODE, globalDefault = "auto"),
-            audioVibrationScene = parseAudioScene(string(KEY_AUDIO_VIBRATION_SCENE, globalDefault = "0")),
+            audioVibrationStrength = int(KEY_AUDIO_VIBRATION_STRENGTH, 80).coerceIn(0, 200),
+            audioVibrationMode = string(KEY_AUDIO_VIBRATION_MODE, "auto"),
+            audioVibrationScene = string(KEY_AUDIO_VIBRATION_SCENE, "0").toIntOrNull() ?: 0,
             enableMic = bool(KEY_ENABLE_MIC),
-            micBitrate = int(KEY_MIC_BITRATE, globalDefault = 96).coerceIn(32, 256),
-            micIconColor = string(KEY_MIC_ICON_COLOR, globalDefault = "solid_white"),
+            micBitrate = int(KEY_MIC_BITRATE, 96).coerceIn(32, 256),
+            micIconColor = string(KEY_MIC_ICON_COLOR, "solid_white"),
 
             // 体感
-            gyroSensitivityMultiplier = if (sp.contains("gyro_sensitivity_multiplier"))
-                sp.getFloat("gyro_sensitivity_multiplier", 1.0f)
-            else
-                globalSp.getFloat("gyro_sensitivity_multiplier", 1.0f),
+            gyroSensitivityMultiplier = sp.getFloat("gyro_sensitivity_multiplier", 1.0f),
             gyroInvertXAxis = bool(KEY_GYRO_INVERT_X_AXIS),
             gyroInvertYAxis = bool(KEY_GYRO_INVERT_Y_AXIS),
-            gyroActivationKeyCode = parseKeyCode(string(KEY_GYRO_ACTIVATION_KEY_CODE), KeyEvent.KEYCODE_BUTTON_L2),
-            showGyroCard = bool(KEY_SHOW_GYRO_CARD, globalDefault = true),
+            gyroActivationKeyCode = int(KEY_GYRO_ACTIVATION_KEY_CODE, KeyEvent.KEYCODE_BUTTON_L2),
+            showGyroCard = sp.getBoolean(KEY_SHOW_GYRO_CARD, true),
 
             // 其它
             enablePerfOverlay = bool(KEY_ENABLE_PERF_OVERLAY),
             perfOverlayLocked = bool(KEY_PERF_OVERLAY_LOCKED),
-            perfOverlayBgOpacity = int(KEY_PERF_OVERLAY_BG_OPACITY, globalDefault = 53).coerceIn(0, 100),
-            perfOverlayOrientation = string(KEY_PERF_OVERLAY_ORIENTATION, globalDefault = "horizontal"),
-            perfOverlayPosition = string(KEY_PERF_OVERLAY_POSITION, globalDefault = "top"),
+            perfOverlayBgOpacity = int(KEY_PERF_OVERLAY_BG_OPACITY, 53).coerceIn(0, 100),
+            perfOverlayOrientation = string(KEY_PERF_OVERLAY_ORIENTATION, "horizontal"),
+            perfOverlayPosition = string(KEY_PERF_OVERLAY_POSITION, "top"),
             enableSimplifyPerfOverlay = bool(KEY_ENABLE_SIMPLIFY_PERF_OVERLAY),
             enableLatencyToast = bool(KEY_ENABLE_LATENCY_TOAST),
-            fabOpacity = int(KEY_FAB_OPACITY, globalDefault = 50).coerceIn(10, 100),
-            toolPanelAutoHideMode = int(KEY_TOOL_PANEL_AUTO_HIDE_MODE, globalDefault = 2).coerceIn(0, 2),
-            enableFloatBall = bool(KEY_ENABLE_FLOAT_BALL, globalDefault = true),
-            floatBallAutoHideDelay = int(KEY_FLOAT_BALL_AUTO_HIDE_DELAY, globalDefault = 2000),
-            floatBallSingleClickAction = string(KEY_FLOAT_BALL_SINGLE_CLICK, globalDefault = "open_keyboard"),
-            floatBallDoubleClickAction = string(KEY_FLOAT_BALL_DOUBLE_CLICK, globalDefault = "open_menu"),
-            floatBallLongClickAction = string(KEY_FLOAT_BALL_LONG_CLICK, globalDefault = "toggle_visibility"),
-            floatBallSwipeUpAction = string(KEY_FLOAT_BALL_SWIPE_UP, globalDefault = "none"),
-            floatBallSwipeDownAction = string(KEY_FLOAT_BALL_SWIPE_DOWN, globalDefault = "none"),
-            floatBallSwipeLeftAction = string(KEY_FLOAT_BALL_SWIPE_LEFT, globalDefault = "none"),
-            floatBallSwipeRightAction = string(KEY_FLOAT_BALL_SWIPE_RIGHT, globalDefault = "none"),
-            showBitrateCard = bool(KEY_SHOW_BITRATE_CARD, globalDefault = true),
-            showQuickKeyCard = bool(KEY_SHOW_QUICK_KEY_CARD, globalDefault = true),
+            fabOpacity = int(KEY_FAB_OPACITY, 50).coerceIn(10, 100),
+            toolPanelAutoHideMode = int(KEY_TOOL_PANEL_AUTO_HIDE_MODE, 2).coerceIn(0, 2),
+            enableFloatBall = sp.getBoolean(KEY_ENABLE_FLOAT_BALL, true),
+            floatBallAutoHideDelay = int(KEY_FLOAT_BALL_AUTO_HIDE_DELAY, 2000),
+            floatBallSingleClickAction = string(KEY_FLOAT_BALL_SINGLE_CLICK, "open_keyboard"),
+            floatBallDoubleClickAction = string(KEY_FLOAT_BALL_DOUBLE_CLICK, "open_menu"),
+            floatBallLongClickAction = string(KEY_FLOAT_BALL_LONG_CLICK, "toggle_visibility"),
+            floatBallSwipeUpAction = string(KEY_FLOAT_BALL_SWIPE_UP, "none"),
+            floatBallSwipeDownAction = string(KEY_FLOAT_BALL_SWIPE_DOWN, "none"),
+            floatBallSwipeLeftAction = string(KEY_FLOAT_BALL_SWIPE_LEFT, "none"),
+            floatBallSwipeRightAction = string(KEY_FLOAT_BALL_SWIPE_RIGHT, "none"),
+            showBitrateCard = sp.getBoolean(KEY_SHOW_BITRATE_CARD, true),
+            showQuickKeyCard = sp.getBoolean(KEY_SHOW_QUICK_KEY_CARD, true),
             keyMappingEnabled = bool(KEY_KEY_MAPPING_ENABLED),
             disableWarnings = bool(KEY_DISABLE_WARNINGS),
         )
@@ -380,22 +371,6 @@ class HostSettingsManager(private val context: Context) {
     private fun parseFps(fps: String): Int = try {
         fps.toInt()
     } catch (_: Exception) { 60 }
-
-    private fun parseHdrMode(mode: String): Int = try {
-        mode.toInt()
-    } catch (_: Exception) { 1 }
-
-    private fun parseAudioScene(scene: String): Int = try {
-        scene.toInt()
-    } catch (_: Exception) { 0 }
-
-    private fun parseKeyCode(value: String?, default: Int): Int = try {
-        value?.toInt() ?: default
-    } catch (_: Exception) { default }
-
-    private fun parseScreenCombinationMode(value: String): Int = try {
-        value.toInt()
-    } catch (_: Exception) { -1 }
 
     private fun parseFramePacing(value: String): Int = when (value) {
         "latency" -> 0

@@ -691,7 +691,9 @@ fun DisplayCategory(
                     standardResolutions + nativeLabel + customResSet.map { "$it (自定义)" }
                 }
 
-                val currentRes = "${settings.width}x${settings.height}"
+                val currentRes = if (settings.width > 0 && settings.height > 0)
+                    "${settings.width}x${settings.height}"
+                else "1920x1080"
                 var selectedRes by remember(settings) { mutableStateOf(currentRes) }
 
                 // 3列网格显示分辨率芯片

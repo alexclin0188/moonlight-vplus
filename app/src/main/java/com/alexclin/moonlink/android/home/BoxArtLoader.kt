@@ -230,3 +230,35 @@ suspend fun fetchAndCacheAppListAndBoxArt(
         }
     }
 }
+
+/**
+ * 获取快速启动的默认应用（无指定 app 时的缩略图点击）。
+ * 优先使用 DesktopSpecialApp，否则从缓存 app list 中查找 "Desktop" 或首个应用。
+ */
+fun getDefaultQuickStartApp(computer: ComputerDetails, context: Context): NvApp? {
+    if (computer.supportsDesktopSpecialApp) {
+        return NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
+    }
+
+    val appList = loadCachedAppList(context, computer.uuid)
+    if (appList.isEmpty()) return null
+
+    // Prefer "Desktop" app if present, otherwise use first available
+    return appList.find { it.appName.equals("Desktop", ignoreCase = true) } ?: appList.first()
+}
+
+/**
+ * Loads the cached app list for a given computer from disk.
+ */
+fun loadCachedAppList(context: Context, uuid: String?): List<NvApp> {
+    if (uuid == null) return emptyList()
+    return try {
+        val stream = CacheHelper.openCacheFileForInput(context.cacheDir, "applist", uuid)
+            ?: return emptyList()
+        val rawXml = CacheHelper.readInputStreamToString(stream)
+        if (rawXml.isNullOrBlank()) return emptyList()
+        NvHTTP.getAppListByReader(StringReader(rawXml))
+    } catch (_: Exception) {
+        emptyList()
+    }
+}

@@ -60,7 +60,7 @@ import com.limelight.preferences.AddComputerManually
 import com.limelight.utils.ServerHelper
 import com.limelight.utils.CacheHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
-import com.alexclin.moonlink.android.device.overview.loadCachedAppList
+import com.alexclin.moonlink.android.home.loadCachedAppList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -966,7 +966,16 @@ private fun launchStream(
     if (computer.supportsDesktopSpecialApp) {
         desktopApp = NvApp(NvApp.DESKTOP_APP_NAME, NvApp.DESKTOP_APP_ID, false)
     } else {
-        val cachedApps = loadCachedAppList(context, computer.uuid)
+        var cachedApps = loadCachedAppList(context, computer.uuid)
+        if (cachedApps.isEmpty() && managerBinder != null) {
+            // 缓存为空时尝试从主机拉取（不下载 box art 以节省时间）
+            try {
+                kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) {
+                    fetchAndCacheAppListAndBoxArt(context, target, managerBinder)
+                }
+            } catch (_: Exception) { /* 拉取失败不阻塞 */ }
+            cachedApps = loadCachedAppList(context, computer.uuid)
+        }
         if (cachedApps.isEmpty()) {
             android.widget.Toast.makeText(
                 context,

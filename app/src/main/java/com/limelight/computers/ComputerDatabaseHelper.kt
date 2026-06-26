@@ -22,13 +22,11 @@ import java.util.Locale
 
 /**
  * SQLiteOpenHelper implementation for managing computer database with proper version management.
- * This class consolidates all legacy database migrations into a single upgrade path.
  *
  * Database Version History:
- * - Version 1 (computers.db): Original schema with byte blob addresses
- * - Version 2 (computers2.db): Added serverCert, separate address fields
- * - Version 3 (computers3.db): Combined addresses with delimiters, added IPv6
- * - Version 4 (computers4.db): JSON format for addresses (current)
+ * - Version 1 (current): Consolidated schema with JSON format addresses, serverCert BLOB,
+ *   MacAddress, ComputerName. All legacy migrations (computers2.db ~ computers4.db) have
+ *   been merged into the initial creation script.
  */
 class ComputerDatabaseHelper(private val context: Context) :
     SQLiteOpenHelper(context, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -44,6 +42,12 @@ class ComputerDatabaseHelper(private val context: Context) :
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
         LimeLog.info("Upgrading database from version $oldVersion to $newVersion")
+    }
+
+    override fun onDowngrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+        // Schema already matches the latest — no migration needed.
+        // This can happen when resetting version to 1 on existing databases.
+        LimeLog.info("Downgrade from $oldVersion to $newVersion: schema unchanged, no migration needed")
     }
 
     /**
@@ -299,7 +303,7 @@ class ComputerDatabaseHelper(private val context: Context) :
 
     companion object {
         private const val DATABASE_NAME = "computers.db"
-        private const val DATABASE_VERSION = 4
+        private const val DATABASE_VERSION = 1
 
         private const val TABLE_NAME = "Computers"
         private const val COL_UUID = "UUID"
