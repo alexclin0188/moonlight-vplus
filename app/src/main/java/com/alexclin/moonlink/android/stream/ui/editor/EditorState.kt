@@ -78,6 +78,9 @@ data class EditorElement(
     val leftValue: String = "",
     val rightValue: String = "",
 
+    // ── 圆形模式 ──
+    val isCircle: Boolean = false,    // 是否圆形按钮（UI 编辑辅助，持久化在 extraAttributesJson 中）
+
     // ── 组按键标志 ──
     val flag1: Int = 0,              // element_flag1: 组按键隐藏标志
 
@@ -452,7 +455,16 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
 
         flag1 = this.optInt(Element.COLUMN_INT_ELEMENT_FLAG1),
         extraAttributesJson = this.optString(Element.COLUMN_STRING_EXTRA_ATTRIBUTES, "{}"),
-    )
+    ).let { el ->
+        // 从 extraAttributesJson 反序列化 isCircle
+        val isCircle = try {
+            val json = org.json.JSONObject(el.extraAttributesJson)
+            json.optBoolean("isCircle", false)
+        } catch (_: Exception) {
+            false
+        }
+        el.copy(isCircle = isCircle)
+    }
 }
 
 /**
@@ -462,8 +474,16 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
  * - 不包含 `_id`（SQLite 自增主键）
  * - INTEGER 列通过 [ContentValues.put(key, Long)] 写入
  * - TEXT 列通过 [ContentValues.put(key, String)] 写入
- */
-internal fun EditorElement.toContentValues(): ContentValues {
+ */    internal fun EditorElement.toContentValues(): ContentValues {
+        // 序列化 isCircle 到 extraAttributesJson
+        val mergedJson = try {
+            val json = org.json.JSONObject(extraAttributesJson)
+            json.put("isCircle", isCircle)
+            json.toString()
+        } catch (_: Exception) {
+            extraAttributesJson
+        }
+
     return ContentValues().apply {
         put(Element.COLUMN_LONG_ELEMENT_ID, elementId)
         put(Element.COLUMN_LONG_CONFIG_ID, configId)
@@ -497,6 +517,6 @@ internal fun EditorElement.toContentValues(): ContentValues {
         put(Element.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
 
         put(Element.COLUMN_INT_ELEMENT_FLAG1, flag1.toLong())
-        put(Element.COLUMN_STRING_EXTRA_ATTRIBUTES, extraAttributesJson)
+        put(Element.COLUMN_STRING_EXTRA_ATTRIBUTES, mergedJson)
     }
 }

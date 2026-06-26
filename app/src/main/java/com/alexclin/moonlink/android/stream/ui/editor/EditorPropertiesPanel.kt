@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,6 +31,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -39,7 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -54,7 +60,7 @@ import kotlin.math.roundToInt
  *
  * Row 1: 按键名 | X坐标 | Y坐标 | 透明度 | 滑块(0%-100%) | 删除按钮
  * Row 2: 键值  | W宽(px) | H高(px) | 文字大小 | 滑块(10%-150%) | 复制按钮
- * Row 3: 按键类型 | 粗细(px) | 圆角(px) | 图层 | 颜色自定义 | 专属属性设置 | 保存
+ * Row 3: 图层 | 粗细(px) | 圆角(px) | 按键类型 | 颜色自定义 | 专属属性设置 | 保存
  *
  * @param atTop 面板是否在屏幕顶部（影响圆角方向）
  */
@@ -82,6 +88,10 @@ fun EditorPropertiesPanel(
     var thick by remember(element.elementId) { mutableStateOf(element.thick.toString()) }
     var opacity by remember(element.elementId) { mutableStateOf(element.opacity.toFloat()) }
     var textSizePercent by remember(element.elementId) { mutableStateOf(element.textSizePercent.toFloat()) }
+    // 如果高宽一致且圆角=宽度/2，则自动识别为圆形
+    var isCircle by remember(element.elementId) {
+        mutableStateOf(element.isCircle || (element.height == element.width && element.radius == element.width / 2))
+    }
 
     // ── 实时同步画布拖拽/缩放产生的变化 ──
     LaunchedEffect(element.centralX) { centralX = element.centralX.toString() }
@@ -91,18 +101,23 @@ fun EditorPropertiesPanel(
 
     var showKeyPicker by remember { mutableStateOf(false) }
 
+    /** 获取当前宽度整数值 */
+    fun currentWidth(): Int = width.toIntOrNull()?.coerceIn(10, 5000) ?: element.width
+
     fun snapshot() = element.copy(
         text = text,
         value = value,
         centralX = centralX.toIntOrNull() ?: element.centralX,
         centralY = centralY.toIntOrNull() ?: element.centralY,
-        width = width.toIntOrNull()?.coerceIn(10, 5000) ?: element.width,
-        height = height.toIntOrNull()?.coerceIn(10, 5000) ?: element.height,
+        width = currentWidth(),
+        // 圆形模式：高度=宽度，圆角=宽度/2
+        height = if (isCircle) currentWidth() else (height.toIntOrNull()?.coerceIn(10, 5000) ?: element.height),
         layer = layer.toIntOrNull()?.coerceIn(0, 999) ?: element.layer,
-        radius = radius.toIntOrNull()?.coerceIn(0, 500) ?: element.radius,
+        radius = if (isCircle) (currentWidth() / 2).coerceIn(0, 500) else (radius.toIntOrNull()?.coerceIn(0, 500) ?: element.radius),
         thick = thick.toIntOrNull()?.coerceIn(0, 100) ?: element.thick,
         opacity = opacity.roundToInt().coerceIn(0, 100),
         textSizePercent = textSizePercent.roundToInt().coerceIn(10, 150),
+        isCircle = isCircle,
     )
 
     Surface(
@@ -140,25 +155,52 @@ fun EditorPropertiesPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl1: 按键名（右对齐）
-                GridLabel("按键名", Modifier.weight(1f), rightAlign = true)
+                GridLabel("按键名", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框
                 InlineTextField(value = text, onValueChange = { text = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
-                // Lbl2: X坐标（右对齐）
-                GridLabel("X坐标", Modifier.weight(1f), rightAlign = true)
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+                // Lbl1: 键值（右对齐）
+                GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Input2: X值
-                MiniIntField(value = centralX, onValueChange = { centralX = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
-                // Lbl3: Y坐标（右对齐）
-                GridLabel("Y坐标", Modifier.weight(1f), rightAlign = true)
+                // Input1: 选择框
+                val keyLabel = getKeyLabelByValue(value) ?: value
+                Box(
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp)
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                        .clickable { showKeyPicker = true }
+                        .padding(horizontal = 3.dp, vertical = 3.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()) {
+                        Text(if (value.isNotEmpty()) keyLabel else "-",
+                            style = TextStyle(fontSize = 9.sp,
+                                color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurfaceVariant),
+                            maxLines = 1, modifier = Modifier.weight(1f))
+                        Icon(Icons.Default.ArrowDropDown,
+                            contentDescription = "选择键值",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                }
+                // Lbl2: 粗细（右对齐）
+                GridLabel("边框粗细", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Input3: Y值
-                MiniIntField(value = centralY, onValueChange = { centralY = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Input2: 粗细值
+                StepperIntField(value = thick, onValueChange = { thick = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+
+                TextButton(onClick = { onOpenColorEditor(snapshot()) },
+                    modifier = Modifier.weight(1.5f).wrapContentHeight(),
+                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    Text("颜色自定义", style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary)
+                }
                 // Lbl4: 透明度（右对齐）
-                GridLabel("透明度", Modifier.weight(1f), rightAlign = true)
+                GridLabel("透明度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Content: 滑块（占多格）
                 Box(Modifier.weight(3f).padding(end = 4.dp)) {
@@ -190,46 +232,69 @@ fun EditorPropertiesPanel(
                 modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Lbl1: 键值（右对齐）
-                GridLabel("按键值", Modifier.weight(1f), rightAlign = true)
-                Spacer(Modifier.width(2.dp))
-                // Input1: 选择框
-                val keyLabel = getKeyLabelByValue(value) ?: value
-                Box(
-                    modifier = Modifier.weight(1f).padding(end = 2.dp)
-                        .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                        .clickable { showKeyPicker = true }
-                        .padding(horizontal = 3.dp, vertical = 3.dp),
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()) {
-                        Text(if (value.isNotEmpty()) keyLabel else "-",
-                            style = TextStyle(fontSize = 9.sp,
-                                color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant),
-                            maxLines = 1, modifier = Modifier.weight(1f))
-                        Icon(Icons.Default.ArrowDropDown,
-                            contentDescription = "选择键值",
-                            modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
                 // Lbl2: W宽（右对齐）
-                GridLabel("按钮宽度", Modifier.weight(1f), rightAlign = true)
+                GridLabel("按钮宽度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: W值
-                MiniIntField(value = width, onValueChange = { width = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                StepperIntField(value = width, onValueChange = { width = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: H高（右对齐）
-                GridLabel("按钮高度", Modifier.weight(1f), rightAlign = true)
+                GridLabel("按钮高度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Input3: H值
-                MiniIntField(value = height, onValueChange = { height = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
+                // Input3: H值（圆形模式禁用，显示宽度值）
+                StepperIntField(value = if (isCircle) width else height,
+                    onValueChange = { height = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp),
+                    enabled = !isCircle)
+                // Lbl3: 圆角（右对齐）
+                GridLabel("边框圆角", Modifier.weight(0.8f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input3: 圆角值
+                StepperIntField(value = if (isCircle) (currentWidth() / 2).toString() else radius,
+                    onValueChange = { radius = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp),
+                    enabled = !isCircle)
+                // 圆形开关 + 文字，整体可点击
+                Row(
+                    modifier = Modifier.weight(1.5f)
+                        .clickable {
+                            isCircle = !isCircle
+                            if (isCircle) {
+                                val w = currentWidth()
+                                height = w.toString()
+                                radius = (w / 2).toString()
+                            }
+                            onElementChanged?.invoke(snapshot())
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center,
+                ) {
+                    Switch(
+                        checked = isCircle,
+                        onCheckedChange = { checked ->
+                            isCircle = checked
+                            if (checked) {
+                                val w = currentWidth()
+                                height = w.toString()
+                                radius = (w / 2).toString()
+                            }
+                            onElementChanged?.invoke(snapshot())
+                        },
+                        modifier = Modifier.height(16.dp).scale(0.6f),
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = MaterialTheme.colorScheme.primary,
+                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
+                        ),
+                    )
+                    Text("圆形",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 9.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Start)
+                }
+
                 // Lbl4: 文字大小（右对齐）
-                GridLabel("文字大小", Modifier.weight(1f), rightAlign = true)
+                GridLabel("文字大小", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Content: 滑块（占多格）
                 Box(Modifier.weight(3f).padding(end = 4.dp)) {
@@ -262,42 +327,34 @@ fun EditorPropertiesPanel(
                 modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Lbl1: 按键类型（右对齐）
-                GridLabel("按键类型", Modifier.weight(1f), rightAlign = true)
+                // Lbl2: X坐标（右对齐）
+                GridLabel("X坐标", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Input1: 类型值
+                // Input2: X值
+                StepperIntField(value = centralX, onValueChange = { centralX = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+                // Lbl3: Y坐标（右对齐）
+                GridLabel("Y坐标", Modifier.weight(0.8f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input3: Y值
+                StepperIntField(value = centralY, onValueChange = { centralY = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+                // Lbl1: 图层（右对齐）
+                GridLabel("所在图层", Modifier.weight(0.8f), rightAlign = true)
+                Spacer(Modifier.width(2.dp))
+                // Input1: 图层值
+                StepperIntField(value = layer, onValueChange = { layer = it; onElementChanged?.invoke(snapshot()) },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+                Spacer(Modifier.width(2.dp))
                 Text(element.type.displayName,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
-                // Lbl2: 粗细（右对齐）
-                GridLabel("边框粗细", Modifier.weight(1f), rightAlign = true)
-                Spacer(Modifier.width(2.dp))
-                // Input2: 粗细值
-                MiniIntField(value = thick, onValueChange = { thick = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
-                // Lbl3: 圆角（右对齐）
-                GridLabel("边框圆角", Modifier.weight(1f), rightAlign = true)
-                Spacer(Modifier.width(2.dp))
-                // Input3: 圆角值
-                MiniIntField(value = radius, onValueChange = { radius = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1f).padding(end = 2.dp))
-                // Lbl4: 图层（右对齐）
-                GridLabel("所在图层", Modifier.weight(1f), rightAlign = true)
-                Spacer(Modifier.width(2.dp))
-                // Content: 图层输入 + 颜色自定义 + 专属属性设置
-                Row(Modifier.weight(3f), verticalAlignment = Alignment.CenterVertically) {
-                    MiniIntField(value = layer, onValueChange = { layer = it; onElementChanged?.invoke(snapshot()) },
-                        modifier = Modifier.weight(1f).wrapContentHeight())
+                    modifier = Modifier.weight(1.5f).wrapContentHeight())
+                // Content: 圆形开关 + 类型值 + 颜色自定义 + 专属属性设置
+                Row(Modifier.weight(3.8f), verticalAlignment = Alignment.CenterVertically) {
                     Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = { onOpenColorEditor(snapshot()) },
-                        modifier = Modifier.weight(1f).wrapContentHeight(),
-                        contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                        Text("颜色自定义", style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary)
-                    }
                     if (element.type.hasTypeSpecificProperties()) {
                         TextButton(onClick = { onOpenTypeSpecificEditor(snapshot()) },
                             modifier = Modifier.weight(1f).wrapContentHeight(),
@@ -384,6 +441,72 @@ private fun MiniIntField(
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
             .padding(horizontal = 3.dp, vertical = 3.dp),
     )
+}
+
+/** 带 +/- 步进按钮的整数输入框 */
+@Composable
+private fun StepperIntField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    step: Int = 1,
+    enabled: Boolean = true,
+    modifier: Modifier = Modifier,
+) {
+    val contentAlpha = if (enabled) 1f else 0.38f
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // 减量按钮
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
+                .then(if (enabled) Modifier.clickable {
+                    val intVal = value.toIntOrNull() ?: return@clickable
+                    onValueChange((intVal - step).toString())
+                } else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("-",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                fontSize = 10.sp)
+        }
+
+        Spacer(Modifier.width(2.dp))
+
+        MiniIntField(
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier.weight(1f).alpha(contentAlpha),
+        )
+
+        Spacer(Modifier.width(2.dp))
+
+        // 增量按钮
+        Box(
+            modifier = Modifier
+                .size(18.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
+                .then(if (enabled) Modifier.clickable {
+                    val intVal = value.toIntOrNull() ?: return@clickable
+                    onValueChange((intVal + step).toString())
+                } else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("+",
+                style = MaterialTheme.typography.labelSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
+                fontSize = 10.sp)
+        }
+    }
 }
 
 /** 行内文字输入框 */
