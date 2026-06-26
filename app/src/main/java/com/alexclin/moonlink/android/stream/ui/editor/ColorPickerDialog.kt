@@ -18,9 +18,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -28,12 +28,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -82,8 +79,6 @@ data class ColorPickerItem(
 // ════════════════════════════════════════════════════════════════════════════
 //  工具函数（colorToHex / parseHexColor 定义在 EditorPropertiesPanel.kt 中）
 // ════════════════════════════════════════════════════════════════════════════
-
-private val HEX_REGEX = Regex("^#?([0-9A-Fa-f]{6,8})$")
 
 // ════════════════════════════════════════════════════════════════════════════
 //  颜色项行（可选择 + 色块 + 十六进制输入）
@@ -292,59 +287,6 @@ internal fun HueBar(
     }
 }
 
-/**
- * RGB/Alpha 滑条行：标签 + Slider + 数值输入。
- */
-@Composable
-internal fun RgbSliderRow(
-    label: String,
-    value: Int,
-    max: Int,
-    onValueChange: (Float) -> Unit,
-    textValue: String,
-    onTextChange: (String) -> Unit,
-) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(label, style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(16.dp))
-        Slider(
-            value = value.toFloat(),
-            onValueChange = onValueChange,
-            valueRange = 0f..max.toFloat(),
-            modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-        )
-        BasicTextField(
-            value = textValue,
-            onValueChange = { newVal ->
-                if (newVal.isEmpty() || newVal.all { it.isDigit() }) {
-                    onTextChange(newVal)
-                    val intVal = newVal.toIntOrNull()
-                    if (intVal != null && intVal in 0..max) {
-                        onValueChange(intVal.toFloat())
-                    }
-                }
-            },
-            singleLine = true,
-            textStyle = TextStyle(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 11.sp,
-            ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            modifier = Modifier
-                .width(36.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-        )
-    }
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 //  核心对话框
 // ════════════════════════════════════════════════════════════════════════════
@@ -395,28 +337,12 @@ fun ColorPickerDialog(
     var value by remember(selectedIndex, selectedArgb) { mutableFloatStateOf(initHsv[2]) }
     var alpha by remember(selectedIndex, selectedArgb) { mutableIntStateOf(android.graphics.Color.alpha(selectedArgb)) }
 
-    // ── RGB sliders 状态 ──
-    var red by remember(selectedIndex, selectedArgb) { mutableIntStateOf(android.graphics.Color.red(selectedArgb)) }
-    var green by remember(selectedIndex, selectedArgb) { mutableIntStateOf(android.graphics.Color.green(selectedArgb)) }
-    var blue by remember(selectedIndex, selectedArgb) { mutableIntStateOf(android.graphics.Color.blue(selectedArgb)) }
-    var rText by remember(selectedIndex) { mutableStateOf(red.toString()) }
-    var gText by remember(selectedIndex) { mutableStateOf(green.toString()) }
-    var bText by remember(selectedIndex) { mutableStateOf(blue.toString()) }
-    var aText by remember(selectedIndex) { mutableStateOf(alpha.toString()) }
-
     /** 解析选中颜色的当前 ARGB */
     fun currentColor(): Int = android.graphics.Color.HSVToColor(alpha, floatArrayOf(hue, sat, value))
 
-    /** 同步当前 picker/滑条状态到 hexMap */
+    /** 同步当前 picker 状态到 hexMap */
     fun syncSelectedColorToHexMap() {
         val argb = currentColor()
-        red = android.graphics.Color.red(argb)
-        green = android.graphics.Color.green(argb)
-        blue = android.graphics.Color.blue(argb)
-        rText = red.toString()
-        gText = green.toString()
-        bText = blue.toString()
-        aText = alpha.toString()
         val hex = colorToHex(argb)
         hexMap[selectedKey] = hex
     }
@@ -446,7 +372,7 @@ fun ColorPickerDialog(
             shadowElevation = 12.dp,
         ) {
             Column(modifier = Modifier.fillMaxSize().imePadding()) {
-                // ── 标题行 ──
+                // ── 标题行（末尾放置取消/保存按钮） ──
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -456,182 +382,10 @@ fun ColorPickerDialog(
                     Text(title, style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭",
-                            modifier = Modifier.size(20.dp))
-                    }
-                }
-
-                HorizontalDivider()
-
-                // ── 可滚动主体 ──
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                ) {
-                    // ═══ 动态颜色项列表 ═══
-                    items.forEachIndexed { index, item ->
-                        val isSelected = index == selectedIndex
-                        val hex = hexMap[item.key] ?: colorToHex(item.currentColor)
-                        val parsed = parseHexColor(hex)
-                        ColorItemRow(
-                            label = item.label,
-                            hex = hex,
-                            parsedColor = parsed,
-                            isSelected = isSelected,
-                            onSelect = {
-                                selectedIndex = index
-                                val argb = parseHexColor(hexMap[items[index].key] ?: colorToHex(items[index].currentColor))
-                                    ?: items[index].currentColor
-                                red = android.graphics.Color.red(argb)
-                                green = android.graphics.Color.green(argb)
-                                blue = android.graphics.Color.blue(argb)
-                                alpha = android.graphics.Color.alpha(argb)
-                                val hsv = FloatArray(3)
-                                android.graphics.Color.colorToHSV(argb, hsv)
-                                hue = hsv[0]; sat = hsv[1]; value = hsv[2]
-                            },
-                            onHexChange = { newHex ->
-                                hexMap[item.key] = newHex
-                                if (isSelected) {
-                                    val argb = parseHexColor(newHex) ?: 0xFFFFFFFF.toInt()
-                                    val hsv = FloatArray(3)
-                                    android.graphics.Color.colorToHSV(argb, hsv)
-                                    hue = hsv[0]; sat = hsv[1]; value = hsv[2]
-                                    alpha = android.graphics.Color.alpha(argb)
-                                    red = android.graphics.Color.red(argb)
-                                    green = android.graphics.Color.green(argb)
-                                    blue = android.graphics.Color.blue(argb)
-                                    rText = red.toString()
-                                    gText = green.toString()
-                                    bText = blue.toString()
-                                    aText = alpha.toString()
-                                }
-                            },
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-                    HorizontalDivider()
-                    Spacer(Modifier.height(8.dp))
-
-                    // ═══ 颜色选择器 ═══
-                    Text("颜色选择器",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary)
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // HSV 面板：Sat/Val 矩形 + Hue 条
-                    Row(
-                        modifier = Modifier.fillMaxWidth().height(160.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        SatValPicker(
-                            hue = hue,
-                            sat = sat,
-                            value = value,
-                            onSatValChanged = { s, v ->
-                                sat = s; value = v
-                                syncSelectedColorToHexMap()
-                            },
-                            modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp),
-                        )
-
-                        HueBar(
-                            hue = hue,
-                            onHueChanged = { h ->
-                                hue = h
-                                syncSelectedColorToHexMap()
-                            },
-                            modifier = Modifier.width(28.dp).fillMaxHeight(),
-                        )
-                    }
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // ═══ RGB + Alpha 滑条 ═══
-                    RgbSliderRow("R", red, 255, { red = it.toInt().coerceIn(0, 255); rText = red.toString(); syncSelectedColorToHexMap() },
-                        rText, { rText = it })
-                    RgbSliderRow("G", green, 255, { green = it.toInt().coerceIn(0, 255); gText = green.toString(); syncSelectedColorToHexMap() },
-                        gText, { gText = it })
-                    RgbSliderRow("B", blue, 255, { blue = it.toInt().coerceIn(0, 255); bText = blue.toString(); syncSelectedColorToHexMap() },
-                        bText, { bText = it })
-                    RgbSliderRow("A", alpha, 255, { alpha = it.toInt().coerceIn(0, 255); aText = alpha.toString(); syncSelectedColorToHexMap() },
-                        aText, { aText = it })
-
-                    Spacer(Modifier.height(8.dp))
-
-                    // ═══ 色块预览 + Hex 输入 ═══
-                    val currentArgb = currentColor()
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        // 色块
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Color(currentArgb))
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp)),
-                        )
-                        Spacer(Modifier.width(12.dp))
-                        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall)
-                        BasicTextField(
-                            value = hexMap[selectedKey]?.removePrefix("#") ?: "",
-                            onValueChange = { h ->
-                                val clean = h.uppercase().filter { it in "0123456789ABCDEF" }.take(8)
-                                val newHex = if (clean.isEmpty()) "" else "#$clean"
-                                hexMap[selectedKey] = newHex
-                                val parsed = parseHexColor(newHex)
-                                if (parsed != null) {
-                                    val hsv = FloatArray(3)
-                                    android.graphics.Color.colorToHSV(parsed, hsv)
-                                    hue = hsv[0]; sat = hsv[1]; value = hsv[2]
-                                    alpha = android.graphics.Color.alpha(parsed)
-                                    red = android.graphics.Color.red(parsed)
-                                    green = android.graphics.Color.green(parsed)
-                                    blue = android.graphics.Color.blue(parsed)
-                                    rText = red.toString()
-                                    gText = green.toString()
-                                    bText = blue.toString()
-                                    aText = alpha.toString()
-                                }
-                            },
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface,
-                                fontSize = 13.sp,
-                                fontFamily = FontFamily.Monospace,
-                            ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                            modifier = Modifier
-                                .width(120.dp)
-                                .clip(RoundedCornerShape(4.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 8.dp, vertical = 5.dp),
-                        )
-                    }
-                }
-
-                HorizontalDivider()
-
-                // ── 底部按钮 ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
                     TextButton(onClick = onDismiss) {
                         Text("取消", style = MaterialTheme.typography.labelMedium)
                     }
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(4.dp))
                     TextButton(onClick = {
                         onSave(buildResult())
                     }) {
@@ -640,6 +394,186 @@ fun ColorPickerDialog(
                         Text("保存", style = MaterialTheme.typography.labelMedium)
                     }
                 }
+
+                HorizontalDivider()
+
+                // ── 三列主体：SatVal 拾色区 | Hue 竖向条 | 颜色项+预览+Hex ──
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 8.dp),
+                ) {
+                    // ═══ 第一列：Sat/Val 拾色区（占大部分宽度） ═══
+                    SatValPicker(
+                        hue = hue,
+                        sat = sat,
+                        value = value,
+                        onSatValChanged = { s, v ->
+                            sat = s; value = v
+                            syncSelectedColorToHexMap()
+                        },
+                        modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp),
+                    )
+
+                    // ═══ 第二列：竖向 Hue 选色条 ═══
+                    HueBar(
+                        hue = hue,
+                        onHueChanged = { h ->
+                            hue = h
+                            syncSelectedColorToHexMap()
+                        },
+                        modifier = Modifier.width(24.dp).fillMaxHeight(),
+                    )
+
+                    Spacer(Modifier.width(10.dp))
+
+                    // ═══ 第三列：颜色项列表 + 色块预览 + Hex 值调整 ═══
+                    Column(
+                        modifier = Modifier.width(180.dp).fillMaxHeight(),
+                        verticalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        // ── 颜色项列表（可滚动） ──
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth()
+                                .verticalScroll(rememberScrollState()),
+                        ) {
+                            items.forEachIndexed { index, item ->
+                                val isSelected = index == selectedIndex
+                                val hex = hexMap[item.key] ?: colorToHex(item.currentColor)
+                                val parsed = parseHexColor(hex)
+                                ColorItemRow(
+                                    label = item.label,
+                                    hex = hex,
+                                    parsedColor = parsed,
+                                    isSelected = isSelected,
+                                    onSelect = {
+                                        selectedIndex = index
+                                        val argb = parseHexColor(hexMap[items[index].key] ?: colorToHex(items[index].currentColor))
+                                            ?: items[index].currentColor
+                                        alpha = android.graphics.Color.alpha(argb)
+                                        val hsv = FloatArray(3)
+                                        android.graphics.Color.colorToHSV(argb, hsv)
+                                        hue = hsv[0]; sat = hsv[1]; value = hsv[2]
+                                    },
+                                    onHexChange = { newHex ->
+                                        hexMap[item.key] = newHex
+                                        if (isSelected) {
+                                            val argb = parseHexColor(newHex) ?: 0xFFFFFFFF.toInt()
+                                            val hsv = FloatArray(3)
+                                            android.graphics.Color.colorToHSV(argb, hsv)
+                                            hue = hsv[0]; sat = hsv[1]; value = hsv[2]
+                                            alpha = android.graphics.Color.alpha(argb)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // ── 色块预览小方块 ──
+                        val currentArgb = currentColor()
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(Color(currentArgb))
+                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+                                .align(Alignment.CenterHorizontally),
+                        )
+
+                        Spacer(Modifier.height(6.dp))
+
+                        // ── Hex 值调整区域：[-] #AABBCC [+] ──
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                        ) {
+                            // 减量按钮
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        // 减小亮度（V 值减 0.05）
+                                        value = (value - 0.05f).coerceIn(0f, 1f)
+                                        syncSelectedColorToHexMap()
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("-",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                            }
+
+                            Spacer(Modifier.width(4.dp))
+
+                            // Hex 值显示
+                            Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                style = MaterialTheme.typography.bodySmall)
+                            BasicTextField(
+                                value = hexMap[selectedKey]?.removePrefix("#") ?: "",
+                                onValueChange = { h ->
+                                    val clean = h.uppercase().filter { it in "0123456789ABCDEF" }.take(8)
+                                    val newHex = if (clean.isEmpty()) "" else "#$clean"
+                                    hexMap[selectedKey] = newHex
+                                    val parsed = parseHexColor(newHex)
+                                    if (parsed != null) {
+                                        val hsv = FloatArray(3)
+                                        android.graphics.Color.colorToHSV(parsed, hsv)
+                                        hue = hsv[0]; sat = hsv[1]; value = hsv[2]
+                                        alpha = android.graphics.Color.alpha(parsed)
+                                    }
+                                },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                    fontSize = 12.sp,
+                                    fontFamily = FontFamily.Monospace,
+                                ),
+                                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
+                                modifier = Modifier
+                                    .width(90.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                                    .padding(horizontal = 4.dp, vertical = 3.dp),
+                            )
+
+                            Spacer(Modifier.width(4.dp))
+
+                            // 增量按钮
+                            Box(
+                                modifier = Modifier
+                                    .size(26.dp)
+                                    .clip(RoundedCornerShape(4.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                                    .clickable {
+                                        // 增加亮度（V 值加 0.05）
+                                        value = (value + 0.05f).coerceIn(0f, 1f)
+                                        syncSelectedColorToHexMap()
+                                    },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("+",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                            }
+                        }
+                    }
+                }
+
+
             }
         }
     }
