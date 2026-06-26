@@ -302,13 +302,12 @@ class ComputerManagerService : Service() {
         synchronized(pollingTuples) {
             for (tuple in pollingTuples) {
                 if (uuid == tuple.computer.uuid) {
-                    synchronized(tuple.networkLock) {
-                        tuple.computer.state = ComputerDetails.State.UNKNOWN
-                    }
-                    // 立即发射到 flow，让 UI 层能感知到 pairState / state 的变更，
-                    // 无需等待下一个轮询周期（~1500ms）。修复 Compose UI 配对后
-                    // 设备仍显示在「未配对设备」列表的问题。
+                    // 保持当前状态不变，仅重启轮询 Job 以立即重新探测
+                    // 不设为 UNKNOWN，避免 UI 闪"检测中…"
                     _computerUpdates.tryEmit(tuple.computer)
+                    // 重启该设备的轮询 Job：重置 offlineCount 到 0，立即开始新轮询
+                    tuple.job?.cancel()
+                    tuple.job = createPollingJob(tuple)
                 }
             }
         }
@@ -316,9 +315,8 @@ class ComputerManagerService : Service() {
 
         /**
          * 强制刷新所有设备在线状态。
-         * - 设置所有设备状态为 UNKNOWN
-         * - 立即发射到 Flow 通知 UI
-         * - 重启轮询 Job（重置 offlineCount 并立即开始新轮询）
+         * - 保持当前状态不变（不设为 UNKNOWN，避免 UI 闪烁）
+         * - 重启所有轮询 Job（重置 offlineCount 并立即开始新轮询）
          * - 重启 mDNS 发现
          *
          * 调用时机：Activity.onResume、网络恢复等需要立即重新扫描的场景。
@@ -326,9 +324,8 @@ class ComputerManagerService : Service() {
         fun forceRefresh() {
             synchronized(pollingTuples) {
                 for (tuple in pollingTuples) {
-                    synchronized(tuple.networkLock) {
-                        tuple.computer.state = ComputerDetails.State.UNKNOWN
-                    }
+                    // 保持当前状态不变，仅重启轮询 Job
+                    // 不设为 UNKNOWN，避免 UI 闪"检测中…"
                     _computerUpdates.tryEmit(tuple.computer)
                     // 重启轮询 Job：重置 offlineCount 到 0，立即开始新轮询
                     tuple.job?.cancel()
@@ -949,7 +946,7 @@ class ComputerManagerService : Service() {
     }
 
     companion object {
-        private const val SERVERINFO_POLLING_PERIOD_MS = 1500
+        private const val SERVERINFO_POLLING_PERIOD_MS = 1000
         private const val APPLIST_POLLING_PERIOD_MS = 30000
         private const val APPLIST_FAILED_POLLING_RETRY_MS = 2000
         private const val MDNS_QUERY_PERIOD_MS = 1000

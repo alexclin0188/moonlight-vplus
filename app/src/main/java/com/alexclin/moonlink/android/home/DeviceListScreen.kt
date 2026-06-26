@@ -155,17 +155,6 @@ fun DeviceListScreen(
             }
         }
     }
-
-    // ── 回到主页时强制刷新设备在线状态 ──
-    // 仅首次绑定后执行一次；tab 切换不再重复触发。
-    var hasRefreshed by rememberSaveable { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        if (!hasRefreshed && managerBinder != null) {
-            managerBinder?.forceRefresh()
-            hasRefreshed = true
-        }
-    }
-
     // ── 主动获取 box art 缩略图（异步并发展）──────────────
     // 为所有在线+已配对且无缓存的设备，自动拉取应用列表并下载缩略图到磁盘。
     // 使用 rememberSaveable 避免 tab 切换时重复执行。

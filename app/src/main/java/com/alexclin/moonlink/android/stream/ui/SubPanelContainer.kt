@@ -692,20 +692,18 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 ) }
                 Text("模式", style = MaterialTheme.typography.bodyMedium,
                      modifier = Modifier.padding(bottom = 4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    RadioButton(selected = gyroMode == 0, onClick = {
-                        gyroMode = 0
-                        engine.enableGyroRightStick()
+                ChipSelector(
+                    options = listOf("右摇杆" to "0", "鼠标" to "1"),
+                    selectedValue = gyroMode.toString(),
+                    onSelect = { value ->
+                        val mode = value.toIntOrNull() ?: 0
+                        gyroMode = mode
+                        if (mode == 0) engine.enableGyroRightStick()
+                        else engine.enableGyroMouse()
                         pref.writePreferences(context)
-                    })
-                    Text("右摇杆", Modifier.padding(end = 16.dp))
-                    RadioButton(selected = gyroMode == 1, onClick = {
-                        gyroMode = 1
-                        engine.enableGyroMouse()
-                        pref.writePreferences(context)
-                    })
-                    Text("鼠标")
-                }
+                    },
+                    columns = 2,
+                )
             }
 
             // 灵敏度 (0.5x~3.0x, 25 级)
@@ -804,32 +802,21 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                 // 操作面板自动隐藏
                 var hideMode by remember { mutableIntStateOf(engine.prefConfig.toolPanelAutoHideMode) }
                 Text("操作面板自动隐藏:", style = MaterialTheme.typography.bodyMedium)
-                Column {
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
-                        hideMode = 0
-                        engine.prefConfig.toolPanelAutoHideMode = 0
+                ChipSelector(
+                    options = listOf(
+                        "开启按键映射时隐藏" to "0",
+                        "2秒后自动隐藏" to "1",
+                        "不自动隐藏" to "2",
+                    ),
+                    selectedValue = hideMode.toString(),
+                    onSelect = { value ->
+                        val mode = value.toIntOrNull() ?: 0
+                        hideMode = mode
+                        engine.prefConfig.toolPanelAutoHideMode = mode
                         engine.prefConfig.writePreferences(context)
-                    }) {
-                        RadioButton(selected = hideMode == 0, onClick = null)
-                        Text("开启按键映射时隐藏", Modifier.padding(end = 8.dp))
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
-                        hideMode = 1
-                        engine.prefConfig.toolPanelAutoHideMode = 1
-                        engine.prefConfig.writePreferences(context)
-                    }) {
-                        RadioButton(selected = hideMode == 1, onClick = null)
-                        Text("2秒后自动隐藏")
-                    }
-                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable {
-                        hideMode = 2
-                        engine.prefConfig.toolPanelAutoHideMode = 2
-                        engine.prefConfig.writePreferences(context)
-                    }) {
-                        RadioButton(selected = hideMode == 2, onClick = null)
-                        Text("不自动隐藏")
-                    }
-                }
+                    },
+                    columns = 3,
+                )
             }
         }
     }

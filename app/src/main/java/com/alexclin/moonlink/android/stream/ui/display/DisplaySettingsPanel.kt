@@ -350,29 +350,16 @@ private fun BitrateSelector(
                     )
                 }
                 AnimatedVisibility(visible = abrExpanded) {
-                    Column(Modifier.padding(start = 8.dp)) {
-                        abrLabels.forEach { (value, label) ->
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.fillMaxWidth()
-                                    .clickable {
-                                        abrMode = value
-                                        onAbrModeSelected(engine, value, context)
-                                        abrExpanded = false
-                                    }
-                                    .padding(vertical = 2.dp),
-                            ) {
-                                RadioButton(selected = abrMode == value,
-                                     onClick = {
-                                         abrMode = value
-                                         onAbrModeSelected(engine, value, context)
-                                         abrExpanded = false
-                                     })
-                                Spacer(Modifier.width(4.dp))
-                                Text(label, style = MaterialTheme.typography.bodyMedium)
-                            }
-                        }
-                    }
+                    ChipSelector(
+                        options = abrLabels.entries.map { (value, label) -> label to value },
+                        selectedValue = abrMode,
+                        onSelect = { value ->
+                            abrMode = value
+                            onAbrModeSelected(engine, value, context)
+                            abrExpanded = false
+                        },
+                        columns = 3,
+                    )
                 }
             }
         }

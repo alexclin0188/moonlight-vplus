@@ -45,7 +45,7 @@ fun CompactChip(
                        else MaterialTheme.colorScheme.onSurfaceVariant,
         border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                  else null,
-        modifier = modifier.heightIn(min = 36.dp),
+        modifier = modifier.heightIn(min = 44.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,

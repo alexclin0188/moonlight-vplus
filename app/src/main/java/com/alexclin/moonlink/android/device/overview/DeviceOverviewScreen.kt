@@ -67,6 +67,12 @@ fun DeviceOverviewScreen(
     var appList by remember(uuid) { mutableStateOf(loadCachedAppList(context, uuid)) }
     var displaysInfo by remember(uuid) { mutableStateOf<List<NvHTTP.DisplayInfo>?>(null) }
 
+    // ── 进入概要页时立即触发该设备的重新探测 ──
+    // 标记为 UNKNOWN 并重启轮询 Job，无需等待下一个轮询周期。
+    LaunchedEffect(uuid) {
+        managerBinder?.invalidateStateForComputer(uuid)
+    }
+
     // ── 主动拉取 app list & box art ─────────────────────
     // 如果缓存中没有 app list 且设备在线+已配对，则异步从主机拉取并缓存。
     // 这解决了快速启动区不展示（Bug 3）以及 box art 缩略图无法加载（Bug 2）的问题。
@@ -978,7 +984,7 @@ private fun DisplayBlock(
     context: Context,
 ) {
     val isPrimary = display.isPrimary
-    val bgColor = if (isPrimary) Color(0xFFFFF3CD) else Color.White.copy(alpha = 0.85f)
+    val bgColor = if (isPrimary) Color(0xFFFFF3CD).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
     val borderMod = if (isPrimary) {
         Modifier.border(1.5.dp, Color(0xFFFFC107), RoundedCornerShape(4.dp))
     } else {
