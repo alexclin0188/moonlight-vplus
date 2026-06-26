@@ -952,11 +952,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 持久化客户端声音开关状态
         prefConfig.muteClientAudio = isAudioMuted
         prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(muteClientAudio = isAudioMuted) }
         displayTransientMessage(if (isAudioMuted) "声音已关闭" else "声音已开启")
     }
 
     fun toggleMicrophoneButton() {
         prefConfig.enableMic = !prefConfig.enableMic
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(enableMic = prefConfig.enableMic) }
         displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
     }
 
@@ -1242,6 +1245,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 prefConfig.perfOverlayLocked = false
             }
         }
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(enablePerfOverlay = prefConfig.enablePerfOverlay, perfOverlayLocked = prefConfig.perfOverlayLocked) }
         displayTransientMessage(
             when {
                 prefConfig.enablePerfOverlay && !prefConfig.perfOverlayLocked -> "性能面板（可拖动）"
@@ -1253,6 +1258,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     fun togglePip() {
         prefConfig.enablePip = !prefConfig.enablePip
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(enablePip = prefConfig.enablePip) }
         displayTransientMessage(if (prefConfig.enablePip) "画中画已开启" else "画中画已关闭")
     }
 
@@ -1270,6 +1277,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun enableGyroRightStick() {
         prefConfig.gyroToRightStick = true
         prefConfig.gyroToMouse = false
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(gyroToRightStick = true, gyroToMouse = false) }
         controllerHandler?.gyroManager?.setGyroToRightStickEnabled(true)
         LimeLog.info("StreamEngine: 体感右摇杆模式已启用")
     }
@@ -1278,6 +1287,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun enableGyroMouse() {
         prefConfig.gyroToMouse = true
         prefConfig.gyroToRightStick = false
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(gyroToMouse = true, gyroToRightStick = false) }
         controllerHandler?.gyroManager?.setGyroToMouseEnabled(true)
         LimeLog.info("StreamEngine: 体感鼠标模式已启用")
     }
@@ -1288,6 +1299,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         val hadMouse = prefConfig.gyroToMouse
         prefConfig.gyroToRightStick = false
         prefConfig.gyroToMouse = false
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(gyroToRightStick = false, gyroToMouse = false) }
         if (hadRightStick) {
             controllerHandler?.gyroManager?.setGyroToRightStickEnabled(false)
         }
@@ -1305,6 +1318,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     fun toggleAdaptiveBitrate() {
         prefConfig.enableAdaptiveBitrate = !prefConfig.enableAdaptiveBitrate
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(enableAdaptiveBitrate = prefConfig.enableAdaptiveBitrate) }
         displayTransientMessage(if (prefConfig.enableAdaptiveBitrate) "自适应码率已开启" else "自适应码率已关闭")
     }
 
@@ -1342,7 +1357,24 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     fun toggleControlOnly() {
         prefConfig.controlOnly = !prefConfig.controlOnly
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(controlOnly = prefConfig.controlOnly) }
         displayTransientMessage(if (prefConfig.controlOnly) "纯控制模式已开启" else "纯控制模式已关闭")
+    }
+
+    /**
+     * 将当前 prefConfig 的变更同步到 per-device HostSettings，
+     * 使设备串流设置页面（设备概要 → 串流设置）中对应的开关状态跟随变化。
+     */
+    private fun syncToHostSettings(updater: (HostSettings) -> HostSettings) {
+        val uuid = pcUuid ?: return
+        try {
+            val mgr = HostSettingsManager(activity)
+            val current = mgr.getSettings(uuid)
+            mgr.saveSettings(uuid, updater(current))
+        } catch (_: Exception) {
+            // 忽略 — host settings 的同步是辅助性的，不应影响核心功能
+        }
     }
 
     fun sendKeyboardShortcut(keyCode: Short, modifier: Byte = 0) {

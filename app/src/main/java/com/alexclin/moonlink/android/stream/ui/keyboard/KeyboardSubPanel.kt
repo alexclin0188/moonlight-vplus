@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -272,7 +273,7 @@ private fun KeyboardTabBar(
             }
             IconButton(
                 onClick = onClose,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.wrapContentWidth().height(24.dp).padding(10.dp,0.dp),
             ) {
                 Icon(
                     Icons.Default.Close,

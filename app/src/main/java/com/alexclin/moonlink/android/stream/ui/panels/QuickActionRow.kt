@@ -95,6 +95,12 @@ fun QuickActionRow(
                 val isActive = when (id) {
                     "toggle_audio" -> !engine.isAudioMuted
                     "toggle_hdr" -> engine.isHdrEnabled
+                    "toggle_mic" -> engine.prefConfig.enableMic
+                    "toggle_pip" -> engine.prefConfig.enablePip
+                    "toggle_adaptive_bitrate" -> engine.prefConfig.enableAdaptiveBitrate
+                    "toggle_control_only" -> engine.prefConfig.controlOnly
+                    "toggle_gyro" -> engine.prefConfig.gyroToRightStick || engine.prefConfig.gyroToMouse
+                    "toggle_perf" -> engine.prefConfig.enablePerfOverlay
                     else -> null
                 }
                 val icon = getActionIcon(id, isActive)
