@@ -847,7 +847,7 @@ private fun EditorToolbar(
     ) {
         Column {
             Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp),
+                modifier = Modifier.fillMaxWidth().height(46.dp).padding(horizontal = 4.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // 方案名

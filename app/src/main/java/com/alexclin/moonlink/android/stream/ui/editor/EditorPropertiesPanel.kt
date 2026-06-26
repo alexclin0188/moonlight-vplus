@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ButtonDefaults.ContentPadding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -130,6 +132,8 @@ fun EditorPropertiesPanel(
             RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
         },
     ) {
+        val paddingValues = PaddingValues(6.dp,3.dp,6.dp,3.dp)
+        val rowHeight = 36.dp
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -151,7 +155,7 @@ fun EditorPropertiesPanel(
             // Row 1: 按键名 | X坐标 | Y坐标 | 透明度滑块 | 删除
             // ═══════════════════════════════════════════════════════
             Row(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                modifier = Modifier.fillMaxWidth().height(rowHeight).padding(vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl1: 按键名（右对齐）
@@ -216,7 +220,7 @@ fun EditorPropertiesPanel(
                 }
                 // Btn: 保存（绿色）
                 TextButton(onClick = { onSave(snapshot()) }, modifier = Modifier.wrapContentHeight(),
-                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    contentPadding = paddingValues) {
                     Icon(Icons.Default.Check, contentDescription = null,
                         tint = androidx.compose.ui.graphics.Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
@@ -229,7 +233,7 @@ fun EditorPropertiesPanel(
             // Row 2: 键值 | W宽 | H高 | 文字大小滑块 | 复制
             // ═══════════════════════════════════════════════════════
             Row(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                modifier = Modifier.fillMaxWidth().height(rowHeight).padding(vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl2: W宽（右对齐）
@@ -280,7 +284,7 @@ fun EditorPropertiesPanel(
                             }
                             onElementChanged?.invoke(snapshot())
                         },
-                        modifier = Modifier.height(16.dp).scale(0.6f),
+                        modifier = Modifier.height(16.dp).width(36.dp).scale(0.6f),
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
                             checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -311,7 +315,7 @@ fun EditorPropertiesPanel(
                 }
                 // Btn: 复制
                 TextButton(onClick = onDuplicate, modifier = Modifier.wrapContentHeight(),
-                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    contentPadding = paddingValues) {
                     Icon(Icons.Default.ContentCopy, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
@@ -324,7 +328,7 @@ fun EditorPropertiesPanel(
             // Row 3: 按键类型 | 粗细 | 圆角 | 图层+按钮 | 保存
             // ═══════════════════════════════════════════════════════
             Row(
-                modifier = Modifier.fillMaxWidth().wrapContentHeight().padding(vertical = 0.dp),
+                modifier = Modifier.fillMaxWidth().height(rowHeight).padding(vertical = 0.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl2: X坐标（右对齐）
@@ -345,13 +349,14 @@ fun EditorPropertiesPanel(
                 // Input1: 图层值
                 StepperIntField(value = layer, onValueChange = { layer = it; onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
-                Spacer(Modifier.width(2.dp))
+                Spacer(Modifier.width(1.dp))
                 Text(element.type.displayName,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.primary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1.5f).wrapContentHeight())
+                Spacer(Modifier.width(1.dp))
                 // Content: 圆形开关 + 类型值 + 颜色自定义 + 专属属性设置
                 Row(Modifier.weight(3.8f), verticalAlignment = Alignment.CenterVertically) {
                     Spacer(Modifier.width(4.dp))
@@ -366,7 +371,7 @@ fun EditorPropertiesPanel(
                 }
                 // Btn: 删除（红色）
                 TextButton(onClick = onDelete, modifier = Modifier.wrapContentHeight(),
-                    contentPadding = ButtonDefaults.TextButtonContentPadding) {
+                    contentPadding = paddingValues) {
                     Icon(Icons.Default.Delete, contentDescription = null,
                         tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
