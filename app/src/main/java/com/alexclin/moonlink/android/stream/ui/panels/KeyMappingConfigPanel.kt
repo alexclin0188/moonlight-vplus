@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.scale
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
@@ -140,7 +141,7 @@ fun KeyMappingConfigPanel(
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("触控开关", Modifier.weight(1f))
-                    Switch(checked = touchEnabled, onCheckedChange = { touchEnabled = it; saveToDb() })
+                    Switch(checked = touchEnabled, modifier = Modifier.scale(0.8f), onCheckedChange = { touchEnabled = it; saveToDb() })
                 }
             }
 
@@ -150,7 +151,7 @@ fun KeyMappingConfigPanel(
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("游戏震动", Modifier.weight(1f))
-                    Switch(checked = gameVibrator, onCheckedChange = { gameVibrator = it; saveToDb() })
+                    Switch(checked = gameVibrator, modifier = Modifier.scale(0.8f), onCheckedChange = { gameVibrator = it; saveToDb() })
                 }
             }
 
@@ -158,7 +159,7 @@ fun KeyMappingConfigPanel(
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("按键震动", Modifier.weight(1f))
-                    Switch(checked = buttonVibrator, onCheckedChange = { buttonVibrator = it; saveToDb() })
+                    Switch(checked = buttonVibrator, modifier = Modifier.scale(0.8f), onCheckedChange = { buttonVibrator = it; saveToDb() })
                 }
             }
 
@@ -186,7 +187,7 @@ fun KeyMappingConfigPanel(
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("增强触控", Modifier.weight(1f))
-                    Switch(checked = enhancedTouch, onCheckedChange = { enhancedTouch = it; saveToDb() })
+                    Switch(checked = enhancedTouch, modifier = Modifier.scale(0.8f), onCheckedChange = { enhancedTouch = it; saveToDb() })
                 }
             }
 
@@ -215,7 +216,7 @@ fun KeyMappingConfigPanel(
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("统一边框和文字颜色", Modifier.weight(1f))
-                    Switch(checked = useGlobalColors, onCheckedChange = {
+                    Switch(checked = useGlobalColors, modifier = Modifier.scale(0.8f), onCheckedChange = {
                         useGlobalColors = it
                         if (!it) {
                             // 关闭时清除 DB 中的全局颜色值

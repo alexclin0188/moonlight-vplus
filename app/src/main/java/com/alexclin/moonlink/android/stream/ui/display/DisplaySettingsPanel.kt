@@ -56,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.scale
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.common.ChipSelector
@@ -1012,6 +1013,6 @@ private fun SettingSwitch(
     Row(modifier.fillMaxWidth().padding(vertical = 4.dp),
          verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Switch(checked = checked, modifier = Modifier.scale(0.8f), onCheckedChange = onToggle)
     }
 }

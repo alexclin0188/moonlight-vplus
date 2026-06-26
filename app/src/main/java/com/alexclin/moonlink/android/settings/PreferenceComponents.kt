@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.scale
 import androidx.preference.PreferenceManager
 
 /**
@@ -64,6 +65,7 @@ fun CheckBoxPreference(
                 checked = checked,
                 onCheckedChange = null,
                 enabled = enabled,
+                modifier = Modifier.scale(0.8f),
             )
         },
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),

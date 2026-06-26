@@ -90,6 +90,7 @@ import com.alexclin.moonlink.android.stream.ui.panels.QuickActionRow
 import com.limelight.QuickActionRegistry
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.compose.ui.draw.scale
 import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.android.stream.ui.display.DisplaySettingsPanel
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingConfigPanel
@@ -359,7 +360,7 @@ private fun PanZoomSection(engine: StreamEngine) {
         Spacer(Modifier.width(12.dp))
         Text("平移缩放", style = MaterialTheme.typography.bodyLarge,
              color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-        Switch(checked = enabled, onCheckedChange = { enabled = it })
+        Switch(checked = enabled, modifier = Modifier.scale(0.8f), onCheckedChange = { enabled = it })
     }
 }
 
@@ -375,14 +376,16 @@ private fun KeyMappingSection(
 
     Column {
         Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            Modifier.fillMaxWidth().height(40.dp).padding(horizontal = 12.dp, vertical = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(Icons.Default.VideogameAsset, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(12.dp))
             Text("启用按键映射", style = MaterialTheme.typography.bodyLarge,
                  color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            Switch(checked = enabled, onCheckedChange = { newValue ->
+            Switch(checked = enabled,
+                modifier = Modifier.scale(0.8f),
+                onCheckedChange = { newValue ->
                 engine.setKeyMappingEnabled(newValue)
                 if (newValue) {
                     // 自动切换触控板模式并立即生效
@@ -400,7 +403,7 @@ private fun KeyMappingSection(
                     onClick = {
                         onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
@@ -418,7 +421,7 @@ private fun KeyMappingSection(
                     onClick = {
                         onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_EDITOR)
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
@@ -429,7 +432,7 @@ private fun KeyMappingSection(
                 // 3. 按键映射配置（所有方案统一使用此入口）
                 TextButton(
                     onClick = { onNavigateToConfig(DetailPage.KEY_MAPPING_CONFIG) },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().height(40.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
@@ -442,8 +445,8 @@ private fun KeyMappingSection(
 }
 
 private enum class TouchMode(val label: String) {
-    ENHANCED("增强式\n多点触控"),
-    TRACKPAD("触控板\n模式"),
+    ENHANCED("增强式多点触控"),
+    TRACKPAD("触控板模式"),
     MOUSE("鼠标模式"),
 }
 
@@ -514,7 +517,9 @@ private fun TouchModeSection(engine: StreamEngine) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("双击按住", Modifier.weight(1f))
-                    Switch(checked = doubleClickDrag, onCheckedChange = {
+                    Switch(checked = doubleClickDrag,
+                        modifier = Modifier.scale(0.8f),
+                        onCheckedChange = {
                         doubleClickDrag = it
                         engine.prefConfig.enableDoubleClickDrag = it
                         engine.prefConfig.writePreferences(context)
@@ -522,7 +527,9 @@ private fun TouchModeSection(engine: StreamEngine) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("本地光标渲染", Modifier.weight(1f))
-                    Switch(checked = localCursor, onCheckedChange = {
+                    Switch(checked = localCursor,
+                        modifier = Modifier.scale(0.8f),
+                        onCheckedChange = {
                         localCursor = it
                         engine.prefConfig.enableLocalCursorRendering = it
                         engine.prefConfig.writePreferences(context)
@@ -536,7 +543,9 @@ private fun TouchModeSection(engine: StreamEngine) {
                 var remoteMouseVisible by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("本地鼠标指针", Modifier.weight(1f))
-                    Switch(checked = nativeMouse, onCheckedChange = {
+                    Switch(checked = nativeMouse,
+                        modifier = Modifier.scale(0.8f),
+                        onCheckedChange = {
                         nativeMouse = it
                         // 同步切换底层模式
                         engine.applyTouchMode(if (it) 3 else 1)
@@ -545,7 +554,9 @@ private fun TouchModeSection(engine: StreamEngine) {
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("切换远程鼠标显示/隐藏", Modifier.weight(1f))
-                    Switch(checked = remoteMouseVisible, onCheckedChange = {
+                    Switch(checked = remoteMouseVisible,
+                        modifier = Modifier.scale(0.8f),
+                        onCheckedChange = {
                         remoteMouseVisible = it
                         engine.sendRemoteMouseToggle()
                     })
@@ -1174,7 +1185,7 @@ private fun SectionTitle(title: String) {
 private fun SettingSwitch(label: String, checked: Boolean, onToggle: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(label, Modifier.weight(1f))
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Switch(checked = checked, modifier = Modifier.scale(0.8f), onCheckedChange = onToggle)
     }
 }
 

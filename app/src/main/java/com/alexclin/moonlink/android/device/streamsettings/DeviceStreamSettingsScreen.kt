@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.draw.scale
 import com.alexclin.moonlink.android.stream.ui.common.ChipSelector
 import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.stream.ui.panels.SchemeInfo
@@ -153,7 +154,7 @@ private fun SettingSwitchRow(
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.weight(1f),
         )
-        Switch(checked = checked, onCheckedChange = onToggle)
+        Switch(checked = checked, modifier = Modifier.scale(0.8f), onCheckedChange = onToggle)
     }
 }
 
@@ -598,7 +599,7 @@ fun DisplayCategory(
                     Switch(
                         checked = unlocked,
                         onCheckedChange = { onSettingsChange(settings.copy(unlockFps = it)) },
-                        modifier = Modifier.height(20.dp),
+                        modifier = Modifier.height(20.dp).scale(0.8f),
                     )
                 }
                 val baseFps = listOf(30, 60, 90, 120)

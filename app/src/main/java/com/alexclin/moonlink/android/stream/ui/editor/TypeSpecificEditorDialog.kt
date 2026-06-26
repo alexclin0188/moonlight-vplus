@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import org.json.JSONObject
@@ -211,6 +212,7 @@ fun TypeSpecificEditorDialog(
                             var checked by remember(element.elementId) { mutableStateOf(isTrackpad) }
                             Switch(
                                 checked = checked,
+                                modifier = Modifier.scale(0.8f),
                                 onCheckedChange = {
                                     checked = it
                                     try {
@@ -234,6 +236,7 @@ fun TypeSpecificEditorDialog(
                             var checked by remember(element.elementId) { mutableStateOf(visible) }
                             Switch(
                                 checked = checked,
+                                modifier = Modifier.scale(0.8f),
                                 onCheckedChange = {
                                     checked = it
                                     sense = if (it) "1" else "0"
@@ -273,6 +276,7 @@ fun TypeSpecificEditorDialog(
                             var checked by remember(element.elementId) { mutableStateOf(hidden) }
                             Switch(
                                 checked = checked,
+                                modifier = Modifier.scale(0.8f),
                                 onCheckedChange = {
                                     checked = it
                                     flag1 = if (it) "1" else "0"
@@ -287,6 +291,7 @@ fun TypeSpecificEditorDialog(
                             var checked by remember(element.elementId) { mutableStateOf(movable) }
                             Switch(
                                 checked = checked,
+                                modifier = Modifier.scale(0.8f),
                                 onCheckedChange = {
                                     checked = it
                                     try {
@@ -305,6 +310,7 @@ fun TypeSpecificEditorDialog(
                             var checked by remember(element.elementId) { mutableStateOf(independent) }
                             Switch(
                                 checked = checked,
+                                modifier = Modifier.scale(0.8f),
                                 onCheckedChange = {
                                     checked = it
                                     try {
