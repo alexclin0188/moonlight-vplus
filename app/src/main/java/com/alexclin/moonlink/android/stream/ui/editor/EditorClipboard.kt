@@ -64,6 +64,7 @@ object EditorClipboard {
      * 并更新 GroupButton 的 [EditorElement.value] 字段以正确引用新的子元素 ID。
      *
      * @param configId 目标方案的 configId
+     * @param existingIds 该方案已存在的 elementId 集合，用于分配不重复的 ID
      * @param offsetX  粘贴时相对原位置的 X 偏移
      * @param offsetY  粘贴时相对原位置的 Y 偏移
      * @param layerOffset 图层偏移（默认 +1 避免重叠）
@@ -71,24 +72,30 @@ object EditorClipboard {
      */
     fun paste(
         configId: Long,
+        existingIds: Set<Long> = emptySet(),
         offsetX: Int = 30,
         offsetY: Int = 30,
         layerOffset: Int = 1,
     ): PasteResult? {
         val clipboard = _data ?: return null
-        val baseTime = System.currentTimeMillis()
 
-        // ── 为所有元素分配新 ID ──
+        // ── 为所有元素分配新 ID（从 1 开始，跳过已存在的） ──
         val oldToNewId = mutableMapOf<Long, Long>()
+        val usedIds = existingIds.toMutableSet()
+        fun nextId(): Long {
+            var id = 1L
+            while (id in usedIds) id++
+            usedIds.add(id)
+            return id
+        }
 
         // 根元素
-        val newRootId = baseTime
+        val newRootId = nextId()
         oldToNewId[clipboard.rootElement.elementId] = newRootId
 
         // 子元素
-        var idCounter = baseTime + 1
         val newChildElements = clipboard.childElements.map { child ->
-            val newId = idCounter++
+            val newId = nextId()
             oldToNewId[child.elementId] = newId
             child.copy(
                 elementId = newId,

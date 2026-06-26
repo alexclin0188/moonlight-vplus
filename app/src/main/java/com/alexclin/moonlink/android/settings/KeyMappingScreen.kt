@@ -466,7 +466,9 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
     db.insertConfig(configValues)
 
     // 写入 elements（带屏幕参数换算）
-    var elementIdCounter = System.currentTimeMillis()
+    val existingIds = db.queryAllElementIds(newConfigId).toSet()
+    var elementIdCounter = 1L
+    while (elementIdCounter in existingIds) elementIdCounter++
     for (i in 0 until elementsArray.length()) {
         val elObj = elementsArray.getJSONObject(i)
         val elValues = ContentValues()

@@ -313,12 +313,7 @@ private fun ChildItemRow(
         )
 
         // 类型标签
-        val typeLabel = childElement?.type?.displayName?.let { t ->
-            when {
-                t.length <= 4 -> t
-                else -> t.take(4)
-            }
-        } ?: "?"
+        val typeLabel = childElement?.type?.displayName ?: "?"
         Text(
             typeLabel,
             style = MaterialTheme.typography.labelSmall,

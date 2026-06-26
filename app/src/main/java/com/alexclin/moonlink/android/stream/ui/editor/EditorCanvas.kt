@@ -265,7 +265,7 @@ private fun DrawScope.drawInvisibleStickPreview(element: EditorElement) {
                 textAlign = android.graphics.Paint.Align.CENTER
                 isAntiAlias = true
             }
-            val typeName = if (element.type == ElementType.INVISIBLE_ANALOG_STICK) "隐形摇杆" else "隐形数字摇杆"
+            val typeName = element.type.displayName
             drawText(typeName, cx, cy + 4f, paint)
         }
     }

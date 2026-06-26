@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -105,33 +107,47 @@ fun TypeSpecificEditorDialog(
         return base
     }
 
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
             modifier = Modifier
-                .fillMaxWidth(0.85f)
-                .fillMaxSize(0.6f),
+                .width(312.dp)
+                .wrapContentHeight()
+                .heightIn(max = (screenHeightDp * 0.95f).dp),
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 12.dp,
         ) {
-            Column(modifier = Modifier.fillMaxSize().imePadding()) {
-                // ── 标题行 ──
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+            ) {
+                // ── 标题行（含取消/保存按钮） ──
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(getDialogTitle(element.type),
+                    Text("${element.type.displayName}属性设置",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭",
-                            modifier = Modifier.size(20.dp))
+                    TextButton(onClick = onDismiss) {
+                        Text("取消", style = MaterialTheme.typography.labelMedium)
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    TextButton(onClick = { onSave(buildUpdated()) }) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("保存", style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -140,9 +156,7 @@ fun TypeSpecificEditorDialog(
                 // ── 类型专属属性区域 ──
                 Column(
                     modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -176,20 +190,41 @@ fun TypeSpecificEditorDialog(
                         Spacer(Modifier.height(8.dp))
                     }
 
-                    // 摇杆中值 + 灵敏度
+                    // 摇杆中值 + 灵敏度（Slider）
                     if (element.type in listOf(
                             ElementType.ANALOG_STICK,
                             ElementType.DIGITAL_STICK,
                             ElementType.INVISIBLE_ANALOG_STICK,
                             ElementType.INVISIBLE_DIGITAL_STICK,
                         )) {
-                        PropertyRow("中值") {
-                            SmallTextField(value = middleValue, onValueChange = { middleValue = it },
-                                modifier = Modifier.weight(1f))
-                        }
-                        PropertyRow("灵敏度") {
-                            SmallIntField(value = sense, onValueChange = { sense = it },
-                                modifier = Modifier.width(80.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            // 中值（与方向键同一样式：文本在上，输入框在下，宽度64dp）
+                            Column(modifier = Modifier.width(64.dp)) {
+                                Text("中值", style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                SmallTextField(value = middleValue,
+                                    onValueChange = { middleValue = it },
+                                    modifier = Modifier.fillMaxWidth())
+                            }
+                            // 灵敏度 Slider（占据三个方向键输入框宽度 = 192dp）
+                            Column(
+                                modifier = Modifier.width(192.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
+                                Text("灵敏度: ${sense.toIntOrNull() ?: 30}",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontSize = 10.sp)
+                                Slider(
+                                    value = (sense.toIntOrNull() ?: 30).toFloat(),
+                                    onValueChange = { sense = it.roundToInt().toString() },
+                                    valueRange = 0f..100f,
+                                    modifier = Modifier.fillMaxWidth().height(16.dp),
+                                )
+                            }
                         }
                         Spacer(Modifier.height(4.dp))
                     }
@@ -230,20 +265,105 @@ fun TypeSpecificEditorDialog(
 
                     // 组按键
                     if (element.type == ElementType.GROUP_BUTTON) {
-                        // 子元素可见性（用 sense 字段存储）
-                        PropertyRow("子元素可见") {
-                            val visible = (sense.toIntOrNull() ?: 1) == 1
-                            var checked by remember(element.elementId) { mutableStateOf(visible) }
-                            Switch(
-                                checked = checked,
-                                modifier = Modifier.scale(0.8f),
-                                onCheckedChange = {
-                                    checked = it
-                                    sense = if (it) "1" else "0"
-                                },
-                            )
+                        // 第一行：子元素可见 + 隐藏本按钮
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("子元素可见", style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(64.dp))
+                                val visible = (sense.toIntOrNull() ?: 1) == 1
+                                var checked by remember(element.elementId) { mutableStateOf(visible) }
+                                Switch(
+                                    checked = checked,
+                                    modifier = Modifier.scale(0.8f),
+                                    onCheckedChange = {
+                                        checked = it
+                                        sense = if (it) "1" else "0"
+                                    },
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("隐藏本按钮", style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(64.dp))
+                                val hidden = (flag1.toIntOrNull() ?: 0) == 1
+                                var checked by remember(element.elementId) { mutableStateOf(hidden) }
+                                Switch(
+                                    checked = checked,
+                                    modifier = Modifier.scale(0.8f),
+                                    onCheckedChange = {
+                                        checked = it
+                                        flag1 = if (it) "1" else "0"
+                                    },
+                                )
+                            }
                         }
-                        // 子按键管理
+
+                        // 第二行：可拖拽 + 永久独立
+                        Row(
+                            modifier = Modifier.fillMaxWidth().height(36.dp),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("可拖拽", style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(64.dp))
+                                val movable = try {
+                                    JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
+                                } catch (_: Exception) { false }
+                                var checked by remember(element.elementId) { mutableStateOf(movable) }
+                                Switch(
+                                    checked = checked,
+                                    modifier = Modifier.scale(0.8f),
+                                    onCheckedChange = {
+                                        checked = it
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("movableInNormalMode", it)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("永久独立", style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.width(64.dp))
+                                val independent = try {
+                                    JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
+                                } catch (_: Exception) { false }
+                                var checked by remember(element.elementId) { mutableStateOf(independent) }
+                                Switch(
+                                    checked = checked,
+                                    modifier = Modifier.scale(0.8f),
+                                    onCheckedChange = {
+                                        checked = it
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("isPermanentlyIndependent", it)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                        }
+
+                        // 子按键管理（放在第二行下面）
                         val childCount = element.value
                             .split(",")
                             .mapNotNull { it.trim().toLongOrNull() }
@@ -269,57 +389,6 @@ fun TypeSpecificEditorDialog(
                                     }
                                 }
                             }
-                        }
-                        // 隐藏标志（Switch 代替数字输入）
-                        PropertyRow("隐藏本按钮") {
-                            val hidden = (flag1.toIntOrNull() ?: 0) == 1
-                            var checked by remember(element.elementId) { mutableStateOf(hidden) }
-                            Switch(
-                                checked = checked,
-                                modifier = Modifier.scale(0.8f),
-                                onCheckedChange = {
-                                    checked = it
-                                    flag1 = if (it) "1" else "0"
-                                },
-                            )
-                        }
-                        // 可拖拽
-                        PropertyRow("可拖拽") {
-                            val movable = try {
-                                JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
-                            } catch (_: Exception) { false }
-                            var checked by remember(element.elementId) { mutableStateOf(movable) }
-                            Switch(
-                                checked = checked,
-                                modifier = Modifier.scale(0.8f),
-                                onCheckedChange = {
-                                    checked = it
-                                    try {
-                                        val jo = JSONObject(extraAttributesJson)
-                                        jo.put("movableInNormalMode", it)
-                                        extraAttributesJson = jo.toString()
-                                    } catch (_: Exception) {}
-                                },
-                            )
-                        }
-                        // 永久独立
-                        PropertyRow("永久独立") {
-                            val independent = try {
-                                JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
-                            } catch (_: Exception) { false }
-                            var checked by remember(element.elementId) { mutableStateOf(independent) }
-                            Switch(
-                                checked = checked,
-                                modifier = Modifier.scale(0.8f),
-                                onCheckedChange = {
-                                    checked = it
-                                    try {
-                                        val jo = JSONObject(extraAttributesJson)
-                                        jo.put("isPermanentlyIndependent", it)
-                                        extraAttributesJson = jo.toString()
-                                    } catch (_: Exception) {}
-                                },
-                            )
                         }
                         Spacer(Modifier.height(4.dp))
                     }
@@ -350,26 +419,6 @@ fun TypeSpecificEditorDialog(
                         Spacer(Modifier.height(4.dp))
                     }
                 }
-
-                HorizontalDivider()
-
-                // ── 底部按钮 ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.End,
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("取消", style = MaterialTheme.typography.labelMedium)
-                    }
-                    Spacer(Modifier.width(8.dp))
-                    TextButton(onClick = { onSave(buildUpdated()) }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("保存", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
             }
         }
     }
@@ -390,17 +439,6 @@ fun TypeSpecificEditorDialog(
             onDismiss = { directionPickerTarget = null },
         )
     }
-}
-
-private fun getDialogTitle(type: ElementType): String = when (type) {
-    ElementType.DIGITAL_PAD -> "方向键设置"
-    ElementType.ANALOG_STICK, ElementType.DIGITAL_STICK,
-    ElementType.INVISIBLE_ANALOG_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "摇杆设置"
-    ElementType.DIGITAL_COMBINE_BUTTON -> "组合键设置"
-    ElementType.DIGITAL_MOVABLE_BUTTON -> "可移动按键设置"
-    ElementType.GROUP_BUTTON -> "组按键设置"
-    ElementType.WHEEL_PAD -> "轮盘按键设置"
-    else -> "专属属性设置"
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════

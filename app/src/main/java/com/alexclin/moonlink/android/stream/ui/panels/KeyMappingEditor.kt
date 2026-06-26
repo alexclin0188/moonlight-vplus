@@ -88,6 +88,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.android.stream.ui.editor.EditorState
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.stream.ui.editor.TypeSpecificEditorDialog
+import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
 import com.alexclin.moonlink.android.stream.ui.editor.WheelPadSegmentEditor
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
@@ -283,8 +284,10 @@ fun KeyMappingEditor(
 
     // ── 从跨方案剪贴板粘贴 ──
     fun pasteFromClipboard() {
+        val existingIds = editorState.loadElements().map { it.elementId }.toSet()
         val result = EditorClipboard.paste(
             configId = currentConfigId,
+            existingIds = existingIds,
             offsetX = 30,
             offsetY = 30,
         ) ?: return
@@ -392,7 +395,7 @@ fun KeyMappingEditor(
     // ════════════════════════════════════════════════════════
 
     val selectedElement = elements.find { it.elementId in selectedIds }
-    val hasSelection = selectedIds.isNotEmpty()
+    val hasSelection = selectedElement != null
     // 按钮在上半屏 → 属性面板在底部（面板不遮挡按钮）
     // 按钮在下半屏 → 属性面板在顶部（面板不遮挡按钮）
     val showPanelAtBottom = if (selectedElement != null) {
@@ -842,7 +845,7 @@ private fun EditorToolbar(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.70f),
         shadowElevation = 4.dp,
     ) {
         Column {
@@ -1103,21 +1106,7 @@ private fun AddElementMenu(
     onDismiss: () -> Unit,
     onSelect: (ElementType) -> Unit,
 ) {
-    data class MenuItem(val type: ElementType, val label: String)
-
-    val menuItems = listOf(
-        MenuItem(ElementType.DIGITAL_COMMON_BUTTON, "普通按钮"),
-        MenuItem(ElementType.DIGITAL_SWITCH_BUTTON, "开关按钮"),
-        MenuItem(ElementType.DIGITAL_MOVABLE_BUTTON, "可移动按钮"),
-        MenuItem(ElementType.DIGITAL_PAD, "十字键"),
-        MenuItem(ElementType.ANALOG_STICK, "手柄摇杆"),
-        MenuItem(ElementType.DIGITAL_STICK, "键盘摇杆"),
-        MenuItem(ElementType.INVISIBLE_ANALOG_STICK, "隐藏手柄摇杆"),
-        MenuItem(ElementType.INVISIBLE_DIGITAL_STICK, "隐藏键盘摇杆"),
-        MenuItem(ElementType.WHEEL_PAD, "轮盘按键"),
-        MenuItem(ElementType.GROUP_BUTTON, "组按键"),
-        MenuItem(ElementType.DIGITAL_COMBINE_BUTTON, "组合键"),
-    )
+    val menuTypes = ElementType.entries.filter { it != ElementType.UNKNOWN }
 
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x44000000)).clickable(onClick = onDismiss),
@@ -1136,9 +1125,9 @@ private fun AddElementMenu(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                items(menuItems) { item ->
+                items(menuTypes) { type ->
                     Button(
-                        onClick = { onSelect(item.type) },
+                        onClick = { onSelect(type) },
                         modifier = Modifier.fillMaxWidth().height(48.dp),
                         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
                         shape = RoundedCornerShape(8.dp),
@@ -1148,7 +1137,7 @@ private fun AddElementMenu(
                         ),
                     ) {
                         Text(
-                            item.label,
+                            type.displayName,
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -1213,11 +1202,11 @@ private fun ElementListDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(elements, key = { it.elementId }) { el ->
-                        val label = if (el.text.isNotBlank()) el.text else el.type.displayName
+                        val label = buildElementSummary(el)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .aspectRatio(1f)
+                                .height(52.dp)
                                 .clip(RoundedCornerShape(8.dp))
                                 .background(MaterialTheme.colorScheme.surfaceVariant)
                                 .clickable { onSelect(el) },
@@ -1228,9 +1217,9 @@ private fun ElementListDialog(
                                 verticalArrangement = Arrangement.Center,
                                 modifier = Modifier.padding(4.dp),
                             ) {
-                                // 类型标签 (2-4 字)
+                                // 类型标签
                                 Text(
-                                    el.type.displayName.take(4),
+                                    el.type.displayName,
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontSize = 9.sp,
@@ -1254,5 +1243,66 @@ private fun ElementListDialog(
                 }
             }
         }
+    }
+}
+
+/**
+ * 根据元素类型生成描述文本，用于按键列表弹窗中展示。
+ * - 按钮类：显示键值名
+ * - 组合键：显示键值名 + 方向值
+ * - 滚轮：显示段值范围（首段 ~ 末段）
+ * - 十字键：显示方向值
+ * - 摇杆类：显示方向值 + 中值
+ */
+private fun buildElementSummary(el: EditorElement): String {
+    val keyName = getKeyLabelByValue(el.value)
+    fun dirLabel(v: String, prefix: String): String? =
+        v.ifBlank { null }?.let { "$prefix${getKeyLabelByValue(it) ?: it}" }
+
+    return when (el.type) {
+        ElementType.DIGITAL_COMMON_BUTTON,
+        ElementType.DIGITAL_SWITCH_BUTTON,
+        ElementType.DIGITAL_MOVABLE_BUTTON -> keyName ?: el.value
+
+        ElementType.DIGITAL_COMBINE_BUTTON -> listOfNotNull(
+            keyName,
+            dirLabel(el.upValue, "↑"),
+            dirLabel(el.downValue, "↓"),
+            dirLabel(el.leftValue, "←"),
+            dirLabel(el.rightValue, "→"),
+        ).joinToString(" ")
+
+        ElementType.WHEEL_PAD -> {
+            val segs = el.value.split(",").filter { it.isNotBlank() }
+            when {
+                segs.size >= 2 -> {
+                    val first = getKeyLabelByValue(segs.first()) ?: segs.first()
+                    val last = getKeyLabelByValue(segs.last()) ?: segs.last()
+                    "$first ~ $last"
+                }
+                segs.size == 1 -> getKeyLabelByValue(segs.first()) ?: segs.first()
+                else -> "—"
+            }
+        }
+
+        ElementType.DIGITAL_PAD -> listOfNotNull(
+            dirLabel(el.upValue, "↑"),
+            dirLabel(el.downValue, "↓"),
+            dirLabel(el.leftValue, "←"),
+            dirLabel(el.rightValue, "→"),
+        ).joinToString(" ")
+
+        ElementType.ANALOG_STICK,
+        ElementType.DIGITAL_STICK,
+        ElementType.INVISIBLE_ANALOG_STICK,
+        ElementType.INVISIBLE_DIGITAL_STICK -> listOfNotNull(
+            dirLabel(el.upValue, "↑"),
+            dirLabel(el.downValue, "↓"),
+            dirLabel(el.leftValue, "←"),
+            dirLabel(el.rightValue, "→"),
+            dirLabel(el.middleValue, "中"),
+        ).joinToString(" ")
+
+        else -> keyName ?: el.type.displayName
     }
 }

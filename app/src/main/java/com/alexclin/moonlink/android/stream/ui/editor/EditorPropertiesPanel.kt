@@ -95,6 +95,18 @@ fun EditorPropertiesPanel(
         mutableStateOf(element.isCircle || (element.height == element.width && element.radius == element.width / 2))
     }
 
+    // 十字键/摇杆：按键名、按键值禁用，圆形强制关闭
+    val isPadOrStick = element.type in listOf(
+        ElementType.DIGITAL_PAD,
+        ElementType.ANALOG_STICK,
+        ElementType.DIGITAL_STICK,
+        ElementType.INVISIBLE_ANALOG_STICK,
+        ElementType.INVISIBLE_DIGITAL_STICK,
+    )
+    LaunchedEffect(element.elementId) {
+        if (isPadOrStick) isCircle = false
+    }
+
     // ── 实时同步画布拖拽/缩放产生的变化 ──
     LaunchedEffect(element.centralX) { centralX = element.centralX.toString() }
     LaunchedEffect(element.centralY) { centralY = element.centralY.toString() }
@@ -124,7 +136,7 @@ fun EditorPropertiesPanel(
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.97f),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.70f),
         shadowElevation = 8.dp,
         shape = if (atTop) {
             RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
@@ -163,31 +175,32 @@ fun EditorPropertiesPanel(
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框
                 InlineTextField(value = text, onValueChange = { text = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1.5f).padding(end = 2.dp))
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp), enabled = !isPadOrStick)
                 // Lbl1: 键值（右对齐）
                 GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 选择框
                 val keyLabel = getKeyLabelByValue(value) ?: value
+                val keyAlpha = if (isPadOrStick) 0.38f else 1f
                 Box(
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp)
                         .clip(RoundedCornerShape(4.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
-                        .clickable { showKeyPicker = true }
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = keyAlpha))
+                        .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = keyAlpha), RoundedCornerShape(4.dp))
+                        .clickable(enabled = !isPadOrStick) { showKeyPicker = true }
                         .padding(horizontal = 3.dp, vertical = 3.dp),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.fillMaxWidth()) {
                         Text(if (value.isNotEmpty()) keyLabel else "-",
                             style = TextStyle(fontSize = 9.sp,
-                                color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
-                                else MaterialTheme.colorScheme.onSurfaceVariant),
+                                color = (if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
+                                else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = keyAlpha)),
                             maxLines = 1, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.ArrowDropDown,
                             contentDescription = "选择键值",
                             modifier = Modifier.size(12.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = keyAlpha))
                     }
                 }
                 // Lbl2: 粗细（右对齐）
@@ -258,10 +271,13 @@ fun EditorPropertiesPanel(
                     onValueChange = { radius = it; onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
-                // 圆形开关 + 文字，整体可点击
+                // 圆形开关 + 文字，整体可点击（十字键/摇杆时强制关闭且禁用）
+                val circleEnabled = !isPadOrStick
+                val circleAlpha = if (circleEnabled) 1f else 0.38f
                 Row(
                     modifier = Modifier.weight(1.5f)
-                        .clickable {
+                        .alpha(circleAlpha)
+                        .then(if (circleEnabled) Modifier.clickable {
                             isCircle = !isCircle
                             if (isCircle) {
                                 val w = currentWidth()
@@ -269,13 +285,13 @@ fun EditorPropertiesPanel(
                                 radius = (w / 2).toString()
                             }
                             onElementChanged?.invoke(snapshot())
-                        },
+                        } else Modifier),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center,
                 ) {
                     Switch(
                         checked = isCircle,
-                        onCheckedChange = { checked ->
+                        onCheckedChange = if (circleEnabled) { checked ->
                             isCircle = checked
                             if (checked) {
                                 val w = currentWidth()
@@ -283,8 +299,8 @@ fun EditorPropertiesPanel(
                                 radius = (w / 2).toString()
                             }
                             onElementChanged?.invoke(snapshot())
-                        },
-                        modifier = Modifier.height(16.dp).width(36.dp).scale(0.6f),
+                        } else null,
+                        modifier = Modifier.wrapContentHeight().width(36.dp).scale(0.6f),
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = MaterialTheme.colorScheme.primary,
                             checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
@@ -520,21 +536,23 @@ private fun InlineTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
+    val contentAlpha = if (enabled) 1f else 0.38f
     BasicTextField(
         value = value,
-        onValueChange = onValueChange,
+        onValueChange = { if (enabled) onValueChange(it) },
         singleLine = true,
         textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = contentAlpha),
             fontSize = 11.sp,
         ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha)),
         keyboardOptions = KeyboardOptions.Default,
         modifier = modifier
             .clip(RoundedCornerShape(3.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
+            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
             .padding(horizontal = 4.dp, vertical = 3.dp),
     )
 }

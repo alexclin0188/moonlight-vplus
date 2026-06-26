@@ -140,13 +140,20 @@ class EditorState(
         db.updateElement(configId, element.elementId, element.toContentValues())
     }
 
-    /** 插入新元素 */
+    /** 插入新元素（自动分配不重复的 elementId，从 1 开始） */
     fun addElement(element: EditorElement) {
-        db.insertElement(element.toContentValues())
+        val existingIds = db.queryAllElementIds(configId).toSet()
+        var newId = 1L
+        while (newId in existingIds) newId++
+        db.insertElement(element.copy(elementId = newId).toContentValues())
     }
 
     /** 插入新元素（通过 ContentValues 快捷创建） */
     fun addElement(cv: ContentValues) {
+        val existingIds = db.queryAllElementIds(configId).toSet()
+        var newId = 1L
+        while (newId in existingIds) newId++
+        cv.put(Element.COLUMN_LONG_ELEMENT_ID, newId)
         db.insertElement(cv)
     }
 
@@ -232,9 +239,11 @@ class EditorState(
             },
         )
 
-    /** 批量插入（导入用） */
+    /** 批量插入（导入用，自动分配不重复 elementId，从 1 开始） */
     fun addElements(elements: List<EditorElement>) {
-        var counter = System.currentTimeMillis()
+        val existingIds = db.queryAllElementIds(configId).toSet()
+        var counter = 1L
+        while (counter in existingIds) counter++
         for (el in elements) {
             val cv = el.copy(elementId = counter).toContentValues()
             db.insertElement(cv)
