@@ -325,21 +325,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 Game.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
             )
 
-            // 如果没有指定显示器、且未使用虚拟显示器，尝试自动选择远端显示器
+            // 如果没有指定显示器、且未使用虚拟显示器：不指定目标显示器，
+            // 让 Sunshine 自行决定（即串流到当前活跃桌面），与旧版 PcView 行为一致。
             if (currentDisplayName == null && displayName == null && !pcUseVdd) {
-                // 查询远端显示器列表，自动选择合适的显示器
-                autoSelectDisplayFromHost()
-                if (currentDisplayName == null) {
-                    // 查询失败或无显示器，强制关闭 VDD、分辨率缩放和屏幕组合模式
-                    pcUseVdd = false
-                    prefConfig.resolutionScale = 100
-                    prefConfig.screenCombinationMode = -1
-                    prefConfig.vddScreenCombinationMode = -1
-                    applyDisplaySettings = false
-                } else {
-                    // 自动选到了显示器，应用显示设置
-                    applyDisplaySettings = true
-                }
+                applyDisplaySettings = false
             } else {
                 // 有显示器配置或使用了虚拟显示器：应用用户的分辨率/缩放等显示设置到 Sunshine
                 applyDisplaySettings = true
@@ -1007,6 +996,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.writePreferences(activity)
         syncToHostSettings { it.copy(enableMic = prefConfig.enableMic) }
         displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
+    }
+
+    /** 设置暂停串流展示开关，同步到全局偏好和主机设置 */
+    fun setShowPauseStream(enabled: Boolean) {
+        prefConfig.showPauseStream = enabled
+        prefConfig.writePreferences(activity)
+        syncToHostSettings { it.copy(showPauseStream = enabled) }
     }
 
     fun toggleVirtualController() {

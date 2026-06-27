@@ -528,8 +528,11 @@ private fun AppIconItem(
             }
         }
         Spacer(Modifier.height(4.dp))
+        val displayName = app.appName.let {
+            if (it.startsWith("Stream ", ignoreCase = true)) "Stream" else it
+        }
         Text(
-            app.appName,
+            displayName,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,

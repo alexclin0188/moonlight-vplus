@@ -826,8 +826,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                 var showPause by remember { mutableStateOf(engine.prefConfig.showPauseStream) }
                 SettingSwitch("暂停串流展示", showPause) {
                     showPause = it
-                    engine.prefConfig.showPauseStream = it
-                    engine.prefConfig.writePreferences(context)
+                    engine.setShowPauseStream(it)
                 }
             }
         }
