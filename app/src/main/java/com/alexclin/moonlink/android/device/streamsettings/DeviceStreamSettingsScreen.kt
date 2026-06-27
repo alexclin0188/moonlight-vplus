@@ -676,15 +676,17 @@ fun DisplayCategory(
                     "${w}x${h}"
                 }
 
-                // 加载自定义分辨率（与主页设置-自定义分辨率共享数据源）
-                val customResSet = remember {
-                    context.getSharedPreferences(
-                        CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
-                    ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
-                        ?.sortedBy { it } ?: emptyList()
+                // 加载自定义分辨率（与 GameMenu 共享 same SharedPreferences 数据源）
+                var customResSet by remember {
+                    mutableStateOf(
+                        context.getSharedPreferences(
+                            CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
+                        ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
+                            ?.sortedBy { it } ?: emptyList()
+                    )
                 }
 
-                val allResolutions = remember {
+                val allResolutions = remember(customResSet) {
                     val nativeLabel = if (nativeRes !in standardResolutions) {
                         listOf("Native ($nativeRes)")
                     } else emptyList()
@@ -733,14 +735,18 @@ fun DisplayCategory(
                     CustomResolutionInputDialog(
                         onDismiss = { showCustomDialog = false },
                         onConfirm = { w, h ->
+                            val resStr = "${w}x${h}"
                             val prefs = context.getSharedPreferences(
                                 CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
                             )
                             val existing = prefs.getStringSet(
                                 CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, mutableSetOf()
                             )?.toMutableSet() ?: mutableSetOf()
-                            existing.add("${w}x${h}")
+                            existing.add(resStr)
                             prefs.edit().putStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, existing).apply()
+                            // 立即更新本地状态，触发界面重组
+                            customResSet = existing.sorted()
+                            selectedRes = resStr
                             onSettingsChange(settings.copy(width = w, height = h))
                             showCustomDialog = false
                         },

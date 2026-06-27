@@ -905,48 +905,6 @@ private fun loadCustomResolutions(context: android.content.Context): List<String
         ?.sortedBy { it } ?: emptyList()
 }
 
-@Composable
-private fun CustomResolutionDialog(
-    onDismiss: () -> Unit,
-    onConfirm: (Int, Int) -> Unit,
-) {
-    var width by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf<String?>(null) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("自定义分辨率") },
-        text = {
-            Column {
-                OutlinedTextField(value = width, onValueChange = { width = it },
-                    label = { Text("宽度 (320~7680)") })
-                Spacer(Modifier.height(8.dp))
-                OutlinedTextField(value = height, onValueChange = { height = it },
-                    label = { Text("高度 (240~4320)") })
-                if (error != null) {
-                    Text(error!!, color = MaterialTheme.colorScheme.error,
-                         style = MaterialTheme.typography.bodySmall)
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                val w = width.toIntOrNull() ?: 0
-                val h = height.toIntOrNull() ?: 0
-                if (w < 320 || w > 7680 || h < 240 || h > 4320) {
-                    error = "分辨率超出范围(宽320~7680, 高240~4320)"
-                } else if (w % 2 != 0 || h % 2 != 0) {
-                    error = "宽高必须为偶数"
-                } else {
-                    onConfirm(w, h)
-                }
-            }) { Text("添加") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
-    )
-}
-
 // ══════════════════════════════════════════
 // 通用组件
 // ══════════════════════════════════════════
