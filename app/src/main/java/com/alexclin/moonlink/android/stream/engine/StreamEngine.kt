@@ -318,8 +318,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 Game.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
             )
 
-            // 如果没有指定显示器（Intent 未传、SP 也未恢复），尝试自动选择远端显示器
-            if (currentDisplayName == null && displayName == null) {
+            // 如果没有指定显示器、且未使用虚拟显示器，尝试自动选择远端显示器
+            if (currentDisplayName == null && displayName == null && !pcUseVdd) {
                 // 查询远端显示器列表，自动选择合适的显示器
                 autoSelectDisplayFromHost()
                 if (currentDisplayName == null) {
@@ -334,7 +334,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                     applyDisplaySettings = true
                 }
             } else {
-                // 有显示器配置：应用用户的分辨率/缩放等显示设置到 Sunshine
+                // 有显示器配置或使用了虚拟显示器：应用用户的分辨率/缩放等显示设置到 Sunshine
                 applyDisplaySettings = true
             }
 
@@ -584,7 +584,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             .setControlOnly(prefConfig.controlOnly)
             .setPersistGamepadsAfterDisconnect(!prefConfig.multiController)
             .setUseVdd(pcUseVdd)
-            .setCustomScreenMode(if (prefConfig.width == 0 && prefConfig.height == 0) 0 else prefConfig.screenCombinationMode)
+            .setCustomScreenMode(prefConfig.screenCombinationMode)
             .setCustomVddScreenMode(prefConfig.vddScreenCombinationMode)
             .setAttachedGamepadMask(computeGamepadMask())
             .build()

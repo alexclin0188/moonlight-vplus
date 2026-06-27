@@ -79,3 +79,5 @@ package-lock.json
 
 # AtomCode local-scope configs (machine-specific)
 .atomcode/local/
+
+plan/

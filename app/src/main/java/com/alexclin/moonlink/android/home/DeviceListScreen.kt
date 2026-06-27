@@ -88,6 +88,10 @@ private val ALL_MENU_ACTIONS = listOf(
     DeviceMenuAction("webui",          "打开 Web 管理（Sunshine）") { true },
     DeviceMenuAction("disable_ipv6",   "禁用 IPv6")             { true },
     DeviceMenuAction("nettest",        "测试网络连接")           { true },
+    DeviceMenuAction("secondary_screen", "作为副屏串流（基地适用）") {
+        it.state == ComputerDetails.State.ONLINE &&
+        it.pairState == PairingManager.PairState.PAIRED
+    },
     DeviceMenuAction("gs_eol",         "NVIDIA GameStream 终止服务") { it.nvidiaServer },
 )
 
@@ -894,6 +898,10 @@ private fun handleMenuAction(
         "nettest" -> {
             ServerHelper.doNetworkTest(activity)
         }
+        "secondary_screen" -> {
+            computer.useVdd = true
+            launchStream(context, computer, managerBinder, vddScreenMode = 2)
+        }
         "iperf" -> {
             try {
                 val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
@@ -927,6 +935,7 @@ private fun launchStream(
     computer: ComputerDetails,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     forceResume: Boolean = false,
+    vddScreenMode: Int = -1,
 ) {
     if (managerBinder == null) return
     val activity = context as? android.app.Activity ?: return
@@ -1003,7 +1012,11 @@ private fun launchStream(
         target.serverCert?.let { putExtra("ServerCert", it.encoded) }
         putExtra("ForceResumeCurrentSession", forceResume)
         putExtra("PairName", target.getPairName(context))
-        putExtra("usevdd", target.useVdd)
+        // 仅显式副屏串流路径才设 usevdd=true，普通点击始终为 false
+        putExtra("usevdd", vddScreenMode != -1)
+        if (vddScreenMode != -1) {
+            putExtra("VDD screen combination mode", vddScreenMode)
+        }
     }
     context.startActivity(intent)
 }

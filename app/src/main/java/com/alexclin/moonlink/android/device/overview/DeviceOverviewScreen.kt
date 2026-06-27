@@ -75,14 +75,10 @@ fun DeviceOverviewScreen(
     var appList by remember(uuid) { mutableStateOf(loadCachedAppList(context, uuid)) }
     var displaysInfo by remember(uuid) { mutableStateOf<List<NvHTTP.DisplayInfo>?>(null) }
 
-    // ── 选中显示器持久化状态 ────────────────────────────
-    val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-    var selectedDisplayGuid by remember(uuid) {
-        mutableStateOf(displayPrefs.getString("selected_display_$uuid", null))
-    }
-    var selectedVddEnabled by remember(uuid) {
-        mutableStateOf(displayPrefs.getBoolean("vdd_enabled_$uuid", false))
-    }
+    // ── 选中显示器会话状态（页面重建后重置，与 AppView 一致） ──
+    var selectedDisplayGuid by remember(uuid) { mutableStateOf<String?>(null) }
+    var selectedDisplayName by remember(uuid) { mutableStateOf<String?>(null) }
+    var selectedVddEnabled by remember(uuid) { mutableStateOf(false) }
 
     // ── 进入概要页时立即触发该设备的重新探测 ──
     // 标记为 UNKNOWN 并重启轮询 Job，无需等待下一个轮询周期。
@@ -146,12 +142,8 @@ fun DeviceOverviewScreen(
         val exists = list.any { d -> (d.guid.ifEmpty { d.name }) == storedGuid }
         if (!exists) {
             selectedDisplayGuid = null
+            selectedDisplayName = null
             selectedVddEnabled = false
-            displayPrefs.edit {
-                remove("selected_display_$uuid")
-                    .remove("selected_display_name_$uuid")
-                    .putBoolean("vdd_enabled_$uuid", false)
-            }
         }
     }
 
@@ -229,21 +221,25 @@ fun DeviceOverviewScreen(
                                 managerBinder = managerBinder,
                                 onDisplaySelected = { guid, name ->
                                     selectedDisplayGuid = guid
+                                    selectedDisplayName = name
                                     selectedVddEnabled = false
-                                    displayPrefs.edit {
-                                        putString("selected_display_$uuid", guid)
-                                            .putBoolean("vdd_enabled_$uuid", false)
-                                    }
-                                    launchStreamFromOverview(context, computer, managerBinder, displayName = name)
+                                    computer.useVdd = false
+                                    launchStreamFromOverview(
+                                        context, computer, managerBinder,
+                                        displayName = name,
+                                        screenCombinationMode = -1,
+                                    )
                                 },
                                 onVddSelected = {
                                     selectedVddEnabled = true
                                     selectedDisplayGuid = null
-                                    displayPrefs.edit {
-                                        remove("selected_display_$uuid")
-                                            .putBoolean("vdd_enabled_$uuid", true)
-                                    }
-                                    launchStreamFromOverview(context, computer, managerBinder, forceVdd = true)
+                                    selectedDisplayName = null
+                                    computer.useVdd = true
+                                    launchStreamFromOverview(
+                                        context, computer, managerBinder,
+                                        forceVdd = true,
+                                        screenCombinationMode = -1,
+                                    )
                                 },
                             )
 
@@ -337,21 +333,25 @@ fun DeviceOverviewScreen(
                             managerBinder = managerBinder,
                             onDisplaySelected = { guid, name ->
                                 selectedDisplayGuid = guid
+                                selectedDisplayName = name
                                 selectedVddEnabled = false
-                                displayPrefs.edit {
-                                    putString("selected_display_$uuid", guid)
-                                        .putBoolean("vdd_enabled_$uuid", false)
-                                }
-                                launchStreamFromOverview(context, computer, managerBinder, displayName = name)
+                                computer.useVdd = false
+                                launchStreamFromOverview(
+                                    context, computer, managerBinder,
+                                    displayName = name,
+                                    screenCombinationMode = -1,
+                                )
                             },
                             onVddSelected = {
                                 selectedVddEnabled = true
                                 selectedDisplayGuid = null
-                                displayPrefs.edit {
-                                    remove("selected_display_$uuid")
-                                        .putBoolean("vdd_enabled_$uuid", true)
-                                }
-                                launchStreamFromOverview(context, computer, managerBinder, forceVdd = true)
+                                selectedDisplayName = null
+                                computer.useVdd = true
+                                launchStreamFromOverview(
+                                    context, computer, managerBinder,
+                                    forceVdd = true,
+                                    screenCombinationMode = -1,
+                                )
                             },
                         )
 
@@ -578,36 +578,6 @@ private fun QuickActionsDialog(
                 )
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 if (isOnline) {
-                    DialogActionRow("重启") {
-                    if (activity != null && managerBinder != null) {
-                        scope.launch {
-                            try {
-                                val address = ServerHelper.getCurrentAddressFromComputer(computer)
-                                val httpConn = NvHTTP(
-                                    address,
-                                    computer.httpsPort,
-                                    managerBinder.getUniqueId(),
-                                    android.os.Build.MODEL,
-                                    computer.serverCert,
-                                    PlatformBinding.getCryptoProvider(context)
-                                )
-                                withContext(Dispatchers.IO) {
-                                    val success = httpConn.pcRestart()
-                                    withContext(Dispatchers.Main) {
-                                        snackBarHostState.showSnackbar(
-                                            if (success) "重启命令已发送" else "重启失败"
-                                        )
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                snackBarHostState.showSnackbar("重启异常: ${e.message}")
-                            }
-                        }
-                    }
-                    onDismiss()
-                }
-                }
-                if (isOnline) {
                     DialogActionRow("关机") {
                     if (activity != null && managerBinder != null) {
                         scope.launch {
@@ -644,6 +614,20 @@ private fun QuickActionsDialog(
                     }
                     onDismiss()
                 }
+                }
+                if (isOnline) {
+                    DialogActionRow("作为副屏串流（基地适用）") {
+                        computer.useVdd = true
+                        launchStreamFromOverview(
+                            context = context,
+                            computer = computer,
+                            managerBinder = managerBinder,
+                            forceVdd = true,
+                            forceResume = computer.runningGameId != 0,
+                            vddScreenMode = 2,
+                        )
+                        onDismiss()
+                    }
                 }
                 if (isOnline) {
                     DialogActionRow("打开 Web 管理（Sunshine）") {
@@ -1139,6 +1123,8 @@ private fun launchStreamFromOverview(
     forceResume: Boolean = false,
     displayName: String? = null,
     forceVdd: Boolean = false,
+    vddScreenMode: Int = -1,
+    screenCombinationMode: Int? = null,
 ) {
     if (managerBinder == null) return
 
@@ -1171,11 +1157,13 @@ private fun launchStreamFromOverview(
         return
     }
 
-    // ── 读取主机级屏幕组合模式 ──────────────────────────
-    val hostSettings = computer.uuid?.let { id ->
-        HostSettingsManager(context).getSettings(id)
-    }
-    val screenCombinationMode = hostSettings?.screenCombinationMode ?: -1
+    // ── 屏幕组合模式：参数非 null 时使用参数值（chip 点击传递 -1），否则从主机设置读取 ──
+    val resolvedScreenMode = screenCombinationMode ?: computer.uuid?.let { id ->
+        HostSettingsManager(context).getSettings(id).screenCombinationMode
+    } ?: -1
+
+    // ── 计算有效 VDD 状态，不变异 computer.useVdd ──
+    val effectiveUseVdd = forceVdd || (vddScreenMode != -1)
 
     // ── 使用新版 StreamActivity ──
     // useLastSettings 标志传递给 StreamActivity，由 StreamEngine 在初始化时应用
@@ -1183,8 +1171,9 @@ private fun launchStreamFromOverview(
     val intent = createStreamIntent(
         context, computer, targetApp, managerBinder,
         useLastSettings, forceResume, displayName,
-        screenCombinationMode = screenCombinationMode,
-        forceVdd = forceVdd,
+        screenCombinationMode = resolvedScreenMode,
+        vddScreenMode = vddScreenMode,
+        effectiveUseVdd = effectiveUseVdd,
     )
     context.startActivity(intent)
 }
@@ -1203,7 +1192,8 @@ private fun createStreamIntent(
     forceResume: Boolean = false,
     displayName: String? = null,
     screenCombinationMode: Int = -1,
-    forceVdd: Boolean = false,
+    vddScreenMode: Int = -1,
+    effectiveUseVdd: Boolean = false,
 ): Intent {
     return Intent(context, StreamActivity::class.java).apply {
         putExtra("Host", computer.activeAddress?.address)
@@ -1219,16 +1209,18 @@ private fun createStreamIntent(
         computer.serverCert?.let { putExtra("ServerCert", it.encoded) }
         putExtra("ForceResumeCurrentSession", forceResume)
         putExtra("PairName", computer.getPairName(context))
-        putExtra("usevdd", forceVdd || computer.useVdd)
+        putExtra("usevdd", effectiveUseVdd)
         if (!displayName.isNullOrEmpty()) {
             putExtra("DisplayName", displayName)
         }
-        // 传递屏幕组合模式
-        if (screenCombinationMode != -1) {
-            if (forceVdd || computer.useVdd) {
-                putExtra("VDD screen combination mode", screenCombinationMode)
+        // 传递屏幕组合模式（vddScreenMode 优先覆盖）
+        val effectiveScreenMode = if (vddScreenMode != -1) vddScreenMode else screenCombinationMode
+        val effectiveForceVdd = effectiveUseVdd
+        if (effectiveScreenMode != -1) {
+            if (effectiveForceVdd) {
+                putExtra("VDD screen combination mode", effectiveScreenMode)
             } else {
-                putExtra("Screen combination mode", screenCombinationMode)
+                putExtra("Screen combination mode", effectiveScreenMode)
             }
         }
         if (useLastSettings) {

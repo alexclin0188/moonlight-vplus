@@ -147,8 +147,8 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             // DB-3: HDR
             item { HdrSection(engine) }
 
-            // CR-3: VDD虚拟显示器 + 使用外接显示器
-            item { VddSection(engine) }
+            // CR-3: 使用外接显示器
+            item { ExternalDisplaySection(engine) }
 
             // DC-2: 画面设置开关组
             item { VideoSwitches(engine) }
@@ -924,24 +924,13 @@ private fun SectionTitle(title: String) {
 }
 
 @Composable
-private fun VddSection(engine: StreamEngine) {
-    val context = LocalContext.current
+private fun ExternalDisplaySection(engine: StreamEngine) {
     val pref = engine.prefConfig
-    val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
-    var useVdd by remember { mutableStateOf(displayPrefs.getBoolean("vdd_enabled", false)) }
     var useExternal by remember { mutableStateOf(pref.useExternalDisplay) }
 
-    Column {
-        SettingSwitch("VDD虚拟显示器", useVdd) {
-            useVdd = it
-            displayPrefs.edit().putBoolean("vdd_enabled", it).apply()
-            if (it) Toast.makeText(context, "VDD切换需重启串流生效", Toast.LENGTH_SHORT).show()
-        }
-        SettingSwitch("使用外接显示器", useExternal) {
-            useExternal = it
-            pref.useExternalDisplay = it
-            
-                    }
+    SettingSwitch("使用外接显示器", useExternal) {
+        useExternal = it
+        pref.useExternalDisplay = it
     }
 }
 
