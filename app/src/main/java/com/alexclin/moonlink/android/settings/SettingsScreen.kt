@@ -37,7 +37,6 @@ val SETTINGS_CATEGORIES = listOf(
     SettingsCategory("performance", "性能与统计分析",      Icons.Default.Speed,           "settings_performance"),
     SettingsCategory("gamepad",     "手柄设置",           Icons.Default.Gamepad,         "settings_gamepad"),
     SettingsCategory("input",       "输入设置",           Icons.Default.Keyboard,        "settings_input"),
-    SettingsCategory("scene",       "场景预设",           Icons.Default.Slideshow,       "settings_scene"),
     SettingsCategory("keymapping",  "按键映射管理",        Icons.Default.Tune,            "settings_keymapping"),
     SettingsCategory("widget",      "桌面小部件",         Icons.Default.Widgets,         "_widget"),
     SettingsCategory("help",        "帮助",              Icons.Default.HelpOutline,     "settings_help"),
@@ -234,7 +233,6 @@ private fun SettingsCategoryContent(
         "performance" -> PerformanceSettingsScreen()
         "gamepad"     -> GamepadSettingsScreen()
         "input"       -> InputSettingsScreen()
-        "scene"       -> ScenePresetsScreen()
         "keymapping"  -> KeyMappingScreen()
         "help"        -> HelpSettingsScreen()
     }

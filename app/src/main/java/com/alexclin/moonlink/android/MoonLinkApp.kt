@@ -82,7 +82,6 @@ private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid
     MoonLinkRoute.SettingsUi.route       -> "界面设置"
     MoonLinkRoute.SettingsGamepad.route  -> "手柄设置"
     MoonLinkRoute.SettingsInput.route    -> "输入设置"
-    MoonLinkRoute.SettingsScene.route    -> "场景预设"
     MoonLinkRoute.SettingsKeyMapping.route -> "按键映射管理"
     MoonLinkRoute.SettingsHelp.route       -> "帮助"
     MoonLinkRoute.SettingsWidget.route     -> "桌面小部件"
@@ -198,9 +197,6 @@ fun MoonLinkApp(
             }
             composable(MoonLinkRoute.SettingsInput.route) {
                 InputSettingsScreen()
-            }
-            composable(MoonLinkRoute.SettingsScene.route) {
-                ScenePresetsScreen()
             }
             composable(MoonLinkRoute.SettingsKeyMapping.route) {
                 KeyMappingScreen()
