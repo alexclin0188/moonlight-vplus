@@ -43,6 +43,7 @@ private data class CategoryEntry(
 private val CATEGORIES = listOf(
     CategoryEntry("touch", "触控模式", Icons.Default.TouchApp),
     CategoryEntry("display", "显示设置", Icons.Default.Tv),
+    CategoryEntry("switches", "画面开关", Icons.Default.Tune),
     CategoryEntry("host", "主机设置", Icons.Default.Computer),
     CategoryEntry("audio", "声音设置", Icons.Default.VolumeUp),
     CategoryEntry("gyro", "体感", Icons.Default.Sensors),
@@ -761,15 +762,6 @@ fun DisplayCategory(
                 }
             }
 
-            // 屏幕组合模式
-            item {
-                Divider()
-                ScreenCombinationModeSelector(
-                    settings = settings,
-                    onSettingsChange = onSettingsChange,
-                )
-            }
-
             // 输出缓冲区
             item {
                 Divider()
@@ -785,60 +777,172 @@ fun DisplayCategory(
                 )
             }
 
-            // ── 开关组 ──
+            // ── 虚拟显示器 ──
             item {
                 Divider()
-                SectionTitle("画面开关")
-                SettingSwitchRow("HDR", settings.enableHdr) {
-                    onSettingsChange(settings.copy(enableHdr = it))
-                }
-                AnimatedVisibility(visible = settings.enableHdr) {
-                    Column(Modifier.padding(start = 16.dp)) {
-                        SettingSwitchRow("HDR 高亮度", settings.enableHdrHighBrightness) {
-                            onSettingsChange(settings.copy(enableHdrHighBrightness = it))
+                SectionTitle("虚拟显示器")
+                Text("虚拟显示器在副屏串流时替代物理显示器使用",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 6.dp))
+
+                // 获取客户端设备原生分辨率
+                val context = LocalContext.current
+                val nativeRes = remember {
+                    val size = Point()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                        val bounds = wm.currentWindowMetrics.bounds
+                        size.set(bounds.width(), bounds.height())
+                    } else {
+                        @Suppress("DEPRECATION")
+                        val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                            display.getRealSize(size)
+                        } else {
+                            display.getSize(size)
                         }
-                        Text("HDR模式", style = MaterialTheme.typography.bodyMedium)
-                        ChipSelector(
-                            options = listOf("HDR10/PQ" to "1", "HLG" to "2"),
-                            selectedValue = settings.hdrMode.toString(),
-                            onSelect = { onSettingsChange(settings.copy(hdrMode = it.toIntOrNull() ?: 1)) },
-                            columns = 2,
-                        )
+                    }
+                    maxOf(size.x, size.y) to minOf(size.x, size.y)
+                }
+                val nativeResStr = "${nativeRes.first}x${nativeRes.second}"
+
+                // 加载自定义分辨率
+                var customResSet by remember {
+                    mutableStateOf(
+                        context.getSharedPreferences(
+                            CustomResolutionsConsts.CUSTOM_RESOLUTIONS_FILE, Context.MODE_PRIVATE
+                        ).getStringSet(CustomResolutionsConsts.CUSTOM_RESOLUTIONS_KEY, emptySet())
+                            ?.sortedBy { it } ?: emptyList()
+                    )
+                }
+
+                // 分辨率 Chip
+                Text("虚拟显示器分辨率", style = MaterialTheme.typography.bodyLarge,
+                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                val vddStandardRes = listOf("640x360", "854x480", "1280x720", "1920x1080", "2560x1440", "3840x2160")
+                val allVddResolutions = remember(customResSet) {
+                    listOf("设备原生 ($nativeResStr)") + vddStandardRes + customResSet.map { "$it (自定义)" }
+                }
+                val currentVddRes = if (settings.vddWidth > 0 && settings.vddHeight > 0)
+                    "${settings.vddWidth}x${settings.vddHeight}"
+                else "设备原生 ($nativeResStr)"
+                var selectedVddRes by remember(settings) { mutableStateOf(currentVddRes) }
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    allVddResolutions.chunked(3).forEach { rowItems ->
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            rowItems.forEach { res ->
+                                val cleanRes = res
+                                    .replace(" (自定义)", "")
+                                    .replace("设备原生 (", "").replace(")", "")
+                                val isSelected = selectedVddRes == res
+                                CompactChip(
+                                    label = res,
+                                    selected = isSelected,
+                                    onClick = {
+                                        selectedVddRes = res
+                                        if (res.startsWith("设备原生")) {
+                                            onSettingsChange(settings.copy(vddWidth = 0, vddHeight = 0))
+                                        } else {
+                                            val parts = cleanRes.split("x")
+                                            if (parts.size == 2) {
+                                                val w = parts[0].toIntOrNull() ?: 0
+                                                val h = parts[1].toIntOrNull() ?: 0
+                                                onSettingsChange(settings.copy(vddWidth = w, vddHeight = h))
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
+                                )
+                            }
+                            repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
+                        }
                     }
                 }
-                SettingSwitchRow("全屏拉伸画面", settings.stretchVideo) {
-                    onSettingsChange(settings.copy(stretchVideo = it))
-                }
-                SettingSwitchRow("反转分辨率", settings.reverseResolution) {
-                    onSettingsChange(settings.copy(reverseResolution = it))
-                }
-                SettingSwitchRow("可旋转画面", settings.rotableScreen) {
-                    onSettingsChange(settings.copy(rotableScreen = it))
-                }
-                SettingSwitchRow("减少刷新率", settings.reduceRefreshRate) {
-                    onSettingsChange(settings.copy(reduceRefreshRate = it))
-                }
-                SettingSwitchRow("全色域", settings.fullRange) {
-                    onSettingsChange(settings.copy(fullRange = it))
-                }
-                SettingSwitchRow("MTK 专属选项", settings.forceMtkMaxOperatingRate) {
-                    onSettingsChange(settings.copy(forceMtkMaxOperatingRate = it))
-                }
-                SettingSwitchRow("使用外接显示器", settings.useExternalDisplay) {
-                    onSettingsChange(settings.copy(useExternalDisplay = it))
-                }
-            }
 
-            // PiP
-            item {
-                Divider()
-                SettingSwitchRow("画中画 (PiP)", settings.enablePip) {
-                    onSettingsChange(settings.copy(enablePip = it))
-                }
+                // 帧率 Chip
+                Text("虚拟显示器帧率", style = MaterialTheme.typography.bodyLarge,
+                     modifier = Modifier.padding(top = 8.dp, bottom = 4.dp))
+                val allVddFps = listOf(30, 60, 90, 120, 144, 165)
+                ChipSelector(
+                    options = allVddFps.map { fps -> "${fps}FPS" to fps.toString() },
+                    selectedValue = settings.vddFps.toString(),
+                    onSelect = { value ->
+                        val newFps = value.toIntOrNull() ?: 90
+                        onSettingsChange(settings.copy(vddFps = newFps))
+                    },
+                    columns = 6,
+                )
             }
 
             item { Spacer(Modifier.height(24.dp)) }
         }
+    }
+
+@Composable
+fun DisplaySwitchesCategory(
+    settings: HostSettings,
+    onSettingsChange: (HostSettings) -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        item {
+            SettingSwitchRow("HDR", settings.enableHdr) {
+                onSettingsChange(settings.copy(enableHdr = it))
+            }
+            AnimatedVisibility(visible = settings.enableHdr) {
+                Column(Modifier.padding(start = 16.dp)) {
+                    SettingSwitchRow("HDR 高亮度", settings.enableHdrHighBrightness) {
+                        onSettingsChange(settings.copy(enableHdrHighBrightness = it))
+                    }
+                    Text("HDR模式", style = MaterialTheme.typography.bodyMedium)
+                    ChipSelector(
+                        options = listOf("HDR10/PQ" to "1", "HLG" to "2"),
+                        selectedValue = settings.hdrMode.toString(),
+                        onSelect = { onSettingsChange(settings.copy(hdrMode = it.toIntOrNull() ?: 1)) },
+                        columns = 2,
+                    )
+                }
+            }
+            SettingSwitchRow("全屏拉伸画面", settings.stretchVideo) {
+                onSettingsChange(settings.copy(stretchVideo = it))
+            }
+            SettingSwitchRow("反转分辨率", settings.reverseResolution) {
+                onSettingsChange(settings.copy(reverseResolution = it))
+            }
+            SettingSwitchRow("可旋转画面", settings.rotableScreen) {
+                onSettingsChange(settings.copy(rotableScreen = it))
+            }
+            SettingSwitchRow("减少刷新率", settings.reduceRefreshRate) {
+                onSettingsChange(settings.copy(reduceRefreshRate = it))
+            }
+            SettingSwitchRow("全色域", settings.fullRange) {
+                onSettingsChange(settings.copy(fullRange = it))
+            }
+            SettingSwitchRow("MTK 专属选项", settings.forceMtkMaxOperatingRate) {
+                onSettingsChange(settings.copy(forceMtkMaxOperatingRate = it))
+            }
+            SettingSwitchRow("使用外接显示器", settings.useExternalDisplay) {
+                onSettingsChange(settings.copy(useExternalDisplay = it))
+            }
+        }
+
+        // PiP
+        item {
+            Divider()
+            SettingSwitchRow("画中画 (PiP)", settings.enablePip) {
+                onSettingsChange(settings.copy(enablePip = it))
+            }
+        }
+
+        item { Spacer(Modifier.height(24.dp)) }
+    }
 }
 
 @Composable
@@ -1170,6 +1274,14 @@ fun OtherCategory(
                 }
             }
 
+            // 暂停串流展示
+            item {
+                Divider()
+                SettingSwitchRow("暂停串流展示", settings.showPauseStream) {
+                    onSettingsChange(settings.copy(showPauseStream = it))
+                }
+            }
+
             // 悬浮按钮不透明度
             item {
                 Divider()
@@ -1193,110 +1305,6 @@ fun OtherCategory(
 // ═══════════════════════════════════════════
 // 自定义分辨率输入对话框
 // ═══════════════════════════════════════════
-
-@Composable
-private fun ScreenCombinationModeSelector(
-    settings: HostSettings,
-    onSettingsChange: (HostSettings) -> Unit,
-) {
-    val context = LocalContext.current
-    val modeNames = remember {
-        context.resources.getStringArray(com.alexclin.moonlink.android.R.array.screen_combination_mode_names)
-    }
-    val modeValues = remember {
-        context.resources.getStringArray(com.alexclin.moonlink.android.R.array.screen_combination_mode_values)
-    }
-
-    // 找到当前值对应的名称
-    val targetValue = settings.screenCombinationMode.toString()
-    val currentName = remember(modeValues, modeNames, targetValue) {
-        val idx = modeValues.indexOf(targetValue)
-        if (idx >= 0) modeNames[idx] else modeNames.firstOrNull() ?: "使用主机端配置"
-    }
-
-    var showDialog by remember { mutableStateOf(false) }
-
-    Column {
-        SectionTitle("屏幕组合模式")
-        Text(
-            "控制主机在启动串流时如何管理屏幕组合，此处配置将覆盖主机端配置。",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 8.dp),
-        )
-
-        // 当前选中模式的可点击行
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    showDialog = true
-                }
-                .padding(vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "组合模式",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                currentName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.width(4.dp))
-            Icon(
-                Icons.Default.ChevronRight,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text("屏幕组合模式") },
-            text = {
-                Column {
-                    modeNames.forEachIndexed { index, name ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    val value = try {
-                                        modeValues[index].toInt()
-                                    } catch (_: Exception) { -1 }
-                                    onSettingsChange(settings.copy(screenCombinationMode = value))
-                                    showDialog = false
-                                }
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(
-                                selected = modeValues[index] == settings.screenCombinationMode.toString(),
-                                onClick = {
-                                    val value = try {
-                                        modeValues[index].toInt()
-                                    } catch (_: Exception) { -1 }
-                                    onSettingsChange(settings.copy(screenCombinationMode = value))
-                                    showDialog = false
-                                },
-                            )
-                            Spacer(Modifier.width(8.dp))
-                            Text(name, style = MaterialTheme.typography.bodyMedium)
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showDialog = false }) { Text("关闭") }
-            },
-        )
-    }
-}
 
 @Composable
 private fun CustomResolutionInputDialog(

@@ -54,7 +54,7 @@ fun QuickActionRow(
     onEditClick: () -> Unit,
 ) {
     val context = LocalContext.current
-    val visibleIds = configIds.take(3)
+    val visibleIds = configIds.take(if (engine.prefConfig.showPauseStream) 3 else 4)
 
     Column {
         Row(
@@ -137,14 +137,16 @@ fun QuickActionRow(
                     onClick = { engine.disconnectAndQuit() },
                 )
             }
-            item {
-                QuickActionChip(
-                    modifier = Modifier.padding(end = 4.dp),
-                    label = "退出串流",
-                    icon = Icons.Default.ExitToApp,
-                    isFixed = true,
-                    onClick = { engine.disconnect() },
-                )
+            if (engine.prefConfig.showPauseStream) {
+                item {
+                    QuickActionChip(
+                        modifier = Modifier.padding(end = 4.dp),
+                        label = "暂停串流",
+                        icon = Icons.Default.ExitToApp,
+                        isFixed = true,
+                        onClick = { engine.disconnect() },
+                    )
+                }
             }
         }
     }

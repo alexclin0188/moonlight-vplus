@@ -56,7 +56,10 @@ class HostSettingsManager(private val context: Context) {
         private const val KEY_SCREEN_OFFSET_Y = "seekbar_screen_offset_y"
         private const val KEY_REDUCE_REFRESH_RATE = "checkbox_reduce_refresh_rate"
         private const val KEY_FULL_RANGE = "checkbox_full_range"
-        private const val KEY_SCREEN_COMBINATION_MODE = "list_screen_combination_mode"
+
+        // 虚拟显示器
+        private const val KEY_VDD_RESOLUTION = "vdd_resolution"
+        private const val KEY_VDD_FPS = "vdd_fps"
 
         // 主机设置
         private const val KEY_ENABLE_SOPS = "checkbox_enable_sops"
@@ -116,6 +119,7 @@ class HostSettingsManager(private val context: Context) {
         private const val KEY_SHOW_QUICK_KEY_CARD = "checkbox_show_QuickKeyCard"
         private const val KEY_KEY_MAPPING_ENABLED = "checkbox_enable_key_mapping"
         private const val KEY_DISABLE_WARNINGS = "checkbox_disable_warnings"
+        private const val KEY_SHOW_PAUSE_STREAM = "checkbox_show_pause_stream"
     }
 
     /**
@@ -183,7 +187,11 @@ class HostSettingsManager(private val context: Context) {
             screenOffsetY = int(KEY_SCREEN_OFFSET_Y),
             reduceRefreshRate = bool(KEY_REDUCE_REFRESH_RATE),
             fullRange = bool(KEY_FULL_RANGE),
-            screenCombinationMode = string(KEY_SCREEN_COMBINATION_MODE, "-1").toIntOrNull() ?: -1,
+
+            // 虚拟显示器
+            vddWidth = parseWidth(string(KEY_VDD_RESOLUTION, "0x0")),
+            vddHeight = parseHeight(string(KEY_VDD_RESOLUTION, "0x0")),
+            vddFps = string(KEY_VDD_FPS, "90").toIntOrNull() ?: 90,
 
             // 主机设置
             enableSops = sp.getBoolean(KEY_ENABLE_SOPS, true),
@@ -243,6 +251,7 @@ class HostSettingsManager(private val context: Context) {
             showQuickKeyCard = sp.getBoolean(KEY_SHOW_QUICK_KEY_CARD, true),
             keyMappingEnabled = bool(KEY_KEY_MAPPING_ENABLED),
             disableWarnings = bool(KEY_DISABLE_WARNINGS),
+            showPauseStream = sp.getBoolean(KEY_SHOW_PAUSE_STREAM, true),
         )
     }
 
@@ -291,7 +300,9 @@ class HostSettingsManager(private val context: Context) {
             .putInt(KEY_SCREEN_OFFSET_Y, settings.screenOffsetY)
             .putBoolean(KEY_REDUCE_REFRESH_RATE, settings.reduceRefreshRate)
             .putBoolean(KEY_FULL_RANGE, settings.fullRange)
-            .putString(KEY_SCREEN_COMBINATION_MODE, settings.screenCombinationMode.toString())
+            // 虚拟显示器
+            .putString(KEY_VDD_RESOLUTION, "${settings.vddWidth}x${settings.vddHeight}")
+            .putString(KEY_VDD_FPS, settings.vddFps.toString())
             // 主机设置
             .putBoolean(KEY_ENABLE_SOPS, settings.enableSops)
             .putBoolean(KEY_LOCK_SCREEN_AFTER_DISCONNECT, settings.lockScreenAfterDisconnect)
@@ -347,6 +358,7 @@ class HostSettingsManager(private val context: Context) {
             .putBoolean(KEY_SHOW_QUICK_KEY_CARD, settings.showQuickKeyCard)
             .putBoolean(KEY_KEY_MAPPING_ENABLED, settings.keyMappingEnabled)
             .putBoolean(KEY_DISABLE_WARNINGS, settings.disableWarnings)
+            .putBoolean(KEY_SHOW_PAUSE_STREAM, settings.showPauseStream)
             .apply()
     }
 

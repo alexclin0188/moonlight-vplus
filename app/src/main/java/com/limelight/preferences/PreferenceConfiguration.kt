@@ -96,6 +96,8 @@ class PreferenceConfiguration {
     var playHostAudio = false
     var muteClientAudio = false
     var disableWarnings = false
+    // 暂停串流展示开关（子面板其它设置）
+    var showPauseStream = true
     var language: String = ""
     var smallIconMode = false
     var multiController = false
@@ -304,6 +306,7 @@ class PreferenceConfiguration {
                 .putInt(TOUCHPAD_SENSITIVITY_PREF_STRING, touchpadSensitivity)
                 .putBoolean(ENABLE_ENHANCED_TOUCH_PREF_STRING, enableEnhancedTouch)
                 .putBoolean(KEY_MAPPING_ENABLED_PREF_STRING, keyMappingEnabled)
+                .putBoolean(SHOW_PAUSE_STREAM_PREF_STRING, showPauseStream)
                 .putBoolean(ADAPTIVE_BITRATE_PREF_STRING, enableAdaptiveBitrate)
                 .putString(ABR_MODE_PREF_STRING, abrMode)
                 .putBoolean(UNLOCK_FPS_STRING, unlockFps)
@@ -367,6 +370,7 @@ class PreferenceConfiguration {
         copy.showGyroCard = this.showGyroCard
         copy.showQuickKeyCard = this.showQuickKeyCard
         copy.keyMappingEnabled = this.keyMappingEnabled
+        copy.showPauseStream = this.showPauseStream
         copy.touchpadSensitivity = this.touchpadSensitivity
         copy.muteClientAudio = this.muteClientAudio
         return copy
@@ -402,6 +406,7 @@ class PreferenceConfiguration {
         const val KEY_MAPPING_ENABLED_PREF_STRING = "checkbox_enable_key_mapping"
         private const val ONLY_L3_R3_PREF_STRING = "checkbox_only_show_L3R3"
         private const val SHOW_GUIDE_BUTTON_PREF_STRING = "checkbox_show_guide_button"
+        private const val SHOW_PAUSE_STREAM_PREF_STRING = "checkbox_show_pause_stream"
         private const val HALF_HEIGHT_OSC_PORTRAIT_PREF_STRING = "checkbox_half_height_osc_portrait"
         private const val LEGACY_DISABLE_FRAME_DROP_PREF_STRING = "checkbox_disable_frame_drop"
         private const val ENABLE_HDR_PREF_STRING = "checkbox_enable_hdr"
@@ -1127,6 +1132,7 @@ class PreferenceConfiguration {
             config.onscreenController = prefs.getBoolean(ONSCREEN_CONTROLLER_PREF_STRING, ONSCREEN_CONTROLLER_DEFAULT)
             config.onscreenKeyboard = prefs.getBoolean(ONSCREEN_KEYBOARD_PREF_STRING, ONSCREEN_KEYBOARD_DEFAULT)
             config.keyMappingEnabled = prefs.getBoolean(KEY_MAPPING_ENABLED_PREF_STRING, false)
+            config.showPauseStream = prefs.getBoolean(SHOW_PAUSE_STREAM_PREF_STRING, true)
             config.onlyL3R3 = prefs.getBoolean(ONLY_L3_R3_PREF_STRING, ONLY_L3_R3_DEFAULT)
             config.showGuideButton = prefs.getBoolean(SHOW_GUIDE_BUTTON_PREF_STRING, SHOW_GUIDE_BUTTON_DEFAULT)
             config.halfHeightOscPortrait = prefs.getBoolean(HALF_HEIGHT_OSC_PORTRAIT_PREF_STRING, HALF_HEIGHT_OSC_PORTRAIT_DEFAULT)

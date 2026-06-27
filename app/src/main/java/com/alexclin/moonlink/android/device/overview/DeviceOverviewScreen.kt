@@ -29,7 +29,6 @@ import com.alexclin.moonlink.android.theme.statusOffline
 import com.alexclin.moonlink.android.theme.statusOnline
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
-import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import com.alexclin.moonlink.android.home.fetchAndCacheAppListAndBoxArt
 import com.alexclin.moonlink.android.home.getDefaultQuickStartApp
 import com.alexclin.moonlink.android.home.loadCachedAppList
@@ -237,8 +236,7 @@ fun DeviceOverviewScreen(
                                     computer.useVdd = true
                                     launchStreamFromOverview(
                                         context, computer, managerBinder,
-                                        forceVdd = true,
-                                        screenCombinationMode = -1,
+                                        vddScreenMode = 3,
                                     )
                                 },
                             )
@@ -344,20 +342,19 @@ fun DeviceOverviewScreen(
                             },
                             onVddSelected = {
                                 selectedVddEnabled = true
-                                selectedDisplayGuid = null
-                                selectedDisplayName = null
-                                computer.useVdd = true
-                                launchStreamFromOverview(
-                                    context, computer, managerBinder,
-                                    forceVdd = true,
-                                    screenCombinationMode = -1,
-                                )
-                            },
-                        )
+                                    selectedDisplayGuid = null
+                                    selectedDisplayName = null
+                                    computer.useVdd = true
+                                    launchStreamFromOverview(
+                                        context, computer, managerBinder,
+                                        vddScreenMode = 3,
+                                    )
+                                },
+                            )
 
-                        // ── Button row ─────────────────────
-                        DesktopActionRow(
-                            dividerHeight = 56.dp,
+                            // ── Button row ─────────────────────
+                            DesktopActionRow(
+                                dividerHeight = 56.dp,
                             showQuickActionButton = showQuickActionButton,
                             onShowQuickActions = { showQuickActions = true },
                             onNavigateToDetail = onNavigateToDetail,
@@ -968,7 +965,12 @@ private fun DisplayChipRow(
     onDisplaySelected: (guid: String, name: String) -> Unit,
     onVddSelected: () -> Unit,
 ) {
-    if (displaysInfo.isNullOrEmpty() && !selectedVddEnabled) return
+    // 检测列表中是否有 Zako HDR 虚拟显示器
+    val zakoDisplay = displaysInfo?.find { it.name.contains("Zako HDR", ignoreCase = true) }
+    // 物理显示器列表（排除 Zako HDR）
+    val physicalDisplays = displaysInfo?.filter { it != zakoDisplay }
+
+    if (physicalDisplays.isNullOrEmpty() && !selectedVddEnabled && zakoDisplay == null) return
 
     LazyRow(
         modifier = Modifier
@@ -979,9 +981,9 @@ private fun DisplayChipRow(
         horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // 物理显示器 Chip
-        if (!displaysInfo.isNullOrEmpty()) {
-            items(displaysInfo, key = { it.guid.ifEmpty { it.name } }) { display ->
+        // 物理显示器 Chip（排除 Zako HDR）
+        if (!physicalDisplays.isNullOrEmpty()) {
+            items(physicalDisplays, key = { it.guid.ifEmpty { it.name } }) { display ->
                 val guid = display.guid.ifEmpty { display.name }
                 DisplayChip(
                     display = display,
@@ -990,11 +992,12 @@ private fun DisplayChipRow(
                 )
             }
         }
-        // VDD Chip
+        // VDD Chip（如果存在 Zako HDR 则显示其名称，否则显示"虚拟显示器"）
         item(key = "__vdd__") {
             VddChip(
                 isSelected = selectedVddEnabled,
                 onClick = onVddSelected,
+                name = zakoDisplay?.name ?: "虚拟显示器",
             )
         }
     }
@@ -1063,6 +1066,7 @@ private fun DisplayChip(
 private fun VddChip(
     isSelected: Boolean,
     onClick: () -> Unit,
+    name: String = "虚拟显示器",
 ) {
     val containerColor = if (isSelected)
         MaterialTheme.colorScheme.primaryContainer
@@ -1089,7 +1093,7 @@ private fun VddChip(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
         ) {
             Text(
-                text = "显示器",
+                text = "虚拟显示器",
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
@@ -1103,7 +1107,7 @@ private fun VddChip(
                 )
                 Spacer(Modifier.width(2.dp))
                 Text(
-                    text = "虚拟显示器",
+                    text = name,
                     style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -1157,10 +1161,8 @@ private fun launchStreamFromOverview(
         return
     }
 
-    // ── 屏幕组合模式：参数非 null 时使用参数值（chip 点击传递 -1），否则从主机设置读取 ──
-    val resolvedScreenMode = screenCombinationMode ?: computer.uuid?.let { id ->
-        HostSettingsManager(context).getSettings(id).screenCombinationMode
-    } ?: -1
+    // ── 屏幕组合模式：vddScreenMode 优先，否则使用传参（不再从 HostSettings 回退）──
+    val resolvedScreenMode = if (vddScreenMode != -1) vddScreenMode else screenCombinationMode ?: -1
 
     // ── 计算有效 VDD 状态，不变异 computer.useVdd ──
     val effectiveUseVdd = forceVdd || (vddScreenMode != -1)

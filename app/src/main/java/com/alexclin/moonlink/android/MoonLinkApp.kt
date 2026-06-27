@@ -34,6 +34,7 @@ import com.alexclin.moonlink.android.device.overview.DeviceOverviewScreen
 import com.alexclin.moonlink.android.device.streamsettings.AudioCategory
 import com.alexclin.moonlink.android.device.streamsettings.DeviceStreamSettingsScreen
 import com.alexclin.moonlink.android.device.streamsettings.DisplayCategory
+import com.alexclin.moonlink.android.device.streamsettings.DisplaySwitchesCategory
 import com.alexclin.moonlink.android.device.streamsettings.GyroCategory
 import com.alexclin.moonlink.android.device.streamsettings.HostCategory
 import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
@@ -75,6 +76,7 @@ private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid
     MoonLinkRoute.DeviceStreamSettings.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "串流设置"
     MoonLinkRoute.DeviceStreamSettingsTouch.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "触控模式"
     MoonLinkRoute.DeviceStreamSettingsDisplay.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "显示设置"
+    MoonLinkRoute.DeviceStreamSettingsSwitches.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "画面开关"
     MoonLinkRoute.DeviceStreamSettingsHost.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "主机设置"
     MoonLinkRoute.DeviceStreamSettingsAudio.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "声音设置"
     MoonLinkRoute.DeviceStreamSettingsGyro.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "体感"
@@ -120,6 +122,7 @@ fun MoonLinkApp(
     val currentUuid = backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceOverview.ARG_UUID)
         ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettings.ARG_UUID)
         ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsTouch.ARG_UUID)
+        ?: backStackEntry?.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsSwitches.ARG_UUID)
 
     // Show bottom bar only on the top-level tabs
     val showBottomBar = currentRoute in TOP_LEVEL_ROUTES
@@ -286,6 +289,23 @@ fun MoonLinkApp(
                 val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
                 var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
                 DisplayCategory(
+                    settings = settings,
+                    onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
+                )
+            }
+
+            // ── 串流设置 → 画面开关子页 ────────────────────
+            composable(
+                route = MoonLinkRoute.DeviceStreamSettingsSwitches.route,
+                arguments = listOf(navArgument(MoonLinkRoute.DeviceStreamSettingsSwitches.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.DeviceStreamSettingsSwitches.ARG_UUID) ?: return@composable
+                val ctx = androidx.compose.ui.platform.LocalContext.current
+                val settingsManager = remember { HostSettingsManager(ctx.applicationContext) }
+                var settings by remember(uuid) { mutableStateOf(settingsManager.getSettings(uuid)) }
+                DisplaySwitchesCategory(
                     settings = settings,
                     onSettingsChange = { settings = it; settingsManager.saveSettings(uuid, it) },
                 )

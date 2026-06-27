@@ -1021,7 +1021,7 @@ class StreamActivity : ComponentActivity() {
         if (engine.connected && engine.prefConfig.enablePip) {
             enterPip()
         } else {
-            engine.disconnect()
+            engine.disconnectAndQuit()
         }
     }
 }

@@ -94,8 +94,16 @@ data class HostSettings(
     val reduceRefreshRate: Boolean = false,
     /** 全色域 */
     val fullRange: Boolean = false,
-    /** 屏幕组合模式: -1=使用主机配置, 0=不修改, 1=确保已开启, 2=确保为主屏, 3=仅启用串流屏 */
-    val screenCombinationMode: Int = -1,
+
+    // ═══════════════════════════════════════════
+    // 虚拟显示器 (VDD)
+    // ═══════════════════════════════════════════
+    /** VDD 分辨率宽度（0=使用客户端设备原生分辨率） */
+    val vddWidth: Int = 0,
+    /** VDD 分辨率高度 */
+    val vddHeight: Int = 0,
+    /** VDD 帧率 */
+    val vddFps: Int = 90,
 
     // ═══════════════════════════════════════════
     // 主机设置 (HOST)
@@ -220,6 +228,8 @@ data class HostSettings(
     val keyMappingEnabled: Boolean = false,
     /** 禁用警告 */
     val disableWarnings: Boolean = false,
+    /** 暂停串流展示开关 */
+    val showPauseStream: Boolean = true,
 ) {
     companion object {
         /** 配置分类，用于 UI 分类展示 */

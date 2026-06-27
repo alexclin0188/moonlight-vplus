@@ -48,6 +48,10 @@ sealed class MoonLinkRoute(val route: String) {
     data object DeviceStreamSettingsGyro : MoonLinkRoute("device_stream_settings/{uuid}/gyro") {
         const val ARG_UUID = "uuid"
     }
+    /** 串流设置 → 画面开关子页 */
+    data object DeviceStreamSettingsSwitches : MoonLinkRoute("device_stream_settings/{uuid}/switches") {
+        const val ARG_UUID = "uuid"
+    }
     /** 串流设置 → 其它设置子页 */
     data object DeviceStreamSettingsOther : MoonLinkRoute("device_stream_settings/{uuid}/other") {
         const val ARG_UUID = "uuid"

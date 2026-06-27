@@ -818,6 +818,18 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                     columns = 3,
                 )
             }
+
+            item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
+
+            item {
+                // 暂停串流展示开关
+                var showPause by remember { mutableStateOf(engine.prefConfig.showPauseStream) }
+                SettingSwitch("暂停串流展示", showPause) {
+                    showPause = it
+                    engine.prefConfig.showPauseStream = it
+                    engine.prefConfig.writePreferences(context)
+                }
+            }
         }
     }
 }

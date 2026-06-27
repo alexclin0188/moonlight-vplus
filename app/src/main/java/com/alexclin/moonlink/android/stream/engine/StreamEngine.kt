@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.stream.engine
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Point
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -158,6 +159,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     private var displayName: String? = null
     private var forceResumeCurrentSession: Boolean = false
     var pcUseVdd: Boolean = false
+    /** VDD 虚拟显示器宽度（0=使用客户端原生分辨率） */
+    private var vddWidth: Int = 0
+    /** VDD 虚拟显示器高度 */
+    private var vddHeight: Int = 0
+    /** VDD 虚拟显示器帧率 */
+    private var vddFps: Int = 90
 
     /** 智能码率服务引用（由外部 Game/StreamActivity 注入，用于手动调码率时同步状态） */
     var adaptiveBitrateService: com.limelight.nvstream.http.AdaptiveBitrateService? = null
@@ -554,10 +561,46 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
         val clientRefreshRateX100 = (displayRefreshRate * 100).roundToInt()
 
+        // VDD 模式下分辨率/帧率覆盖
+        val effectiveWidth: Int
+        val effectiveHeight: Int
+        val effectiveFps: Int
+        val effectiveLaunchFpsVal: Int
+        if (pcUseVdd) {
+            effectiveFps = vddFps
+            effectiveLaunchFpsVal = vddFps
+            if (vddWidth > 0 && vddHeight > 0) {
+                effectiveWidth = vddWidth
+                effectiveHeight = vddHeight
+            } else {
+                // 使用客户端设备原生分辨率
+                val size = Point()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val bounds = activity.windowManager.currentWindowMetrics.bounds
+                    size.set(bounds.width(), bounds.height())
+                } else {
+                    @Suppress("DEPRECATION")
+                    val display = activity.windowManager.defaultDisplay
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        display.getRealSize(size)
+                    } else {
+                        display.getSize(size)
+                    }
+                }
+                effectiveWidth = maxOf(size.x, size.y)
+                effectiveHeight = minOf(size.x, size.y)
+            }
+        } else {
+            effectiveWidth = prefConfig.width
+            effectiveHeight = prefConfig.height
+            effectiveFps = chosenFrameRate
+            effectiveLaunchFpsVal = effectiveLaunchFps
+        }
+
         return StreamConfiguration.Builder()
-            .setResolution(prefConfig.width, prefConfig.height)
-            .setLaunchRefreshRate(effectiveLaunchFps)
-            .setRefreshRate(chosenFrameRate)
+            .setResolution(effectiveWidth, effectiveHeight)
+            .setLaunchRefreshRate(effectiveLaunchFpsVal)
+            .setRefreshRate(effectiveFps)
             .setApp(app)
             .setBitrate(prefConfig.bitrate)
             .setResolutionScale(if (applyDisplaySettings) prefConfig.resolutionScale else 100)
@@ -2008,7 +2051,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.screenOffsetY = settings.screenOffsetY
         prefConfig.reduceRefreshRate = settings.reduceRefreshRate
         prefConfig.fullRange = settings.fullRange
-        prefConfig.screenCombinationMode = settings.screenCombinationMode
+
+        // ── 虚拟显示器 ──
+        vddWidth = settings.vddWidth
+        vddHeight = settings.vddHeight
+        vddFps = settings.vddFps
 
         // ── 主机设置 ──
         prefConfig.enableSops = settings.enableSops
@@ -2071,6 +2118,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.showQuickKeyCard = settings.showQuickKeyCard
         prefConfig.keyMappingEnabled = settings.keyMappingEnabled
         prefConfig.disableWarnings = settings.disableWarnings
+        prefConfig.showPauseStream = settings.showPauseStream
     }
 
     /**
