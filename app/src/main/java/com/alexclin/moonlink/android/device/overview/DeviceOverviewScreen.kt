@@ -5,6 +5,8 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -17,6 +19,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.theme.windowsBlue
@@ -25,12 +29,12 @@ import com.alexclin.moonlink.android.theme.statusOffline
 import com.alexclin.moonlink.android.theme.statusOnline
 import androidx.compose.animation.core.*
 import androidx.compose.ui.graphics.graphicsLayer
+import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import com.alexclin.moonlink.android.home.fetchAndCacheAppListAndBoxArt
 import com.alexclin.moonlink.android.home.getDefaultQuickStartApp
 import com.alexclin.moonlink.android.home.loadCachedAppList
 import com.alexclin.moonlink.android.stream.StreamActivity
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
-import com.limelight.AppView
 import com.limelight.SunshineWebUiActivity
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
@@ -52,6 +56,7 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.core.content.edit
 
 @Composable
 fun DeviceOverviewScreen(
@@ -68,6 +73,15 @@ fun DeviceOverviewScreen(
     val computer = findComputer(computers, uuid)
     var appList by remember(uuid) { mutableStateOf(loadCachedAppList(context, uuid)) }
     var displaysInfo by remember(uuid) { mutableStateOf<List<NvHTTP.DisplayInfo>?>(null) }
+
+    // ── 选中显示器持久化状态 ────────────────────────────
+    val displayPrefs = context.getSharedPreferences("display_settings", Context.MODE_PRIVATE)
+    var selectedDisplayGuid by remember(uuid) {
+        mutableStateOf(displayPrefs.getString("selected_display_$uuid", null))
+    }
+    var selectedVddEnabled by remember(uuid) {
+        mutableStateOf(displayPrefs.getBoolean("vdd_enabled_$uuid", false))
+    }
 
     // ── 进入概要页时立即触发该设备的重新探测 ──
     // 标记为 UNKNOWN 并重启轮询 Job，无需等待下一个轮询周期。
@@ -123,6 +137,23 @@ fun DeviceOverviewScreen(
             }
         } else {
             displaysInfo = null
+        }
+    }
+
+    // ── 显示器列表变化时，校验已存储的选中显示器是否仍在列表中 ──
+    // 不在则清空存储（说明该显示器已被拔除或重命名）
+    LaunchedEffect(displaysInfo) {
+        val list = displaysInfo ?: return@LaunchedEffect
+        val storedGuid = selectedDisplayGuid ?: return@LaunchedEffect
+        val exists = list.any { d -> (d.guid.ifEmpty { d.name }) == storedGuid }
+        if (!exists) {
+            selectedDisplayGuid = null
+            selectedVddEnabled = false
+            displayPrefs.edit()
+                .remove("selected_display_$uuid")
+                .remove("selected_display_name_$uuid")
+                .putBoolean("vdd_enabled_$uuid", false)
+                .apply()
         }
     }
 
@@ -188,144 +219,45 @@ fun DeviceOverviewScreen(
                     ) {
                         Column(modifier = Modifier.fillMaxSize()) {
                             // ── 桌面缩略图 (自适应剩余高度，无内边距，仅顶部圆角) ────────
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                                    .clickable(enabled = isOnline) {
-                                        val forceResume = computer.runningGameId != 0
-                                        launchStreamFromOverview(context, computer, managerBinder, forceResume = forceResume)
-                                    },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                // Desktop box art
-                                DeviceBoxArt(
-                                    uuid = computer.uuid,
-                                    isOnline = isOnline,
-                                    modifier = Modifier.fillMaxSize(),
-                                    clipShape = RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp),
-                                )
-
-                                // Status badge (top-start)
-                                val badgeColor = if (isOnline) statusOnline else statusOffline
-                                val badgeText  = if (isOnline) "在线" else "离线"
-                                Box(
-                                    modifier = Modifier
-                                        .align(Alignment.TopStart)
-                                        .padding(8.dp)
-                                        .background(
-                                            badgeColor.copy(alpha = 0.85f),
-                                            RoundedCornerShape(4.dp),
-                                        )
-                                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                                ) {
-                                    Text(
-                                        text = badgeText,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White,
-                                    )
-                                }
-
-                                // OS icon + IP at top-center
-                                Row(
-                                    modifier = Modifier
-                                        .align(Alignment.TopCenter)
-                                        .padding(top = 12.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Icon(
-                                        Icons.Default.DesktopWindows,
-                                        contentDescription = "Windows",
-                                        modifier = Modifier.size(20.dp),
-                                        tint = windowsBlue,
-                                    )
-                                    computer.activeAddress?.let { addr ->
-                                        Spacer(Modifier.width(4.dp))
-                                        Text(
-                                            text = addr.toString(),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = Color.White.copy(alpha = 0.9f),
-                                            maxLines = 1,
-                                        )
+                            DesktopThumbnailBox(
+                                modifier = Modifier.weight(1f),
+                                clipRadius = 12.dp,
+                                showLoadingDots = false,
+                                computer = computer,
+                                isOnline = isOnline,
+                                displaysInfo = displaysInfo,
+                                selectedDisplayGuid = selectedDisplayGuid,
+                                selectedVddEnabled = selectedVddEnabled,
+                                managerBinder = managerBinder,
+                                onDisplaySelected = { guid, name ->
+                                    selectedDisplayGuid = guid
+                                    selectedVddEnabled = false
+                                    displayPrefs.edit {
+                                        putString("selected_display_$uuid", guid)
+                                            .putBoolean("vdd_enabled_$uuid", false)
                                     }
-                                }
-
-                                // Display selector blocks (Sunshine displays API)
-                                val displayInfoList = displaysInfo
-                                if (displayInfoList != null && displayInfoList.isNotEmpty()) {
-                                    Row(
-                                        modifier = Modifier
-                                            .align(Alignment.Center)
-                                            .padding(top = 12.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                    ) {
-                                        displayInfoList.forEach { display ->
-                                            DisplayBlock(
-                                                display = display,
-                                                computer = computer,
-                                                managerBinder = managerBinder,
-                                                context = context,
-                                            )
-                                        }
+                                    launchStreamFromOverview(context, computer, managerBinder, displayName = name)
+                                },
+                                onVddSelected = {
+                                    selectedVddEnabled = true
+                                    selectedDisplayGuid = null
+                                    displayPrefs.edit {
+                                        remove("selected_display_$uuid")
+                                            .putBoolean("vdd_enabled_$uuid", true)
                                     }
-                                }
-
-                                // Bottom overlay: "进入桌面 >"（仅在线时显示）
-                                if (isOnline) {
-                                    Text(
-                                        "进入桌面 >",
-                                        style = MaterialTheme.typography.titleMedium.copy(
-                                            fontWeight = FontWeight.SemiBold,
-                                        ),
-                                        color = Color.White,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .padding(bottom = 16.dp),
-                                    )
-                                }
-
-                                // Offline overlay
-                                if (!isOnline) {
-                                    Box(
-                                        Modifier
-                                            .matchParentSize()
-                                            .background(Color.Black.copy(alpha = 0.4f)),
-                                    )
-                                }
-                            }
+                                    launchStreamFromOverview(context, computer, managerBinder, forceVdd = true)
+                                },
+                            )
 
                             // ── 操作按钮行 ─────────────────────
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 8.dp),
-                            ) {
-                                if (showQuickActionButton) {
-                                    OverviewActionButton(
-                                        icon = Icons.Default.Bolt,
-                                        label = "快捷操作",
-                                        modifier = Modifier.weight(1f),
-                                        onClick = { showQuickActions = true },
-                                    )
-                                }
-                                VerticalDivider(modifier = Modifier.height(48.dp))
-                                OverviewActionButton(
-                                    icon = Icons.Default.Info,
-                                    label = "设备详情",
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onNavigateToDetail,
-                                )
-                                VerticalDivider(modifier = Modifier.height(48.dp))
-                                OverviewActionButton(
-                                    icon = Icons.Default.Settings,
-                                    label = "串流设置",
-                                    modifier = Modifier.weight(1f),
-                                    onClick = onNavigateToStreamSettings,
-                                )
-                            }
+                            DesktopActionRow(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                                dividerHeight = 48.dp,
+                                showQuickActionButton = showQuickActionButton,
+                                onShowQuickActions = { showQuickActions = true },
+                                onNavigateToDetail = onNavigateToDetail,
+                                onNavigateToStreamSettings = onNavigateToStreamSettings,
+                            )
                         }
                     }
 
@@ -345,35 +277,13 @@ fun DeviceOverviewScreen(
                             )
                             Spacer(Modifier.height(12.dp))
 
-                            // App grid — 4 columns
-                            val columns = 4
-                            val visibleApps = appList.filter {
-                                it.appId != NvApp.DESKTOP_APP_ID && !"Desktop".equals(it.appName,ignoreCase = true)
-                            }
-
-                            Column {
-                                visibleApps.chunked(columns).forEach { row ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceEvenly,
-                                    ) {
-                                        row.forEach { app ->
-                                            AppIconItem(
-                                                app = app,
-                                                uuid = uuid,
-                                                isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
-                                                onClick = {
-                                                    launchStreamFromOverview(context, computer, managerBinder, app = app)
-                                                },
-                                                modifier = Modifier.weight(1f),
-                                            )
-                                        }
-                                        repeat(columns - row.size) {
-                                            Spacer(Modifier.weight(1f))
-                                        }
-                                    }
-                                }
-                            }
+                            QuickLaunchGrid(
+                                appList = appList,
+                                uuid = uuid,
+                                computer = computer,
+                                context = context,
+                                managerBinder = managerBinder,
+                            )
                         }
                     } else {
                         // 无快速启动时显示提示
@@ -402,7 +312,7 @@ fun DeviceOverviewScreen(
                     .verticalScroll(rememberScrollState()),
             ) {
                 // ── Main card ─────────────────────────────
-            Card(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp),
@@ -411,176 +321,50 @@ fun DeviceOverviewScreen(
                         containerColor = MaterialTheme.colorScheme.surface,
                     ),
                 ) {
-                    Column {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1.5f),
+                    ) {
                         // ── Thumbnail area ─────────────────
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(200.dp)
-                                .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .clickable(enabled = isOnline) {
-                                    val forceResume = computer.runningGameId != 0
-                                    launchStreamFromOverview(context, computer, managerBinder, forceResume = forceResume)
-                                },
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            // Desktop box art
-                            DeviceBoxArt(
-                                uuid = computer.uuid,
-                                isOnline = isOnline,
-                                modifier = Modifier.fillMaxSize(),
-                                clipShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                            )
-
-                            // Status badge (bottom-start)
-                            val badgeColor = if (isOnline) statusOnline else statusOffline
-                            val badgeText  = if (isOnline) "在线" else "离线"
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(8.dp)
-                                    .background(
-                                        badgeColor.copy(alpha = 0.85f),
-                                        RoundedCornerShape(4.dp),
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                            ) {
-                                Text(
-                                    text = badgeText,
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = Color.White,
-                                )
-                            }
-
-                            // Loading dots for unpaired UNKNOWN (marquee animation)
-                            val isUnknown = computer.state == ComputerDetails.State.UNKNOWN
-                            val isPairedUnknown = computer.pairState == PairingManager.PairState.PAIRED
-                            if (isUnknown && !isPairedUnknown) {
-                                val infiniteTransition = rememberInfiniteTransition(label = "loading")
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    modifier = Modifier.align(Alignment.Center),
-                                ) {
-                                    repeat(3) { index ->
-                                        val alpha by infiniteTransition.animateFloat(
-                                            initialValue = 0.3f,
-                                            targetValue = 1f,
-                                            animationSpec = infiniteRepeatable(
-                                                animation = tween(600, delayMillis = index * 200),
-                                                repeatMode = RepeatMode.Reverse,
-                                            ),
-                                            label = "dot$index",
-                                        )
-                                        Box(
-                                            modifier = Modifier
-                                                .size(8.dp)
-                                                .graphicsLayer { this.alpha = alpha }
-                                                .background(
-                                                    MaterialTheme.colorScheme.primary,
-                                                    RoundedCornerShape(50),
-                                                ),
-                                        )
-                                    }
+                        DesktopThumbnailBox(
+                            modifier = Modifier.weight(1f),
+                            clipRadius = 16.dp,
+                            showLoadingDots = true,
+                            computer = computer,
+                            isOnline = isOnline,
+                            displaysInfo = displaysInfo,
+                            selectedDisplayGuid = selectedDisplayGuid,
+                            selectedVddEnabled = selectedVddEnabled,
+                            managerBinder = managerBinder,
+                            onDisplaySelected = { guid, name ->
+                                selectedDisplayGuid = guid
+                                selectedVddEnabled = false
+                                displayPrefs.edit {
+                                    putString("selected_display_$uuid", guid)
+                                        .putBoolean("vdd_enabled_$uuid", false)
                                 }
-                            }
-
-                            // OS icon + IP at top-start area
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.TopCenter)
-                                    .padding(top = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Icon(
-                                    Icons.Default.DesktopWindows,
-                                    contentDescription = "Windows",
-                                    modifier = Modifier.size(20.dp),
-                                    tint = windowsBlue,
-                                )
-                                computer.activeAddress?.let { addr ->
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = addr.toString(),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = Color.White.copy(alpha = 0.9f),
-                                        maxLines = 1,
-                                    )
+                                launchStreamFromOverview(context, computer, managerBinder, displayName = name)
+                            },
+                            onVddSelected = {
+                                selectedVddEnabled = true
+                                selectedDisplayGuid = null
+                                displayPrefs.edit {
+                                    remove("selected_display_$uuid")
+                                        .putBoolean("vdd_enabled_$uuid", true)
                                 }
-                            }
-
-                            // Display selector blocks (Sunshine displays API)
-                            val displayInfoList = displaysInfo
-                            if (displayInfoList != null && displayInfoList.isNotEmpty()) {
-                                Row(
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .padding(top = 12.dp),
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    displayInfoList.forEach { display ->
-                                        DisplayBlock(
-                                            display = display,
-                                            computer = computer,
-                                            managerBinder = managerBinder,
-                                            context = context,
-                                        )
-                                    }
-                                }
-                            }
-
-                            // Bottom overlay: "进入桌面 >"（仅在线时显示）
-                            if (isOnline) {
-                                Text(
-                                    "进入桌面 >",
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.SemiBold,
-                                    ),
-                                    color = Color.White,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(bottom = 16.dp),
-                                )
-                            }
-
-                            // Offline overlay
-                            if (!isOnline) {
-                                Box(
-                                    Modifier
-                                        .matchParentSize()
-                                        .background(Color.Black.copy(alpha = 0.4f)),
-                                )
-                            }
-                        }
+                                launchStreamFromOverview(context, computer, managerBinder, forceVdd = true)
+                            },
+                        )
 
                         // ── Button row ─────────────────────
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                        ) {
-                            if (showQuickActionButton) {
-                                OverviewActionButton(
-                                    icon = Icons.Default.Bolt,
-                                    label = "快捷操作",
-                                    modifier = Modifier.weight(1f),
-                                    onClick = { showQuickActions = true },
-                                )
-                            }
-                            VerticalDivider(modifier = Modifier.height(56.dp))
-                            OverviewActionButton(
-                                icon = Icons.Default.Info,
-                                label = "设备详情",
-                                modifier = Modifier.weight(1f),
-                                onClick = onNavigateToDetail,
-                            )
-                            VerticalDivider(modifier = Modifier.height(56.dp))
-                            OverviewActionButton(
-                                icon = Icons.Default.Settings,
-                                label = "串流设置",
-                                modifier = Modifier.weight(1f),
-                                onClick = onNavigateToStreamSettings,
-                            )
-                        }
+                        DesktopActionRow(
+                            dividerHeight = 56.dp,
+                            showQuickActionButton = showQuickActionButton,
+                            onShowQuickActions = { showQuickActions = true },
+                            onNavigateToDetail = onNavigateToDetail,
+                            onNavigateToStreamSettings = onNavigateToStreamSettings,
+                        )
                     }
                 }
 
@@ -594,38 +378,14 @@ fun DeviceOverviewScreen(
                         modifier = Modifier.padding(horizontal = 16.dp),
                     )
                     Spacer(Modifier.height(12.dp))
-
-                    // App grid — 4 columns
-                    val columns = 4
-                    val visibleApps = appList.filter {
-                        it.appId != NvApp.DESKTOP_APP_ID && !"Desktop".equals(it.appName,ignoreCase = true)// Exclude Desktop from grid
-                    }
-
-                    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
-                        visibleApps.chunked(columns).forEach { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceEvenly,
-                            ) {
-                                row.forEach { app ->
-                                    AppIconItem(
-                                        app = app,
-                                        uuid = uuid,
-                                        isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
-                                        onClick = {
-                                            launchStreamFromOverview(context, computer, managerBinder, app = app)
-                                        },
-                                        modifier = Modifier.weight(1f),
-                                    )
-                                }
-                                // Fill remaining slots
-                                repeat(columns - row.size) {
-                                    Spacer(Modifier.weight(1f))
-                                }
-                            }
-                            Spacer(Modifier.height(8.dp))
-                        }
-                    }
+                    QuickLaunchGrid(
+                        appList = appList,
+                        uuid = uuid,
+                        computer = computer,
+                        context = context,
+                        managerBinder = managerBinder,
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                    )
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -976,70 +736,397 @@ private fun DialogActionRow(text: String, onClick: () -> Unit) {
     }
 }
 
-// ── Enhanced display block (Sunshine displays API) ─────────────────
+// ── Desktop thumbnail area (shared by landscape & portrait) ─────────
 
+/**
+ * @param clipRadius 缩略图顶部圆角半径 — 横屏 12.dp，竖屏 16.dp
+ * @param showLoadingDots 是否显示配对加载动画 — 仅竖屏需要
+ * @param onDisplaySelected 用户点击物理显示器 Chip 时的回调
+ * @param onVddSelected 用户点击 VDD Chip 时的回调
+ */
 @Composable
-private fun DisplayBlock(
-    display: NvHTTP.DisplayInfo,
+private fun DesktopThumbnailBox(
+    clipRadius: Dp,
+    showLoadingDots: Boolean,
+    modifier: Modifier = Modifier,
     computer: ComputerDetails,
+    isOnline: Boolean,
+    displaysInfo: List<NvHTTP.DisplayInfo>?,
+    selectedDisplayGuid: String?,
+    selectedVddEnabled: Boolean,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
-    context: Context,
+    onDisplaySelected: (guid: String, name: String) -> Unit,
+    onVddSelected: () -> Unit,
 ) {
-    val isPrimary = display.isPrimary
-    val bgColor = if (isPrimary) Color(0xFFFFF3CD).copy(alpha = 0.5f) else Color.White.copy(alpha = 0.5f)
-    val borderMod = if (isPrimary) {
-        Modifier.border(1.5.dp, Color(0xFFFFC107), RoundedCornerShape(4.dp))
-    } else {
-        Modifier
-    }
-
+    val context = LocalContext.current
     Box(
-        modifier = Modifier
-            .wrapContentWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(4.dp))
-            .background(bgColor)
-            .then(borderMod)
-            .clickable {
-                launchStreamFromOverview(context, computer, managerBinder, displayName = display.name)
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(topStart = clipRadius, topEnd = clipRadius))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .clickable(enabled = isOnline) {
+                val forceResume = computer.runningGameId != 0
+                launchStreamFromOverview(
+                    context, computer, managerBinder,
+                    forceResume = forceResume,
+                )
             },
+        contentAlignment = Alignment.Center,
     ) {
-        Column(
+        // Desktop box art
+        DeviceBoxArt(
+            uuid = computer.uuid,
+            isOnline = isOnline,
+            modifier = Modifier.fillMaxSize(),
+            clipShape = RoundedCornerShape(topStart = clipRadius, topEnd = clipRadius),
+        )
+
+        // Status badge (top-start)
+        val badgeColor = if (isOnline) statusOnline else statusOffline
+        val badgeText  = if (isOnline) "在线" else "离线"
+        Box(
             modifier = Modifier
-                .fillMaxHeight()
-                .padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
+                .align(Alignment.TopStart)
+                .padding(8.dp)
+                .background(
+                    badgeColor.copy(alpha = 0.85f),
+                    RoundedCornerShape(4.dp),
+                )
+                .padding(horizontal = 6.dp, vertical = 2.dp),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                if (isPrimary) {
-                    Icon(
-                        Icons.Default.Star,
-                        contentDescription = "主显示器",
-                        modifier = Modifier.size(14.dp),
-                        tint = Color(0xFFFF8F00),
-                    )
+            Text(
+                text = badgeText,
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White,
+            )
+        }
+
+        // Loading dots for unpaired UNKNOWN (marquee animation) — 仅竖屏
+        if (showLoadingDots) {
+            val isUnknown = computer.state == ComputerDetails.State.UNKNOWN
+            val isPairedUnknown = computer.pairState == PairingManager.PairState.PAIRED
+            if (isUnknown && !isPairedUnknown) {
+                val infiniteTransition = rememberInfiniteTransition(label = "loading")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier.align(Alignment.Center),
+                ) {
+                    repeat(3) { index ->
+                        val alpha by infiniteTransition.animateFloat(
+                            initialValue = 0.3f,
+                            targetValue = 1f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(600, delayMillis = index * 200),
+                                repeatMode = RepeatMode.Reverse,
+                            ),
+                            label = "dot$index",
+                        )
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .graphicsLayer { this.alpha = alpha }
+                                .background(
+                                    MaterialTheme.colorScheme.primary,
+                                    RoundedCornerShape(50),
+                                ),
+                        )
+                    }
                 }
+            }
+        }
+
+        // OS icon + IP at top-center
+        Row(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Default.DesktopWindows,
+                contentDescription = "Windows",
+                modifier = Modifier.size(20.dp),
+                tint = windowsBlue,
+            )
+            computer.activeAddress?.let { addr ->
+                Spacer(Modifier.width(4.dp))
                 Text(
-                    text = display.name,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Medium,
-                    ),
-                    color = if (isPrimary) Color(0xFF5D4037) else Color.Black,
-                    maxLines = 2,
+                    text = addr.toString(),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White.copy(alpha = 0.9f),
+                    maxLines = 1,
                 )
             }
+        }
+
+        // Display selector chips (Sunshine displays API)
+        DisplayChipRow(
+            displaysInfo = displaysInfo,
+            selectedDisplayGuid = selectedDisplayGuid,
+            selectedVddEnabled = selectedVddEnabled,
+            onDisplaySelected = onDisplaySelected,
+            onVddSelected = onVddSelected,
+        )
+
+        // Bottom overlay: "进入桌面 >"（仅在线时显示）
+        if (isOnline) {
             Text(
-                text = "${display.currentScalePercent}%",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
+                "进入桌面 >",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold,
                 ),
-                color = if (isPrimary) Color(0xFF8D6E63) else Color.Black.copy(alpha = 0.5f),
+                color = Color.White,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 16.dp),
+            )
+        }
+
+        // Offline overlay
+        if (!isOnline) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.4f)),
+            )
+        }
+    }
+}
+
+// ── Action button row (shared by landscape & portrait) ────────────
+
+@Composable
+private fun DesktopActionRow(
+    dividerHeight: Dp,
+    showQuickActionButton: Boolean,
+    modifier: Modifier = Modifier,
+    onShowQuickActions: () -> Unit,
+    onNavigateToDetail: () -> Unit,
+    onNavigateToStreamSettings: () -> Unit,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        if (showQuickActionButton) {
+            OverviewActionButton(
+                icon = Icons.Default.Bolt,
+                label = "快捷操作",
+                modifier = Modifier.weight(1f),
+                onClick = onShowQuickActions,
+            )
+        }
+        VerticalDivider(modifier = Modifier.height(dividerHeight))
+        OverviewActionButton(
+            icon = Icons.Default.Info,
+            label = "设备详情",
+            modifier = Modifier.weight(1f),
+            onClick = onNavigateToDetail,
+        )
+        VerticalDivider(modifier = Modifier.height(dividerHeight))
+        OverviewActionButton(
+            icon = Icons.Default.Settings,
+            label = "串流设置",
+            modifier = Modifier.weight(1f),
+            onClick = onNavigateToStreamSettings,
+        )
+    }
+}
+
+// ── Quick launch grid (shared by landscape & portrait) ────────────
+
+@Composable
+private fun QuickLaunchGrid(
+    appList: List<NvApp>,
+    uuid: String,
+    computer: ComputerDetails,
+    context: Context,
+    managerBinder: ComputerManagerService.ComputerManagerBinder?,
+    modifier: Modifier = Modifier,
+) {
+    if (appList.isEmpty()) return
+
+    val columns = 4
+    val visibleApps = appList.filter {
+        it.appId != NvApp.DESKTOP_APP_ID && !"Desktop".equals(it.appName, ignoreCase = true)
+    }
+
+    Column(modifier = modifier) {
+        visibleApps.chunked(columns).forEach { row ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                row.forEach { app ->
+                    AppIconItem(
+                        app = app,
+                        uuid = uuid,
+                        isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
+                        onClick = {
+                            launchStreamFromOverview(context, computer, managerBinder, app = app)
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                repeat(columns - row.size) {
+                    Spacer(Modifier.weight(1f))
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
+    }
+}
+
+// ── Display chip row (horizontally scrollable chips) ────────────────
+
+@Composable
+private fun DisplayChipRow(
+    displaysInfo: List<NvHTTP.DisplayInfo>?,
+    selectedDisplayGuid: String?,
+    selectedVddEnabled: Boolean,
+    onDisplaySelected: (guid: String, name: String) -> Unit,
+    onVddSelected: () -> Unit,
+) {
+    if (displaysInfo.isNullOrEmpty() && !selectedVddEnabled) return
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp)
+            .background(Color.Transparent, RoundedCornerShape(6.dp))
+            .padding(horizontal = 4.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // 物理显示器 Chip
+        if (!displaysInfo.isNullOrEmpty()) {
+            items(displaysInfo, key = { it.guid.ifEmpty { it.name } }) { display ->
+                val guid = display.guid.ifEmpty { display.name }
+                DisplayChip(
+                    display = display,
+                    isSelected = guid == selectedDisplayGuid,
+                    onClick = { onDisplaySelected(guid, display.name) },
+                )
+            }
+        }
+        // VDD Chip
+        item(key = "__vdd__") {
+            VddChip(
+                isSelected = selectedVddEnabled,
+                onClick = onVddSelected,
+            )
+        }
+    }
+}
+
+// ── Display chip (physical display) ──────────────────────────────
+
+@Composable
+private fun DisplayChip(
+    display: NvHTTP.DisplayInfo,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val containerColor = if (isSelected)
+        MaterialTheme.colorScheme.primaryContainer
+    else
+        MaterialTheme.colorScheme.surfaceVariant
+
+    val borderMod = if (isSelected)
+        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+    else if (display.isPrimary)
+        Modifier.border(1.dp, Color(0xFFFFC107), RoundedCornerShape(6.dp))
+    else
+        Modifier
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor.copy(alpha = 0.5f),
+        modifier = Modifier
+            .widthIn(min = 56.dp, max = 110.dp)
+            .height(50.dp)
+            .then(borderMod)
+            .clickable(onClick = onClick),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        ) {
+            // 第一行: "显示器" + 主屏星标（蓝色文字）
+            Text(
+                text = buildString {
+                    append("显示器")
+                    if (display.isPrimary) append(" ★")
+                },
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
             )
+            Spacer(Modifier.height(1.dp))
+            // 第二行: DisplayName
+            Text(
+                text = display.name,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+            )
+        }
+    }
+}
+
+// ── VDD chip ────────────────────────────────────────────────────
+
+@Composable
+private fun VddChip(
+    isSelected: Boolean,
+    onClick: () -> Unit,
+) {
+    val containerColor = if (isSelected)
+        MaterialTheme.colorScheme.primaryContainer
+    else
+        MaterialTheme.colorScheme.surfaceVariant
+
+    val borderMod = if (isSelected)
+        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(6.dp))
+    else
+        Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = containerColor.copy(alpha = 0.5f),
+        modifier = Modifier
+            .widthIn(min = 56.dp, max = 96.dp)
+            .height(50.dp)
+            .then(borderMod)
+            .clickable(onClick = onClick),
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+        ) {
+            Text(
+                text = "显示器",
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                color = MaterialTheme.colorScheme.primary,
+                maxLines = 1,
+            )
+            Spacer(Modifier.height(1.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.Monitor,
+                    contentDescription = null,
+                    modifier = Modifier.size(11.dp),
+                )
+                Spacer(Modifier.width(2.dp))
+                Text(
+                    text = "虚拟显示器",
+                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+            }
         }
     }
 }
@@ -1053,6 +1140,7 @@ private fun launchStreamFromOverview(
     app: NvApp? = null,
     forceResume: Boolean = false,
     displayName: String? = null,
+    forceVdd: Boolean = false,
 ) {
     if (managerBinder == null) return
     val activity = context as? android.app.Activity ?: return
@@ -1086,10 +1174,21 @@ private fun launchStreamFromOverview(
         return
     }
 
+    // ── 读取主机级屏幕组合模式 ──────────────────────────
+    val hostSettings = computer.uuid?.let { id ->
+        HostSettingsManager(context).getSettings(id)
+    }
+    val screenCombinationMode = hostSettings?.screenCombinationMode ?: -1
+
     // ── 使用新版 StreamActivity ──
     // useLastSettings 标志传递给 StreamActivity，由 StreamEngine 在初始化时应用
     val useLastSettings = AppSettingsManager(context).isUseLastSettingsEnabled
-    val intent = createStreamIntent(context, computer, targetApp, managerBinder, useLastSettings, forceResume, displayName)
+    val intent = createStreamIntent(
+        context, computer, targetApp, managerBinder,
+        useLastSettings, forceResume, displayName,
+        screenCombinationMode = screenCombinationMode,
+        forceVdd = forceVdd,
+    )
     context.startActivity(intent)
 }
 
@@ -1106,6 +1205,8 @@ private fun createStreamIntent(
     useLastSettings: Boolean,
     forceResume: Boolean = false,
     displayName: String? = null,
+    screenCombinationMode: Int = -1,
+    forceVdd: Boolean = false,
 ): Intent {
     return Intent(context, StreamActivity::class.java).apply {
         putExtra("Host", computer.activeAddress?.address)
@@ -1121,9 +1222,17 @@ private fun createStreamIntent(
         computer.serverCert?.let { putExtra("ServerCert", it.encoded) }
         putExtra("ForceResumeCurrentSession", forceResume)
         putExtra("PairName", computer.getPairName(context))
-        putExtra("usevdd", computer.useVdd)
+        putExtra("usevdd", forceVdd || computer.useVdd)
         if (!displayName.isNullOrEmpty()) {
             putExtra("DisplayName", displayName)
+        }
+        // 传递屏幕组合模式
+        if (screenCombinationMode != -1) {
+            if (forceVdd || computer.useVdd) {
+                putExtra("VDD screen combination mode", screenCombinationMode)
+            } else {
+                putExtra("Screen combination mode", screenCombinationMode)
+            }
         }
         if (useLastSettings) {
             val uuid = computer.uuid
