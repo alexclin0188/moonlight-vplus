@@ -931,6 +931,9 @@ fun DisplaySwitchesCategory(
             SettingSwitchRow("使用外接显示器", settings.useExternalDisplay) {
                 onSettingsChange(settings.copy(useExternalDisplay = it))
             }
+            SettingSwitchRow("仅控制模式", settings.controlOnly) {
+                onSettingsChange(settings.copy(controlOnly = it))
+            }
         }
 
         // PiP
@@ -964,9 +967,6 @@ fun HostCategory(
                 }
                 SettingSwitchRow("在电脑上播放声音", settings.playHostAudio) {
                     onSettingsChange(settings.copy(playHostAudio = it))
-                }
-                SettingSwitchRow("仅控制模式", settings.controlOnly) {
-                    onSettingsChange(settings.copy(controlOnly = it))
                 }
                 SettingSwitchRow("同步剪贴板文本", settings.enableClipboardSyncText) {
                     onSettingsChange(settings.copy(enableClipboardSyncText = it))

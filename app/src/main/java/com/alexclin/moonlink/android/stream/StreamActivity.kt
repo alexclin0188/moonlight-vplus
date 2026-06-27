@@ -14,15 +14,22 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -181,6 +188,28 @@ class StreamActivity : ComponentActivity() {
                         },
                         modifier = Modifier.fillMaxSize()
                     )
+
+                    // 仅控制模式提示覆盖层（连接完成后显示，位于本地光标之下，保证光标绘制在上层）
+                    if (connectionStage == null && engine.prefConfig.controlOnly) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xCC000000.toInt()),
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            ) {
+                                Text(
+                                    text = "当前为仅控制模式\n如需退出，请在主机串流设置的画面开关中关闭",
+                                    color = Color(0xFFCCCCCC.toInt()),
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                                )
+                            }
+                        }
+                    }
 
                     // 本地光标覆盖层（触控板模式下绘制）
                     if (engine.showLocalCursor) {
@@ -838,6 +867,28 @@ class StreamActivity : ComponentActivity() {
                     val touchEnabled = engine.configTouchEnabled
                     val touchSense = engine.configTouchSense
                     val enhancedTouch = engine.configEnhancedTouch
+
+                    // 仅控制模式提示覆盖层（连接完成后显示，位于按键映射层和面板层之下，保证触控事件穿透）
+                    if (connectionStage == null && engine.prefConfig.controlOnly) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = Color(0xCC000000.toInt()),
+                                modifier = Modifier.padding(horizontal = 32.dp),
+                            ) {
+                                Text(
+                                    text = "当前为仅控制模式\n如需退出，请在主机串流设置的画面开关中关闭",
+                                    color = Color(0xFFCCCCCC.toInt()),
+                                    fontSize = 16.sp,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(horizontal = 24.dp, vertical = 20.dp),
+                                )
+                            }
+                        }
+                    }
 
                     if (overlayElements.isNotEmpty() && !engine.isFullScreenPageActive) {
                         // 过滤被 GroupButton 隐藏的子元素

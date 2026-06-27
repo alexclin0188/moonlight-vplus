@@ -98,7 +98,6 @@ fun QuickActionRow(
                     "toggle_mic" -> engine.prefConfig.enableMic
                     "toggle_pip" -> engine.prefConfig.enablePip
                     "toggle_adaptive_bitrate" -> engine.prefConfig.enableAdaptiveBitrate
-                    "toggle_control_only" -> engine.prefConfig.controlOnly
                     "toggle_gyro" -> engine.prefConfig.gyroToRightStick || engine.prefConfig.gyroToMouse
                     "toggle_perf" -> engine.prefConfig.enablePerfOverlay
                     else -> null
@@ -266,7 +265,6 @@ private fun executeAction(id: String, engine: StreamEngine) {
         "toggle_perf" -> engine.togglePerformanceOverlay()
         MoonLinkQuickActions.TOGGLE_PIP -> engine.togglePip()
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> engine.toggleAdaptiveBitrate()
-        MoonLinkQuickActions.TOGGLE_CONTROL_ONLY -> engine.toggleControlOnly()
         MoonLinkQuickActions.TOGGLE_GYRO -> engine.toggleGyro()
     }
 }

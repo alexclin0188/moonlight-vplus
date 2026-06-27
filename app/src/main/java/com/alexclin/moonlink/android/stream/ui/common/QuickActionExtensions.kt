@@ -23,7 +23,6 @@ import com.limelight.QuickActionRegistry
 object MoonLinkQuickActions {
     const val TOGGLE_PIP = "toggle_pip"
     const val TOGGLE_ADAPTIVE_BITRATE = "toggle_adaptive_bitrate"
-    const val TOGGLE_CONTROL_ONLY = "toggle_control_only"
     const val TOGGLE_GYRO = "toggle_gyro"
 }
 
@@ -43,7 +42,6 @@ fun getActionIcon(id: String, isActive: Boolean? = null): ImageVector? {
         "toggle_perf" -> Icons.Default.Tune
         MoonLinkQuickActions.TOGGLE_PIP -> Icons.Default.Layers
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> Icons.Default.GraphicEq
-        MoonLinkQuickActions.TOGGLE_CONTROL_ONLY -> Icons.Default.SettingsRemote
         MoonLinkQuickActions.TOGGLE_GYRO -> Icons.Default.Sensors
         else -> null
     }
@@ -65,7 +63,6 @@ fun getActionLabel(id: String): String {
         "toggle_perf" -> "性能"
         MoonLinkQuickActions.TOGGLE_PIP -> "画中画"
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> "自适应码率"
-        MoonLinkQuickActions.TOGGLE_CONTROL_ONLY -> "纯控制"
         MoonLinkQuickActions.TOGGLE_GYRO -> "体感"
         else -> id
     }
@@ -76,7 +73,6 @@ fun getAllActionIds(): List<String> {
     val moonlinkIds = listOf(
         MoonLinkQuickActions.TOGGLE_PIP,
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE,
-        MoonLinkQuickActions.TOGGLE_CONTROL_ONLY,
         MoonLinkQuickActions.TOGGLE_GYRO,
     )
     return builtinIds + moonlinkIds

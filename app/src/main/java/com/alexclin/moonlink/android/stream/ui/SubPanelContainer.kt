@@ -872,12 +872,6 @@ private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
                 SettingSwitch("在电脑上播放声音", v) { v = it; pref.playHostAudio = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
-                var controlOnly by remember { mutableStateOf(pref.controlOnly) }
-                SettingSwitch("仅控制模式", controlOnly) {
-                    controlOnly = it; pref.controlOnly = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true
-                }
-            }
-            item {
                 var v by remember { mutableStateOf(pref.enableClipboardSyncText) }
                 SettingSwitch("同步剪贴板文本", v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
@@ -1019,7 +1013,6 @@ private fun getAllEditorActionIds(): List<String> {
     val moonlinkIds = listOf(
         MoonLinkQuickActions.TOGGLE_PIP,
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE,
-        MoonLinkQuickActions.TOGGLE_CONTROL_ONLY,
         MoonLinkQuickActions.TOGGLE_GYRO,
     )
     return builtinIds + moonlinkIds

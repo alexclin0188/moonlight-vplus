@@ -1397,13 +1397,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         adaptiveBitrateService = null
     }
 
-    fun toggleControlOnly() {
-        prefConfig.controlOnly = !prefConfig.controlOnly
-        prefConfig.writePreferences(activity)
-        syncToHostSettings { it.copy(controlOnly = prefConfig.controlOnly) }
-        displayTransientMessage(if (prefConfig.controlOnly) "纯控制模式已开启" else "纯控制模式已关闭")
-    }
-
     /**
      * 将当前 prefConfig 的变更同步到 per-device HostSettings，
      * 使设备串流设置页面（设备概要 → 串流设置）中对应的开关状态跟随变化。
@@ -1730,6 +1723,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         startAdaptiveBitrateIfEnabled()
         // 剪贴板同步
         initClipboardSync()
+
+        // 仅控制模式：无视频解码器，首帧回调不会触发，
+        // 在此直接通知 UI 连接完成，关闭进度 overlay
+        if (prefConfig.controlOnly) {
+            handler.post { onStageUpdate?.invoke("connected", true, false) }
+        }
     }
 
     override fun connectionTerminated(errorCode: Int) {
