@@ -171,16 +171,19 @@ class StreamActivity : ComponentActivity() {
                             }
                         },
                         update = { sv ->
+                            // 使用实际串流分辨率（VDD 模式下可能 ≠ prefConfig）
+                            val displayW = engine.actualStreamWidth.coerceAtLeast(1).let {
+                                if (it == 0) engine.prefConfig.width.coerceAtLeast(1) else it
+                            }
+                            val displayH = engine.actualStreamHeight.coerceAtLeast(1).let {
+                                if (it == 0) engine.prefConfig.height.coerceAtLeast(1) else it
+                            }
                             // 根据 stretchVideo 即时更新画面比例（纯客户端，无需重启串流）
                             if (engine.stretchVideo) {
                                 sv.setDesiredAspectRatio(0.0)
-                                sv.holder.setFixedSize(
-                                    engine.prefConfig.width.coerceAtLeast(1),
-                                    engine.prefConfig.height.coerceAtLeast(1)
-                                )
+                                sv.holder.setFixedSize(displayW, displayH)
                             } else {
-                                val aspect = engine.prefConfig.width.toFloat() /
-                                    engine.prefConfig.height.toFloat()
+                                val aspect = displayW.toFloat() / displayH.toFloat()
                                 sv.setDesiredAspectRatio(aspect.toDouble())
                                 sv.holder.setSizeFromLayout()
                             }

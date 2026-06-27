@@ -586,6 +586,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             effectiveLaunchFpsVal = effectiveLaunchFps
         }
 
+        // 保存实际串流分辨率，供 UI 层（StreamView 宽高比）使用
+        actualStreamWidth = effectiveWidth
+        actualStreamHeight = effectiveHeight
+
         return StreamConfiguration.Builder()
             .setResolution(effectiveWidth, effectiveHeight)
             .setLaunchRefreshRate(effectiveLaunchFpsVal)
@@ -1049,6 +1053,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 拉伸视频：纯客户端渲染，即时生效无需重启串流 */
     var stretchVideo: Boolean by mutableStateOf(false)
+
+    /** 实际串流宽度（可能 ≠ prefConfig.width，如 VDD 设备原生分辨率时） */
+    var actualStreamWidth: Int by mutableStateOf(0)
+
+    /** 实际串流高度 */
+    var actualStreamHeight: Int by mutableStateOf(0)
 
     /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
     var isFullScreenPageActive: Boolean by mutableStateOf(false)

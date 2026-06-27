@@ -1033,7 +1033,7 @@ private fun QuickActionEditorPage(
         result.toList()
     }
     val reorderableItems = remember { mutableStateListOf<String>().also { it.addAll(items) } }
-    val activeCount = 3.coerceAtMost(reorderableItems.size)
+    val activeCount = 4.coerceAtMost(reorderableItems.size)
     var draggedItemKey by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableFloatStateOf(0f) }
     val density = LocalDensity.current

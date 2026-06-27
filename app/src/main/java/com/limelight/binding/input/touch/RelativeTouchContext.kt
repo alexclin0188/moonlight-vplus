@@ -62,8 +62,9 @@ class RelativeTouchContext(
     // 是否启用本地光标渲染
     private var enableLocalCursorRendering = true
     // 本地光标累计位置（当 enableLocalCursorRendering=true 且无 renderer 时使用）
-    private var cursorAccX = 0f
-    private var cursorAccY = 0f
+    // 初始化为 -1 表示尚未初始化，首次移动时延迟初始化为视图中心
+    private var cursorAccX = -1f
+    private var cursorAccY = -1f
 
     /** 光标位置更新回调（新版 Compose 串流使用，替代旧的 LocalCursorRenderer） */
     var onCursorPositionChanged: ((absX: Float, absY: Float) -> Unit)? = null
@@ -335,6 +336,11 @@ class RelativeTouchContext(
                         )
                     } else if (this.enableLocalCursorRendering && onCursorPositionChanged != null) {
                         // 新版 Compose 模式：累计光标位置并通过回调通知
+                        // 延迟初始化：首次移动时将光标定位到视图中心，避免从左上角 (0,0) 开始
+                        if (cursorAccX < 0f || cursorAccY < 0f) {
+                            cursorAccX = targetView.width / 2f
+                            cursorAccY = targetView.height / 2f
+                        }
                         cursorAccX = (cursorAccX + deltaX).coerceIn(0f, targetView.width.toFloat() - 1f)
                         cursorAccY = (cursorAccY + deltaY).coerceIn(0f, targetView.height.toFloat() - 1f)
                         onCursorPositionChanged?.invoke(cursorAccX, cursorAccY)
