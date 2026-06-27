@@ -3,7 +3,6 @@ package com.alexclin.moonlink.android.stream.ui.display
 import android.content.Context
 import android.graphics.Point
 import android.os.Build
-import android.preference.PreferenceManager
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -718,13 +717,21 @@ private fun DisplaySection(engine: StreamEngine) {
         // ── 分辨率 ──
         val nativeRes by remember {
             mutableStateOf(run {
-                val display = (context.getSystemService(Context.WINDOW_SERVICE)
-                        as android.view.WindowManager).defaultDisplay
                 val size = Point()
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    display.getRealSize(size)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val wm = context.getSystemService(Context.WINDOW_SERVICE)
+                            as android.view.WindowManager
+                    val bounds = wm.currentWindowMetrics.bounds
+                    size.set(bounds.width(), bounds.height())
                 } else {
-                    display.getSize(size)
+                    @Suppress("DEPRECATION")
+                    val display = (context.getSystemService(Context.WINDOW_SERVICE)
+                            as android.view.WindowManager).defaultDisplay
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                        display.getRealSize(size)
+                    } else {
+                        display.getSize(size)
+                    }
                 }
                 val w = maxOf(size.x, size.y)
                 val h = minOf(size.x, size.y)

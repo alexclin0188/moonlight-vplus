@@ -664,12 +664,19 @@ fun DisplayCategory(
 
                 // 获取设备原生分辨率
                 val nativeRes = remember {
-                    val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
                     val size = Point()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        display.getRealSize(size)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+                        val bounds = wm.currentWindowMetrics.bounds
+                        size.set(bounds.width(), bounds.height())
                     } else {
-                        display.getSize(size)
+                        @Suppress("DEPRECATION")
+                        val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
+                            display.getRealSize(size)
+                        } else {
+                            display.getSize(size)
+                        }
                     }
                     val w = maxOf(size.x, size.y)
                     val h = minOf(size.x, size.y)

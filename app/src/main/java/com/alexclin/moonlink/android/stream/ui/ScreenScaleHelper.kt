@@ -2,6 +2,7 @@ package com.alexclin.moonlink.android.stream.ui
 
 import android.content.Context
 import android.content.ContentValues
+import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
 import com.limelight.binding.input.advance_setting.element.Element
@@ -32,9 +33,14 @@ object ScreenScaleHelper {
      */
     fun getDeviceScreenSize(context: Context): Pair<Int, Int> {
         val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val metrics = DisplayMetrics()
-        wm.defaultDisplay.getRealMetrics(metrics)
-        return Pair(metrics.widthPixels, metrics.heightPixels)
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val bounds = wm.currentWindowMetrics.bounds
+            Pair(bounds.width(), bounds.height())
+        } else {
+            @Suppress("DEPRECATION")
+            val metrics = DisplayMetrics().also { wm.defaultDisplay.getRealMetrics(it) }
+            Pair(metrics.widthPixels, metrics.heightPixels)
+        }
     }
 
     /**

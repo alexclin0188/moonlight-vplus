@@ -57,6 +57,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import androidx.core.content.edit
+import androidx.core.net.toUri
 
 @Composable
 fun DeviceOverviewScreen(
@@ -99,7 +100,7 @@ fun DeviceOverviewScreen(
             managerBinder != null
         ) {
             val fetched = fetchAndCacheAppListAndBoxArt(context, computer, managerBinder)
-            if (fetched != null && fetched.isNotEmpty()) {
+            if (!fetched.isNullOrEmpty()) {
                 appList = fetched
             }
         }
@@ -109,26 +110,23 @@ fun DeviceOverviewScreen(
     // 设备在线时尝试调用 Sunshine 扩展 API /displays，
     // 成功则在桌面缩略图中间展示显示器矩形块，点击以该 displayName 启动。
     LaunchedEffect(uuid, computer?.state) {
-        val comp = computer
-        if (comp != null && comp.state == ComputerDetails.State.ONLINE &&
-            managerBinder != null && comp.activeAddress != null && !comp.nvidiaServer
+        if (computer != null && computer.state == ComputerDetails.State.ONLINE &&
+            managerBinder != null && computer.activeAddress != null && !computer.nvidiaServer
         ) {
             withContext(Dispatchers.IO) {
                 try {
-                    val address = ServerHelper.getCurrentAddressFromComputer(comp)
+                    val address = ServerHelper.getCurrentAddressFromComputer(computer)
                     val httpConn = NvHTTP(
                         address,
-                        comp.httpsPort,
+                        computer.httpsPort,
                         managerBinder.getUniqueId(),
                         android.os.Build.MODEL,
-                        comp.serverCert,
+                        computer.serverCert,
                         PlatformBinding.getCryptoProvider(context)
                     )
                     val displays = httpConn.getDisplays()
-                    if (displays.isNotEmpty()) {
-                        displaysInfo = displays
-                    } else {
-                        displaysInfo = null
+                    displaysInfo = displays.ifEmpty {
+                        null
                     }
                 } catch (_: Exception) {
                     // 调用失败则忽略，不展示矩形小方块
@@ -149,18 +147,18 @@ fun DeviceOverviewScreen(
         if (!exists) {
             selectedDisplayGuid = null
             selectedVddEnabled = false
-            displayPrefs.edit()
-                .remove("selected_display_$uuid")
-                .remove("selected_display_name_$uuid")
-                .putBoolean("vdd_enabled_$uuid", false)
-                .apply()
+            displayPrefs.edit {
+                remove("selected_display_$uuid")
+                    .remove("selected_display_name_$uuid")
+                    .putBoolean("vdd_enabled_$uuid", false)
+            }
         }
     }
 
     // Quick actions dialog (merged with former MoreActions)
     var showQuickActions by remember { mutableStateOf(false) }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackBarHostState = remember { SnackbarHostState() }
 
     // ── 横屏检测 ──────────────────────────────────────
     val configuration = LocalConfiguration.current
@@ -190,7 +188,7 @@ fun DeviceOverviewScreen(
     val showQuickActionButton = isPaired // 离线时也展示快捷操作按钮，但仅隐藏部分选项
 
     Scaffold(
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { SnackbarHost(hostState = snackBarHostState) },
     ) { paddingValues ->
         if (isLandscape) {
             // ── 横屏：全宽标题栏 + 下方左右两栏 ──────────
@@ -398,7 +396,7 @@ fun DeviceOverviewScreen(
         QuickActionsDialog(
             computer = computer,
             managerBinder = managerBinder,
-            snackbarHostState = snackbarHostState,
+            snackBarHostState = snackBarHostState,
             scope = scope,
             onDismiss = { showQuickActions = false },
         )
@@ -548,7 +546,7 @@ private fun AppIconItem(
 private fun QuickActionsDialog(
     computer: ComputerDetails,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
-    snackbarHostState: SnackbarHostState,
+    snackBarHostState: SnackbarHostState,
     scope: kotlinx.coroutines.CoroutineScope,
     onDismiss: () -> Unit,
 ) {
@@ -596,13 +594,13 @@ private fun QuickActionsDialog(
                                 withContext(Dispatchers.IO) {
                                     val success = httpConn.pcRestart()
                                     withContext(Dispatchers.Main) {
-                                        snackbarHostState.showSnackbar(
+                                        snackBarHostState.showSnackbar(
                                             if (success) "重启命令已发送" else "重启失败"
                                         )
                                     }
                                 }
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("重启异常: ${e.message}")
+                                snackBarHostState.showSnackbar("重启异常: ${e.message}")
                             }
                         }
                     }
@@ -626,13 +624,13 @@ private fun QuickActionsDialog(
                                 withContext(Dispatchers.IO) {
                                     val success = httpConn.pcShutdown()
                                     withContext(Dispatchers.Main) {
-                                        snackbarHostState.showSnackbar(
+                                        snackBarHostState.showSnackbar(
                                             if (success) "关机命令已发送" else "关机失败"
                                         )
                                     }
                                 }
                             } catch (e: Exception) {
-                                snackbarHostState.showSnackbar("关机异常: ${e.message}")
+                                snackBarHostState.showSnackbar("关机异常: ${e.message}")
                             }
                         }
                     }
@@ -710,7 +708,7 @@ private fun QuickActionsDialog(
                 if (computer.nvidiaServer) {
                     DialogActionRow("NVIDIA GameStream 终止服务") {
                         val intent = Intent(Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/moonlight-stream/moonlight-android/wiki/GameStream-EOL"))
+                            "https://github.com/moonlight-stream/moonlight-android/wiki/GameStream-EOL".toUri())
                         context.startActivity(intent)
                         onDismiss()
                     }
@@ -1052,7 +1050,7 @@ private fun DisplayChip(
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
         ) {
-            // 第一行: "显示器" + 主屏星标（蓝色文字）
+            // "显示器" + 主屏星标（蓝色文字）
             Text(
                 text = buildString {
                     append("显示器")
@@ -1143,7 +1141,6 @@ private fun launchStreamFromOverview(
     forceVdd: Boolean = false,
 ) {
     if (managerBinder == null) return
-    val activity = context as? android.app.Activity ?: return
 
     // ── PiP 模式检测 ────────────────────────────────────
     if (StreamEngine.currentPipActivity != null && !StreamEngine.currentPipActivity!!.isFinishing) {

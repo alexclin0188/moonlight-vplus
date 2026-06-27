@@ -73,14 +73,17 @@ class StreamActivity : ComponentActivity() {
         // 全屏（隐藏状态栏 + 导航栏）
         if (Build.VERSION.SDK_INT >= 30) {
             try {
+                @Suppress("DEPRECATION")
                 window.setDecorFitsSystemWindows(false)
             } catch (_: NoSuchMethodError) {
                 // 部分定制 ROM（如华为/小米早期版本）声称 >= R 但实际无此方法
             }
         }
+        @Suppress("DEPRECATION")
         window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         // 设置窗口背景为黑色，非视频区域（letterbox/pillarbox）显示纯黑
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK))
+        @Suppress("DEPRECATION")
         window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
             or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION

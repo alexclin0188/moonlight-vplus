@@ -448,6 +448,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 3) 检查 HDR 支持
         if (willStreamHdr) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                @Suppress("DEPRECATION")
                 val hdrCaps = activity.windowManager.defaultDisplay.hdrCapabilities
                 if (hdrCaps == null || !hdrCaps.supportedHdrTypes.contains(
                         android.view.Display.HdrCapabilities.HDR_TYPE_HDR10
@@ -532,6 +533,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
 
         // 帧率调整（旧代码 line 784-799）
+        @Suppress("DEPRECATION")
         val displayRefreshRate = activity.windowManager.defaultDisplay.refreshRate
         val roundedRefreshRate = displayRefreshRate.roundToInt()
 
@@ -839,6 +841,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             .getSystemService(Context.WIFI_SERVICE) as WifiManager
         try {
             highPerfWifiLock = wifiMgr.createWifiLock(
+                @Suppress("DEPRECATION")
                 WifiManager.WIFI_MODE_FULL_HIGH_PERF, "MoonLink High Perf")
             highPerfWifiLock?.setReferenceCounted(false)
             highPerfWifiLock?.acquire()
