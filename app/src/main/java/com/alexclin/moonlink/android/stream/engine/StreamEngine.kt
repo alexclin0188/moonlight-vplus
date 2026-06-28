@@ -1002,7 +1002,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
     }
 
-    /** 设置暂停串流展示开关，同步到全局偏好和主机设置 */
+    /** 设置暂停串流支持开关，同步到全局偏好和主机设置 */
     fun setShowPauseStream(enabled: Boolean) {
         prefConfig.showPauseStream = enabled
         prefConfig.writePreferences(activity)
@@ -1021,7 +1021,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     // ── 按键映射配置面板的设置值（运行时状态） ──
 
-    /** 全局透明度（0-100），由 [KeyMappingConfigPanel] 更新，[KeyMappingOverlay] 消费。 */
+    /** 全局不透明度（0-100），由 [KeyMappingConfigPanel] 更新，[KeyMappingOverlay] 消费。 */
     var configGlobalOpacity: Int by mutableStateOf(100)
 
     /** 触控开关，由 [KeyMappingConfigPanel] 更新，[KeyMappingOverlay] 消费。 */

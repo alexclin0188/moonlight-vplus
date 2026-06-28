@@ -93,7 +93,7 @@ fun PerformanceSettingsScreen() {
                     dependency = "checkbox_enable_perf_overlay",
                 )
             }
-            // 7. 性能图层背景透明度
+            // 7. 性能图层背景不透明度
             item {
                 SeekBarPreference(
                     key = "seekbar_perf_overlay_bg_opacity",

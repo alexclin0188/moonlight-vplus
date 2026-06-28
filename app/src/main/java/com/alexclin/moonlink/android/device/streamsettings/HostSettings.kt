@@ -228,8 +228,8 @@ data class HostSettings(
     val keyMappingEnabled: Boolean = false,
     /** 禁用警告 */
     val disableWarnings: Boolean = false,
-    /** 暂停串流展示开关 */
-    val showPauseStream: Boolean = true,
+    /** 暂停串流支持开关 */
+    val showPauseStream: Boolean = false,
 ) {
     companion object {
         /** 配置分类，用于 UI 分类展示 */

@@ -33,7 +33,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.drawWheelPad
  * relX/relY 是触摸点相对于元素中心的位置（用于十字键方向检测和摇杆轴值计算）。
  * 虚拟手柄和游戏按键映射共用此覆盖层，仅数据来源不同。
  *
- * @param globalOpacity  全局透明度（0-100），叠加到所有元素的渲染透明度上
+ * @param globalOpacity  全局不透明度（0-100），叠加到所有元素的渲染不透明度上
  * @param enabled        true=元素交互正常+非元素区域透传下层；false=元素交互正常+非元素区域消费(阻止透传)
  * @param touchSense     触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
  * @param enhancedTouch  增强触控：启用时扩大触摸命中区域边距，提升触摸响应

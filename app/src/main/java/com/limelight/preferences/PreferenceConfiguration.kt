@@ -96,8 +96,8 @@ class PreferenceConfiguration {
     var playHostAudio = false
     var muteClientAudio = false
     var disableWarnings = false
-    // 暂停串流展示开关（子面板其它设置）
-    var showPauseStream = true
+    // 暂停串流支持开关（子面板其它设置）
+    var showPauseStream = false
     var language: String = ""
     var smallIconMode = false
     var multiController = false
@@ -1132,7 +1132,7 @@ class PreferenceConfiguration {
             config.onscreenController = prefs.getBoolean(ONSCREEN_CONTROLLER_PREF_STRING, ONSCREEN_CONTROLLER_DEFAULT)
             config.onscreenKeyboard = prefs.getBoolean(ONSCREEN_KEYBOARD_PREF_STRING, ONSCREEN_KEYBOARD_DEFAULT)
             config.keyMappingEnabled = prefs.getBoolean(KEY_MAPPING_ENABLED_PREF_STRING, false)
-            config.showPauseStream = prefs.getBoolean(SHOW_PAUSE_STREAM_PREF_STRING, true)
+            config.showPauseStream = prefs.getBoolean(SHOW_PAUSE_STREAM_PREF_STRING, false)
             config.onlyL3R3 = prefs.getBoolean(ONLY_L3_R3_PREF_STRING, ONLY_L3_R3_DEFAULT)
             config.showGuideButton = prefs.getBoolean(SHOW_GUIDE_BUTTON_PREF_STRING, SHOW_GUIDE_BUTTON_DEFAULT)
             config.halfHeightOscPortrait = prefs.getBoolean(HALF_HEIGHT_OSC_PORTRAIT_PREF_STRING, HALF_HEIGHT_OSC_PORTRAIT_DEFAULT)

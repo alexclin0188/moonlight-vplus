@@ -251,7 +251,7 @@ class HostSettingsManager(private val context: Context) {
             showQuickKeyCard = sp.getBoolean(KEY_SHOW_QUICK_KEY_CARD, true),
             keyMappingEnabled = bool(KEY_KEY_MAPPING_ENABLED),
             disableWarnings = bool(KEY_DISABLE_WARNINGS),
-            showPauseStream = sp.getBoolean(KEY_SHOW_PAUSE_STREAM, true),
+            showPauseStream = sp.getBoolean(KEY_SHOW_PAUSE_STREAM, false),
         )
     }
 

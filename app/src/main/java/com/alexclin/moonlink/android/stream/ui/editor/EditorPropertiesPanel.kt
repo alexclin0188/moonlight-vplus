@@ -60,7 +60,7 @@ import kotlin.math.roundToInt
 /**
  * 属性编辑面板 —— 6 列网格布局（匹配设计文档）。
  *
- * Row 1: 按键名 | X坐标 | Y坐标 | 透明度 | 滑块(0%-100%) | 删除按钮
+ * Row 1: 按键名 | X坐标 | Y坐标 | 不透明度 | 滑块(0%-100%) | 删除按钮
  * Row 2: 键值  | W宽(px) | H高(px) | 文字大小 | 滑块(10%-150%) | 复制按钮
  * Row 3: 图层 | 粗细(px) | 圆角(px) | 按键类型 | 颜色自定义 | 专属属性设置 | 保存
  *
@@ -159,12 +159,12 @@ fun EditorPropertiesPanel(
             //   Input2: X值 / W值 / 粗细值
             //   Lbl3: Y坐标 / H高 / 圆角
             //   Input3: Y值 / H值 / 圆角值
-            //   Lbl4: 透明度 / 文字大小 / 图层
+            //   Lbl4: 不透明度 / 文字大小 / 图层
             //   Content: R1/R2 滑块, R3 图层输入+颜色+专属按钮
             //   Btn: 保存 / 复制 / 删除
 
             // ═══════════════════════════════════════════════════════
-            // Row 1: 按键名 | X坐标 | Y坐标 | 透明度滑块 | 删除
+            // Row 1: 按键名 | X坐标 | Y坐标 | 不透明度滑块 | 删除
             // ═══════════════════════════════════════════════════════
             Row(
                 modifier = Modifier.fillMaxWidth().height(rowHeight).padding(vertical = 0.dp),
@@ -216,8 +216,8 @@ fun EditorPropertiesPanel(
                     Text("颜色自定义", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary)
                 }
-                // Lbl4: 透明度（右对齐）
-                GridLabel("透明度", Modifier.weight(0.8f), rightAlign = true)
+                // Lbl4: 不透明度（右对齐）
+                GridLabel("不透明度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Content: 滑块（占多格）
                 Box(Modifier.weight(3f).padding(end = 4.dp)) {

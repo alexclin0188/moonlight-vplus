@@ -822,9 +822,9 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
             item {
-                // 暂停串流展示开关
+                // 暂停串流支持开关
                 var showPause by remember { mutableStateOf(engine.prefConfig.showPauseStream) }
-                SettingSwitch("暂停串流展示", showPause) {
+                SettingSwitch("暂停串流支持", showPause) {
                     showPause = it
                     engine.setShowPauseStream(it)
                 }

@@ -1274,10 +1274,10 @@ fun OtherCategory(
                 }
             }
 
-            // 暂停串流展示
+            // 暂停串流支持
             item {
                 Divider()
-                SettingSwitchRow("暂停串流展示", settings.showPauseStream) {
+                SettingSwitchRow("暂停串流支持", settings.showPauseStream) {
                     onSettingsChange(settings.copy(showPauseStream = it))
                 }
             }

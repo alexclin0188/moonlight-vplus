@@ -193,11 +193,11 @@ fun KeyMappingConfigPanel(
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
-            // 全局透明度
+            // 全局不透明度
             item {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("全局透明度", Modifier.weight(1f))
+                        Text("全局不透明度", Modifier.weight(1f))
                         Text("$globalOpacity%", style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
