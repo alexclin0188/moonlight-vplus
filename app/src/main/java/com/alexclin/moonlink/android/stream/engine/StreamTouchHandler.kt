@@ -347,10 +347,8 @@ class StreamTouchHandler(
 
     /** 归一化到视图像素坐标（供 TouchContext 使用） */
     private fun normXY(view: View?, rawX: Float, rawY: Float): FloatArray {
-        val v = view ?: return floatArrayOf(rawX, rawY)
-        val sx = v.scaleX; val sy = v.scaleY
-        if (sx == 0f || sy == 0f) return floatArrayOf(rawX, rawY)
-        return floatArrayOf((rawX - v.x) / sx, (rawY - v.y) / sy)
+        // event.getX()/getY() 已经相对于 view 自身，无需减去 view.x 或除以 scale
+        return floatArrayOf(rawX, rawY)
     }
 
     /** 归一化到 0..1（供 sendTouchEvent 使用） */
@@ -358,11 +356,10 @@ class StreamTouchHandler(
         val v = view ?: return floatArrayOf(rawX / targetView.width, rawY / targetView.height)
         val w = v.width; val h = v.height
         if (w == 0 || h == 0) return floatArrayOf(0f, 0f)
-        val sx = v.scaleX; val sy = v.scaleY
-        if (sx == 0f || sy == 0f) return floatArrayOf(rawX / w, rawY / h)
+        // event.getX()/getY() 已相对于 view 自身，直接归一化即可
         return floatArrayOf(
-            ((rawX - v.x) / sx / w).coerceIn(0f, 1f),
-            ((rawY - v.y) / sy / h).coerceIn(0f, 1f)
+            (rawX / w).coerceIn(0f, 1f),
+            (rawY / h).coerceIn(0f, 1f)
         )
     }
 

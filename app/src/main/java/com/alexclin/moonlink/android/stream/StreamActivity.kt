@@ -161,16 +161,31 @@ class StreamActivity : ComponentActivity() {
 
                     AndroidView(
                         factory = { ctx ->
+                            val frameLayout = android.widget.FrameLayout(ctx).also { fl ->
+                                fl.layoutParams = android.widget.FrameLayout.LayoutParams(
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT
+                                )
+                            }
                             StreamView(ctx).also { sv ->
                                 sv.id = R.id.surfaceView
+                                // FrameLayout 内居中：当 StreamView 按宽高比约束后小于父容器时，画面居中展示
+                                sv.layoutParams = android.widget.FrameLayout.LayoutParams(
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                                    android.view.Gravity.CENTER
+                                )
                                 engine.surfaceView = sv
                                 engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
                                 sv.setOnTouchListener(touchListener)
                                 sv.setOnGenericMotionListener(genericMotionListener)
+                                frameLayout.addView(sv)
                             }
+                            frameLayout
                         },
-                        update = { sv ->
+                        update = { fl ->
+                            val sv = fl.getChildAt(0) as? StreamView ?: return@AndroidView
                             // 使用实际串流分辨率（VDD 模式下可能 ≠ prefConfig）
                             val displayW = engine.actualStreamWidth.coerceAtLeast(1).let {
                                 if (it == 0) engine.prefConfig.width.coerceAtLeast(1) else it

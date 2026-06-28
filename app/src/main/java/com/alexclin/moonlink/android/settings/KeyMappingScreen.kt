@@ -59,7 +59,7 @@ fun KeyMappingScreen() {
     var exportMlkTarget by remember { mutableLongStateOf(0L) }
 
     val mlkCreateLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/octet-stream")
+        ActivityResultContracts.CreateDocument("*/*")
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         try {
@@ -86,6 +86,12 @@ fun KeyMappingScreen() {
             val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
             if (json.isBlank()) {
                 Toast.makeText(context, "文件内容为空", Toast.LENGTH_SHORT).show()
+                return@rememberLauncherForActivityResult
+            }
+            // 验证是否为有效的 .mlk 文件（含 format: "mlk" 标记）
+            val root = JSONObject(json)
+            if (root.optString("format") != "mlk") {
+                Toast.makeText(context, "这不是有效的 .mlk 文件，请选择后缀为 .mlk 的按键映射方案文件", Toast.LENGTH_SHORT).show()
                 return@rememberLauncherForActivityResult
             }
             importMlkJson = json
@@ -143,7 +149,7 @@ fun KeyMappingScreen() {
                     title = "导入按键映射方案",
                     summary = "从 .mlk 文件导入按键映射方案",
                     onClick = {
-                        mlkOpenLauncher.launch(arrayOf("application/json", "*/*"))
+                        mlkOpenLauncher.launch(arrayOf("*/*"))
                     },
                 )
             }
