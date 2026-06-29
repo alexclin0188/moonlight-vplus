@@ -32,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -231,13 +232,44 @@ fun TypeSpecificEditorDialog(
 
                     // 可移动按键模式 + 触控板模式
                     if (element.type == ElementType.DIGITAL_MOVABLE_BUTTON) {
-                        PropertyRow("模式 (0=按钮,1=摇杆)") {
-                            SmallIntField(value = mode, onValueChange = { mode = it },
-                                modifier = Modifier.width(80.dp))
+                        // 模式：Chip 单行布局 — "模式"标签 + "按钮"Chip + "摇杆"Chip
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text("模式",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.width(64.dp))
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                CompactChip(
+                                    label = "按钮",
+                                    selected = mode == "0",
+                                    onClick = { mode = "0" },
+                                    modifier = Modifier.weight(1f),
+                                )
+                                CompactChip(
+                                    label = "摇杆",
+                                    selected = mode == "1",
+                                    onClick = { mode = "1" },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                         }
-                        PropertyRow("灵敏度") {
-                            SmallIntField(value = sense, onValueChange = { sense = it },
-                                modifier = Modifier.width(80.dp))
+                        // 灵敏度 Slider
+                        Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                            Text("灵敏度: ${sense.toIntOrNull() ?: 100}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Slider(
+                                value = (sense.toIntOrNull() ?: 100).toFloat(),
+                                onValueChange = { sense = it.roundToInt().toString() },
+                                valueRange = 1f..100f,
+                                modifier = Modifier.fillMaxWidth(),
+                            )
                         }
                         // 触控板模式开关
                         PropertyRow("触控板模式") {

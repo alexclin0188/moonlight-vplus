@@ -326,6 +326,14 @@ class StreamActivity : ComponentActivity() {
                     val stickLastClickTime = remember { HashMap<Long, Long>() }
                     // MovableButton 触控板模式：追踪上次触摸位置（元素ID → Pair(relX, relY)）
                     val trackpadLastPos = remember { HashMap<Long, Pair<Float, Float>>() }
+                    // 触控板模式：首次触摸位置（用于判定是否移动超过阈值）
+                    val trackpadFirstTouch = remember { HashMap<Long, Pair<Float, Float>>() }
+                    // 触控板模式：是否已确认为拖动（长按300ms触发）
+                    val trackpadDragConfirmed = remember { HashMap<Long, Boolean>() }
+                    // 触控板模式：是否已确认为滑动（移动超过20px阈值）
+                    val trackpadMoveConfirmed = remember { HashMap<Long, Boolean>() }
+                    // 触控板模式：长按计时器（元素ID → Runnable），用于取消
+                    val trackpadTimers = remember { HashMap<Long, java.lang.Runnable>() }
                     // MovableButton 摇杆模式（mode=1）：记录首次触摸偏移（元素ID → Pair(relX, relY)）
                     val joystickFirstTouch = remember { HashMap<Long, Pair<Float, Float>>() }
                     // 震动防重复：记录已触发震动的元素（元素ID → true），只在首次按下时震动，抬起清除
@@ -587,18 +595,75 @@ class StreamActivity : ComponentActivity() {
                                     val joyMode = el.mode == 1
 
                                     if (isTrackpad) {
-                                        // 触控板模式：触摸移动驱动鼠标（参考旧 Crown）
+                                        // 触控板模式：点击/滑动/长按拖拽（参考旧 Crown handleTrackpadTouchEvent）
                                         if (isPressed) {
                                             val prev = trackpadLastPos[el.elementId]
-                                            if (prev != null) {
-                                                val dx = relX - prev.first
-                                                val dy = relY - prev.second
-                                                val senseMul = el.sense.coerceIn(1, 500) * 0.01f
-                                                engine.conn?.sendMouseMove((dx * senseMul).toInt().toShort(), (dy * senseMul).toInt().toShort())
+                                            if (prev == null) {
+                                                // ═══ ACTION_DOWN：首次按下 ═══
+                                                trackpadFirstTouch[el.elementId] = Pair(relX, relY)
+                                                trackpadDragConfirmed[el.elementId] = false
+                                                trackpadMoveConfirmed[el.elementId] = false
+                                                // 启动 300ms 长按检测计时器（触发拖拽模式）
+                                                val dragRunnable = java.lang.Runnable {
+                                                    val eId = el.elementId
+                                                    if (trackpadLastPos.containsKey(eId) &&
+                                                        trackpadDragConfirmed[eId] != true &&
+                                                        trackpadMoveConfirmed[eId] != true) {
+                                                        // 长按触发 → 进入拖拽模式：发送鼠标左键按下
+                                                        trackpadDragConfirmed[eId] = true
+                                                        triggerVibration()
+                                                        engine.conn?.sendMouseButtonDown(1.toByte())
+                                                    }
+                                                }
+                                                trackpadTimers[el.elementId] = dragRunnable
+                                                repeatHandler.postDelayed(dragRunnable, 300)
+                                            } else {
+                                                // ═══ ACTION_MOVE：持续触摸移动 ═══
+                                                val firstTouch = trackpadFirstTouch[el.elementId] ?: Pair(relX, relY)
+                                                val dxTotal = relX - firstTouch.first
+                                                val dyTotal = relY - firstTouch.second
+                                                val moveDist = kotlin.math.sqrt(dxTotal * dxTotal + dyTotal * dyTotal)
+                                                val isDrag = trackpadDragConfirmed[el.elementId] == true
+                                                val isMove = trackpadMoveConfirmed[el.elementId] == true
+                                                if (!isDrag && !isMove) {
+                                                    // 尚未确认任何手势 — 检查是否超过移动阈值
+                                                    if (moveDist > 20f /* TAP_MOVEMENT_THRESHOLD */) {
+                                                        trackpadMoveConfirmed[el.elementId] = true
+                                                        // 超过阈值则取消长按计时器（不是长按）
+                                                        trackpadTimers.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
+                                                    }
+                                                }
+                                                if (isDrag || trackpadMoveConfirmed[el.elementId] == true) {
+                                                    // 拖动或滑动中 → 驱动鼠标指针
+                                                    val dx = relX - prev.first
+                                                    val dy = relY - prev.second
+                                                    val senseMul = el.sense.coerceIn(1, 500) * 0.01f
+                                                    engine.conn?.sendMouseMove((dx * senseMul).toInt().toShort(), (dy * senseMul).toInt().toShort())
+                                                }
                                             }
                                             trackpadLastPos[el.elementId] = Pair(relX, relY)
                                         } else {
+                                            // ═══ ACTION_UP / CANCEL：手指抬起 ═══
+                                            val isDrag = trackpadDragConfirmed[el.elementId] == true
+                                            val isMove = trackpadMoveConfirmed[el.elementId] == true
+                                            // 取消所有计时器
+                                            trackpadTimers.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
+                                            if (isDrag) {
+                                                // 拖拽结束 → 发送鼠标左键释放
+                                                engine.conn?.sendMouseButtonUp(1.toByte())
+                                            } else if (!isMove) {
+                                                // 点击（未移动、未拖拽）→ 震动 + 发送鼠标左键单击
+                                                triggerVibration()
+                                                engine.conn?.sendMouseButtonDown(1.toByte())
+                                                repeatHandler.postDelayed({
+                                                    engine.conn?.sendMouseButtonUp(1.toByte())
+                                                }, 50)
+                                            }
+                                            // 清理所有追踪状态
                                             trackpadLastPos.remove(el.elementId)
+                                            trackpadFirstTouch.remove(el.elementId)
+                                            trackpadDragConfirmed.remove(el.elementId)
+                                            trackpadMoveConfirmed.remove(el.elementId)
                                         }
                                     } else if (joyMode) {
                                         // 摇杆模式（mode=1）：参照旧 Crown 合成 MotionEvent
