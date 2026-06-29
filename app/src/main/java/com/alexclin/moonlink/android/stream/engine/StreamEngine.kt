@@ -1820,6 +1820,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     override fun rumble(controllerNumber: Short, lowFreqMotor: Short, highFreqMotor: Short) {
+        if (!configGameVibrator) return
         controllerHandler?.handleRumble(controllerNumber, lowFreqMotor, highFreqMotor)
     }
     override fun rumbleTriggers(controllerNumber: Short, leftTrigger: Short, rightTrigger: Short) {

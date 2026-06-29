@@ -342,6 +342,7 @@ class StreamActivity : ComponentActivity() {
 
                     // ── 振动反馈（参考原 Crown buttonVibrator） ──
                     fun triggerVibration() {
+                        if (!engine.configButtonVibrator) return
                         try {
                             val vibrator = engine.activity.getSystemService(android.content.Context.VIBRATOR_SERVICE) as android.os.Vibrator?
                             if (vibrator != null && vibrator.hasVibrator()) {
@@ -403,13 +404,15 @@ class StreamActivity : ComponentActivity() {
                             }
                         } else if (value == "SU") {
                             // 鼠标滚轮上 — 按下时持续滚动（参考原 Crown：初始延迟 150ms，重复间隔 100ms）
+                            // 数值越小滚动越快：configWheelSpeed 1→最快, 119→最慢
                             scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
                             scrollRepeatRunnable.value = null
                             if (isPressed) {
-                                engine.mouseVScroll(1.toByte())
+                                val upAmount = ((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5).toByte()
+                                engine.mouseVScroll(upAmount)
                                 val r = object : java.lang.Runnable {
                                     override fun run() {
-                                        engine.mouseVScroll(1.toByte())
+                                        engine.mouseVScroll(upAmount)
                                         repeatHandler.postDelayed(this, 100)
                                     }
                                 }
@@ -420,10 +423,11 @@ class StreamActivity : ComponentActivity() {
                             scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
                             scrollRepeatRunnable.value = null
                             if (isPressed) {
-                                engine.mouseVScroll((-1).toByte())
+                                val downAmount = (-((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5)).toByte()
+                                engine.mouseVScroll(downAmount)
                                 val r = object : java.lang.Runnable {
                                     override fun run() {
-                                        engine.mouseVScroll((-1).toByte())
+                                        engine.mouseVScroll(downAmount)
                                         repeatHandler.postDelayed(this, 100)
                                     }
                                 }
