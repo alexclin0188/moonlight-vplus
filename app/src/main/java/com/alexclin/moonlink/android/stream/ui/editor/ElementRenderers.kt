@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.unit.dp
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -88,25 +89,67 @@ fun DrawScope.drawDigitalButton(
         style = Stroke(width = element.thick.toFloat()),
     )
 
-    // ── 文字（text 为空时自动显示键值名） ──
-    val displayText = element.text.ifBlank {
-        getKeyLabelByValue(element.value) ?: ""
-    }
-    if (displayText.isNotBlank()) {
-        val fontSizePx = (element.height * element.textSizePercent / 100f).coerceIn(8f, 120f)
-        val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
+    // ── 文字 ──
+    val fontSizePx = (element.height * element.textSizePercent / 100f).coerceIn(8f, 120f)
+    val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
+    val valueLabel = getKeyLabelByValue(element.value) ?: element.value
+
+    if (element.text.isNotBlank() && !element.text.equals(valueLabel, ignoreCase = true)) {
+        // 自定义按键名不为空且与键值名不同 → 两行显示：第一行按键名，第二行键值名（较小）
+        val line1Size = fontSizePx * 0.7f
+        val line2Size = fontSizePx * 0.5f
+        val spacing = minOf(line2Size * 0.3f, with(drawContext.density) { 1.dp.toPx() })
+
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.apply {
-                val mPaint = android.graphics.Paint().apply {
+                val paint1 = android.graphics.Paint().apply {
                     color = textArgb
-                    textSize = fontSizePx
+                    textSize = line1Size
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                     isFakeBoldText = true
                 }
-                val metrics = mPaint.fontMetrics
-                val baseline = element.centralY - (metrics.top + metrics.bottom) / 2f
-                drawText(displayText, element.centralX.toFloat(), baseline, mPaint)
+                val paint2 = android.graphics.Paint().apply {
+                    color = textArgb
+                    textSize = line2Size
+                    textAlign = android.graphics.Paint.Align.CENTER
+                    isAntiAlias = true
+                    isFakeBoldText = true
+                }
+                val fm1 = paint1.fontMetrics
+                val fm2 = paint2.fontMetrics
+                val h1 = fm1.bottom - fm1.top
+                val h2 = fm2.bottom - fm2.top
+                val totalHeight = h1 + spacing + h2
+                val blockTop = element.centralY.toFloat() - totalHeight / 2f
+
+                // Line 1: 自定义按键名
+                val line1CenterY = blockTop + h1 / 2f
+                val baseline1 = line1CenterY - (fm1.top + fm1.bottom) / 2f
+                drawText(element.text, element.centralX.toFloat(), baseline1, paint1)
+
+                // Line 2: 键值名（较小）
+                val line2CenterY = blockTop + h1 + spacing + h2 / 2f
+                val baseline2 = line2CenterY - (fm2.top + fm2.bottom) / 2f
+                drawText(valueLabel, element.centralX.toFloat(), baseline2, paint2)
+            }
+        }
+    } else {
+        // 没有自定义按键名（或与键值名相同）→ 单行显示键值名
+        if (valueLabel.isNotBlank()) {
+            drawIntoCanvas { canvas ->
+                canvas.nativeCanvas.apply {
+                    val mPaint = android.graphics.Paint().apply {
+                        color = textArgb
+                        textSize = fontSizePx
+                        textAlign = android.graphics.Paint.Align.CENTER
+                        isAntiAlias = true
+                        isFakeBoldText = true
+                    }
+                    val metrics = mPaint.fontMetrics
+                    val baseline = element.centralY - (metrics.top + metrics.bottom) / 2f
+                    drawText(valueLabel, element.centralX.toFloat(), baseline, mPaint)
+                }
             }
         }
     }

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -225,6 +226,120 @@ private val gamepadKeys = listOf(
     KeyEntry("g32768", "Y"),
 )
 
+/**
+ * 键盘行布局中的单元格：一个按键或一个间隔空白
+ */
+private sealed class KbCell {
+    data class Key(val entry: KeyEntry, val weight: Float = 1f) : KbCell()
+    data class Spacer(val weight: Float) : KbCell()
+}
+
+/**
+ * 按实际标准 US 键盘物理布局排列的行。
+ * weight 基准 = 标准字母键宽度（1 个单位）。
+ * 用 Spacer 模拟功能键簇之间的间隔。
+ */
+private val keyboardLayout: List<List<KbCell>> = listOf(
+    // ── Row 0: 功能键（Ins 保留在末尾） ──
+    listOf(
+        KbCell.Key(KeyEntry("k111", "ESC"), 1.3f),
+        KbCell.Key(KeyEntry("k131", "F1")),
+        KbCell.Key(KeyEntry("k132", "F2")),
+        KbCell.Key(KeyEntry("k133", "F3")),
+        KbCell.Key(KeyEntry("k134", "F4")),
+        KbCell.Key(KeyEntry("k135", "F5")),
+        KbCell.Key(KeyEntry("k136", "F6")),
+        KbCell.Key(KeyEntry("k137", "F7")),
+        KbCell.Key(KeyEntry("k138", "F8")),
+        KbCell.Key(KeyEntry("k139", "F9")),
+        KbCell.Key(KeyEntry("k140", "F10")),
+        KbCell.Key(KeyEntry("k141", "F11")),
+        KbCell.Key(KeyEntry("k142", "F12")),
+        KbCell.Key(KeyEntry("k124", "Ins"),1.1f),
+    ),
+    // ── Row 1: 数字行 + Del ──
+    listOf(
+        KbCell.Key(KeyEntry("k68", "~"), 1.2f),
+        KbCell.Key(KeyEntry("k8", "1")),
+        KbCell.Key(KeyEntry("k9", "2")),
+        KbCell.Key(KeyEntry("k10", "3")),
+        KbCell.Key(KeyEntry("k11", "4")),
+        KbCell.Key(KeyEntry("k12", "5")),
+        KbCell.Key(KeyEntry("k13", "6")),
+        KbCell.Key(KeyEntry("k14", "7")),
+        KbCell.Key(KeyEntry("k15", "8")),
+        KbCell.Key(KeyEntry("k16", "9")),
+        KbCell.Key(KeyEntry("k7", "0")),
+        KbCell.Key(KeyEntry("k69", "-")),
+        KbCell.Key(KeyEntry("k70", "=")),
+        KbCell.Key(KeyEntry("k67", "Back"), 2f),
+        KbCell.Key(KeyEntry("k112", "Del"),1.3f),
+    ),
+    // ── Row 2: QWERTY 行 + Home ──
+    listOf(
+        KbCell.Key(KeyEntry("k61", "Tab"), 1.5f),
+        KbCell.Key(KeyEntry("k45", "Q")),
+        KbCell.Key(KeyEntry("k51", "W")),
+        KbCell.Key(KeyEntry("k33", "E")),
+        KbCell.Key(KeyEntry("k46", "R")),
+        KbCell.Key(KeyEntry("k48", "T")),
+        KbCell.Key(KeyEntry("k53", "Y")),
+        KbCell.Key(KeyEntry("k49", "U")),
+        KbCell.Key(KeyEntry("k37", "I")),
+        KbCell.Key(KeyEntry("k43", "O")),
+        KbCell.Key(KeyEntry("k44", "P")),
+        KbCell.Key(KeyEntry("k71", "[")),
+        KbCell.Key(KeyEntry("k72", "]")),
+        KbCell.Key(KeyEntry("k73", "\\")),
+        KbCell.Key(KeyEntry("k122", "Home"),1.25f),
+    ),
+    // ── Row 3: ASDF 行 + End ──
+    listOf(
+        KbCell.Key(KeyEntry("k115", "Cap"), 1.75f),
+        KbCell.Key(KeyEntry("k29", "A")),
+        KbCell.Key(KeyEntry("k47", "S")),
+        KbCell.Key(KeyEntry("k32", "D")),
+        KbCell.Key(KeyEntry("k34", "F")),
+        KbCell.Key(KeyEntry("k35", "G")),
+        KbCell.Key(KeyEntry("k36", "H")),
+        KbCell.Key(KeyEntry("k38", "J")),
+        KbCell.Key(KeyEntry("k39", "K")),
+        KbCell.Key(KeyEntry("k40", "L")),
+        KbCell.Key(KeyEntry("k74", ";")),
+        KbCell.Key(KeyEntry("k75", "'")),
+        KbCell.Key(KeyEntry("k66", "Enter"), 2f),
+        KbCell.Key(KeyEntry("k123", "End"),1.28f),
+    ),
+    // ── Row 4: ZXCV 行 + ↑ + 间隔 + PgUp ──
+    listOf(
+        KbCell.Key(KeyEntry("k59", "Shift"), 1.9f),
+        KbCell.Key(KeyEntry("k54", "Z")),
+        KbCell.Key(KeyEntry("k52", "X")),
+        KbCell.Key(KeyEntry("k31", "C")),
+        KbCell.Key(KeyEntry("k50", "V")),
+        KbCell.Key(KeyEntry("k30", "B")),
+        KbCell.Key(KeyEntry("k42", "N")),
+        KbCell.Key(KeyEntry("k41", "M")),
+        KbCell.Key(KeyEntry("k55", ",")),
+        KbCell.Key(KeyEntry("k56", ".")),
+        KbCell.Key(KeyEntry("k76", "/")),
+        KbCell.Key(KeyEntry("k19", "↑"),1.1f),
+        KbCell.Spacer(1.1f),
+        KbCell.Key(KeyEntry("k92", "PgUp"),1.25f),
+    ),
+    // ── Row 5: 底行 + ← ↓ → + PgDn ──
+    listOf(
+        KbCell.Key(KeyEntry("k113", "Ctrl"), 1.25f),
+        KbCell.Key(KeyEntry("k117", "Win"), 1.25f),
+        KbCell.Key(KeyEntry("k57", "Alt"), 1.25f),
+        KbCell.Key(KeyEntry("k62", "Space"), 6.25f),
+        KbCell.Key(KeyEntry("k21", "←")),
+        KbCell.Key(KeyEntry("k20", "↓")),
+        KbCell.Key(KeyEntry("k22", "→")),
+        KbCell.Key(KeyEntry("k93", "PgDn"),1.1f),
+    ),
+)
+
 /** 特殊功能键列表 */
 private val specialKeys = listOf(
     KeyEntry("MMS", "鼠标移动"),
@@ -265,12 +380,12 @@ fun KeyValuePickerDialog(
         Surface(
             modifier = Modifier
                 .fillMaxWidth(0.85f)
-                .fillMaxSize(0.95f),
+                .wrapContentHeight(),
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 12.dp,
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            Column(modifier = Modifier.wrapContentHeight().fillMaxWidth()) {
                 // ── 标题 ──
                 Row(
                     modifier = Modifier
@@ -311,8 +426,6 @@ fun KeyValuePickerDialog(
                     }
                 }
 
-                Spacer(Modifier.height(8.dp))
-
                 // ── 按键网格 ──
                 val keys = when (selectedTab) {
                     0 -> keyboardKeys
@@ -324,23 +437,26 @@ fun KeyValuePickerDialog(
 
                 LazyColumn(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                        .fillMaxWidth().wrapContentHeight()
+                        .padding(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
-                    // 键盘用 FlowRow 展示
+                    // 键盘按物理行布局展示
                     if (selectedTab == 0) {
-                        item {
-                            FlowRow(
+                        items(keyboardLayout) { row ->
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp),
+                                horizontalArrangement = Arrangement.spacedBy(3.dp),
                             ) {
-                                keys.forEach { key ->
-                                    KeyChip(
-                                        key = key,
-                                        onClick = { onSelect(key.value, key.label) },
-                                    )
+                                row.forEach { cell ->
+                                    when (cell) {
+                                        is KbCell.Key -> KeyChip(
+                                            key = cell.entry,
+                                            onClick = { onSelect(cell.entry.value, cell.entry.label) },
+                                            modifier = Modifier.weight(cell.weight),
+                                        )
+                                        is KbCell.Spacer -> Spacer(Modifier.weight(cell.weight))
+                                    }
                                 }
                             }
                         }
@@ -357,7 +473,7 @@ fun KeyValuePickerDialog(
                                             GridKeyItem(
                                                 key = key,
                                                 onClick = { onSelect(key.value, key.label) },
-                                                modifier = Modifier.weight(1f).heightIn(min = 36.dp),
+                                                modifier = Modifier.weight(1f).heightIn(min = 40.dp),
                                             )
                                         }
                                         repeat(4 - rowKeys.size) {
@@ -378,22 +494,23 @@ fun KeyValuePickerDialog(
 //  辅助组件
 // ════════════════════════════════════════════════════════════════════════════
 
-/** 小芯片按钮（用于键盘流式布局） */
+/** 芯片按钮（用于键盘行布局，通过 weight 等宽分配） */
 @Composable
 private fun KeyChip(
     key: KeyEntry,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val bg = MaterialTheme.colorScheme.surfaceVariant
     val textColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .clip(RoundedCornerShape(6.dp))
             .background(bg)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 8.dp),
     ) {
         Text(
             key.label,
@@ -402,6 +519,7 @@ private fun KeyChip(
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
             maxLines = 1,
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }
@@ -421,7 +539,7 @@ private fun GridKeyItem(
             .background(bg)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
-            .padding(horizontal = 8.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center,
     ) {
         Row(

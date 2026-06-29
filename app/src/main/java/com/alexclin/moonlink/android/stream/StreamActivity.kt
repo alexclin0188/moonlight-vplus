@@ -666,7 +666,49 @@ class StreamActivity : ComponentActivity() {
                                             trackpadMoveConfirmed.remove(el.elementId)
                                         }
                                     } else if (joyMode) {
-                                        // 摇杆模式（mode=1）：参照旧 Crown 合成 MotionEvent
+                                        // 摇杆模式（mode=1）：先发键值 + 再合成 MotionEvent（旧 Crown 行为）
+                                        if (isPressed) {
+                                            if (elementVibrationFired.put(el.elementId, true) == null) {
+                                                triggerVibration()
+                                            }
+                                        } else {
+                                            elementVibrationFired.remove(el.elementId)
+                                        }
+                                        when {
+                                            value.startsWith("k") -> sendKeyboardKey(value, isPressed)
+                                            value.startsWith("g") -> {
+                                                val flag = parseValueToFlag(value)
+                                                if (flag != 0) {
+                                                    btnState.value = if (isPressed) btnState.value or flag
+                                                        else btnState.value and flag.inv()
+                                                    gamepadRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                                    if (isPressed) {
+                                                        val r = java.lang.Runnable { sendFullState() }
+                                                        gamepadRepeatRunnable.value = r
+                                                        repeatHandler.postDelayed(r, 50)
+                                                        repeatHandler.postDelayed(r, 75)
+                                                    }
+                                                }
+                                            }
+                                            value.startsWith("m") -> {
+                                                val btnId = value.substring(1).toIntOrNull()
+                                                if (btnId != null) {
+                                                    if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                    else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                    mouseRepeatMap.remove(btnId)?.let(repeatHandler::removeCallbacks)
+                                                    if (isPressed) {
+                                                        val r = java.lang.Runnable {
+                                                            engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                        }
+                                                        mouseRepeatMap[btnId] = r
+                                                        repeatHandler.postDelayed(r, 50)
+                                                        repeatHandler.postDelayed(r, 75)
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        sendFullState()
+                                        // ── 合成 MotionEvent（原有逻辑保留） ──
                                         run joy@ {
                                             if (engine.surfaceView == null) return@joy
                                             val sv = engine.surfaceView!!
@@ -694,13 +736,23 @@ class StreamActivity : ComponentActivity() {
                                             }
                                         }
                                     } else {
-                                        // 按钮模式（mode=0）：同普通按键
+                                        // 按钮模式（mode=0）：同普通按键 + 滑动时发送鼠标移动（旧 Crown 行为）
                                         if (isPressed) {
                                             if (elementVibrationFired.put(el.elementId, true) == null) {
                                                 triggerVibration()
                                             }
+                                            // 手指滑动 → 发送鼠标移动（参考旧 Crown handleButtonTouchEvent MOVE）
+                                            val prev = trackpadLastPos[el.elementId]
+                                            if (prev != null) {
+                                                val dx = relX - prev.first
+                                                val dy = relY - prev.second
+                                                val senseMul = el.sense.coerceIn(1, 500) * 0.01f
+                                                engine.conn?.sendMouseMove((dx * senseMul).toInt().toShort(), (dy * senseMul).toInt().toShort())
+                                            }
+                                            trackpadLastPos[el.elementId] = Pair(relX, relY)
                                         } else {
                                             elementVibrationFired.remove(el.elementId)
+                                            trackpadLastPos.remove(el.elementId)
                                         }
                                         when {
                                             value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0

@@ -53,6 +53,8 @@ fun KeyMappingOverlay(
     val touchOffsets = remember { mutableStateMapOf<Long, Offset>() }
     // 多指跟踪：pointerId → elementId
     val pointerToElement = remember { mutableStateMapOf<Int, Long>() }
+    // 开关按键持久 toggle 状态（DIGITAL_SWITCH_BUTTON 专用，每次 DOWN 翻转，UP 不影响）
+    val switchToggleStates = remember { mutableStateMapOf<Long, Boolean>() }
 
     Box(
         modifier = modifier
@@ -84,7 +86,15 @@ fun KeyMappingOverlay(
                                     position.y - hitIdx.centralY
                                 )
                                 touchOffsets[hitIdx.elementId] = rel
-                                onElementAction?.invoke(hitIdx, true, rel.x, rel.y)
+                                val newPressed = if (hitIdx.type == ElementType.DIGITAL_SWITCH_BUTTON) {
+                                    val current = switchToggleStates[hitIdx.elementId] ?: false
+                                    val next = !current
+                                    switchToggleStates[hitIdx.elementId] = next
+                                    next
+                                } else {
+                                    true
+                                }
+                                onElementAction?.invoke(hitIdx, newPressed, rel.x, rel.y)
                                 true
                             }
                         } else {
@@ -93,11 +103,11 @@ fun KeyMappingOverlay(
                         }
                     }
                     MotionEvent.ACTION_UP -> {
-                        // 最后一指抬起：释放所有
+                        // 最后一指抬起：释放所有（开关按键保持 toggle 状态，不回调）
                         for ((id, _) in pressedIds.toMap()) {
                             pressedIds[id] = false
                             val el = elements.find { it.elementId == id }
-                            if (el != null) {
+                            if (el != null && el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
                                 onElementAction?.invoke(el, false, 0f, 0f)
                             }
                         }
@@ -107,23 +117,24 @@ fun KeyMappingOverlay(
                         !enabled || hitIdx != null
                     }
                     MotionEvent.ACTION_POINTER_UP -> {
-                        // 某一指抬起：释放对应的元素
+                        // 某一指抬起：释放对应的元素（开关按键保持 toggle 状态，不回调）
                         val releasedElId = pointerToElement.remove(pointerId)
                         if (releasedElId != null) {
                             pressedIds[releasedElId] = false
                             touchOffsets.remove(releasedElId)
                             val el = elements.find { it.elementId == releasedElId }
-                            if (el != null) {
+                            if (el != null && el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
                                 onElementAction?.invoke(el, false, 0f, 0f)
                             }
                         }
                         true
                     }
                     MotionEvent.ACTION_CANCEL -> {
+                        // 取消：释放所有（开关按键保持 toggle 状态，不回调）
                         for ((id, _) in pressedIds.toMap()) {
                             pressedIds[id] = false
                             val el = elements.find { it.elementId == id }
-                            if (el != null) {
+                            if (el != null && el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
                                 onElementAction?.invoke(el, false, 0f, 0f)
                             }
                         }
@@ -150,12 +161,20 @@ fun KeyMappingOverlay(
                                         pos.y - hit.centralY
                                     )
                                     touchOffsets[hit.elementId] = rel
-                                    onElementAction?.invoke(hit, true, rel.x, rel.y)
+                                    val newPressed = if (hit.type == ElementType.DIGITAL_SWITCH_BUTTON) {
+                                        val current = switchToggleStates[hit.elementId] ?: false
+                                        val next = !current
+                                        switchToggleStates[hit.elementId] = next
+                                        next
+                                    } else {
+                                        true
+                                    }
+                                    onElementAction?.invoke(hit, newPressed, rel.x, rel.y)
                                     consumed = true
                                 }
                                 continue
                             }
-                            // 更新已有元素的偏移（摇杆用）
+                            // 更新已有元素的偏移（摇杆用）—— 开关按键跳过 MOVE 回调（旧 Crown 行为）
                             val el = elements.find { it.elementId == elId }
                             if (el != null) {
                                 val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
@@ -164,7 +183,9 @@ fun KeyMappingOverlay(
                                     pos.y - el.centralY
                                 )
                                 touchOffsets[elId] = rel
-                                onElementAction?.invoke(el, true, rel.x, rel.y)
+                                if (el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
+                                    onElementAction?.invoke(el, true, rel.x, rel.y)
+                                }
                                 consumed = true
                             }
                         }
@@ -178,7 +199,11 @@ fun KeyMappingOverlay(
         Canvas(modifier = Modifier.fillMaxSize(), contentDescription = "keymap") {
             val sorted = elements.sortedBy { it.layer }
             for (el in sorted) {
-                val isPressed = pressedIds[el.elementId] == true
+                val isPressed = if (el.type == ElementType.DIGITAL_SWITCH_BUTTON) {
+                    switchToggleStates[el.elementId] == true
+                } else {
+                    pressedIds[el.elementId] == true
+                }
                 drawElement(el, isPressed)
             }
         }

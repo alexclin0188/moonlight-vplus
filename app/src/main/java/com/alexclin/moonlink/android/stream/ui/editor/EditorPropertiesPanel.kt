@@ -48,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -80,6 +81,7 @@ fun EditorPropertiesPanel(
 ) {
     // ── 本地可编辑状态 ──
     var text by remember(element.elementId) { mutableStateOf(element.text) }
+    var pendingText by remember(element.elementId) { mutableStateOf(element.text) }
     var value by remember(element.elementId) { mutableStateOf(element.value) }
     var centralX by remember(element.elementId) { mutableStateOf(element.centralX.toString()) }
     var centralY by remember(element.elementId) { mutableStateOf(element.centralY.toString()) }
@@ -173,9 +175,16 @@ fun EditorPropertiesPanel(
                 // Lbl1: 按键名（右对齐）
                 GridLabel("按键名", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Input1: 输入框
-                InlineTextField(value = text, onValueChange = { text = it; onElementChanged?.invoke(snapshot()) },
-                    modifier = Modifier.weight(1.5f).padding(end = 2.dp), enabled = !isPadOrStick)
+                // Input1: 输入框（使用 pendingText，失焦时提交）
+                InlineTextField(value = pendingText, onValueChange = { pendingText = it },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp)
+                        .onFocusEvent { focusState ->
+                            if (!focusState.isFocused && pendingText != text) {
+                                text = pendingText
+                                onElementChanged?.invoke(snapshot())
+                            }
+                        },
+                    enabled = !isPadOrStick)
                 // Lbl1: 键值（右对齐）
                 GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
@@ -231,8 +240,14 @@ fun EditorPropertiesPanel(
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
                 }
-                // Btn: 保存（绿色）
-                TextButton(onClick = { onSave(snapshot()) }, modifier = Modifier.wrapContentHeight(),
+                // Btn: 保存（绿色）—— 先提交待定文本再保存
+                TextButton(onClick = {
+                    if (pendingText != text) {
+                        text = pendingText
+                        onElementChanged?.invoke(snapshot())
+                    }
+                    onSave(snapshot())
+                }, modifier = Modifier.wrapContentHeight(),
                     contentPadding = paddingValues) {
                     Icon(Icons.Default.Check, contentDescription = null,
                         tint = androidx.compose.ui.graphics.Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
