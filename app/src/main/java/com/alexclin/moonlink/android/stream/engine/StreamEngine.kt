@@ -56,6 +56,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.preference.PreferenceManager
 import kotlin.math.roundToInt
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
@@ -239,6 +240,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         return try {
             // 1. 读取全局串流偏好
             prefConfig = PreferenceConfiguration.readPreferences(activity)
+
+            // 读取连接恢复设置（与旧 Game.kt 逻辑一致）
+            val globalPrefs = PreferenceManager.getDefaultSharedPreferences(activity)
+            isExtremeResumeEnabled = globalPrefs.getBoolean("checkbox_extreme_resume", false) &&
+                    globalPrefs.getBoolean("checkbox_resume_stream", false)
 
             // 恢复客户端声音开关状态
             isAudioMuted = prefConfig.muteClientAudio
@@ -1699,10 +1705,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         override fun surfaceDestroyed(holder: SurfaceHolder) {
             LimeLog.info("StreamEngine: surfaceDestroyed")
-            if (attemptedConnection && connected && !activity.isFinishing && !isInPipMode) {
+            if (attemptedConnection && connected && !activity.isFinishing && !isInPipMode && isExtremeResumeEnabled) {
                 // 极速恢复：暂停渲染但不中断串流，surface 重建后 resume
                 isExtremeResumeEnabled = true
-                audioRenderer?.pauseProcessing()
+                if (!isBackgroundAudioEnabled()) {
+                    audioRenderer?.pauseProcessing()
+                    LimeLog.info("StreamEngine: 后台音频已暂停")
+                }
                 decoderRenderer?.pauseProcessing()
             }
             cachedSurfaceHolder = null
@@ -2004,6 +2013,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             audioRenderer?.pauseProcessing()
             return
         }
+        // 极端恢复模式下不停止连接 — surfaceDestroyed/onStop 会处理保活逻辑
+        if (isExtremeResumeEnabled && !activity.isFinishing) {
+            LimeLog.info("StreamEngine: 极端恢复模式，跳过 onPause 断连")
+            return
+        }
         // 关闭对话框（Activity 即将不可见，防止 WindowLeaked）
         activeDialog?.dismiss()
         activeDialog = null
@@ -2037,6 +2051,20 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         decoderRenderer = null
         conn = null
     }
+
+    // ═══════════════════════════════════════════════════════════
+    // 连接设置 — 供 StreamActivity 生命周期使用
+    // ═══════════════════════════════════════════════════════════
+
+    /** 读取"自动恢复串流"设置（checkbox_resume_stream） */
+    fun isResumeStreamEnabled(): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(activity)
+            .getBoolean("checkbox_resume_stream", false)
+
+    /** 读取"后台播放音频"设置（checkbox_background_audio） */
+    private fun isBackgroundAudioEnabled(): Boolean =
+        PreferenceManager.getDefaultSharedPreferences(activity)
+            .getBoolean("checkbox_background_audio", false)
 
     // ═══════════════════════════════════════════════════════════
     // 主机级串流配置映射

@@ -221,6 +221,11 @@ fun MoonLinkApp(
                 PerformanceSettingsScreen()
             }
 
+            // ── 连接设置 ─────────────────────────────────
+            composable(MoonLinkRoute.SettingsConnection.route) {
+                ConnectionSettingsScreen()
+            }
+
             // ── 设备概要页 ────────────────────────────────────
             composable(
                 route = MoonLinkRoute.DeviceOverview.route,

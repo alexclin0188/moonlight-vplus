@@ -1,15 +1,24 @@
 package com.alexclin.moonlink.android.stream
 
+import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.os.SystemClock
 import android.view.View
 import com.limelight.ui.StreamView
 import android.view.WindowManager
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import androidx.core.app.ActivityCompat
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -78,6 +87,9 @@ class StreamActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 清除上一次串流遗留的保活通知
+        cancelKeepAliveNotification()
+
         // 全屏（隐藏状态栏 + 导航栏）
         if (Build.VERSION.SDK_INT >= 30) {
             try {
@@ -117,6 +129,11 @@ class StreamActivity : ComponentActivity() {
         if (!engine.initialize(intent)) {
             finish()
             return
+        }
+
+        // 提示用户开启通知权限以保证后台保活
+        if (engine.isResumeStreamEnabled()) {
+            checkNotificationPermission()
         }
 
         engine.onStreamEnded = {
@@ -1145,6 +1162,7 @@ class StreamActivity : ComponentActivity() {
 
     override fun onDestroy() {
         clearPipReference()
+        cancelKeepAliveNotification()
         super.onDestroy()
         engine.release()
     }
@@ -1153,7 +1171,7 @@ class StreamActivity : ComponentActivity() {
         super.onPause()
         wasPaused = true
         wasBackgrounded = !isFinishing
-        if (!isFinishing) {
+        if (!isFinishing && engine.isResumeStreamEnabled()) {
             engine.shouldResumeSession = true
         }
         engine.onPause()
@@ -1175,15 +1193,87 @@ class StreamActivity : ComponentActivity() {
         engine.onStopStreaming()
 
         // 标记为"应恢复会话"
-        if (!engine.shouldResumeSession && !isFinishing) {
+        if (!engine.shouldResumeSession && !isFinishing && engine.isResumeStreamEnabled()) {
             engine.shouldResumeSession = true
         }
     }
 
+    @SuppressLint("BatteryLife")
     private fun showKeepAliveNotification() {
+        // Android 13+：必须先获得通知权限才能显示前台服务通知
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    KEEP_ALIVE_NOTIFICATION_ID
+                )
+                return
+            }
+        }
+
+        // Android 12+：引导用户关闭电池优化，防止后台被系统杀死
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+                val isResumeEnabled = prefs.getBoolean("checkbox_resume_stream", false)
+                val hasRequestedOptimization = prefs.getBoolean("pref_battery_optimization_requested", false)
+
+                if (isResumeEnabled && !hasRequestedOptimization) {
+                    if (ContextCompat.checkSelfPermission(this, "android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS")
+                        == PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val pm = getSystemService(POWER_SERVICE) as PowerManager
+                        if (!pm.isIgnoringBatteryOptimizations(packageName)) {
+                            val intent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS)
+                            intent.data = "package:$packageName".toUri()
+                            try {
+                                startActivity(intent)
+                                prefs.edit {
+                                    putBoolean("pref_battery_optimization_requested", true)
+                                }
+                            } catch (e: Exception) {
+                                LimeLog.warning("StreamActivity: 无法打开电池优化设置 ${e.message}")
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (_: Exception) {
+        }
+
         val pcName = intent.getStringExtra(com.limelight.Game.EXTRA_PC_NAME) ?: return
         val appName = intent.getStringExtra(com.limelight.Game.EXTRA_APP_NAME) ?: return
         StreamNotificationService.start(this, pcName, appName)
+    }
+
+    private fun cancelKeepAliveNotification() {
+        StreamNotificationService.stop(this)
+    }
+
+    /** 提示用户开启通知权限以确保后台保活生效 */
+    private fun checkNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (!NotificationManagerCompat.from(this).areNotificationsEnabled()) {
+                Toast.makeText(this, getString(R.string.toast_enable_notification_for_bg), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == KEEP_ALIVE_NOTIFICATION_ID) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // 权限已授予，重新尝试启动保活通知
+                val pcName = intent.getStringExtra(com.limelight.Game.EXTRA_PC_NAME) ?: return
+                val appName = intent.getStringExtra(com.limelight.Game.EXTRA_APP_NAME) ?: return
+                StreamNotificationService.start(this, pcName, appName)
+            } else {
+                Toast.makeText(this, getString(R.string.toast_no_notification_permission), Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
@@ -1214,5 +1304,10 @@ class StreamActivity : ComponentActivity() {
         } else {
             engine.disconnectAndQuit()
         }
+    }
+
+    companion object {
+        /** 保活通知权限请求码 */
+        private const val KEEP_ALIVE_NOTIFICATION_ID = 1001
     }
 }

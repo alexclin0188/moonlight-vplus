@@ -39,6 +39,7 @@ val SETTINGS_CATEGORIES = listOf(
     SettingsCategory("input",       "输入设置",           Icons.Default.Keyboard,        "settings_input"),
     SettingsCategory("keymapping",  "按键映射管理",        Icons.Default.Tune,            "settings_keymapping"),
     SettingsCategory("widget",      "桌面小部件",         Icons.Default.Widgets,         "_widget"),
+    SettingsCategory("connection",  "连接设置",           Icons.Default.Lan,             "settings_connection"),
     SettingsCategory("help",        "帮助",              Icons.Default.HelpOutline,     "settings_help"),
 )
 
@@ -234,6 +235,7 @@ private fun SettingsCategoryContent(
         "gamepad"     -> GamepadSettingsScreen()
         "input"       -> InputSettingsScreen()
         "keymapping"  -> KeyMappingScreen()
+        "connection"  -> ConnectionSettingsScreen()
         "help"        -> HelpSettingsScreen()
     }
 }

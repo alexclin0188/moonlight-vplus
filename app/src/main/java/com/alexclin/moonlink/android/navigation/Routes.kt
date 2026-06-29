@@ -70,4 +70,7 @@ sealed class MoonLinkRoute(val route: String) {
 
     /** 性能与统计分析 */
     data object SettingsPerformance : MoonLinkRoute("settings_performance")
+
+    /** 连接设置 */
+    data object SettingsConnection : MoonLinkRoute("settings_connection")
 }
