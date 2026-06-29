@@ -46,6 +46,8 @@ import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
 import com.alexclin.moonlink.android.stream.ui.common.getActionLabel
 import com.limelight.QuickActionRegistry
 import com.limelight.binding.input.KeyboardTranslator
+import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 
 @Composable
 fun QuickActionRow(
@@ -117,11 +119,11 @@ fun QuickActionRow(
                         if (isAvailable) {
                             executeAction(id, engine)
                         } else {
-                            android.widget.Toast.makeText(
+                            ToastUtil.show(
                                 context,
                                 "麦克风功能不可用，需要PC端安装对应虚拟驱动",
-                                android.widget.Toast.LENGTH_SHORT,
-                            ).show()
+                                Toast.LENGTH_SHORT,
+                            )
                         }
                     },
                 )

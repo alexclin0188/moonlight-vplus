@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import com.limelight.Game
 import com.limelight.LimeLog
 import com.limelight.binding.PlatformBinding
@@ -246,10 +247,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             perfOverlayEnabled = prefConfig.enablePerfOverlay
             fabOpacity = prefConfig.fabOpacity
 
-            // 默认触摸模式：增强式多点触控
-            prefConfig.enableEnhancedTouch = true
-            prefConfig.touchscreenTrackpad = false
-            prefConfig.enableNativeMousePointer = false
+            // 默认触摸模式：从 SharedPreferences 读取（用户上次选择的模式）
+            // HostSettings 将在步骤 2a/2c 覆盖（如已配置）
 
             // 默认关闭按键映射（不持久化上次状态）
             prefConfig.keyMappingEnabled = false
@@ -283,6 +282,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
             // 2b. 应用"以最近一次配置启动"（若 Intent 中包含）
             AppSettingsManager(activity).applyLastSettingsFromIntent(intent, prefConfig)
+
+            // 2b+. 同步运行时 Compose 状态（applyLastSettingsFromIntent 可能改变 prefConfig）
+            isAudioMuted = prefConfig.muteClientAudio
+            perfOverlayEnabled = prefConfig.enablePerfOverlay
+            fabOpacity = prefConfig.fabOpacity
+            stretchVideo = prefConfig.stretchVideo
 
             // 2c. 如果存在主机级配置，重新应用使其优先级高于"最近配置"
             //     这样用户在主机的"串流设置"中明确设置的值不会被 per-app 历史记录覆盖。
@@ -371,14 +376,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             true
         } catch (e: Exception) {
             LimeLog.severe("StreamEngine: 初始化失败 ${e.message}")
-            Toast.makeText(activity, "串流初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            ToastUtil.show(activity, "串流初始化失败: ${e.message}", Toast.LENGTH_LONG)
             false
         }
     }
 
     private fun fail(msg: String): Boolean {
         LimeLog.severe("StreamEngine: $msg")
-        Toast.makeText(activity, msg, Toast.LENGTH_SHORT).show()
+        ToastUtil.show(activity, msg, Toast.LENGTH_SHORT)
         return false
     }
 
@@ -437,7 +442,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         // 2) 检查 AVC 解码器是否可用（旧代码 line 479）
         if (decoderRenderer?.isAvcSupported() != true) {
-            Toast.makeText(activity, "设备不支持 H.264 硬件解码", Toast.LENGTH_LONG).show()
+            ToastUtil.show(activity, "设备不支持 H.264 硬件解码", Toast.LENGTH_LONG)
             throw IllegalStateException("No AVC decoder available")
         }
 
@@ -1136,7 +1141,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 val device = InputDevice.getDevice(id)
                 val deviceName = device?.name ?: "外设"
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "$deviceName 已连接", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(activity, "$deviceName 已连接", Toast.LENGTH_SHORT)
                 }
             }
         }
@@ -1147,7 +1152,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             scanPeripherals()
             if (wasInList != null) {
                 activity.runOnUiThread {
-                    Toast.makeText(activity, "$deviceName 已断开", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(activity, "$deviceName 已断开", Toast.LENGTH_SHORT)
                 }
             }
         }
@@ -1270,16 +1275,49 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             }
         }
 
+    /** 开启按键映射前保存的触摸模式，用于关闭时恢复 */
+    private var savedEnableEnhancedTouch: Boolean? = null
+    private var savedTouchscreenTrackpad: Boolean? = null
+    private var savedEnableNativeMousePointer: Boolean? = null
+
     /** 设置按键映射开关（不持久化，重启后默认为关闭）。同时加载当前方案的覆盖层元素和配置状态。由 Compose UI（KeyMappingSection）调用。 */
     fun setKeyMappingEnabled(enabled: Boolean) {
         keyMappingState = enabled
         if (enabled) {
+            // 保存当前触摸模式，便于关闭按键映射时恢复
+            savedEnableEnhancedTouch = prefConfig.enableEnhancedTouch
+            savedTouchscreenTrackpad = prefConfig.touchscreenTrackpad
+            savedEnableNativeMousePointer = prefConfig.enableNativeMousePointer
             reloadOverlay()
         } else {
             currentOverlayElements.value = emptyList()
             // 关闭时重置触控状态，让下层触控处理器接管
             configTouchEnabled = true
             configGlobalOpacity = 100
+            // 恢复按键映射开启前的触摸模式
+            restoreSavedTouchMode()
+        }
+    }
+
+    /** 恢复按键映射开启前保存的触摸模式 */
+    private fun restoreSavedTouchMode() {
+        val ee = savedEnableEnhancedTouch ?: return
+        val ts = savedTouchscreenTrackpad ?: return
+        val nm = savedEnableNativeMousePointer ?: return
+        savedEnableEnhancedTouch = null
+        savedTouchscreenTrackpad = null
+        savedEnableNativeMousePointer = null
+
+        prefConfig.enableEnhancedTouch = ee
+        prefConfig.touchscreenTrackpad = ts
+        prefConfig.enableNativeMousePointer = nm
+        prefConfig.writePreferences(activity)
+        syncNativeTouchContext()
+        showLocalCursor = prefConfig.enableLocalCursorRendering && prefConfig.touchscreenTrackpad
+        touchHandler?.let { handler ->
+            handler.setTouchMode(ts)
+            handler.setEnhancedTouch(ee)
+            handler.cursorVisible = nm
         }
     }
 
@@ -1766,7 +1804,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                             }
                         }
                         if (latencyText.isNotEmpty()) {
-                            Toast.makeText(activity, latencyText, Toast.LENGTH_LONG).show()
+                            ToastUtil.show(activity, latencyText, Toast.LENGTH_LONG)
                         }
                     } catch (_: Exception) {}
                 }
@@ -1812,11 +1850,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     override fun displayMessage(message: String) {
         LimeLog.info("StreamEngine: displayMessage $message")
         StreamLogger.log(activity, "SRV_MSG", message)
-        handler.post { Toast.makeText(activity, message, Toast.LENGTH_LONG).show() }
+        handler.post { ToastUtil.show(activity, message, Toast.LENGTH_LONG) }
     }
 
     override fun displayTransientMessage(message: String) {
-        handler.post { Toast.makeText(activity, message, Toast.LENGTH_SHORT).show() }
+        handler.post { ToastUtil.show(activity, message, Toast.LENGTH_SHORT) }
     }
 
     override fun rumble(controllerNumber: Short, lowFreqMotor: Short, highFreqMotor: Short) {

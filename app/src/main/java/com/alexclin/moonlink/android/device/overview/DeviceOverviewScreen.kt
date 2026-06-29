@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.device.overview
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -671,10 +672,10 @@ private fun QuickActionsDialog(
                             val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
                             Iperf3Tester(iperfActivity, ip).show()
                         } catch (e: java.io.IOException) {
-                            Toast.makeText(context, "设备地址不可用，请确认设备在线", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "设备地址不可用，请确认设备在线", Toast.LENGTH_SHORT)
                         }
                     } else {
-                        Toast.makeText(context, "无法获取设备地址", Toast.LENGTH_SHORT).show()
+                        ToastUtil.show(context, "无法获取设备地址", Toast.LENGTH_SHORT)
                     }
                     onDismiss()
                 }
@@ -1140,13 +1141,13 @@ private fun launchStreamFromOverview(
         val pipUuid = StreamEngine.currentPipUuid
         if (pipUuid != null && pipUuid == computer.uuid) {
             // 同一设备：关闭 PiP Activity，然后启动新流
-            Toast.makeText(context, "从画中画恢复串流…", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "从画中画恢复串流…", Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
         } else {
             // 不同设备：关闭 PiP Activity 停止旧流。
             // finish() 会触发旧 Activity 的 onDestroy → engine.release() 完整清理。
             // 但 onDestroy 是异步执行的，主动清除静态引用避免新流启动时读到脏数据。
-            Toast.makeText(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
             StreamEngine.currentPipActivity = null
             StreamEngine.currentPipUuid = null
@@ -1154,13 +1155,13 @@ private fun launchStreamFromOverview(
     }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
-        Toast.makeText(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT)
         try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
         return
     }
 
     val targetApp = app ?: getDefaultQuickStartApp(computer, context) ?: run {
-        Toast.makeText(context, "无可启动的应用，请先打开应用列表加载", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "无可启动的应用，请先打开应用列表加载", Toast.LENGTH_SHORT)
         return
     }
 

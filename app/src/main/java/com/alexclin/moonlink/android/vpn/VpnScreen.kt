@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import com.easytier.jni.EasyTierJNI
 import com.easytier.jni.EasyTierManager
 import org.json.JSONObject
+import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 
 // ── Data classes (mirrors EasyTierController) ─────────────────────
 
@@ -252,7 +254,7 @@ fun VpnScreen(externalRefreshTrigger: Int) {
                             proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
                         )
                         saveConfig(context, config)
-                        android.widget.Toast.makeText(context, "配置已保存", android.widget.Toast.LENGTH_SHORT).show()
+                        ToastUtil.show(context, "配置已保存", Toast.LENGTH_SHORT)
                     },
                     modifier = Modifier.weight(1f),
                 ) {

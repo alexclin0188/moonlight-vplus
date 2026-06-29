@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,7 +53,7 @@ fun DeviceDetailScreen(
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("设备详情", detailText)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(context, "详情已复制到剪贴板", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "详情已复制到剪贴板", Toast.LENGTH_SHORT)
         }
     }
 
@@ -190,7 +191,7 @@ private fun EditRemoteAddressDialog(
                     }
                     computer.remoteAddress = ComputerDetails.AddressTuple(host, port)
                     managerBinder?.updateComputer(computer)
-                    Toast.makeText(context, "远程地址已更新", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "远程地址已更新", Toast.LENGTH_SHORT)
                 }
                 onDismiss()
             }) { Text("确定") }

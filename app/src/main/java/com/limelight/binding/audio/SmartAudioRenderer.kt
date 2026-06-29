@@ -23,6 +23,9 @@ class SmartAudioRenderer(
 
     private var delegate: AudioRenderer? = null
 
+    /** 缓存 setup() 之前调用的 mute 状态，delegate 创建后立即应用 */
+    private var pendingMute: Boolean = false
+
     override fun setup(
         audioConfiguration: MoonBridge.AudioConfiguration,
         sampleRate: Int,
@@ -44,6 +47,7 @@ class SmartAudioRenderer(
             if (res == 0) {
                 LimeLog.info("SmartAudioRenderer: using PcmPassthroughRenderer")
                 delegate = pcmThru
+                applyPendingMute()
                 return 0
             }
             LimeLog.warning("SmartAudioRenderer: PcmPassthroughRenderer setup failed ($res)")
@@ -57,6 +61,7 @@ class SmartAudioRenderer(
             if (res == 0) {
                 LimeLog.info("SmartAudioRenderer: using Ac3PassthroughRenderer (codec=$codec)")
                 delegate = passthrough
+                applyPendingMute()
                 return 0
             }
             LimeLog.warning("SmartAudioRenderer: Ac3PassthroughRenderer setup failed ($res); native side already negotiated $codec, no PCM fallback available")
@@ -68,6 +73,7 @@ class SmartAudioRenderer(
         val res = pcm.setup(audioConfiguration, sampleRate, samplesPerFrame, codec, bitrate)
         if (res == 0) {
             delegate = pcm
+            applyPendingMute()
         }
         return res
     }
@@ -105,7 +111,18 @@ class SmartAudioRenderer(
 
     /** Forwarded for [AndroidAudioRenderer.setMuted] when active. */
     fun setMuted(muted: Boolean) {
+        pendingMute = muted
         (delegate as? AndroidAudioRenderer)?.setMuted(muted)
+    }
+
+    /** 在 delegate 创建后应用缓存的 mute 状态 */
+    private fun applyPendingMute() {
+        val androidRenderer = delegate as? AndroidAudioRenderer
+        if (androidRenderer != null) {
+            androidRenderer.setMuted(pendingMute)
+        } else if (pendingMute) {
+            LimeLog.info("SmartAudioRenderer: mute 请求无法应用于 passthrough 渲染器，音频将正常播放")
+        }
     }
 
     /** Whether the active delegate is currently muted. */

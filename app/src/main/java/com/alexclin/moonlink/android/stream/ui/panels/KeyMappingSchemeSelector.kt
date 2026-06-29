@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -107,9 +108,9 @@ fun KeyMappingSchemeSelector(
                             if (currentConfigId == target.configId) {
                                 selectScheme(0L)
                             }
-                            Toast.makeText(context, "已删除", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "已删除", Toast.LENGTH_SHORT)
                         } catch (e: Exception) {
-                            Toast.makeText(context, "删除失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "删除失败: ${e.message}", Toast.LENGTH_SHORT)
                         }
                         deleteTarget = null
                     },

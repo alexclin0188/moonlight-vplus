@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Point
 import android.os.Build
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -456,7 +457,7 @@ private fun setFixedBitrate(
                     }
             override fun onFailure(errorMessage: String) {
                 // 服务端拒绝，恢复之前的状态
-                Toast.makeText(context, "码率设置失败: $errorMessage", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "码率设置失败: $errorMessage", Toast.LENGTH_SHORT)
             }
         })
     }
@@ -834,7 +835,7 @@ private fun DisplaySection(engine: StreamEngine) {
                                             } catch (_: Exception) { false }
                                         }
                                         if (!ok) {
-                                            Toast.makeText(context, "DPI缩放设置失败", Toast.LENGTH_SHORT).show()
+                                            ToastUtil.show(context, "DPI缩放设置失败", Toast.LENGTH_SHORT)
                                         }
                                     }
                                 },
@@ -942,7 +943,7 @@ private fun PipSwitch(engine: StreamEngine) {
         checked = it
         pref.enablePip = it
         if (it) {
-            Toast.makeText(engine.activity, "离开应用时将自动进入画中画模式", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(engine.activity, "离开应用时将自动进入画中画模式", Toast.LENGTH_SHORT)
         }
     }
 }

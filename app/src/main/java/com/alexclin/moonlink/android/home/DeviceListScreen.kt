@@ -50,6 +50,8 @@ import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.R
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
+import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
@@ -945,18 +947,18 @@ private fun launchStream(
         val pipUuid = StreamEngine.currentPipUuid
         if (pipUuid != null && pipUuid == computer.uuid) {
             // 同一设备：关闭 PiP Activity（它会清理流），然后启动新流
-            android.widget.Toast.makeText(context, "从画中画恢复串流…", android.widget.Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "从画中画恢复串流…", Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
             // Activity finish 后继续执行下面的正常启动逻辑
         } else {
             // 不同设备：关闭 PiP Activity 停止旧流，然后启动新流
-            android.widget.Toast.makeText(context, "已停止另一台设备的画中画串流…", android.widget.Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
         }
     }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
-        android.widget.Toast.makeText(context, "设备离线，正在尝试唤醒…", android.widget.Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT)
         try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) {}
         return
     }
@@ -967,7 +969,7 @@ private fun launchStream(
         target.activeAddress = target.selectBestAddress()
     }
     if (target.activeAddress == null) {
-        android.widget.Toast.makeText(context, "设备地址不可用", android.widget.Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "设备地址不可用", Toast.LENGTH_SHORT)
         return
     }
 
@@ -986,11 +988,11 @@ private fun launchStream(
             cachedApps = loadCachedAppList(context, computer.uuid)
         }
         if (cachedApps.isEmpty()) {
-            android.widget.Toast.makeText(
+            ToastUtil.show(
                 context,
                 "无可启动的应用，请先打开应用列表加载",
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
+                Toast.LENGTH_SHORT
+            )
             return
         }
         desktopApp = cachedApps.firstOrNull { it.appName.equals("Desktop", ignoreCase = true) }
@@ -1032,7 +1034,7 @@ private fun doPair(
     setLoading: (Boolean) -> Unit = {},
 ) {
     if (computer.state == ComputerDetails.State.OFFLINE || computer.activeAddress == null) {
-        android.widget.Toast.makeText(activity, "设备离线，无法配对", android.widget.Toast.LENGTH_SHORT).show()
+        ToastUtil.show(activity, "设备离线，无法配对", Toast.LENGTH_SHORT)
         return
     }
     if (managerBinder == null) return

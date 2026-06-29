@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android.settings
 
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

@@ -5,6 +5,7 @@ import android.content.ContentValues
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -125,13 +126,13 @@ private fun doExit(
 
     val name = schemeName.trim()
     if (name.isEmpty()) {
-        Toast.makeText(context, "方案名称不能为空", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "方案名称不能为空", Toast.LENGTH_SHORT)
         return
     }
 
     // 校验名称不重复
     if (isSchemeNameDuplicate(context, name)) {
-        Toast.makeText(context, "已存在同名方案「$name」，请修改名称", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "已存在同名方案「$name」，请修改名称", Toast.LENGTH_SHORT)
         return
     }
 
@@ -160,10 +161,10 @@ private fun doExit(
         prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newId).apply()
         engine.setKeyMappingEnabled(true)
         engine.reloadOverlay()
-        Toast.makeText(context, "方案「$name」已创建", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "方案「$name」已创建", Toast.LENGTH_SHORT)
         onClose()
     } catch (e: Exception) {
-        Toast.makeText(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT)
     }
 }
 
@@ -261,7 +262,7 @@ fun KeyMappingEditor(
         editorState.addElement(newEl)
         selectedIds = setOf(newEl.elementId)
         reloadElements()
-        Toast.makeText(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT)
     }
 
     // ── 复制到跨方案剪贴板（携带 GroupButton 子元素） ──
@@ -279,7 +280,7 @@ fun KeyMappingEditor(
         EditorClipboard.copy(src, children)
         clipboardHasData = true
         val childInfo = if (children.isNotEmpty()) "（含 ${children.size} 个子按键）" else ""
-        Toast.makeText(context, "已复制「${src.text.ifBlank { src.type.displayName }}」$childInfo 到剪贴板", Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」$childInfo 到剪贴板", Toast.LENGTH_SHORT)
     }
 
     // ── 从跨方案剪贴板粘贴 ──
@@ -308,7 +309,7 @@ fun KeyMappingEditor(
         } else {
             "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」"
         }
-        Toast.makeText(context, summary, Toast.LENGTH_SHORT).show()
+        ToastUtil.show(context, summary, Toast.LENGTH_SHORT)
     }
 
     // ── 删除元素（reloadElements 自动清理 GroupButton 的孤儿引用） ──
@@ -493,7 +494,7 @@ fun KeyMappingEditor(
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                             editorState.saveElement(updated)
                             selectedIds = emptySet()
-                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "已保存", Toast.LENGTH_SHORT)
                         },
                         onDelete = { showDeleteConfirm = true },
                         onDuplicate = { duplicateSelected() },
@@ -517,7 +518,7 @@ fun KeyMappingEditor(
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                             editorState.saveElement(updated)
                             selectedIds = emptySet()
-                            Toast.makeText(context, "已保存", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "已保存", Toast.LENGTH_SHORT)
                         },
                         onDelete = { showDeleteConfirm = true },
                         onDuplicate = { duplicateSelected() },
@@ -589,7 +590,7 @@ fun KeyMappingEditor(
                     } catch (_: Exception) { }
                     showColorEditor = false
                     pendingColorEditorElement = null
-                    Toast.makeText(context, "颜色已更新", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "颜色已更新", Toast.LENGTH_SHORT)
                 },
                 onDismiss = { showColorEditor = false; pendingColorEditorElement = null },
             )
@@ -604,7 +605,7 @@ fun KeyMappingEditor(
                     editorState.saveElement(updated)
                     showTypeSpecificEditor = false
                     pendingTypeSpecificEditorElement = null
-                    Toast.makeText(context, "属性已更新", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
                 },
                 onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
             )
@@ -643,7 +644,7 @@ fun KeyMappingEditor(
                     editorState.addElement(elToInsert)
                     selectedIds = setOf(elToInsert.elementId)
                     reloadElements()
-                    Toast.makeText(context, "已添加「${type.displayName}」", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "已添加「${type.displayName}」", Toast.LENGTH_SHORT)
                 },
             )
         }
@@ -664,18 +665,18 @@ fun KeyMappingEditor(
                     editorState.addElement(finalEl)
                     selectedIds = setOf(finalEl.elementId)
                     reloadElements()
-                    Toast.makeText(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT)
                     showComboKeyEditor = false
                 },
                 onSaveExisting = { updatedEl ->
                     editorState.saveElement(updatedEl)
-                    Toast.makeText(context, "组合键已更新", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "组合键已更新", Toast.LENGTH_SHORT)
                     reloadElements()
                     showComboKeyEditor = false
                 },
                 onDeleteExisting = { targetEl ->
                     editorState.deleteElement(targetEl.elementId)
-                    Toast.makeText(context, "已删除组合键", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "已删除组合键", Toast.LENGTH_SHORT)
                     reloadElements()
                     showComboKeyEditor = false
                 },
@@ -693,7 +694,7 @@ fun KeyMappingEditor(
                     onSave = { updated ->
                         editorState.saveElement(updated)
                         reloadElements()
-                        Toast.makeText(context, "分段已更新", Toast.LENGTH_SHORT).show()
+                        ToastUtil.show(context, "分段已更新", Toast.LENGTH_SHORT)
                         showWheelPadSegmentEditor = false
                     },
                     onDismiss = { showWheelPadSegmentEditor = false },
@@ -714,7 +715,7 @@ fun KeyMappingEditor(
                     onSave = { updatedGroup ->
                         editorState.saveElement(updatedGroup)
                         reloadElements()
-                        Toast.makeText(context, "子按键列表已更新", Toast.LENGTH_SHORT).show()
+                        ToastUtil.show(context, "子按键列表已更新", Toast.LENGTH_SHORT)
                         showChildManager = false
                     },
                     onDismiss = { showChildManager = false },
@@ -759,7 +760,7 @@ fun KeyMappingEditor(
                             }
                             selectedIds = emptySet()
                             reloadElements()
-                            Toast.makeText(context, "已清空所有按键", Toast.LENGTH_SHORT).show()
+                            ToastUtil.show(context, "已清空所有按键", Toast.LENGTH_SHORT)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     ) { Text("清空") }

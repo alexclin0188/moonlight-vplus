@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.stream.ui.editor
 import android.content.Context
 import android.net.Uri
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -45,7 +46,7 @@ object SchemeExporter {
                 true
             } ?: false
         } catch (e: Exception) {
-            Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_LONG).show()
+            ToastUtil.show(context, "导出失败: ${e.message}", Toast.LENGTH_LONG)
             false
         }
     }
@@ -65,7 +66,7 @@ object SchemeExporter {
             val json = context.contentResolver.openInputStream(uri)?.use { inputStream ->
                 BufferedReader(InputStreamReader(inputStream)).readText()
             } ?: run {
-                Toast.makeText(context, "无法读取文件", Toast.LENGTH_LONG).show()
+                ToastUtil.show(context, "无法读取文件", Toast.LENGTH_LONG)
                 return
             }
 
@@ -77,19 +78,19 @@ object SchemeExporter {
                     val newConfigId = if (allConfigIds.isNotEmpty()) {
                         allConfigIds.max()
                     } else {
-                        Toast.makeText(context, "导入成功但未找到方案", Toast.LENGTH_LONG).show()
+                        ToastUtil.show(context, "导入成功但未找到方案", Toast.LENGTH_LONG)
                         return
                     }
-                    Toast.makeText(context, "导入成功", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "导入成功", Toast.LENGTH_SHORT)
                     onImported(newConfigId)
                 }
-                -1 -> Toast.makeText(context, "文件格式错误", Toast.LENGTH_LONG).show()
-                -2 -> Toast.makeText(context, "文件校验失败（已损坏）", Toast.LENGTH_LONG).show()
-                -3 -> Toast.makeText(context, "版本不兼容，无法导入", Toast.LENGTH_LONG).show()
-                else -> Toast.makeText(context, "导入失败 (错误: $result)", Toast.LENGTH_LONG).show()
+                -1 -> ToastUtil.show(context, "文件格式错误", Toast.LENGTH_LONG)
+                -2 -> ToastUtil.show(context, "文件校验失败（已损坏）", Toast.LENGTH_LONG)
+                -3 -> ToastUtil.show(context, "版本不兼容，无法导入", Toast.LENGTH_LONG)
+                else -> ToastUtil.show(context, "导入失败 (错误: $result)", Toast.LENGTH_LONG)
             }
         } catch (e: Exception) {
-            Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_LONG).show()
+            ToastUtil.show(context, "导入失败: ${e.message}", Toast.LENGTH_LONG)
         }
     }
 }

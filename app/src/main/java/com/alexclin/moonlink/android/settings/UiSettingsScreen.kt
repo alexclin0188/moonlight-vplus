@@ -2,6 +2,7 @@ package com.alexclin.moonlink.android.settings
 
 import android.net.Uri
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -45,12 +46,12 @@ fun UiSettingsScreen() {
                         File(context.filesDir, "custom_background_image.png").absolutePath)
                     .apply()
                 BackgroundSource.setActivePreservingExtras(context, BackgroundSource.Local)
-                Toast.makeText(context, "背景图片设置成功", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "背景图片设置成功", Toast.LENGTH_SHORT)
             } catch (e: Exception) {
-                Toast.makeText(context, "图片保存失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "图片保存失败: ${e.message}", Toast.LENGTH_SHORT)
             }
         } else {
-            Toast.makeText(context, "图片选择已取消", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "图片选择已取消", Toast.LENGTH_SHORT)
         }
     }
 
@@ -109,7 +110,7 @@ fun UiSettingsScreen() {
                                 if (file.exists()) file.delete()
                                 // 原子切换到 Auto 源（自动清除 KEY_LOCAL_PATH、KEY_API_URL，发刷新广播）
                                 BackgroundSource.setActive(context, BackgroundSource.Auto)
-                                Toast.makeText(context, "已恢复默认背景", Toast.LENGTH_SHORT).show()
+                                ToastUtil.show(context, "已恢复默认背景", Toast.LENGTH_SHORT)
                                 showDialog = false
                             }) { Text("确定") }
                         },

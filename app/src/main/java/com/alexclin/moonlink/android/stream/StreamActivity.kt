@@ -9,6 +9,7 @@ import android.view.View
 import com.limelight.ui.StreamView
 import android.view.WindowManager
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent

@@ -90,6 +90,7 @@ import com.alexclin.moonlink.android.stream.ui.panels.QuickActionRow
 import com.limelight.QuickActionRegistry
 import android.view.KeyEvent
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.ui.draw.scale
 import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.android.stream.ui.display.DisplaySettingsPanel
@@ -391,7 +392,7 @@ private fun KeyMappingSection(
                     // 自动切换触控板模式并立即生效
                     engine.applyTouchMode(2)  // 2 = 触控板模式
                     engine.prefConfig.touchscreenTrackpad = true
-                    Toast.makeText(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT)
                 }
             })
         }
@@ -579,7 +580,7 @@ private fun applyTouchMode(engine: StreamEngine, mode: TouchMode, context: andro
         TouchMode.TRACKPAD -> "已切换为触控板模式"
         TouchMode.MOUSE -> "已切换为鼠标模式"
     }
-    Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+    ToastUtil.show(context, msg, Toast.LENGTH_SHORT)
 }
 
 /** 自动换行居中标签 */

@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.settings
 import android.content.ContentValues
 import android.net.Uri
 import android.widget.Toast
+import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -69,9 +70,9 @@ fun KeyMappingScreen() {
             context.contentResolver.openOutputStream(uri)?.use {
                 it.write(json.toByteArray(Charsets.UTF_8))
             }
-            Toast.makeText(context, "按键方案已导出 (.mlk)", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "按键方案已导出 (.mlk)", Toast.LENGTH_SHORT)
         } catch (e: Exception) {
-            Toast.makeText(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT)
         }
     }
 
@@ -85,19 +86,19 @@ fun KeyMappingScreen() {
         try {
             val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
             if (json.isBlank()) {
-                Toast.makeText(context, "文件内容为空", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "文件内容为空", Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             // 验证是否为有效的 .mlk 文件（含 format: "mlk" 标记）
             val root = JSONObject(json)
             if (root.optString("format") != "mlk") {
-                Toast.makeText(context, "这不是有效的 .mlk 文件，请选择后缀为 .mlk 的按键映射方案文件", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "这不是有效的 .mlk 文件，请选择后缀为 .mlk 的按键映射方案文件", Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             importMlkJson = json
             showImportMlkDialog = true
         } catch (e: Exception) {
-            Toast.makeText(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT)
         }
     }
 
@@ -111,19 +112,19 @@ fun KeyMappingScreen() {
         try {
             val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
             if (json.isBlank()) {
-                Toast.makeText(context, "文件内容为空", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "文件内容为空", Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             // 验证是否为有效的旧版配置文件（ExportFile 格式）
             val root = JSONObject(json)
             if (!root.has("version") || !root.has("settings") || !root.has("elements")) {
-                Toast.makeText(context, "这不是有效的旧王冠配置文件", Toast.LENGTH_SHORT).show()
+                ToastUtil.show(context, "这不是有效的旧王冠配置文件", Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             importMdatJson = json
             showImportMdatDialog = true
         } catch (e: Exception) {
-            Toast.makeText(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            ToastUtil.show(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT)
         }
     }
 
@@ -197,9 +198,9 @@ fun KeyMappingScreen() {
                 try {
                     importMlkFromJson(context, importMlkJson, name, overrideTargetId)
                     schemes = loadUserSchemes(context)
-                    Toast.makeText(context, "方案「$name」已导入", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "方案「$name」已导入", Toast.LENGTH_SHORT)
                 } catch (e: Exception) {
-                    Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT)
                 }
                 showImportMlkDialog = false
             },
@@ -218,9 +219,9 @@ fun KeyMappingScreen() {
                 try {
                     importMdatFromJson(context, importMdatJson, name, overrideTargetId)
                     schemes = loadUserSchemes(context)
-                    Toast.makeText(context, "方案「$name」已从旧配置导入", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "方案「$name」已从旧配置导入", Toast.LENGTH_SHORT)
                 } catch (e: Exception) {
-                    Toast.makeText(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                    ToastUtil.show(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT)
                 }
                 showImportMdatDialog = false
             },
