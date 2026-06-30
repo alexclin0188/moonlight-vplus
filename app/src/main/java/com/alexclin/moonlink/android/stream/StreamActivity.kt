@@ -1073,6 +1073,15 @@ class StreamActivity : ComponentActivity() {
         }
     }
 
+    /**
+     * 处理点击通知栏通知 / 其他 singleTask 唤起场景。
+     * 不调用 setIntent()，保留 onCreate 时的原始 intent（含 EXTRA_PC_NAME 等关键参数）。
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        LimeLog.info("StreamActivity: onNewIntent 收到唤起")
+    }
+
     override fun onResume() {
         super.onResume()
         if (wasPaused) {

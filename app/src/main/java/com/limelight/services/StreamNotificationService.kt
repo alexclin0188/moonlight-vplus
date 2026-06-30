@@ -15,7 +15,7 @@ import android.os.Looper
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.limelight.Game
+import com.alexclin.moonlink.android.stream.StreamActivity
 import com.limelight.LimeLog
 import com.alexclin.moonlink.android.R
 import androidx.core.content.edit
@@ -110,7 +110,7 @@ class StreamNotificationService : Service() {
     }
 
     private fun buildNotification(pcName: String?, appName: String?): Notification {
-        val intent = Intent(this, Game::class.java).apply {
+        val intent = Intent(this, StreamActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
 
