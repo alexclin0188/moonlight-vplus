@@ -9,6 +9,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -20,6 +23,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -52,6 +56,8 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -177,13 +183,13 @@ fun EditorPropertiesPanel(
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框（使用 pendingText，失焦时提交）
                 InlineTextField(value = pendingText, onValueChange = { pendingText = it },
-                    modifier = Modifier.weight(1.5f).padding(end = 2.dp)
-                        .onFocusEvent { focusState ->
-                            if (!focusState.isFocused && pendingText != text) {
-                                text = pendingText
-                                onElementChanged?.invoke(snapshot())
-                            }
-                        },
+                    modifier = Modifier.weight(1.5f).padding(end = 2.dp),
+                    onCommit = {
+                        if (pendingText != text) {
+                            text = pendingText
+                            onElementChanged?.invoke(snapshot())
+                        }
+                    },
                     enabled = !isPadOrStick)
                 // Lbl1: 键值（右对齐）
                 GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
@@ -240,13 +246,15 @@ fun EditorPropertiesPanel(
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
                 }
-                // Btn: 保存（绿色）—— 先提交待定文本再保存
+                // Btn: 保存（绿色）—— 先提交所有待定值再保存
                 TextButton(onClick = {
                     if (pendingText != text) {
                         text = pendingText
-                        onElementChanged?.invoke(snapshot())
                     }
-                    onSave(snapshot())
+                    // 提交所有待定值（整数修正、文本等），确保保存前已统一修正
+                    val element = snapshot()
+                    onElementChanged?.invoke(element)
+                    onSave(element)
                 }, modifier = Modifier.wrapContentHeight(),
                     contentPadding = paddingValues) {
                     Icon(Icons.Default.Check, contentDescription = null,
@@ -450,6 +458,75 @@ private fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
     else -> true
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+//  共享输入框提交逻辑（MiniIntField / InlineTextField 共用）
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/** 输入框提交状态 — 封装 isValidFocused / valueOnFocus / IME 监听 / 失焦提交 / Done 提交 */
+private class FieldCommitState(
+    val onFocusModifier: Modifier,
+    val keyboardActions: KeyboardActions,
+)
+
+/**
+ * 记住并管理输入框的提交状态。
+ * - 失焦时（onFocusEvent）自动提交
+ * - IME 隐藏时（点击空白区域）自动提交
+ * - IME Done 按钮自动提交
+ * - baselineSyncKey 递增时同步基线（± 按钮外部提交后防止重复提交）
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun rememberFieldCommitState(
+    value: String,
+    onCommit: () -> Unit,
+    baselineSyncKey: Int = 0,
+): FieldCommitState {
+    var isFocused by remember { mutableStateOf(false) }
+    var valueOnFocus by remember { mutableStateOf(value) }
+    val focusManager = LocalFocusManager.current
+
+    // 监听 IME 隐藏（点击空白区域导致键盘收起），自动提交
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(imeVisible) {
+        if (!imeVisible && isFocused && value != valueOnFocus) {
+            onCommit()
+            valueOnFocus = value
+        }
+    }
+
+    // ± 按钮点击后，父级提交已发生，同步基线避免失焦时重复提交
+    LaunchedEffect(baselineSyncKey) {
+        if (baselineSyncKey > 0) {
+            valueOnFocus = value
+        }
+    }
+
+    fun commitIfChanged() {
+        if (value != valueOnFocus) {
+            onCommit()
+            valueOnFocus = value
+        }
+    }
+
+    return FieldCommitState(
+        onFocusModifier = Modifier.onFocusEvent { focusState ->
+            if (focusState.isFocused) {
+                valueOnFocus = value
+            } else if (isFocused) {
+                commitIfChanged()
+            }
+            isFocused = focusState.isFocused
+        },
+        keyboardActions = KeyboardActions(
+            onDone = {
+                commitIfChanged()
+                focusManager.clearFocus()
+            }
+        ),
+    )
+}
+
 /** 微型整数输入框 */
 @Composable
 private fun MiniIntField(
@@ -457,9 +534,10 @@ private fun MiniIntField(
     onValueChange: (String) -> Unit,
     onValueCommit: () -> Unit,
     modifier: Modifier = Modifier,
+    /** 父级 ± 按钮提交后递增，用于同步 valueOnFocus 避免后续失焦时重复提交 */
+    baselineSyncKey: Int = 0,
 ) {
-    var isFocused by remember { mutableStateOf(false) }
-    var valueOnFocus by remember(value) { mutableStateOf(value) }
+    val state = rememberFieldCommitState(value, onValueCommit, baselineSyncKey)
 
     BasicTextField(
         value = value,
@@ -474,20 +552,17 @@ private fun MiniIntField(
             fontSize = 10.sp,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done,
+        ),
+        keyboardActions = state.keyboardActions,
         modifier = modifier
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
             .padding(horizontal = 3.dp, vertical = 3.dp)
-            .onFocusEvent { focusState ->
-                if (focusState.isFocused) {
-                    valueOnFocus = value
-                } else if (isFocused && value != valueOnFocus) {
-                    onValueCommit()
-                }
-                isFocused = focusState.isFocused
-            },
+            .then(state.onFocusModifier),
     )
 }
 
@@ -502,6 +577,8 @@ private fun StepperIntField(
     modifier: Modifier = Modifier,
 ) {
     val contentAlpha = if (enabled) 1f else 0.38f
+    /** ± 按钮每次点击递增，通知 MiniIntField 同步 valueOnFocus 避免重复提交 */
+    var baselineSyncKey by remember { mutableStateOf(0) }
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -517,6 +594,7 @@ private fun StepperIntField(
                     val intVal = value.toIntOrNull() ?: return@clickable
                     onValueChange((intVal - step).toString())
                     onValueCommit()
+                    baselineSyncKey++
                 } else Modifier),
             contentAlignment = Alignment.Center,
         ) {
@@ -534,6 +612,7 @@ private fun StepperIntField(
             onValueChange = onValueChange,
             onValueCommit = onValueCommit,
             modifier = Modifier.weight(1f).alpha(contentAlpha),
+            baselineSyncKey = baselineSyncKey,
         )
 
         Spacer(Modifier.width(2.dp))
@@ -549,6 +628,7 @@ private fun StepperIntField(
                     val intVal = value.toIntOrNull() ?: return@clickable
                     onValueChange((intVal + step).toString())
                     onValueCommit()
+                    baselineSyncKey++
                 } else Modifier),
             contentAlignment = Alignment.Center,
         ) {
@@ -561,15 +641,20 @@ private fun StepperIntField(
     }
 }
 
-/** 行内文字输入框 */
+/** 行内文字输入框 —— 支持 IME 确定/键盘隐藏时自动提交 */
 @Composable
 private fun InlineTextField(
     value: String,
     onValueChange: (String) -> Unit,
+    onCommit: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    /** 父级外部提交后递增，用于同步 valueOnFocus 避免后续失焦时重复提交 */
+    baselineSyncKey: Int = 0,
 ) {
     val contentAlpha = if (enabled) 1f else 0.38f
+    val state = rememberFieldCommitState(value, onCommit, baselineSyncKey)
+
     BasicTextField(
         value = value,
         onValueChange = { if (enabled) onValueChange(it) },
@@ -579,12 +664,14 @@ private fun InlineTextField(
             fontSize = 11.sp,
         ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary.copy(alpha = contentAlpha)),
-        keyboardOptions = KeyboardOptions.Default,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        keyboardActions = state.keyboardActions,
         modifier = modifier
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
-            .padding(horizontal = 4.dp, vertical = 3.dp),
+            .padding(horizontal = 4.dp, vertical = 3.dp)
+            .then(state.onFocusModifier),
     )
 }
 
