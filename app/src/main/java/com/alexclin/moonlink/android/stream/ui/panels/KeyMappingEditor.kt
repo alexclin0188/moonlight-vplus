@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -232,6 +233,7 @@ fun KeyMappingEditor(
 
     // ── 网格吸附辅助 ──
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
+    val focusManager = LocalFocusManager.current
 
     // ── 加载（自动清理 GroupButton 和 WheelPad 的孤儿引用） ──
     fun reloadElements() {
@@ -461,6 +463,7 @@ fun KeyMappingEditor(
                         elementDragEnd = { saveElementOnInteractionEnd(it, snap = true) },
 
                         canvasTap = {
+                            focusManager.clearFocus()
                             selectedIds = emptySet()
                             showGridSlider = false
                         },

@@ -42,10 +42,13 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -103,6 +106,24 @@ fun EditorPropertiesPanel(
         mutableStateOf(element.isCircle || (element.height == element.width && element.radius == element.width / 2))
     }
 
+    // ── 颜色（统一为本地状态，不从 element 隐式读取） ──
+    var normalColor by remember(element.elementId) { mutableStateOf(element.normalColor) }
+    var pressedColor by remember(element.elementId) { mutableStateOf(element.pressedColor) }
+    var backgroundColor by remember(element.elementId) { mutableStateOf(element.backgroundColor) }
+    var normalTextColor by remember(element.elementId) { mutableStateOf(element.normalTextColor) }
+    var pressedTextColor by remember(element.elementId) { mutableStateOf(element.pressedTextColor) }
+
+    // ── 类型专属属性（摇杆模式/灵敏度/方向值等） ──
+    var mode by remember(element.elementId) { mutableStateOf(element.mode) }
+    var sense by remember(element.elementId) { mutableStateOf(element.sense) }
+    var middleValue by remember(element.elementId) { mutableStateOf(element.middleValue) }
+    var upValue by remember(element.elementId) { mutableStateOf(element.upValue) }
+    var downValue by remember(element.elementId) { mutableStateOf(element.downValue) }
+    var leftValue by remember(element.elementId) { mutableStateOf(element.leftValue) }
+    var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
+    var flag1 by remember(element.elementId) { mutableStateOf(element.flag1) }
+    var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
+
     // 十字键/摇杆：按键名、按键值禁用，圆形强制关闭
     val isPadOrStick = element.type in listOf(
         ElementType.DIGITAL_PAD,
@@ -120,6 +141,24 @@ fun EditorPropertiesPanel(
     LaunchedEffect(element.centralY) { centralY = element.centralY.toString() }
     LaunchedEffect(element.width) { width = element.width.toString() }
     LaunchedEffect(element.height) { height = element.height.toString() }
+
+    // ── 同步颜色（对话框保存后 element 更新，同步到本地状态） ──
+    LaunchedEffect(element.normalColor) { normalColor = element.normalColor }
+    LaunchedEffect(element.pressedColor) { pressedColor = element.pressedColor }
+    LaunchedEffect(element.backgroundColor) { backgroundColor = element.backgroundColor }
+    LaunchedEffect(element.normalTextColor) { normalTextColor = element.normalTextColor }
+    LaunchedEffect(element.pressedTextColor) { pressedTextColor = element.pressedTextColor }
+
+    // ── 同步类型专属属性 ──
+    LaunchedEffect(element.mode) { mode = element.mode }
+    LaunchedEffect(element.sense) { sense = element.sense }
+    LaunchedEffect(element.middleValue) { middleValue = element.middleValue }
+    LaunchedEffect(element.upValue) { upValue = element.upValue }
+    LaunchedEffect(element.downValue) { downValue = element.downValue }
+    LaunchedEffect(element.leftValue) { leftValue = element.leftValue }
+    LaunchedEffect(element.rightValue) { rightValue = element.rightValue }
+    LaunchedEffect(element.flag1) { flag1 = element.flag1 }
+    LaunchedEffect(element.extraAttributesJson) { extraAttributesJson = element.extraAttributesJson }
 
     var showKeyPicker by remember { mutableStateOf(false) }
 
@@ -140,6 +179,22 @@ fun EditorPropertiesPanel(
         opacity = opacity.roundToInt().coerceIn(0, 100),
         textSizePercent = textSizePercent.roundToInt().coerceIn(10, 150),
         isCircle = isCircle,
+        // ── 颜色（从本地状态读取，不依赖 element 参数） ──
+        normalColor = normalColor,
+        pressedColor = pressedColor,
+        backgroundColor = backgroundColor,
+        normalTextColor = normalTextColor,
+        pressedTextColor = pressedTextColor,
+        // ── 类型专属属性 ──
+        mode = mode,
+        sense = sense,
+        middleValue = middleValue,
+        upValue = upValue,
+        downValue = downValue,
+        leftValue = leftValue,
+        rightValue = rightValue,
+        flag1 = flag1,
+        extraAttributesJson = extraAttributesJson,
     )
 
     Surface(
@@ -182,7 +237,7 @@ fun EditorPropertiesPanel(
                 GridLabel("按键名", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框（使用 pendingText，失焦时提交）
-                InlineTextField(value = pendingText, onValueChange = { pendingText = it },
+                InlineTextField(getValue = { pendingText }, value = pendingText, onValueChange = { pendingText = it },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     onCommit = {
                         if (pendingText != text) {
@@ -222,7 +277,7 @@ fun EditorPropertiesPanel(
                 GridLabel("边框粗细", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: 粗细值
-                StepperIntField(value = thick, onValueChange = { thick = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
+                StepperIntField(getValue = { thick }, value = thick, onValueChange = { thick = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
 
                 TextButton(onClick = { onOpenColorEditor(snapshot()) },
@@ -241,7 +296,9 @@ fun EditorPropertiesPanel(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 8.sp)
-                        Slider(value = opacity, onValueChange = { opacity = it; onElementChanged?.invoke(snapshot()) },
+                        Slider(value = opacity,
+                            onValueChange = { opacity = it },
+                            onValueChangeFinished = { onElementChanged?.invoke(snapshot()) },
                             valueRange = 0f..100f,
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
@@ -251,9 +308,7 @@ fun EditorPropertiesPanel(
                     if (pendingText != text) {
                         text = pendingText
                     }
-                    // 提交所有待定值（整数修正、文本等），确保保存前已统一修正
                     val element = snapshot()
-                    onElementChanged?.invoke(element)
                     onSave(element)
                 }, modifier = Modifier.wrapContentHeight(),
                     contentPadding = paddingValues) {
@@ -276,13 +331,14 @@ fun EditorPropertiesPanel(
                 GridLabel("按钮宽度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: W值
-                StepperIntField(value = width, onValueChange = { width = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
+                StepperIntField(getValue = { width }, value = width, onValueChange = { width = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: H高（右对齐）
                 GridLabel("按钮高度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: H值（圆形模式禁用，显示宽度值）
-                StepperIntField(value = if (isCircle) width else height,
+                StepperIntField(getValue = { if (isCircle) width else height },
+                    value = if (isCircle) width else height,
                     onValueChange = { height = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
@@ -290,7 +346,8 @@ fun EditorPropertiesPanel(
                 GridLabel("边框圆角", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: 圆角值
-                StepperIntField(value = if (isCircle) (currentWidth() / 2).toString() else radius,
+                StepperIntField(getValue = { if (isCircle) (currentWidth() / 2).toString() else radius },
+                    value = if (isCircle) (currentWidth() / 2).toString() else radius,
                     onValueChange = { radius = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
@@ -347,7 +404,8 @@ fun EditorPropertiesPanel(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 8.sp)
                         Slider(value = textSizePercent,
-                            onValueChange = { textSizePercent = it; onElementChanged?.invoke(snapshot()) },
+                            onValueChange = { textSizePercent = it },
+                            onValueChangeFinished = { onElementChanged?.invoke(snapshot()) },
                             valueRange = 10f..150f,
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
@@ -374,19 +432,19 @@ fun EditorPropertiesPanel(
                 GridLabel("X坐标", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: X值
-                StepperIntField(value = centralX, onValueChange = { centralX = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
+                StepperIntField(getValue = { centralX }, value = centralX, onValueChange = { centralX = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: Y坐标（右对齐）
                 GridLabel("Y坐标", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: Y值
-                StepperIntField(value = centralY, onValueChange = { centralY = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
+                StepperIntField(getValue = { centralY }, value = centralY, onValueChange = { centralY = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl1: 图层（右对齐）
                 GridLabel("所在图层", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 图层值
-                StepperIntField(value = layer, onValueChange = { layer = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
+                StepperIntField(getValue = { layer }, value = layer, onValueChange = { layer = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 Spacer(Modifier.width(1.dp))
                 Text(element.type.displayName,
@@ -450,19 +508,11 @@ private fun GridLabel(text: String, modifier: Modifier = Modifier, rightAlign: B
             .padding(end = 1.dp))
 }
 
-/** 判断该元素类型是否有专属属性可设置 */
-private fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
-    ElementType.DIGITAL_COMMON_BUTTON,
-    ElementType.DIGITAL_SWITCH_BUTTON,
-    ElementType.UNKNOWN -> false
-    else -> true
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 //  共享输入框提交逻辑（MiniIntField / InlineTextField 共用）
 // ═══════════════════════════════════════════════════════════════════════════════
 
-/** 输入框提交状态 — 封装 isValidFocused / valueOnFocus / IME 监听 / 失焦提交 / Done 提交 */
+/** 输入框提交状态 — 封装 onFocusModifier / IME 监听 / 失焦提交 / Done 提交 */
 private class FieldCommitState(
     val onFocusModifier: Modifier,
     val keyboardActions: KeyboardActions,
@@ -470,49 +520,69 @@ private class FieldCommitState(
 
 /**
  * 记住并管理输入框的提交状态。
+ * - IME 隐藏时自动提交（点击空白 / Enter/Done 均会导致键盘收起）
  * - 失焦时（onFocusEvent）自动提交
- * - IME 隐藏时（点击空白区域）自动提交
- * - IME Done 按钮自动提交
+ * - IME Done 按钮提交 → clearFocus → 触发 IME 隐藏 → 统一走 LaunchedEffect(imeVisible)
  * - baselineSyncKey 递增时同步基线（± 按钮外部提交后防止重复提交）
+ *
+ * @param getValue 从 Compose 状态读取最新值的 lambda（避免重组前参数滞后）
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun rememberFieldCommitState(
-    value: String,
+    getValue: () -> String,
     onCommit: () -> Unit,
     baselineSyncKey: Int = 0,
 ): FieldCommitState {
     var isFocused by remember { mutableStateOf(false) }
-    var valueOnFocus by remember { mutableStateOf(value) }
+    var valueOnFocus by remember { mutableStateOf(getValue()) }
     val focusManager = LocalFocusManager.current
 
-    // 监听 IME 隐藏（点击空白区域导致键盘收起），自动提交
+    // ══ 核心：监听 IME 隐藏，统一触发提交 ══
+    // Enter/Done → clearFocus → IME 隐藏 → 到这里
+    // 点击空白区域 → IME 隐藏 → 到这里
     val imeVisible = WindowInsets.isImeVisible
     LaunchedEffect(imeVisible) {
-        if (!imeVisible && isFocused && value != valueOnFocus) {
-            onCommit()
-            valueOnFocus = value
+        if (!imeVisible && isFocused) {
+            val currentVal = getValue()
+            if (currentVal != valueOnFocus) {
+                onCommit()
+                valueOnFocus = currentVal
+            }
         }
     }
 
     // ± 按钮点击后，父级提交已发生，同步基线避免失焦时重复提交
     LaunchedEffect(baselineSyncKey) {
         if (baselineSyncKey > 0) {
-            valueOnFocus = value
+            valueOnFocus = getValue()
+        }
+    }
+
+    // 当属性面板因取消选中元素而离开组合时，自动提交尚未保存的变更
+    val currentGetValue by rememberUpdatedState(getValue)
+    val currentOnCommit by rememberUpdatedState(onCommit)
+    DisposableEffect(Unit) {
+        onDispose {
+            val currentVal = currentGetValue()
+            if (currentVal != valueOnFocus) {
+                currentOnCommit()
+            }
         }
     }
 
     fun commitIfChanged() {
-        if (value != valueOnFocus) {
+        val currentVal = getValue()
+        if (currentVal != valueOnFocus) {
             onCommit()
-            valueOnFocus = value
+            valueOnFocus = currentVal
         }
     }
 
     return FieldCommitState(
         onFocusModifier = Modifier.onFocusEvent { focusState ->
             if (focusState.isFocused) {
-                valueOnFocus = value
+                valueOnFocus = getValue()
             } else if (isFocused) {
                 commitIfChanged()
             }
@@ -530,6 +600,7 @@ private fun rememberFieldCommitState(
 /** 微型整数输入框 */
 @Composable
 private fun MiniIntField(
+    getValue: () -> String,
     value: String,
     onValueChange: (String) -> Unit,
     onValueCommit: () -> Unit,
@@ -537,38 +608,50 @@ private fun MiniIntField(
     /** 父级 ± 按钮提交后递增，用于同步 valueOnFocus 避免后续失焦时重复提交 */
     baselineSyncKey: Int = 0,
 ) {
-    val state = rememberFieldCommitState(value, onValueCommit, baselineSyncKey)
+    val state = rememberFieldCommitState(getValue, onValueCommit, baselineSyncKey)
+    // 本地显示值 + 拒绝键：非法字符被拦截后强制 BasicTextField 重建回退显示
+    var displayValue by remember { mutableStateOf(value) }
+    var rejectKey by remember { mutableStateOf(0) }
+    LaunchedEffect(value) { displayValue = value }
 
-    BasicTextField(
-        value = value,
-        onValueChange = { newVal ->
-            if (newVal.isEmpty() || newVal.all { it.isDigit() || it == '-' }) {
-                onValueChange(newVal)
-            }
-        },
-        singleLine = true,
-        textStyle = TextStyle(
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 10.sp,
-        ),
-        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
-            imeAction = ImeAction.Done,
-        ),
-        keyboardActions = state.keyboardActions,
-        modifier = modifier
-            .clip(RoundedCornerShape(3.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
-            .padding(horizontal = 3.dp, vertical = 3.dp)
-            .then(state.onFocusModifier),
-    )
+    key(rejectKey) {
+        BasicTextField(
+            value = displayValue,
+            onValueChange = { newVal ->
+                val isValid = newVal.isEmpty() || newVal.matches(Regex("-?\\d*"))
+                if (isValid) {
+                    displayValue = newVal
+                    onValueChange(newVal)
+                } else {
+                    // 非法输入：递增 key 触发重建，BasicTextField 自动回退到 displayValue
+                    rejectKey++
+                }
+            },
+            singleLine = true,
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 10.sp,
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done,
+            ),
+            keyboardActions = state.keyboardActions,
+            modifier = modifier
+                .clip(RoundedCornerShape(3.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
+                .padding(horizontal = 3.dp, vertical = 3.dp)
+                .then(state.onFocusModifier),
+        )
+    }
 }
 
 /** 带 +/- 步进按钮的整数输入框 */
 @Composable
 private fun StepperIntField(
+    getValue: () -> String,
     value: String,
     onValueChange: (String) -> Unit,
     onValueCommit: () -> Unit,
@@ -591,7 +674,7 @@ private fun StepperIntField(
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
                 .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
                 .then(if (enabled) Modifier.clickable {
-                    val intVal = value.toIntOrNull() ?: return@clickable
+                    val intVal = getValue().toIntOrNull() ?: return@clickable
                     onValueChange((intVal - step).toString())
                     onValueCommit()
                     baselineSyncKey++
@@ -608,6 +691,7 @@ private fun StepperIntField(
         Spacer(Modifier.width(2.dp))
 
         MiniIntField(
+            getValue = getValue,
             value = value,
             onValueChange = onValueChange,
             onValueCommit = onValueCommit,
@@ -625,7 +709,7 @@ private fun StepperIntField(
                 .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = contentAlpha))
                 .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = contentAlpha), RoundedCornerShape(3.dp))
                 .then(if (enabled) Modifier.clickable {
-                    val intVal = value.toIntOrNull() ?: return@clickable
+                    val intVal = getValue().toIntOrNull() ?: return@clickable
                     onValueChange((intVal + step).toString())
                     onValueCommit()
                     baselineSyncKey++
@@ -644,6 +728,7 @@ private fun StepperIntField(
 /** 行内文字输入框 —— 支持 IME 确定/键盘隐藏时自动提交 */
 @Composable
 private fun InlineTextField(
+    getValue: () -> String,
     value: String,
     onValueChange: (String) -> Unit,
     onCommit: () -> Unit,
@@ -653,7 +738,7 @@ private fun InlineTextField(
     baselineSyncKey: Int = 0,
 ) {
     val contentAlpha = if (enabled) 1f else 0.38f
-    val state = rememberFieldCommitState(value, onCommit, baselineSyncKey)
+    val state = rememberFieldCommitState(getValue, onCommit, baselineSyncKey)
 
     BasicTextField(
         value = value,

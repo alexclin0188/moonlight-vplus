@@ -29,6 +29,14 @@ enum class ElementType(val value: Int, val displayName: String) {
     }
 }
 
+/** 判断该元素类型是否有专属属性可设置（例如组合键、方向键、摇杆等有额外配置面板） */
+fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
+    ElementType.DIGITAL_COMMON_BUTTON,
+    ElementType.DIGITAL_SWITCH_BUTTON,
+    ElementType.UNKNOWN -> false
+    else -> true
+}
+
 // ════════════════════════════════════════════════════════════════════════════
 //  纯 Compose 数据类（脱离旧 View 系统）
 // ════════════════════════════════════════════════════════════════════════════
