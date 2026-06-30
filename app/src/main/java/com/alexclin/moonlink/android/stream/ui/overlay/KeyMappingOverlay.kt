@@ -33,28 +33,47 @@ import com.alexclin.moonlink.android.stream.ui.editor.drawWheelPad
  * relX/relY 是触摸点相对于元素中心的位置（用于十字键方向检测和摇杆轴值计算）。
  * 虚拟手柄和游戏按键映射共用此覆盖层，仅数据来源不同。
  *
- * @param globalOpacity  全局不透明度（0-100），叠加到所有元素的渲染不透明度上
- * @param enabled        true=元素交互正常+非元素区域透传下层；false=元素交互正常+非元素区域消费(阻止透传)
- * @param touchSense     触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
- * @param enhancedTouch  增强触控：启用时扩大触摸命中区域边距，提升触摸响应
+ * @param globalOpacity         全局不透明度（0-100），叠加到所有元素的渲染不透明度上
+ * @param enabled               true=元素交互正常+非元素区域透传下层；false=元素交互正常+非元素区域消费(阻止透传)
+ * @param touchSense            触控灵敏度（1-200），影响元素触摸命中区域的弹性边距
+ * @param enhancedTouch         增强触控：启用时扩大触摸命中区域边距，提升触摸响应
+ * @param onElementPositionChanged GroupButton 在 Normal 模式下长按拖动位置变更回调
+ *   (elementId, newCx, newCy, isFinal): isFinal=true 表示拖动结束（UP/CANCEL），可持久化
+ * @param repeatHandler          外部 Handler，用于 GroupButton 长按计时器（可选，默认内部创建）
  */
 @Composable
 fun KeyMappingOverlay(
     elements: List<EditorElement>,
     modifier: Modifier = Modifier,
     onElementAction: ((element: EditorElement, isPressed: Boolean, relX: Float, relY: Float) -> Unit)? = null,
+    onElementPositionChanged: ((elementId: Long, newCentralX: Int, newCentralY: Int, isFinal: Boolean) -> Unit)? = null,
     globalOpacity: Int = 100,
     enabled: Boolean = true,
     touchSense: Int = 100,
     enhancedTouch: Boolean = false,
+    repeatHandler: android.os.Handler = remember {
+        android.os.Handler(android.os.Looper.getMainLooper())
+    },
 ) {
+    // ── 通用触摸状态 ──
     val pressedIds = remember { mutableStateMapOf<Long, Boolean>() }
-    // 记录每个元素的触摸偏移，用于 MOVE 时更新摇杆
     val touchOffsets = remember { mutableStateMapOf<Long, Offset>() }
-    // 多指跟踪：pointerId → elementId
     val pointerToElement = remember { mutableStateMapOf<Int, Long>() }
-    // 开关按键持久 toggle 状态（DIGITAL_SWITCH_BUTTON 专用，每次 DOWN 翻转，UP 不影响）
     val switchToggleStates = remember { mutableStateMapOf<Long, Boolean>() }
+
+    // ── GroupButton Normal 模式长按拖动状态 ──
+    val groupDragActive = remember { mutableStateMapOf<Long, Boolean>() }
+    val groupDragAnchor = remember { mutableStateMapOf<Long, Offset>() }
+    val groupDragTimers = remember { mutableStateMapOf<Long, java.lang.Runnable>() }
+
+    // ── 解析 GroupButton 是否可拖动 ──
+    fun isDraggableGroup(el: EditorElement): Boolean {
+        if (el.type != ElementType.GROUP_BUTTON) return false
+        return try {
+            org.json.JSONObject(el.extraAttributesJson)
+                .optBoolean("movableInNormalMode", false)
+        } catch (_: Exception) { false }
+    }
 
     Box(
         modifier = modifier
@@ -75,7 +94,6 @@ fun KeyMappingOverlay(
                     MotionEvent.ACTION_DOWN,
                     MotionEvent.ACTION_POINTER_DOWN -> {
                         if (hitIdx != null) {
-                            // 如果该元素已被其他手指按住（同一元素），不再重复触发
                             if (pointerToElement.containsValue(hitIdx.elementId)) {
                                 true
                             } else {
@@ -86,6 +104,26 @@ fun KeyMappingOverlay(
                                     position.y - hitIdx.centralY
                                 )
                                 touchOffsets[hitIdx.elementId] = rel
+
+                                // ── GroupButton: 启动 250ms 长按拖动计时器 ──
+                                if (isDraggableGroup(hitIdx)) {
+                                    val dragRunnable = java.lang.Runnable {
+                                        val el = elements.find { it.elementId == hitIdx.elementId }
+                                        if (el != null && pressedIds[hitIdx.elementId] == true) {
+                                            // 长按触发 → 取消按键效果，进入拖动模式
+                                            groupDragActive[hitIdx.elementId] = true
+                                            groupDragAnchor[hitIdx.elementId] = Offset(
+                                                position.x - el.centralX,
+                                                position.y - el.centralY
+                                            )
+                                            onElementAction?.invoke(el, false, 0f, 0f)
+                                        }
+                                    }
+                                    groupDragTimers[hitIdx.elementId] = dragRunnable
+                                    repeatHandler.postDelayed(dragRunnable, 250)
+                                    groupDragActive[hitIdx.elementId] = false
+                                }
+
                                 val newPressed = if (hitIdx.type == ElementType.DIGITAL_SWITCH_BUTTON) {
                                     val current = switchToggleStates[hitIdx.elementId] ?: false
                                     val next = !current
@@ -98,12 +136,23 @@ fun KeyMappingOverlay(
                                 true
                             }
                         } else {
-                            // enabled=false 时消费所有触摸阻止透传；否则透传（仅 POINTER_DOWN 消费）
                             !enabled || actionMasked == MotionEvent.ACTION_POINTER_DOWN
                         }
                     }
                     MotionEvent.ACTION_UP -> {
-                        // 最后一指抬起：释放所有（开关按键保持 toggle 状态，不回调）
+                        // ── 清理 GroupButton 拖动状态，发送 isFinal=true 持久化 ──
+                        for ((elId, _) in groupDragActive.toMap()) {
+                            if (groupDragActive[elId] == true) {
+                                val el = elements.find { it.elementId == elId }
+                                if (el != null) {
+                                    onElementPositionChanged?.invoke(elId, el.centralX, el.centralY, true)
+                                }
+                            }
+                            groupDragTimers.remove(elId)?.let(repeatHandler::removeCallbacks)
+                            groupDragActive.remove(elId)
+                            groupDragAnchor.remove(elId)
+                        }
+                        // 释放所有（开关按键保持 toggle 状态，不回调）
                         for ((id, _) in pressedIds.toMap()) {
                             pressedIds[id] = false
                             val el = elements.find { it.elementId == id }
@@ -113,16 +162,27 @@ fun KeyMappingOverlay(
                         }
                         touchOffsets.clear()
                         pointerToElement.clear()
-                        // enabled=false 时消费所有触摸阻止透传；否则仅命中元素时消费
                         !enabled || hitIdx != null
                     }
                     MotionEvent.ACTION_POINTER_UP -> {
-                        // 某一指抬起：释放对应的元素（开关按键保持 toggle 状态，不回调）
-                        val releasedElId = pointerToElement.remove(pointerId)
+                        // ── 清理该指针对应的 GroupButton 拖动状态，发送 isFinal=true ──
+                        val releasedElId = pointerToElement[pointerId]
                         if (releasedElId != null) {
-                            pressedIds[releasedElId] = false
-                            touchOffsets.remove(releasedElId)
-                            val el = elements.find { it.elementId == releasedElId }
+                            if (groupDragActive[releasedElId] == true) {
+                                val el = elements.find { it.elementId == releasedElId }
+                                if (el != null) {
+                                    onElementPositionChanged?.invoke(releasedElId, el.centralX, el.centralY, true)
+                                }
+                            }
+                            groupDragTimers.remove(releasedElId)?.let(repeatHandler::removeCallbacks)
+                            groupDragActive.remove(releasedElId)
+                            groupDragAnchor.remove(releasedElId)
+                        }
+                        // 某指抬起：释放对应元素（开关按键保持 toggle 状态，不回调）
+                        pointerToElement.remove(pointerId)?.let { eId ->
+                            pressedIds[eId] = false
+                            touchOffsets.remove(eId)
+                            val el = elements.find { it.elementId == eId }
                             if (el != null && el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
                                 onElementAction?.invoke(el, false, 0f, 0f)
                             }
@@ -130,7 +190,19 @@ fun KeyMappingOverlay(
                         true
                     }
                     MotionEvent.ACTION_CANCEL -> {
-                        // 取消：释放所有（开关按键保持 toggle 状态，不回调）
+                        // ── 清理所有 GroupButton 拖动状态，发送 isFinal=true ──
+                        for ((elId, _) in groupDragActive.toMap()) {
+                            if (groupDragActive[elId] == true) {
+                                val el = elements.find { it.elementId == elId }
+                                if (el != null) {
+                                    onElementPositionChanged?.invoke(elId, el.centralX, el.centralY, true)
+                                }
+                            }
+                            groupDragTimers.remove(elId)?.let(repeatHandler::removeCallbacks)
+                            groupDragActive.remove(elId)
+                            groupDragAnchor.remove(elId)
+                        }
+                        // 释放所有（开关按键保持 toggle 状态，不回调）
                         for ((id, _) in pressedIds.toMap()) {
                             pressedIds[id] = false
                             val el = elements.find { it.elementId == id }
@@ -144,26 +216,55 @@ fun KeyMappingOverlay(
                     }
                     MotionEvent.ACTION_MOVE -> {
                         var consumed = false
-                        // 遍历所有活跃指针，处理每个指针的状态变化
+                        // 遍历所有活跃指针
                         for (i in 0 until motionEvent.pointerCount) {
                             val pid = motionEvent.getPointerId(i)
+                            val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
                             val elId = pointerToElement[pid]
+
+                            // ── GroupButton 拖动中 ──
+                            if (elId != null && groupDragActive[elId] == true) {
+                                val anchor = groupDragAnchor[elId] ?: continue
+                                val newCx = (pos.x - anchor.x).toInt()
+                                val newCy = (pos.y - anchor.y).toInt()
+                                onElementPositionChanged?.invoke(elId, newCx, newCy, false)
+                                consumed = true
+                                continue
+                            }
+
                             if (elId == null) {
-                                // 该指针未关联任何元素 — 检查是否滑入新元素
-                                val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
+                                // 指针未关联任何元素 — 检查是否滑入新元素
                                 val hit = findHitElement(elements, pos, touchMargin)
-                                if (hit != null && !pointerToElement.containsValue(hit.elementId) && !pressedIds.containsKey(hit.elementId)) {
+                                if (hit != null && !pointerToElement.containsValue(hit.elementId)
+                                    && pressedIds[hit.elementId] != true
+                                ) {
                                     // 手指滑入新元素
                                     pressedIds[hit.elementId] = true
                                     pointerToElement[pid] = hit.elementId
-                                    val rel = Offset(
-                                        pos.x - hit.centralX,
-                                        pos.y - hit.centralY
-                                    )
+                                    val rel = Offset(pos.x - hit.centralX, pos.y - hit.centralY)
                                     touchOffsets[hit.elementId] = rel
+
+                                    // 滑入可拖动 GroupButton 时启动长按计时器
+                                    if (isDraggableGroup(hit)) {
+                                        val dragRunnable = java.lang.Runnable {
+                                            val el = elements.find { it.elementId == hit.elementId }
+                                            if (el != null && pressedIds[hit.elementId] == true) {
+                                                groupDragActive[hit.elementId] = true
+                                                groupDragAnchor[hit.elementId] = Offset(
+                                                    pos.x - el.centralX,
+                                                    pos.y - el.centralY
+                                                )
+                                                onElementAction?.invoke(el, false, 0f, 0f)
+                                            }
+                                        }
+                                        groupDragTimers[hit.elementId] = dragRunnable
+                                        repeatHandler.postDelayed(dragRunnable, 250)
+                                        groupDragActive[hit.elementId] = false
+                                    }
+
                                     val newPressed = if (hit.type == ElementType.DIGITAL_SWITCH_BUTTON) {
-                                        val current = switchToggleStates[hit.elementId] ?: false
-                                        val next = !current
+                                        val cur = switchToggleStates[hit.elementId] ?: false
+                                        val next = !cur
                                         switchToggleStates[hit.elementId] = next
                                         next
                                     } else {
@@ -174,17 +275,78 @@ fun KeyMappingOverlay(
                                 }
                                 continue
                             }
-                            // 更新已有元素的偏移（摇杆用）—— 开关按键跳过 MOVE 回调（旧 Crown 行为）
-                            val el = elements.find { it.elementId == elId }
-                            if (el != null) {
-                                val pos = Offset(motionEvent.getX(i), motionEvent.getY(i))
-                                val rel = Offset(
-                                    pos.x - el.centralX,
-                                    pos.y - el.centralY
-                                )
+
+                            // ── 跨按钮手指滑动联动（旧 Crown 行为） ──
+                            val currentEl = elements.find { it.elementId == elId }
+                            if (currentEl != null) {
+                                val stillInside = hitTest(currentEl, pos, touchMargin)
+
+                                if (!stillInside) {
+                                    // 手指离开当前元素 → 释放它（取消长按计时器）
+                                    // 如果正在拖动，先发送 isFinal=true 持久化最终位置
+                                    if (groupDragActive[elId] == true) {
+                                        onElementPositionChanged?.invoke(elId, currentEl.centralX, currentEl.centralY, true)
+                                    }
+                                    groupDragTimers.remove(elId)?.let(repeatHandler::removeCallbacks)
+                                    groupDragActive.remove(elId)
+                                    groupDragAnchor.remove(elId)
+
+                                    pressedIds[elId] = false
+                                    touchOffsets.remove(elId)
+                                    pointerToElement.remove(pid)
+                                    val shouldNotify = currentEl.type != ElementType.DIGITAL_SWITCH_BUTTON
+                                    if (shouldNotify) {
+                                        onElementAction?.invoke(currentEl, false, 0f, 0f)
+                                    }
+
+                                    // 再检测是否滑入其他元素
+                                    val hit = findHitElement(elements, pos, touchMargin)
+                                    if (hit != null && !pointerToElement.containsValue(hit.elementId)
+                                        && pressedIds[hit.elementId] != true
+                                    ) {
+                                        pressedIds[hit.elementId] = true
+                                        pointerToElement[pid] = hit.elementId
+                                        val rel = Offset(pos.x - hit.centralX, pos.y - hit.centralY)
+                                        touchOffsets[hit.elementId] = rel
+
+                                        // 滑入可拖动 GroupButton 时启动长按计时器
+                                        if (isDraggableGroup(hit)) {
+                                            val dragRunnable = java.lang.Runnable {
+                                                val el = elements.find { it.elementId == hit.elementId }
+                                                if (el != null && pressedIds[hit.elementId] == true) {
+                                                    groupDragActive[hit.elementId] = true
+                                                    groupDragAnchor[hit.elementId] = Offset(
+                                                        pos.x - el.centralX,
+                                                        pos.y - el.centralY
+                                                    )
+                                                    onElementAction?.invoke(el, false, 0f, 0f)
+                                                }
+                                            }
+                                            groupDragTimers[hit.elementId] = dragRunnable
+                                            repeatHandler.postDelayed(dragRunnable, 250)
+                                            groupDragActive[hit.elementId] = false
+                                        }
+
+                                        val newPressed = if (hit.type == ElementType.DIGITAL_SWITCH_BUTTON) {
+                                            val cur = switchToggleStates[hit.elementId] ?: false
+                                            val next = !cur
+                                            switchToggleStates[hit.elementId] = next
+                                            next
+                                        } else true
+                                        onElementAction?.invoke(hit, newPressed, rel.x, rel.y)
+                                    }
+                                    consumed = true
+                                    continue
+                                }
+
+                                // 仍在元素内 → 更新偏移（开关按键跳过 MOVE 回调，旧 Crown 行为）
+                                val rel = Offset(pos.x - currentEl.centralX, pos.y - currentEl.centralY)
                                 touchOffsets[elId] = rel
-                                if (el.type != ElementType.DIGITAL_SWITCH_BUTTON) {
-                                    onElementAction?.invoke(el, true, rel.x, rel.y)
+                                // 跳过 onElementAction 的条件：开关按键 / 可拖动 GroupButton 等待长按计时器触发中
+                                val skipAction = currentEl.type == ElementType.DIGITAL_SWITCH_BUTTON ||
+                                    (isDraggableGroup(currentEl) && groupDragTimers.containsKey(elId) && groupDragActive[elId] != true)
+                                if (!skipAction) {
+                                    onElementAction?.invoke(currentEl, true, rel.x, rel.y)
                                 }
                                 consumed = true
                             }

@@ -1248,6 +1248,43 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
     }
 
+    /**
+     * 更新内存中指定元素的位置（供 GroupButton Normal 模式长按拖动使用）。
+     * 立即反映到 Compose 状态，UI 层会重新渲染。
+     */
+    fun updateElementPosition(elementId: Long, centralX: Int, centralY: Int) {
+        val list = currentOverlayElements.value.toMutableList()
+        val idx = list.indexOfFirst { it.elementId == elementId }
+        if (idx >= 0) {
+            list[idx] = list[idx].copy(centralX = centralX, centralY = centralY)
+            currentOverlayElements.value = list
+        }
+    }
+
+    /**
+     * 持久化元素位置到数据库（供 GroupButton Normal 模式长按拖动使用）。
+     * 使用单线程 Executor 异步写入，避免多实例 SQLiteOpenHelper 并发锁问题。
+     */
+    fun saveElementPosition(elementId: Long, centralX: Int, centralY: Int) {
+        val configId = currentSchemeConfigId
+        val appCtx = activity.applicationContext
+        dbWriteExecutor.execute {
+            try {
+                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(appCtx)
+                val cv = android.content.ContentValues().apply {
+                    put("element_central_x", centralX.toLong())
+                    put("element_central_y", centralY.toLong())
+                }
+                db.updateElement(configId, elementId, cv)
+            } catch (_: Exception) {
+                // 静默失败，位置已在内存中更新
+            }
+        }
+    }
+
+    /** 数据库写入专用单线程 Executor，避免多实例 SQLiteOpenHelper 并发锁冲突 */
+    private val dbWriteExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
+
     // ── 按键映射开关（Crown → MoonLink） ──
 
     /** 按键映射是否启用（Compose 可观察状态） */
@@ -2050,6 +2087,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         audioRenderer = null
         decoderRenderer = null
         conn = null
+        dbWriteExecutor.shutdown()
     }
 
     // ═══════════════════════════════════════════════════════════

@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
@@ -297,17 +298,22 @@ class StreamActivity : ComponentActivity() {
                     }
 
                     // ── 摇杆辅助：根据 relX/relY 和元素半径计算轴值 ──
-                    // 死区由 el.sense（元素自身灵敏度，0-100）决定：sense 越大→死区越小→越灵敏
-                    // formula: sense=100→0.05(5%), sense=50→0.275(27.5%), sense=1→0.5(50%)
-                    fun computeStickAxis(relX: Float, relY: Float, radius: Float, element: EditorElement): Pair<Short, Short> {
-                        val normalizedSense = element.sense.coerceIn(1, 100) / 100f
-                        val deadZoneRatio = 0.05f + (1f - normalizedSense) * 0.45f
+                    // 死区由 el.sense（与旧 Crown deadZoneRadius 同列，0-100）决定：直接用百分比
+                    // 旧 Crown 使用径向距离（圆形死区），不是分轴检测
+                    // sense=100→0%(无死区), sense=30→30%, sense=1→1%
+                    // isActive: 上次是否已激活越过死区（用于滞后保持），退回死区时不归零
+                    fun computeStickAxis(relX: Float, relY: Float, radius: Float, element: EditorElement, isActive: Boolean): Pair<Short, Short> {
+                        val deadZoneRatio = element.sense.coerceIn(1, 100) / 100f
                         val maxRadius = radius.coerceAtLeast(1f)
-                        var nx = (relX / maxRadius).coerceIn(-1f, 1f)
-                        var ny = (relY / maxRadius).coerceIn(-1f, 1f)
-                        if (kotlin.math.abs(nx) < deadZoneRatio) nx = 0f
-                        if (kotlin.math.abs(ny) < deadZoneRatio) ny = 0f
-                        return Pair((nx * 32767).toInt().toShort(), (ny * 32767).toInt().toShort())
+                        val nx = (relX / maxRadius).coerceIn(-1f, 1f)
+                        val ny = (relY / maxRadius).coerceIn(-1f, 1f)
+                        // 旧 Crown 使用圆形死区（径向距离），非分轴
+                        val dist = kotlin.math.sqrt(nx * nx + ny * ny)
+                        val inDeadZone = dist < deadZoneRatio
+                        // 死区滞后保持：已激活状态下退回死区不归零（参考旧 Crown STICK_STATE.MOVED_ACTIVE）
+                        val finalNx = if (inDeadZone && !isActive) 0f else nx
+                        val finalNy = if (inDeadZone && !isActive) 0f else ny
+                        return Pair((finalNx * 32766).toInt().toShort(), (finalNy * 32766).toInt().toShort())
                     }
 
                     // ── D-Pad 方向位掩码（与旧 Crown DigitalPad 一致） ──
@@ -355,6 +361,14 @@ class StreamActivity : ComponentActivity() {
                     val joystickFirstTouch = remember { HashMap<Long, Pair<Float, Float>>() }
                     // 震动防重复：记录已触发震动的元素（元素ID → true），只在首次按下时震动，抬起清除
                     val elementVibrationFired = remember { HashMap<Long, Boolean>() }
+                    // 摇杆死区滞后保持状态（elementId → 是否已激活越过死区），用于退回死区不归零
+                    val stickActiveStates = remember { HashMap<Long, Boolean>() }
+                    // 隐藏摇杆动态圆心（elementId → 触摸圆心在元素本地坐标中的偏移，用于 ACTION_DOWN 重定位）
+                    val invisibleStickCenters = remember { HashMap<Long, Pair<Float, Float>>() }
+                    // 隐藏摇杆按下时间戳（elementId → 按下时刻 ms），用于 timeoutDeadzone=150ms（旧 Crown）
+                    val stickDownTime = remember { HashMap<Long, Long>() }
+                    // 双击 middleValue 保持状态（elementId → true=双击已激活 middleValue 按下，UP 时释放）
+                    val stickClickStates = remember { HashMap<Long, Boolean>() }
 
                     // ── 键盘按键翻译器（用于 kXX 格式按键值） ──
                     val keyboardTranslator = remember { KeyboardTranslator() }
@@ -384,6 +398,8 @@ class StreamActivity : ComponentActivity() {
 
                     /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
                     fun sendKeyboardKey(value: String, isPressed: Boolean) {
+                        // 调试日志：记录键值命令 ↓按下 / ↑释放
+                        LimeLog.info("KEY: ${value}${if (isPressed) "↓" else "↑"}")
                         val doSend: (Short, Byte) -> Unit = { code, action ->
                             engine.conn?.sendKeyboardInput(code, action, 0, 0)
                         }
@@ -725,29 +741,39 @@ class StreamActivity : ComponentActivity() {
                                             }
                                         }
                                         sendFullState()
-                                        // ── 合成 MotionEvent（原有逻辑保留） ──
+                                        // ── 合成 MotionEvent ──
+                                        // 使用增量计算：MOVE 时基于首次触摸点的偏移量，而非绝对 relX
+                                        // 这样手指在元素区域内滑动时鼠标位置平滑累加而非跳变
                                         run joy@ {
                                             if (engine.surfaceView == null) return@joy
                                             val sv = engine.surfaceView!!
                                             val downTime = android.os.SystemClock.uptimeMillis()
                                             val senseMul = el.sense.coerceIn(1, 500) * 0.01f
-                                            val touchX = (sv.width / 2f + relX * senseMul).toInt().coerceIn(0, sv.width)
-                                            val touchY = (sv.height / 2f + relY * senseMul).toInt().coerceIn(0, sv.height)
+                                            // 首次触摸点（相对元素中心）
+                                            val firstTouch = joystickFirstTouch[el.elementId]
                                             if (isPressed) {
-                                                val prev = joystickFirstTouch[el.elementId]
-                                                if (prev == null) {
+                                                if (firstTouch == null) {
+                                                    // ═══ ACTION_DOWN：记录首次触摸点，发送 DOWN 事件 ═══
                                                     joystickFirstTouch[el.elementId] = Pair(relX, relY)
+                                                    val touchX = (sv.width / 2f).toInt().coerceIn(0, sv.width)
+                                                    val touchY = (sv.height / 2f).toInt().coerceIn(0, sv.height)
                                                     val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_DOWN, touchX.toFloat(), touchY.toFloat(), 0)
                                                     engine.touchHandler?.handleMotionEvent(sv, e)
                                                     e.recycle()
                                                 } else {
+                                                    // ═══ ACTION_MOVE：基于首次触摸点的增量 ═══
+                                                    val deltaX = (relX - firstTouch.first) * senseMul
+                                                    val deltaY = (relY - firstTouch.second) * senseMul
+                                                    val touchX = (sv.width / 2f + deltaX).toInt().coerceIn(0, sv.width)
+                                                    val touchY = (sv.height / 2f + deltaY).toInt().coerceIn(0, sv.height)
                                                     val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_MOVE, touchX.toFloat(), touchY.toFloat(), 0)
                                                     engine.touchHandler?.handleMotionEvent(sv, e)
                                                     e.recycle()
                                                 }
                                             } else {
+                                                // ═══ ACTION_UP：发送 UP 事件，清理状态 ═══
                                                 joystickFirstTouch.remove(el.elementId)
-                                                val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_UP, touchX.toFloat(), touchY.toFloat(), 0)
+                                                val e = android.view.MotionEvent.obtain(downTime, downTime, android.view.MotionEvent.ACTION_UP, sv.width / 2f, sv.height / 2f, 0)
                                                 engine.touchHandler?.handleMotionEvent(sv, e)
                                                 e.recycle()
                                             }
@@ -849,26 +875,129 @@ class StreamActivity : ComponentActivity() {
                                 ElementType.DIGITAL_STICK,
                                 ElementType.INVISIBLE_ANALOG_STICK,
                                 ElementType.INVISIBLE_DIGITAL_STICK -> {
-                                    val rad = el.radius.coerceAtLeast(el.width.coerceAtMost(el.height) / 2).toFloat()
-                                    val (sx, sy) = computeStickAxis(relX, relY, rad, el)
-                                    // 根据 upValue/downValue/leftValue/rightValue 判断左/右摇杆
-                                    val isRightStick = el.leftValue == "a2" || el.rightValue == "a2"
-                                    if (isRightStick) {
-                                        rsX.value = sx; rsY.value = sy
+                                    // ── 振动反馈：首次按下时触发 ──
+                                    if (isPressed) {
+                                        if (elementVibrationFired.put(el.elementId, true) == null) {
+                                            triggerVibration()
+                                        }
                                     } else {
-                                        lsX.value = sx; lsY.value = sy
+                                        elementVibrationFired.remove(el.elementId)
                                     }
-                                    // 摇杆方向键值处理（参考旧 Crown DigitalStick）
+
+                                    // ── 双击检测（旧 Crown：第2次 DOWN 时触发 middleValue，保持直到 UP） ──
+                                    if (isPressed) {
+                                        val now = android.os.SystemClock.uptimeMillis()
+                                        val lastClick = stickLastClickTime[el.elementId] ?: 0L
+                                        if (lastClick > 0 && now - lastClick < 350) {
+                                            // 双击 → 按下 middleValue，保持直到 UP（旧 Crown notifyOnDoubleClick + notifyOnRevoke）
+                                            stickClickStates[el.elementId] = true
+                                            if (el.middleValue.isNotEmpty()) {
+                                                val mv = el.middleValue
+                                                when {
+                                                    mv == "lt" -> { ltV.value = 0xFF.toByte(); sendFullState() }
+                                                    mv == "rt" -> { rtV.value = 0xFF.toByte(); sendFullState() }
+                                                    mv.startsWith("k") -> sendKeyboardKey(mv, true)
+                                                    mv.startsWith("g") -> {
+                                                        val flag = parseValueToFlag(mv)
+                                                        if (flag != 0) {
+                                                            btnState.value = btnState.value or flag
+                                                            sendFullState()
+                                                        }
+                                                    }
+                                                    mv.startsWith("m") -> {
+                                                        val btnId = mv.substring(1).toIntOrNull()
+                                                        if (btnId != null) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                    }
+                                                }
+                                            }
+                                            stickLastClickTime[el.elementId] = 0L
+                                        } else {
+                                            stickLastClickTime[el.elementId] = now
+                                        }
+                                    }
+
+                                    val rad = el.radius.coerceAtLeast(el.width.coerceAtMost(el.height) / 2).toFloat()
+                                    val isInvisible = el.type == ElementType.INVISIBLE_ANALOG_STICK ||
+                                        el.type == ElementType.INVISIBLE_DIGITAL_STICK
+                                    // AnalogStick moveMode=1 也表示相对移动模式，首次触摸点为动态圆心（旧 Crown 行为）
+                                    val useDynamicCenter = isInvisible ||
+                                        (el.type == ElementType.ANALOG_STICK && el.mode == 1)
+
+                                    // ── 动态圆心：每次 ACTION_DOWN 时以手指按下位置为圆心 ──
+                                    val effRelX: Float
+                                    val effRelY: Float
+                                    if (useDynamicCenter) {
+                                        if (isPressed) {
+                                            val center = invisibleStickCenters[el.elementId]
+                                            if (center == null) {
+                                                // 首次按下 → 记录触摸点为新圆心
+                                                invisibleStickCenters[el.elementId] = Pair(relX, relY)
+                                                effRelX = 0f
+                                                effRelY = 0f
+                                            } else {
+                                                // 后续 MOVE → 相对于记录圆心计算偏移
+                                                effRelX = relX - center.first
+                                                effRelY = relY - center.second
+                                            }
+                                        } else {
+                                            // 抬起 → 清除圆心
+                                            invisibleStickCenters.remove(el.elementId)
+                                            effRelX = relX
+                                            effRelY = relY
+                                        }
+                                    } else {
+                                        effRelX = relX
+                                        effRelY = relY
+                                    }
+
+                                    // ── 隐藏摇杆 timeoutDeadzone 150ms 延迟解除（旧 Crown） ──
+                                    // 使用 uptimeMillis 对齐 MotionEvent eventTime（单调时钟，不受系统时间跳变影响）
+                                    val deadzoneTimeoutPassed: Boolean
+                                    if (isInvisible && isPressed) {
+                                        val downMs = stickDownTime.getOrPut(el.elementId) { android.os.SystemClock.uptimeMillis() }
+                                        deadzoneTimeoutPassed = android.os.SystemClock.uptimeMillis() - downMs > 150L
+                                    } else {
+                                        if (!isPressed) stickDownTime.remove(el.elementId)
+                                        deadzoneTimeoutPassed = false
+                                    }
+
+                                    // ── 死区滞后保持计算轴值 ──
+                                    val wasActive = stickActiveStates[el.elementId] ?: false
+                                    val (sx, sy) = computeStickAxis(effRelX, effRelY, rad, el, wasActive || deadzoneTimeoutPassed)
+                                    val nowActive = if (isPressed) {
+                                        // 滞后保持：一旦激活越过死区就保持激活直到抬起
+                                        // 隐藏摇杆额外支持 150ms 延迟（旧 Crown timeoutDeadzone）
+                                        wasActive || (sx != 0.toShort() || sy != 0.toShort()) || deadzoneTimeoutPassed
+                                    } else {
+                                        false
+                                    }
+                                    if (isPressed) {
+                                        stickActiveStates[el.elementId] = nowActive
+                                    } else {
+                                        stickActiveStates.remove(el.elementId)
+                                    }
+
+                                    // ── 仅模拟摇杆类型发送手柄摇杆轴值（旧 Crown DigitalStick 不发送轴值） ──
+                                    val isAnalogType = el.type == ElementType.ANALOG_STICK || el.type == ElementType.INVISIBLE_ANALOG_STICK
+                                    val isRightStick = el.leftValue == "a2" || el.rightValue == "a2"
+                                    if (isAnalogType) {
+                                        if (isRightStick) {
+                                            rsX.value = sx; rsY.value = sy
+                                        } else {
+                                            lsX.value = sx; lsY.value = sy
+                                        }
+                                    }
+                                    // 摇杆方向键值处理（参考旧 Crown DigitalStick 独立方向检测）
                                     // 每个方向独立检测，支持对角线同时触发
-                                    // sense 越大→阈值越低→越灵敏：sense=100→0.1, sense=1→0.5
-                                    val normalizedSense = el.sense.coerceIn(1, 100) / 100f
-                                    val directionThreshold = 0.1f + (1f - normalizedSense) * 0.4f
-                                    val nx = relX / rad.coerceAtLeast(1f)
-                                    val ny = relY / rad.coerceAtLeast(1f)
-                                    val leftActive = nx < -directionThreshold
-                                    val rightActive = nx > directionThreshold
-                                    val upActive = ny < -directionThreshold
-                                    val downActive = ny > directionThreshold
+                                    // 旧 Crown 方向阈值：deadZoneRadius * 0.01（sense 字段即 deadZoneRadius）
+                                    val directionThreshold = el.sense.coerceIn(1, 100) / 100f
+                                    // 方向检测统一使用动态圆心调整后的坐标（旧 Crown 隐藏摇杆使用动态圆心）
+                                    val dirNx = effRelX / rad.coerceAtLeast(1f)
+                                    val dirNy = effRelY / rad.coerceAtLeast(1f)
+                                    val leftActive = dirNx < -directionThreshold
+                                    val rightActive = dirNx > directionThreshold
+                                    val upActive = dirNy < -directionThreshold
+                                    val downActive = dirNy > directionThreshold
                                     // 获取当前元素各方向状态
                                     val dirState = activeStickDirections.getOrPut(el.elementId) {
                                         mutableSetOf<String>()
@@ -897,46 +1026,34 @@ class StreamActivity : ComponentActivity() {
                                     } else if (!downActive && "down" in dirState) {
                                         dirState.remove("down"); sendStickDirection(el, "down", false)
                                     }
-                                    // 双击摇杆 = 摇杆点击 (L3/R3)，只在释放且偏移很小时触发
+                                    // ── 释放处理：双击保持的 middleValue + 清零轴值 + 释放方向 ──
                                     if (!isPressed) {
-                                        // 检测双击（两次按下间隔 < 300ms）
-                                        val now = System.currentTimeMillis()
-                                        val lastClick = stickLastClickTime[el.elementId] ?: 0L
-                                        if (now - lastClick < 300 && lastClick > 0) {
-                                            // 双击 → 触发 middleValue（支持 k/g/m/lt/rt 前缀，匹配旧 Crown）
-                                            if (el.middleValue.isNotEmpty()) {
-                                                val mv = el.middleValue
-                                                when {
-                                                    mv == "lt" -> { ltV.value = 0xFF.toByte(); sendFullState(); ltV.value = 0; sendFullState() }
-                                                    mv == "rt" -> { rtV.value = 0xFF.toByte(); sendFullState(); rtV.value = 0; sendFullState() }
-                                                    mv.startsWith("k") -> {
-                                                        sendKeyboardKey(mv, true)
-                                                        sendKeyboardKey(mv, false)
-                                                    }
-                                                    mv.startsWith("g") -> {
-                                                        val flag = parseValueToFlag(mv)
-                                                        if (flag != 0) {
-                                                            btnState.value = btnState.value or flag
-                                                            sendFullState()
-                                                            btnState.value = btnState.value and flag.inv()
-                                                            sendFullState()
-                                                        }
-                                                    }
-                                                    mv.startsWith("m") -> {
-                                                        val btnId = mv.substring(1).toIntOrNull()
-                                                        if (btnId != null) {
-                                                            engine.conn?.sendMouseButtonDown(btnId.toByte())
-                                                            engine.conn?.sendMouseButtonUp(btnId.toByte())
-                                                        }
+                                        // 如果双击 middleValue 正在保持，释放之（旧 Crown notifyOnRevoke）
+                                        val doubleHeld = stickClickStates.remove(el.elementId) ?: false
+                                        if (doubleHeld && el.middleValue.isNotEmpty()) {
+                                            val mv = el.middleValue
+                                            when {
+                                                mv == "lt" -> { ltV.value = 0; sendFullState() }
+                                                mv == "rt" -> { rtV.value = 0; sendFullState() }
+                                                mv.startsWith("k") -> sendKeyboardKey(mv, false)
+                                                mv.startsWith("g") -> {
+                                                    val flag = parseValueToFlag(mv)
+                                                    if (flag != 0) {
+                                                        btnState.value = btnState.value and flag.inv()
+                                                        sendFullState()
                                                     }
                                                 }
+                                                mv.startsWith("m") -> {
+                                                    val btnId = mv.substring(1).toIntOrNull()
+                                                    if (btnId != null) engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                }
                                             }
-                                            stickLastClickTime[el.elementId] = 0L
-                                        } else {
-                                            stickLastClickTime[el.elementId] = now
                                         }
-                                        if (isRightStick) { rsX.value = 0; rsY.value = 0 }
-                                        else { lsX.value = 0; lsY.value = 0 }
+                                        // 仅模拟摇杆类型清零轴值（数字摇杆不发送轴值）
+                                        if (isAnalogType) {
+                                            if (isRightStick) { rsX.value = 0; rsY.value = 0 }
+                                            else { lsX.value = 0; lsY.value = 0 }
+                                        }
                                         // 释放所有方向
                                         for (dir in dirState.toList()) {
                                             sendStickDirection(el, dir, false)
@@ -1057,6 +1174,12 @@ class StreamActivity : ComponentActivity() {
                             elements = visibleElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
+                            onElementPositionChanged = { elementId, newCx, newCy, isFinal ->
+                                engine.updateElementPosition(elementId, newCx, newCy)
+                                if (isFinal) {
+                                    engine.saveElementPosition(elementId, newCx, newCy)
+                                }
+                            },
                             globalOpacity = globalOpacity,
                             enabled = touchEnabled,
                             touchSense = touchSense,
