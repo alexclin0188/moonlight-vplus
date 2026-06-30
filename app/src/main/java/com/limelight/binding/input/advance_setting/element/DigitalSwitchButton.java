@@ -630,7 +630,7 @@ public class DigitalSwitchButton extends Element {
         // Add new text properties with good defaults for new buttons
         contentValues.put(COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, 0xFFFFFFFF); // White
         contentValues.put(COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, 0xFFCCCCCC); // Light Grey for pressed state
-        contentValues.put(COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25);
+        contentValues.put(COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 50);
         return contentValues;
 
 

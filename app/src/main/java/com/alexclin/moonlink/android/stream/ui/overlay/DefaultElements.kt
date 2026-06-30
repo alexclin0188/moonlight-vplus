@@ -127,7 +127,7 @@ object DefaultElements {
             put(Element.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, bgColor)
             put(Element.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, textColor)
             put(Element.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedTextColor)
-            put(Element.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25L)
+            put(Element.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 50L)
             put(Element.COLUMN_STRING_ELEMENT_MIDDLE_VALUE, middleValue)
             put(Element.COLUMN_STRING_ELEMENT_UP_VALUE, upValue)
             put(Element.COLUMN_STRING_ELEMENT_DOWN_VALUE, downValue)

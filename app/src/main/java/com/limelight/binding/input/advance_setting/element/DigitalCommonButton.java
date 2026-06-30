@@ -671,7 +671,7 @@ public class DigitalCommonButton extends Element {
         // Add new properties with good defaults
         contentValues.put(COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, 0xFFFFFFFF); // White
         contentValues.put(COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, 0xFFCCCCCC); // Light Grey for pressed state
-        contentValues.put(COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25);
+        contentValues.put(COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 50);
         return contentValues;
     }
 

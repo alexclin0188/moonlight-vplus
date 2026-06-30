@@ -216,7 +216,7 @@ fun EditorPropertiesPanel(
                 GridLabel("边框粗细", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: 粗细值
-                StepperIntField(value = thick, onValueChange = { thick = it; onElementChanged?.invoke(snapshot()) },
+                StepperIntField(value = thick, onValueChange = { thick = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
 
                 TextButton(onClick = { onOpenColorEditor(snapshot()) },
@@ -268,14 +268,14 @@ fun EditorPropertiesPanel(
                 GridLabel("按钮宽度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: W值
-                StepperIntField(value = width, onValueChange = { width = it; onElementChanged?.invoke(snapshot()) },
+                StepperIntField(value = width, onValueChange = { width = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: H高（右对齐）
                 GridLabel("按钮高度", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: H值（圆形模式禁用，显示宽度值）
                 StepperIntField(value = if (isCircle) width else height,
-                    onValueChange = { height = it; onElementChanged?.invoke(snapshot()) },
+                    onValueChange = { height = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
                 // Lbl3: 圆角（右对齐）
@@ -283,7 +283,7 @@ fun EditorPropertiesPanel(
                 Spacer(Modifier.width(2.dp))
                 // Input3: 圆角值
                 StepperIntField(value = if (isCircle) (currentWidth() / 2).toString() else radius,
-                    onValueChange = { radius = it; onElementChanged?.invoke(snapshot()) },
+                    onValueChange = { radius = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
                 // 圆形开关 + 文字，整体可点击（十字键/摇杆时强制关闭且禁用）
@@ -366,19 +366,19 @@ fun EditorPropertiesPanel(
                 GridLabel("X坐标", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: X值
-                StepperIntField(value = centralX, onValueChange = { centralX = it; onElementChanged?.invoke(snapshot()) },
+                StepperIntField(value = centralX, onValueChange = { centralX = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: Y坐标（右对齐）
                 GridLabel("Y坐标", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: Y值
-                StepperIntField(value = centralY, onValueChange = { centralY = it; onElementChanged?.invoke(snapshot()) },
+                StepperIntField(value = centralY, onValueChange = { centralY = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl1: 图层（右对齐）
                 GridLabel("所在图层", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 图层值
-                StepperIntField(value = layer, onValueChange = { layer = it; onElementChanged?.invoke(snapshot()) },
+                StepperIntField(value = layer, onValueChange = { layer = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 Spacer(Modifier.width(1.dp))
                 Text(element.type.displayName,
@@ -455,8 +455,12 @@ private fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
 private fun MiniIntField(
     value: String,
     onValueChange: (String) -> Unit,
+    onValueCommit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var isFocused by remember { mutableStateOf(false) }
+    var valueOnFocus by remember(value) { mutableStateOf(value) }
+
     BasicTextField(
         value = value,
         onValueChange = { newVal ->
@@ -475,7 +479,15 @@ private fun MiniIntField(
             .clip(RoundedCornerShape(3.dp))
             .background(MaterialTheme.colorScheme.surfaceVariant)
             .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
-            .padding(horizontal = 3.dp, vertical = 3.dp),
+            .padding(horizontal = 3.dp, vertical = 3.dp)
+            .onFocusEvent { focusState ->
+                if (focusState.isFocused) {
+                    valueOnFocus = value
+                } else if (isFocused && value != valueOnFocus) {
+                    onValueCommit()
+                }
+                isFocused = focusState.isFocused
+            },
     )
 }
 
@@ -484,6 +496,7 @@ private fun MiniIntField(
 private fun StepperIntField(
     value: String,
     onValueChange: (String) -> Unit,
+    onValueCommit: () -> Unit,
     step: Int = 1,
     enabled: Boolean = true,
     modifier: Modifier = Modifier,
@@ -503,6 +516,7 @@ private fun StepperIntField(
                 .then(if (enabled) Modifier.clickable {
                     val intVal = value.toIntOrNull() ?: return@clickable
                     onValueChange((intVal - step).toString())
+                    onValueCommit()
                 } else Modifier),
             contentAlignment = Alignment.Center,
         ) {
@@ -518,6 +532,7 @@ private fun StepperIntField(
         MiniIntField(
             value = value,
             onValueChange = onValueChange,
+            onValueCommit = onValueCommit,
             modifier = Modifier.weight(1f).alpha(contentAlpha),
         )
 
@@ -533,6 +548,7 @@ private fun StepperIntField(
                 .then(if (enabled) Modifier.clickable {
                     val intVal = value.toIntOrNull() ?: return@clickable
                     onValueChange((intVal + step).toString())
+                    onValueCommit()
                 } else Modifier),
             contentAlignment = Alignment.Center,
         ) {

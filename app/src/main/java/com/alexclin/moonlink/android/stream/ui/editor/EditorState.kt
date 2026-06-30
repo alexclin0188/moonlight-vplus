@@ -350,7 +350,12 @@ class EditorState(
             },
             normalTextColor = 0xFFFFFFFF.toInt(),
             pressedTextColor = 0xFFCCCCCC.toInt(),
-            textSizePercent = 25,
+            textSizePercent = when (type) {
+                ElementType.DIGITAL_COMMON_BUTTON,
+                ElementType.DIGITAL_SWITCH_BUTTON,
+                ElementType.DIGITAL_MOVABLE_BUTTON -> 50
+                else -> 25
+            },
             thick = 5,
             sense = when {
                 type == ElementType.GROUP_BUTTON -> 1

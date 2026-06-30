@@ -132,6 +132,9 @@ fun StreamOverlay(
     if (fullScreenPage != null) {
         BackHandler {
             fullScreenPage = null
+            panelState = PanelState.VERTICAL_BAR
+            activeEntry = null
+            detailPage = DetailPage.MAIN_LIST
         }
     }
 
@@ -440,7 +443,12 @@ fun StreamOverlay(
                     ) {
                         KeyMappingSchemeSelector(
                             engine = engine,
-                            onClose = { fullScreenPage = null },
+                            onClose = {
+                                fullScreenPage = null
+                                panelState = PanelState.VERTICAL_BAR
+                                activeEntry = null
+                                detailPage = DetailPage.MAIN_LIST
+                            },
                             onOpenEditor = { fullScreenPage = FullScreenPage.KEY_MAPPING_EDITOR },
                         )
                     }
@@ -458,7 +466,12 @@ fun StreamOverlay(
                     ) {
                         KeyMappingEditor(
                             engine = engine,
-                            onClose = { fullScreenPage = null },
+                            onClose = {
+                                fullScreenPage = null
+                                panelState = PanelState.VERTICAL_BAR
+                                activeEntry = null
+                                detailPage = DetailPage.MAIN_LIST
+                            },
                         )
                     }
                 }
