@@ -54,6 +54,7 @@ fun KeyMappingOverlay(
     repeatHandler: android.os.Handler = remember {
         android.os.Handler(android.os.Looper.getMainLooper())
     },
+    activeDpadDirections: Map<Long, Int> = emptyMap(),
 ) {
     // ── 通用触摸状态 ──
     val pressedIds = remember { mutableStateMapOf<Long, Boolean>() }
@@ -366,7 +367,7 @@ fun KeyMappingOverlay(
                 } else {
                     pressedIds[el.elementId] == true
                 }
-                drawElement(el, isPressed)
+                drawElement(el, isPressed, activeDpadDirections = activeDpadDirections)
             }
         }
     }
@@ -420,7 +421,7 @@ internal fun computeTouchMargin(touchSense: Int, enhancedTouch: Boolean): Int {
 }
 
 /** 根据元素类型分发绘制到对应的 renderer */
-internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, wheelActiveIndex: Int = -1) {
+internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, wheelActiveIndex: Int = -1, activeDpadDirections: Map<Long, Int> = emptyMap()) {
     when (el.type) {
         ElementType.DIGITAL_COMMON_BUTTON,
         ElementType.DIGITAL_SWITCH_BUTTON,
@@ -428,7 +429,7 @@ internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, wheelA
         ElementType.DIGITAL_COMBINE_BUTTON -> drawDigitalButton(el, isPressed)
 
         ElementType.GROUP_BUTTON -> drawGroupButton(el, isPressed)
-        ElementType.DIGITAL_PAD -> drawDigitalPad(el, if (isPressed) 0x0F else 0)
+        ElementType.DIGITAL_PAD -> drawDigitalPad(el, activeDpadDirections[el.elementId] ?: 0)
         ElementType.ANALOG_STICK,
         ElementType.DIGITAL_STICK,
         ElementType.INVISIBLE_ANALOG_STICK,

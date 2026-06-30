@@ -44,6 +44,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -318,8 +319,8 @@ class StreamActivity : ComponentActivity() {
 
                     // ── D-Pad 方向位掩码（与旧 Crown DigitalPad 一致） ──
                     val DPAD_LEFT = 1
-                    val DPAD_RIGHT = 2
-                    val DPAD_UP = 4
+                    val DPAD_UP = 2
+                    val DPAD_RIGHT = 4
                     val DPAD_DOWN = 8
 
                     // ── D-Pad 方向检测（旧 Crown 使用 33%/66% 网格分割，支持对角线） ──
@@ -339,7 +340,7 @@ class StreamActivity : ComponentActivity() {
                     val groupButtonHiddenIds = remember { mutableStateOf<Set<Long>>(emptySet()) }
 
                     // 十字方向键当前激活的方向（elementId → 方向），用于 MOVE 时的方向变更检测
-                    val activeDpadDirections = remember { HashMap<Long, Int>() }
+                    val activeDpadDirections = remember { mutableStateMapOf<Long, Int>() }
                     // 摇杆当前激活的方向集合（elementId → 方向集合），支持对角线
                     val activeStickDirections = remember { HashMap<Long, MutableSet<String>>() }
                     // WheelPad 状态：元素ID → {是否已激活(弹窗模式用), 当前选中的段索引}
@@ -1184,6 +1185,7 @@ class StreamActivity : ComponentActivity() {
                             enabled = touchEnabled,
                             touchSense = touchSense,
                             enhancedTouch = enhancedTouch,
+                            activeDpadDirections = activeDpadDirections,
                         )
                     }
 
