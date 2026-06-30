@@ -128,8 +128,8 @@ fun StreamOverlay(
     var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
     var fullScreenPage by remember { mutableStateOf<FullScreenPage?>(null) }
 
-    // ── 全屏页面 BackHandler ──
-    if (fullScreenPage != null) {
+    // ── 全屏页面 BackHandler（仅方案选择器，编辑器已自行处理） ──
+    if (fullScreenPage == FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR) {
         BackHandler {
             fullScreenPage = null
             panelState = PanelState.VERTICAL_BAR
@@ -141,6 +141,17 @@ fun StreamOverlay(
     // 全屏页面状态同步到 engine，供 StreamActivity 等外部组件判断
     LaunchedEffect(fullScreenPage) {
         engine.isFullScreenPageActive = fullScreenPage != null
+    }
+
+    // Activity 切到后台时强制退出全屏编辑页面
+    LaunchedEffect(engine.forceExitFullScreenPage) {
+        if (engine.forceExitFullScreenPage > 0) {
+            fullScreenPage = null
+            panelState = PanelState.VERTICAL_BAR
+            activeEntry = null
+            detailPage = DetailPage.MAIN_LIST
+            engine.forceExitFullScreenPage = 0
+        }
     }
 
     // 操作面板自动隐藏：窄面板开启且用户无操作时2秒自动隐藏

@@ -21,11 +21,6 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun ConnectionSettingsScreen() {
     LazyColumn(modifier = Modifier.fillMaxSize()) {
-        // ── 分类标题 ──
-        item {
-            CategoryHeader(title = "串流连接")
-        }
-
         // 1. 自动恢复串流
         item {
             CheckBoxPreference(

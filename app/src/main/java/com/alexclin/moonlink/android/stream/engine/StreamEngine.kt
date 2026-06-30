@@ -54,6 +54,7 @@ import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import android.net.TrafficStats
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
@@ -1073,6 +1074,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 是否在全屏页面（编辑器/方案选择器）中，用于 StreamActivity 隐藏干扰 UI */
     var isFullScreenPageActive: Boolean by mutableStateOf(false)
+
+    /** Activity 切到后台时递增，StreamOverlay 观察到变化后自动退出全屏编辑页面 */
+    var forceExitFullScreenPage: Int by mutableIntStateOf(0)
 
     // ── 外设管理 ──
 

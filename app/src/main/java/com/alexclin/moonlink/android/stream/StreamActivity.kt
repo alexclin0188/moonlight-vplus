@@ -1305,8 +1305,14 @@ class StreamActivity : ComponentActivity() {
         super.onPause()
         wasPaused = true
         wasBackgrounded = !isFinishing
-        if (!isFinishing && engine.isResumeStreamEnabled()) {
-            engine.shouldResumeSession = true
+        if (!isFinishing) {
+            if (engine.isResumeStreamEnabled()) {
+                engine.shouldResumeSession = true
+            }
+            // 切到后台时退出全屏编辑页面（按键编辑器/方案选择器）
+            if (engine.isFullScreenPageActive) {
+                engine.forceExitFullScreenPage++
+            }
         }
         engine.onPause()
     }
@@ -1329,6 +1335,11 @@ class StreamActivity : ComponentActivity() {
         // 标记为"应恢复会话"
         if (!engine.shouldResumeSession && !isFinishing && engine.isResumeStreamEnabled()) {
             engine.shouldResumeSession = true
+        }
+
+        // 自动恢复串流未开启 → 直接终止并退出串流界面
+        if (!engine.isResumeStreamEnabled() && !isFinishing) {
+            finish()
         }
     }
 

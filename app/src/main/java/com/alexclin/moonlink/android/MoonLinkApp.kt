@@ -88,6 +88,7 @@ private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid
     MoonLinkRoute.SettingsHelp.route       -> "帮助"
     MoonLinkRoute.SettingsWidget.route     -> "桌面小部件"
     MoonLinkRoute.SettingsPerformance.route -> "性能与统计分析"
+    MoonLinkRoute.SettingsConnection.route  -> "连接设置"
     else                                 -> ""
 }
 

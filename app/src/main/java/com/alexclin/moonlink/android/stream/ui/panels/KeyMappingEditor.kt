@@ -6,6 +6,7 @@ import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -392,6 +393,9 @@ fun KeyMappingEditor(
     val exitEditor: () -> Unit = {
         doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
     }
+
+    // ── 返回键等同于点击工具栏"取消"按钮 ──
+    BackHandler(enabled = true) { exitEditor() }
 
     // ════════════════════════════════════════════════════════
     //  UI
