@@ -91,7 +91,6 @@ internal fun ColorItemRow(
     parsedColor: Int?,
     isSelected: Boolean,
     onSelect: () -> Unit,
-    onHexChange: (String) -> Unit,
 ) {
     val bgColor = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
         else Color.Transparent
@@ -120,7 +119,7 @@ internal fun ColorItemRow(
 
         Text(label, style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(64.dp))
+            modifier = Modifier.width(56.dp))
 
         // 色块预览
         Box(
@@ -137,30 +136,16 @@ internal fun ColorItemRow(
 
         Spacer(Modifier.width(8.dp))
 
-        // Hex 输入
-        Text("#", color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodySmall)
-        BasicTextField(
-            value = hex.removePrefix("#"),
-            onValueChange = { h ->
-                val clean = h.uppercase().filter { it in "0123456789ABCDEF" }.take(8)
-                onHexChange(if (clean.isEmpty()) "" else "#$clean")
-            },
-            singleLine = true,
-            textStyle = TextStyle(
+        // Hex 只读显示（仅选中项可在底部输入框修改，自动同步到此处）
+        Text(
+            text = hex,
+            style = TextStyle(
                 color = if (parsedColor != null) MaterialTheme.colorScheme.onSurface
                 else MaterialTheme.colorScheme.error,
                 fontSize = 11.sp,
                 fontFamily = FontFamily.Monospace,
             ),
-            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-            modifier = Modifier
-                .width(100.dp)
-                .clip(RoundedCornerShape(3.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp))
-                .padding(horizontal = 4.dp, vertical = 2.dp),
+            maxLines = 1,
         )
     }
 }
@@ -404,7 +389,7 @@ fun ColorPickerDialog(
                         .fillMaxWidth()
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                 ) {
-                    // ═══ 第一列：Sat/Val 拾色区（占大部分宽度） ═══
+                    // ═══ 第一列：Sat/Val 拾色区 ═══
                     SatValPicker(
                         hue = hue,
                         sat = sat,
@@ -413,7 +398,7 @@ fun ColorPickerDialog(
                             sat = s; value = v
                             syncSelectedColorToHexMap()
                         },
-                        modifier = Modifier.weight(1f).fillMaxHeight().padding(end = 8.dp),
+                        modifier = Modifier.weight(0.7f).fillMaxHeight().padding(end = 8.dp),
                     )
 
                     // ═══ 第二列：竖向 Hue 选色条 ═══
@@ -430,7 +415,7 @@ fun ColorPickerDialog(
 
                     // ═══ 第三列：颜色项列表 + 色块预览 + Hex 值调整 ═══
                     Column(
-                        modifier = Modifier.width(180.dp).fillMaxHeight(),
+                        modifier = Modifier.weight(0.3f).fillMaxHeight(),
                         verticalArrangement = Arrangement.SpaceBetween,
                     ) {
                         // ── 颜色项列表（可滚动） ──
@@ -457,16 +442,6 @@ fun ColorPickerDialog(
                                         val hsv = FloatArray(3)
                                         android.graphics.Color.colorToHSV(argb, hsv)
                                         hue = hsv[0]; sat = hsv[1]; value = hsv[2]
-                                    },
-                                    onHexChange = { newHex ->
-                                        hexMap[item.key] = newHex
-                                        if (isSelected) {
-                                            val argb = parseHexColor(newHex) ?: 0xFFFFFFFF.toInt()
-                                            val hsv = FloatArray(3)
-                                            android.graphics.Color.colorToHSV(argb, hsv)
-                                            hue = hsv[0]; sat = hsv[1]; value = hsv[2]
-                                            alpha = android.graphics.Color.alpha(argb)
-                                        }
                                     },
                                 )
                             }
