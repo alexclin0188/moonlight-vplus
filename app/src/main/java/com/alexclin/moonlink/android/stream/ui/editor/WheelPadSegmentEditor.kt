@@ -103,8 +103,10 @@ fun WheelPadSegmentEditor(
             return "[无效的组]"
         }
         if (value.isBlank() || value == "null") return "空"
-        val label = getKeyLabelByValue(value)
-        return label ?: value
+        // 多键组合显示所有键名
+        val keys = value.split("+")
+        val labels = keys.map { k -> getKeyLabelByValue(k.trim()) ?: k.trim() }
+        return labels.joinToString(" + ")
     }
 
     fun buildValueString(): String {
@@ -240,11 +242,23 @@ fun WheelPadSegmentEditor(
         }
     }
 
-    // ── 键值选择器 ──
+    // ── 键值选择器（支持组合键追加） ──
     if (showKeyPicker) {
         KeyValuePickerDialog(
             onSelect = { selectedValue, _ ->
-                val ns = Segment(value = selectedValue, name = "")
+                val newValue = if (editingSegmentIndex in segments.indices) {
+                    val existing = segments[editingSegmentIndex].value
+                    if (existing.isNotBlank() && !existing.startsWith("gb") && existing != "null") {
+                        // 已有普通按键 → 用 + 追加
+                        "$existing+$selectedValue"
+                    } else {
+                        // 空或已是组按键 → 替换
+                        selectedValue
+                    }
+                } else {
+                    selectedValue
+                }
+                val ns = Segment(value = newValue, name = "")
                 segments = if (editingSegmentIndex in segments.indices) {
                     segments.toMutableList().apply { this[editingSegmentIndex] = ns }
                 } else {

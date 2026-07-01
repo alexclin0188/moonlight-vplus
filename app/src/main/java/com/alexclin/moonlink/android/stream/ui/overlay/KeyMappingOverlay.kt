@@ -21,8 +21,10 @@ import com.alexclin.moonlink.android.stream.ui.editor.drawAnalogStick
 import com.alexclin.moonlink.android.stream.ui.editor.drawDigitalButton
 import com.alexclin.moonlink.android.stream.ui.editor.drawDigitalPad
 import com.alexclin.moonlink.android.stream.ui.editor.drawGroupButton
+import com.alexclin.moonlink.android.stream.ui.editor.drawGroupButtonChildrenPreview
 import com.alexclin.moonlink.android.stream.ui.editor.drawUnknownElement
 import com.alexclin.moonlink.android.stream.ui.editor.drawWheelPad
+import org.json.JSONObject
 
 /**
  * 按键映射覆盖层 — Compose Canvas 渲染 + 触摸处理 + 输入发送。
@@ -55,6 +57,10 @@ fun KeyMappingOverlay(
         android.os.Handler(android.os.Looper.getMainLooper())
     },
     activeDpadDirections: Map<Long, Int> = emptyMap(),
+    wheelActiveIndex: Map<Long, Int> = emptyMap(),
+    wheelPopupActive: Map<Long, Boolean> = emptyMap(),
+    wheelHoveredGroupId: Map<Long, Long> = emptyMap(),
+    allElements: List<EditorElement> = emptyList(),
 ) {
     // ── 通用触摸状态 ──
     val pressedIds = remember { mutableStateMapOf<Long, Boolean>() }
@@ -367,7 +373,43 @@ fun KeyMappingOverlay(
                 } else {
                     pressedIds[el.elementId] == true
                 }
-                drawElement(el, isPressed, activeDpadDirections = activeDpadDirections)
+                drawElement(
+                    el, isPressed,
+                    wheelActiveIndex = wheelActiveIndex[el.elementId] ?: -1,
+                    wheelPopupActive = wheelPopupActive[el.elementId] ?: false,
+                    activeDpadDirections = activeDpadDirections,
+                )
+
+                // ── 组按键子元素预览（轮盘悬停在 gb 分段时，需开启 previewGroupChildren） ──
+                if (el.type == ElementType.WHEEL_PAD) {
+                    val previewEnabled = try {
+                        JSONObject(el.extraAttributesJson).optBoolean("previewGroupChildren", true)
+                    } catch (_: Exception) { true }
+                    val hoveredGbId = wheelHoveredGroupId[el.elementId]
+                    if (previewEnabled && hoveredGbId != null && hoveredGbId > 0) {
+                        val hoveredGroup = allElements.find { it.elementId == hoveredGbId }
+                        if (hoveredGroup != null && hoveredGroup.type == ElementType.GROUP_BUTTON) {
+                    val rect = el.elementRect()
+                    val isPopupMode = el.text.isNotBlank()
+                            val popupAtCenter = el.flag1 == 1
+                            val isPopupActive = wheelPopupActive[el.elementId] == true
+                            val translateX = if (isPopupMode && isPopupActive && popupAtCenter) {
+                                size.width / 2f - rect.center.x
+                            } else 0f
+                            val translateY = if (isPopupMode && isPopupActive && popupAtCenter) {
+                                size.height / 2f - rect.center.y
+                            } else 0f
+                            drawGroupButtonChildrenPreview(
+                                hoveredGroup = hoveredGroup,
+                                allElements = allElements,
+                                wheelTranslateX = translateX,
+                                wheelTranslateY = translateY,
+                                wheelGlobalLeft = rect.left,
+                                wheelGlobalTop = rect.top,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -421,7 +463,13 @@ internal fun computeTouchMargin(touchSense: Int, enhancedTouch: Boolean): Int {
 }
 
 /** 根据元素类型分发绘制到对应的 renderer */
-internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, wheelActiveIndex: Int = -1, activeDpadDirections: Map<Long, Int> = emptyMap()) {
+internal fun DrawScope.drawElement(
+    el: EditorElement,
+    isPressed: Boolean,
+    wheelActiveIndex: Int = -1,
+    wheelPopupActive: Boolean = false,
+    activeDpadDirections: Map<Long, Int> = emptyMap(),
+) {
     when (el.type) {
         ElementType.DIGITAL_COMMON_BUTTON,
         ElementType.DIGITAL_SWITCH_BUTTON,
@@ -435,7 +483,12 @@ internal fun DrawScope.drawElement(el: EditorElement, isPressed: Boolean, wheelA
         ElementType.INVISIBLE_ANALOG_STICK,
         ElementType.INVISIBLE_DIGITAL_STICK -> drawAnalogStick(el)
 
-        ElementType.WHEEL_PAD -> drawWheelPad(el, wheelActiveIndex)
+        ElementType.WHEEL_PAD -> drawWheelPad(
+            el, wheelActiveIndex,
+            isPopupMode = el.text.isNotBlank(),
+            isPopupActive = wheelPopupActive,
+            popupAtCenter = el.flag1 == 1,
+        )
         ElementType.UNKNOWN -> drawUnknownElement(el)
     }
 }

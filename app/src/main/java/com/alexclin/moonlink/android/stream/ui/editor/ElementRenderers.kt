@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
+import org.json.JSONObject
 import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
@@ -358,14 +359,120 @@ fun DrawScope.drawGroupButton(
 // ════════════════════════════════════════════════════════════════════════════
 
 /**
- * 绘制滚轮面板。
+ * 绘制滚轮面板（总调度）。
  *
- * 将圆环按 [element.mode] 等分为 N 个扇区，每个扇区对应一个键值。
- * [activeIndex] 表示当前选中的扇区索引（-1 表示无选中）。
+ * 根据弹窗模式状态决定渲染策略：
+ * - 弹窗未激活 → 仅绘制中心触发器
+ * - 弹窗激活 + 屏幕居中 → 画布平移到屏幕中心绘制完整轮盘
+ * - 弹窗激活 + 原地弹出 → 在元素原位绘制完整轮盘
+ * - 非弹窗模式（直接模式）→ 始终在元素原位绘制完整轮盘
  *
- * 段值从 [element.value] 解析（逗号分隔，支持 `|` 后缀命名）。
+ * @param element          轮盘元素数据
+ * @param activeIndex      当前选中的扇区索引（-1 无选中）
+ * @param isPopupMode      是否弹窗模式（element.text 非空时为 true）
+ * @param isPopupActive    弹窗模式是否已激活展开
+ * @param popupAtCenter    弹窗是否屏幕居中（对应 flag1）
  */
 fun DrawScope.drawWheelPad(
+    element: EditorElement,
+    activeIndex: Int = -1,
+    isPopupMode: Boolean = false,
+    isPopupActive: Boolean = false,
+    popupAtCenter: Boolean = true,
+) {
+    if (isPopupMode && !isPopupActive) {
+        // ── 弹窗未激活：仅绘制中心触发器 ──
+        drawWheelPadTrigger(element)
+    } else if (isPopupMode && isPopupActive && popupAtCenter) {
+        // ── 弹窗激活 + 屏幕居中：平移到屏幕中心绘制 ──
+        val rect = elementRect(element)
+        val translateX = size.width / 2f - rect.center.x
+        val translateY = size.height / 2f - rect.center.y
+        drawIntoCanvas { canvas ->
+            canvas.nativeCanvas.save()
+            canvas.nativeCanvas.translate(translateX, translateY)
+        }
+        drawFullWheel(element, activeIndex)
+        drawIntoCanvas { canvas ->
+            canvas.nativeCanvas.restore()
+        }
+    } else {
+        // ── 原地绘制（弹窗激活原地 / 直接模式） ──
+        drawFullWheel(element, activeIndex)
+    }
+}
+
+/**
+ * 绘制未激活弹窗的触发器：中心圆 + 触发器文字。
+ * 等效旧 Crown [drawInactivePopupCenter]。
+ */
+fun DrawScope.drawWheelPadTrigger(element: EditorElement) {
+    val rect = elementRect(element)
+    val cx = rect.center.x
+    val cy = rect.center.y
+    val outerRadius = min(rect.width, rect.height) / 2f - element.thick
+    val innerRatio = (element.sense.coerceIn(10, 90) / 100f)
+    val innerRadius = outerRadius * innerRatio
+    val borderInnerRadius = innerRadius + element.thick / 2f
+
+    val normalColor = element.withOpacity(element.normalColor)
+
+    // 半透明深色中心圆
+    drawCircle(Color(0x80000000), innerRadius, Offset(cx, cy))
+
+    // 内圈高亮轮廓（柔和阴影）
+    drawIntoCanvas { canvas ->
+        val paint = android.graphics.Paint().apply {
+            style = android.graphics.Paint.Style.STROKE
+            color = element.argbWithOpacity(element.normalColor)
+            strokeWidth = element.thick.toFloat()
+            isAntiAlias = true
+            setShadowLayer(
+                element.thick * 0.6f, 0f, 0f,
+                (element.normalColor and 0x00FFFFFF) or 0x33000000
+            )
+        }
+        canvas.nativeCanvas.drawCircle(cx, cy, borderInnerRadius, paint)
+        // 清除阴影避免影响后续
+        paint.clearShadowLayer()
+    }
+
+    // ── 中心触发器文字 ──
+    val triggerText = element.text
+    if (triggerText.isNotBlank()) {
+        // 从 extraAttributesJson 读取触发器文字大小和颜色
+        val extraAttrs = try { JSONObject(element.extraAttributesJson) } catch (_: Exception) { JSONObject() }
+        val triggerTextSizePercent = extraAttrs.optInt("triggerTextSizePercent", 40)
+        val centerTxtColor = extraAttrs.optInt("centerTextColor", -1)
+        fun effectiveCenterTextColor(): Int = if (centerTxtColor != -1) centerTxtColor else 0xFFFFFFFF.toInt()
+
+        val triggerTextSize = (innerRadius * 2) * (triggerTextSizePercent / 100f)
+
+        drawIntoCanvas { canvas ->
+            val paint = android.graphics.Paint().apply {
+                color = element.argbWithOpacity(effectiveCenterTextColor())
+                textSize = triggerTextSize
+                textAlign = android.graphics.Paint.Align.CENTER
+                isAntiAlias = true
+                isFakeBoldText = true
+                setShadowLayer(
+                    (element.thick * 0.3f).coerceAtLeast(2f), 0f,
+                    (element.thick * 0.2f).coerceAtLeast(1f), 0x88000000.toInt()
+                )
+            }
+            val metrics = paint.fontMetrics
+            val baseline = cy - (metrics.top + metrics.bottom) / 2f
+            canvas.nativeCanvas.drawText(triggerText, cx, baseline, paint)
+            paint.clearShadowLayer()
+        }
+    }
+}
+
+/**
+ * 绘制完整轮盘（扇形、分割线、文字、中心预览）。
+ * 等效旧 Crown [drawFullWheel]。
+ */
+private fun DrawScope.drawFullWheel(
     element: EditorElement,
     activeIndex: Int = -1,
 ) {
@@ -382,10 +489,26 @@ fun DrawScope.drawWheelPad(
     val normalColor = element.withOpacity(element.normalColor)
     val pressedColor = element.withOpacity(element.pressedColor)
 
-    // 解析段值列表（逗号分隔，支持 "k51|名称" 格式）
+    // 解析段值列表（逗号分隔，支持 "k51|名称" 和 "k51+k29" 多键组合格式）
     val segments = element.value.split(",").filter { it.isNotBlank() }
 
+    // 解析 extraAttributesJson（一次解析，复用）
+    val extraAttrs = try { JSONObject(element.extraAttributesJson) } catch (_: Exception) { JSONObject() }
+
+    val textSizePct = extraAttrs.optInt("textSizePercent", 35)
+    val centerTextSizePct = extraAttrs.optInt("centerTextSizePercent", 60)
+    val normalTxtColor = extraAttrs.optInt("normalTextColor", -1)
+    val pressedTxtColor = extraAttrs.optInt("pressedTextColor", -1)
+    val centerTxtColor = extraAttrs.optInt("centerTextColor", -1)
+
+    fun effectiveNormalTextColor(): Int = if (normalTxtColor != -1) normalTxtColor else 0xFFFFFFFF.toInt()
+    fun effectivePressedTextColor(): Int = if (pressedTxtColor != -1) pressedTxtColor else 0xFFFFFFFF.toInt()
+    fun effectiveCenterTextColor(): Int = if (centerTxtColor != -1) centerTxtColor else 0xFFFFFFFF.toInt()
+
     // ── 绘制各段扇形 ──
+    val isPopupMode = element.text.isNotBlank()
+    val popupAtCenter = element.flag1 == 1
+
     for (i in 0 until segmentCount) {
         val startAngle = (i * sweepAngle) - (sweepAngle / 2) - 90
         val isActive = i == activeIndex
@@ -400,7 +523,38 @@ fun DrawScope.drawWheelPad(
             sweepAngle = sweepAngle,
             useCenter = true,
         )
+
+        // ── 激活分区发光效果（参照旧 Crown paintGlow） ──
+        if (isActive) {
+            val glowAlpha = 0x3C // ~60/255, 柔和发光
+            drawIntoCanvas { canvas ->
+                val paint = android.graphics.Paint().apply {
+                    style = android.graphics.Paint.Style.FILL
+                    isAntiAlias = true
+                    val pc = element.pressedColor
+                    color = android.graphics.Color.argb(
+                        glowAlpha,
+                        android.graphics.Color.red(pc),
+                        android.graphics.Color.green(pc),
+                        android.graphics.Color.blue(pc),
+                    )
+                    setShadowLayer(
+                        outerRadius * 0.15f, 0f, 0f,
+                        element.pressedColor
+                    )
+                }
+                val arcRect = android.graphics.RectF(
+                    cx - outerRadius, cy - outerRadius,
+                    cx + outerRadius, cy + outerRadius
+                )
+                canvas.nativeCanvas.drawArc(arcRect, startAngle, sweepAngle, true, paint)
+                paint.clearShadowLayer()
+            }
+        }
     }
+
+    // ── 中心圆 ──
+    drawCircle(Color(0xFF000000), innerRadius, Offset(cx, cy))
 
     // ── 绘制各段分割线（内圆到外圆） ──
     val dividerColor = element.withOpacity(element.normalColor, 0.4f)
@@ -413,17 +567,31 @@ fun DrawScope.drawWheelPad(
         drawLine(dividerColor, Offset(sx, sy), Offset(ex, ey), element.thick.toFloat() * 0.7f)
     }
 
-    // ── 中心圆 ──
-    drawCircle(Color(0xFF000000), innerRadius, Offset(cx, cy))
-
     // ── 外圈/内圈边框 ──
-    drawCircle(normalColor, outerRadius, Offset(cx, cy), style = Stroke(width = element.thick.toFloat()))
+    // 屏幕居中弹窗时外圈添加柔和阴影
+    if (isPopupMode && popupAtCenter) {
+        drawIntoCanvas { canvas ->
+            val paint = android.graphics.Paint().apply {
+                style = android.graphics.Paint.Style.STROKE
+                color = element.argbWithOpacity(element.normalColor)
+                strokeWidth = element.thick.toFloat()
+                isAntiAlias = true
+                setShadowLayer(
+                    (element.thick * 0.6f).coerceAtLeast(2f), 0f, 0f, 0x55000000
+                )
+            }
+            canvas.nativeCanvas.drawCircle(cx, cy, outerRadius - element.thick / 2f, paint)
+            paint.clearShadowLayer()
+        }
+    } else {
+        drawCircle(normalColor, outerRadius, Offset(cx, cy), style = Stroke(width = element.thick.toFloat()))
+    }
     drawCircle(element.withOpacity(element.normalColor, 0.5f), innerRadius, Offset(cx, cy),
         style = Stroke(width = element.thick.toFloat() * 0.5f))
 
     // ── 各段文字 ──
     val ringThickness = outerRadius - innerRadius
-    val textSizePx = (ringThickness * 0.35f).coerceIn(8f, 48f)
+    val textSizePx = (ringThickness * (textSizePct / 100f)).coerceIn(8f, 48f)
     drawIntoCanvas { canvas ->
         val nativeCanvas = canvas.nativeCanvas
         val paint = android.graphics.Paint().apply {
@@ -439,8 +607,19 @@ fun DrawScope.drawWheelPad(
             val ty = cy + (textRadius * sin(rad)).toFloat()
 
             val segValue = segments.getOrElse(i) { "" }
-            val displayName = getKeyLabelByValue(segValue) ?: segValue
-            paint.color = element.argbWithOpacity(if (i == activeIndex) element.pressedTextColor else element.normalTextColor)
+            // 解析显示名称：优先用 | 后缀命名，否则查键值表
+            val displayName = if (segValue.contains("|")) {
+                segValue.substringAfterLast("|")
+            } else {
+                // 多键组合时显示第一个键的名称
+                val firstKey = segValue.substringBefore("+")
+                getKeyLabelByValue(firstKey) ?: segValue
+            }
+            paint.color = if (i == activeIndex) {
+                element.argbWithOpacity(effectivePressedTextColor())
+            } else {
+                element.argbWithOpacity(effectiveNormalTextColor())
+            }
             paint.isFakeBoldText = i == activeIndex
             val metrics = paint.fontMetrics
             val baseline = ty - (metrics.top + metrics.bottom) / 2f
@@ -448,24 +627,127 @@ fun DrawScope.drawWheelPad(
         }
     }
 
-    // ── 选中时中心显示键值名 ──
+    // ── 选中时中心显示键值名（带阴影） ──
     if (activeIndex in 0 until segmentCount) {
         val segValue = segments.getOrElse(activeIndex) { "" }
-        val centerText = getKeyLabelByValue(segValue) ?: segValue
+        val centerDisplay = if (segValue.contains("|")) {
+            segValue.substringAfterLast("|")
+        } else {
+            getKeyLabelByValue(segValue) ?: segValue
+        }
+        val ctSizePx = innerRadius * 2 * (centerTextSizePct / 100f)
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.apply {
                 val paint = android.graphics.Paint().apply {
-                    color = element.argbWithOpacity(0xFFFFFFFF.toInt())
-                    textSize = (innerRadius * 1.2f).coerceIn(12f, 60f)
+                    color = element.argbWithOpacity(effectiveCenterTextColor())
+                    textSize = ctSizePx
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                     isFakeBoldText = true
+                    setShadowLayer(
+                        (ctSizePx * 0.06f).coerceAtLeast(2f), 0f,
+                        (ctSizePx * 0.04f).coerceAtLeast(1f), 0x88000000.toInt()
+                    )
                 }
                 val metrics = paint.fontMetrics
                 val baseline = cy - (metrics.top + metrics.bottom) / 2f
-                drawText(centerText, cx, baseline, paint)
+                drawText(centerDisplay, cx, baseline, paint)
+                paint.clearShadowLayer()
             }
         }
+    }
+}
+
+/**
+ * 绘制组按键子元素预览（轮盘悬停在 gb 分段时）。
+ * 等效旧 Crown [drawHoveredGroupButtonChildren]。
+ *
+ * @param hoveredGroup      悬停的 GroupButton 元素
+ * @param allElements       所有元素列表（用于查找子元素）
+ * @param wheelTranslateX   轮盘画布 X 轴平移量（屏幕居中模式有值，原地模式为 0）
+ * @param wheelTranslateY   轮盘画布 Y 轴平移量
+ * @param wheelGlobalLeft   轮盘在屏幕上的绝对 left 坐标
+ * @param wheelGlobalTop    轮盘在屏幕上的绝对 top 坐标
+ */
+fun DrawScope.drawGroupButtonChildrenPreview(
+    hoveredGroup: EditorElement,
+    allElements: List<EditorElement>,
+    wheelTranslateX: Float = 0f,
+    wheelTranslateY: Float = 0f,
+    wheelGlobalLeft: Float = 0f,
+    wheelGlobalTop: Float = 0f,
+) {
+    val childIds = hoveredGroup.value
+        .split(",")
+        .mapNotNull { it.trim().toLongOrNull() }
+        .filter { it != -1L }
+    if (childIds.isEmpty()) return
+
+    val children = allElements.filter { it.elementId in childIds }
+    if (children.isEmpty()) return
+
+    drawIntoCanvas { canvas ->
+        for (child in children) {
+            canvas.nativeCanvas.save()
+            // 计算子元素相对轮盘画布原点的位置
+            // child.centralX/centralY 是屏幕绝对坐标
+            // wheelGlobalLeft/Top + wheelTranslateX/Y 是当前画布原点在屏幕上的位置
+            val childDrawX = child.centralX - (wheelGlobalLeft + wheelTranslateX) - child.width / 2f
+            val childDrawY = child.centralY - (wheelGlobalTop + wheelTranslateY) - child.height / 2f
+            canvas.nativeCanvas.translate(childDrawX, childDrawY)
+
+            // 绘制子元素 — 需要手工调用各类型的绘制
+            drawSingleChildElement(canvas.nativeCanvas, child, child.width, child.height)
+
+            canvas.nativeCanvas.restore()
+        }
+    }
+}
+
+/**
+ * 在 native Canvas 上绘制单个子元素。
+ * 简化版：对于预览场景，绘制基本边框和文字即可。
+ */
+private fun drawSingleChildElement(
+    nativeCanvas: android.graphics.Canvas,
+    el: EditorElement,
+    drawW: Int,
+    drawH: Int,
+) {
+    val bgPaint = android.graphics.Paint().apply {
+        style = android.graphics.Paint.Style.FILL
+        color = (el.backgroundColor and 0x00FFFFFF) or ((el.backgroundColor ushr 24) * el.opacity / 100 shl 24)
+        isAntiAlias = true
+    }
+    val borderPaint = android.graphics.Paint().apply {
+        style = android.graphics.Paint.Style.STROKE
+        color = (el.normalColor and 0x00FFFFFF) or ((el.normalColor ushr 24) * el.opacity / 100 shl 24)
+        strokeWidth = el.thick.toFloat()
+        isAntiAlias = true
+    }
+    val textPaint = android.graphics.Paint().apply {
+        color = (el.normalTextColor and 0x00FFFFFF) or ((el.normalTextColor ushr 24) * el.opacity / 100 shl 24)
+        textSize = (drawH * el.textSizePercent / 100f).coerceIn(8f, 60f)
+        textAlign = android.graphics.Paint.Align.CENTER
+        isAntiAlias = true
+        isFakeBoldText = true
+    }
+
+    val rectF = android.graphics.RectF(0f, 0f, drawW.toFloat(), drawH.toFloat())
+    val radius = el.radius.toFloat()
+    if (radius > 0) {
+        nativeCanvas.drawRoundRect(rectF, radius, radius, bgPaint)
+        nativeCanvas.drawRoundRect(rectF, radius, radius, borderPaint)
+    } else {
+        nativeCanvas.drawRect(rectF, bgPaint)
+        nativeCanvas.drawRect(rectF, borderPaint)
+    }
+
+    val label = getKeyLabelByValue(el.value) ?: el.text.ifBlank { el.value }
+    if (label.isNotBlank()) {
+        val metrics = textPaint.fontMetrics
+        val baseline = drawH / 2f - (metrics.top + metrics.bottom) / 2f
+        nativeCanvas.drawText(label, drawW / 2f, baseline, textPaint)
     }
 }
 

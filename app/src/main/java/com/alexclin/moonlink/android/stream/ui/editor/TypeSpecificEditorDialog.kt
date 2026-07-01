@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -19,6 +20,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -39,6 +42,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,6 +53,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -93,6 +98,8 @@ fun TypeSpecificEditorDialog(
     var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
     var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
     var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
+    // WheelPad 弹窗模式专用
+    var popupText by remember(element.elementId, element.text) { mutableStateOf(element.text) }
 
     var showKeyPicker by remember { mutableStateOf(false) }
     var directionPickerTarget by remember { mutableStateOf<String?>(null) }
@@ -110,10 +117,18 @@ fun TypeSpecificEditorDialog(
             flag1 = flag1.toIntOrNull() ?: element.flag1,
             extraAttributesJson = extraAttributesJson,
         )
-        return base
+        return if (element.type == ElementType.WHEEL_PAD) {
+            base.copy(text = popupText)
+        } else {
+            base
+        }
     }
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
+
+    // WheelPad 对话框宽度翻倍，其他类型维持原宽度
+    val isWheelPad = element.type == ElementType.WHEEL_PAD
+    val dialogWidth = if (isWheelPad) 624.dp else 312.dp
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -121,7 +136,7 @@ fun TypeSpecificEditorDialog(
     ) {
         Surface(
             modifier = Modifier
-                .width(312.dp)
+                .width(dialogWidth)
                 .wrapContentHeight()
                 .heightIn(max = (screenHeightDp * 0.95f).dp),
             color = MaterialTheme.colorScheme.surface,
@@ -432,20 +447,226 @@ fun TypeSpecificEditorDialog(
 
                     // 轮盘按键
                     if (element.type == ElementType.WHEEL_PAD) {
-                        PropertyRow("分段数") {
-                            Column {
-                                Slider(
+                        val isPopupNow = popupText.isNotBlank()
+
+                        // ── 中心文字 / 屏幕居中弹出 / 预览组子元素 ──
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // 中心文字：标签+输入框，填满剩余宽度
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text("中心文字",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Spacer(Modifier.width(6.dp))
+                                SmallTextField(
+                                    value = popupText,
+                                    onValueChange = { popupText = it },
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
+
+                            if (isPopupNow) {
+                                // 屏幕居中弹出：适应自身内容宽度
+                                Row(
+                                    modifier = Modifier.wrapContentWidth(),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("屏幕居中弹出",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.width(4.dp))
+                                    val checked = (flag1.toIntOrNull() ?: 1) == 1
+                                    var sw by remember(element.elementId) { mutableStateOf(checked) }
+                                    Switch(
+                                        checked = sw,
+                                        modifier = Modifier.wrapContentSize().scale(0.8f),
+                                        onCheckedChange = {
+                                            sw = it
+                                            flag1 = if (it) "1" else "0"
+                                        },
+                                    )
+                                }
+
+                                // 预览组子元素：适应自身内容宽度
+                                Row(
+                                    modifier = Modifier,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text("预览组子元素",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Spacer(Modifier.width(4.dp))
+                                    val previewInit = try {
+                                        JSONObject(extraAttributesJson).optBoolean("previewGroupChildren", true)
+                                    } catch (_: Exception) { true }
+                                    var preview by remember(element.elementId) { mutableStateOf(previewInit) }
+                                    Switch(
+                                        checked = preview,
+                                        modifier = Modifier.wrapContentSize().scale(0.8f),
+                                        onCheckedChange = {
+                                            preview = it
+                                            try {
+                                                val jo = JSONObject(extraAttributesJson)
+                                                jo.put("previewGroupChildren", it)
+                                                extraAttributesJson = jo.toString()
+                                            } catch (_: Exception) {}
+                                        },
+                                    )
+                                }
+                            }
+                        }
+
+                        Spacer(Modifier.height(4.dp))
+
+                        // 内圈半径 / 段文字颜色 JSON 读取
+                        val segTextSizeInit = try {
+                            JSONObject(extraAttributesJson).optInt("textSizePercent", 35)
+                        } catch (_: Exception) { 35 }
+                        val ctrTextSizeInit = try {
+                            JSONObject(extraAttributesJson).optInt("centerTextSizePercent", 60)
+                        } catch (_: Exception) { 60 }
+                        val ntc = try {
+                            JSONObject(extraAttributesJson).optInt("normalTextColor", -1)
+                        } catch (_: Exception) { -1 }
+                        val ctc = try {
+                            JSONObject(extraAttributesJson).optInt("centerTextColor", -1)
+                        } catch (_: Exception) { -1 }
+
+                        // ── Row 1: 内圈半径 | 分段数 ──
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                SliderWithValueAbove(
+                                    label = "内圈半径",
+                                    value = (sense.toIntOrNull() ?: 30).toFloat(),
+                                    onValueChange = { sense = it.roundToInt().toString() },
+                                    valueRange = 10f..90f,
+                                    formatValue = { "${it.roundToInt()}%" },
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                SliderWithValueAbove(
+                                    label = "分段数",
                                     value = (mode.toIntOrNull() ?: 8).toFloat(),
                                     onValueChange = { mode = it.roundToInt().toString() },
                                     valueRange = 2f..24f,
                                     steps = 21,
-                                    modifier = Modifier.weight(1f),
+                                    formatValue = { "${it.roundToInt()} 段" },
                                 )
-                                Text("${mode.toIntOrNull() ?: 8} 段",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                         }
+
+                        // ── Row 2: 段文字大小 | 中心文字大小 ──
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            // ── 触发器文字大小（中心文字行下方） ──
+                            if (isPopupNow) {
+                                val triggerSizeInit = try {
+                                    JSONObject(extraAttributesJson).optInt("triggerTextSizePercent", 40)
+                                } catch (_: Exception) { 40 }
+                                Column(modifier = Modifier.weight(1f).padding(vertical = 2.dp)) {
+                                    SliderWithValueAbove(
+                                        label = "触发器文字大小",
+                                        value = triggerSizeInit.toFloat(),
+                                        onValueChange = {
+                                            val v = it.roundToInt()
+                                            try {
+                                                val jo = JSONObject(extraAttributesJson)
+                                                jo.put("triggerTextSizePercent", v)
+                                                extraAttributesJson = jo.toString()
+                                            } catch (_: Exception) {}
+                                        },
+                                        valueRange = 5f..150f,
+                                        formatValue = { "${it.roundToInt()}%" },
+                                    )
+                                }
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                SliderWithValueAbove(
+                                    label = "段文字大小",
+                                    value = segTextSizeInit.toFloat(),
+                                    onValueChange = {
+                                        val v = it.roundToInt()
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("textSizePercent", v)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                    valueRange = 10f..100f,
+                                    formatValue = { "${it.roundToInt()}%" },
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                SliderWithValueAbove(
+                                    label = "中心文字大小",
+                                    value = ctrTextSizeInit.toFloat(),
+                                    onValueChange = {
+                                        val v = it.roundToInt()
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("centerTextSizePercent", v)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                    valueRange = 10f..150f,
+                                    formatValue = { "${it.roundToInt()}%" },
+                                )
+                            }
+                        }
+
+                        // ── Row 3: 段文字颜色 | 中心文字颜色 ──
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("段文字颜色",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                CompactColorSwatch(
+                                    color = ntc,
+                                    defaultColor = 0xFFFFFFFF.toInt(),
+                                    onColorChange = { c ->
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("normalTextColor", c)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("中心文字颜色",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                CompactColorSwatch(
+                                    color = ctc,
+                                    defaultColor = 0xFFFFFFFF.toInt(),
+                                    onColorChange = { c ->
+                                        try {
+                                            val jo = JSONObject(extraAttributesJson)
+                                            jo.put("centerTextColor", c)
+                                            extraAttributesJson = jo.toString()
+                                        } catch (_: Exception) {}
+                                    },
+                                )
+                            }
+                        }
+
+                        Spacer(Modifier.height(8.dp))
+
+                        // ── 分段编辑按钮 ──
                         if (onManageSegments != null) {
                             PropertyRow("分段编辑") {
                                 TextButton(onClick = onManageSegments) {
@@ -481,6 +702,53 @@ fun TypeSpecificEditorDialog(
 // ═══════════════════════════════════════════════════════════════════════════════
 // 辅助组件（与 EditorPropertiesPanel.kt 中相同，同包下 internal 化以便复用）
 // ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * 将属性值文字展示在 Slider 上方正中央的组件。
+ * 用于滚轮面板属性设置对话框中的统一 Slider 展示效果。
+ */
+@Composable
+private fun SliderWithValueAbove(
+    label: String,
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int = 0,
+    formatValue: (Float) -> String = { it.roundToInt().toString() },
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Box(
+                modifier = Modifier.weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = formatValue(value),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Spacer(Modifier.height(2.dp))
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            steps = steps,
+            modifier = Modifier.fillMaxWidth().height(24.dp),
+        )
+    }
+}
 
 /** 带标签的行布局 */
 @Composable
@@ -607,5 +875,103 @@ internal fun DirectionValueField(
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  紧凑型颜色选择控件
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * 紧凑型颜色选择控件：色块预览 + HEX 输入。
+ * @param color 当前颜色值（ARGB int，-1 表示使用默认）
+ * @param defaultColor 默认颜色（ARGB int）
+ * @param onColorChange 颜色变更回调（返回 ARGB int）
+ */
+@Composable
+private fun CompactColorSwatch(
+    color: Int,
+    defaultColor: Int,
+    onColorChange: (Int) -> Unit,
+) {
+    var hexText by remember { mutableStateOf("") }
+    val effectiveColor = if (color == -1) defaultColor else color
+    val displayHex = hexText.ifBlank { colorToHexStr(effectiveColor) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        // 色块预览
+        Box(
+            modifier = Modifier
+                .size(20.dp)
+                .clip(RoundedCornerShape(3.dp))
+                .background(androidx.compose.ui.graphics.Color(effectiveColor))
+                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(3.dp)),
+        )
+
+        // HEX 文本输入
+        BasicTextField(
+            value = displayHex,
+            onValueChange = { newVal ->
+                val cleaned = newVal.filter { it in "0123456789ABCDEFabcdef" }.take(8)
+                hexText = cleaned.uppercase()
+                if (cleaned.length == 6 || cleaned.length == 8) {
+                    val parsed = parseHexColorStr("#$cleaned")
+                    if (parsed != null) onColorChange(parsed)
+                }
+            },
+            singleLine = true,
+            textStyle = TextStyle(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 11.sp,
+            ),
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            modifier = Modifier
+                .weight(1f)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .border(0.5.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(4.dp))
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+        )
+
+        // 重置按钮
+        TextButton(
+            onClick = { onColorChange(-1); hexText = "" },
+            modifier = Modifier.height(30.dp),
+            contentPadding = ButtonDefaults.TextButtonContentPadding,
+        ) {
+            Text("重置", style = MaterialTheme.typography.labelSmall, fontSize = 9.sp)
+        }
+    }
+}
+
+/** ARGB int → #RRGGBB 或 #AARRGGBB */
+private fun colorToHexStr(color: Int): String {
+    val a = (color shr 24) and 0xFF
+    val r = (color shr 16) and 0xFF
+    val g = (color shr 8) and 0xFF
+    val b = color and 0xFF
+    return if (a == 0xFF) {
+        "#%02X%02X%02X".format(r, g, b)
+    } else {
+        "#%02X%02X%02X%02X".format(a, r, g, b)
+    }
+}
+
+/** #RRGGBB 或 #AARRGGBB → ARGB int */
+private fun parseHexColorStr(hex: String): Int? {
+    val clean = hex.removePrefix("#").trim()
+    if (clean.isEmpty()) return null
+    return try {
+        when (clean.length) {
+            6 -> (0xFF000000 or clean.toLong(16)).toInt()
+            8 -> clean.toLong(16).toInt()
+            else -> null
+        }
+    } catch (_: NumberFormatException) {
+        null
     }
 }

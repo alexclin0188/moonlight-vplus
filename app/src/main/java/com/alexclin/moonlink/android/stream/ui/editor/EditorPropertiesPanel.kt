@@ -132,6 +132,8 @@ fun EditorPropertiesPanel(
         ElementType.INVISIBLE_ANALOG_STICK,
         ElementType.INVISIBLE_DIGITAL_STICK,
     )
+    // 轮盘按键：文字大小由专属编辑器管理，通用面板中禁用
+    val isWheelPad = element.type == ElementType.WHEEL_PAD
     LaunchedEffect(element.elementId) {
         if (isPadOrStick) isCircle = false
     }
@@ -141,6 +143,9 @@ fun EditorPropertiesPanel(
     LaunchedEffect(element.centralY) { centralY = element.centralY.toString() }
     LaunchedEffect(element.width) { width = element.width.toString() }
     LaunchedEffect(element.height) { height = element.height.toString() }
+    // ── 同步 text/value（类型专属对话框保存后更新到 elements 列表，需同步到本地状态） ──
+    LaunchedEffect(element.text) { text = element.text; pendingText = element.text }
+    LaunchedEffect(element.value) { value = element.value }
 
     // ── 同步颜色（对话框保存后 element 更新，同步到本地状态） ──
     LaunchedEffect(element.normalColor) { normalColor = element.normalColor }
@@ -394,18 +399,19 @@ fun EditorPropertiesPanel(
                 }
 
                 // Lbl4: 文字大小（右对齐）
-                GridLabel("文字大小", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel("文字大小", Modifier.weight(0.8f).then(if (isWheelPad) Modifier.alpha(0.38f) else Modifier), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Content: 滑块（占多格）
-                Box(Modifier.weight(3f).padding(end = 4.dp)) {
+                // Content: 滑块（占多格）— WheelPad 禁用（由专属弹窗管理）
+                Box(Modifier.weight(3f).padding(end = 4.dp).then(if (isWheelPad) Modifier.alpha(0.38f) else Modifier)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text("${textSizePercent.roundToInt()}%",
+                        Text(if (isWheelPad) "—" else "${textSizePercent.roundToInt()}%",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 8.sp)
                         Slider(value = textSizePercent,
-                            onValueChange = { textSizePercent = it },
-                            onValueChangeFinished = { onElementChanged?.invoke(snapshot()) },
+                            onValueChange = if (!isWheelPad) {{ textSizePercent = it }} else {{ }},
+                            onValueChangeFinished = if (!isWheelPad) {{ onElementChanged?.invoke(snapshot()) }} else {{ }},
+                            enabled = !isWheelPad,
                             valueRange = 10f..150f,
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }
