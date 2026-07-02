@@ -33,11 +33,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.alexclin.moonlink.android.util.ToastUtil
+import android.widget.Toast
 import kotlin.math.roundToInt
 
 /**
@@ -52,6 +55,7 @@ fun StickPropertyDialog(
     element: EditorElement,
     onSave: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
+    isCreateMode: Boolean = false,
 ) {
     var sense by remember(element.elementId) { mutableStateOf(element.sense.toString()) }
     var middleValue by remember(element.elementId) { mutableStateOf(element.middleValue) }
@@ -85,6 +89,7 @@ fun StickPropertyDialog(
     }
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val context = LocalContext.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -121,7 +126,37 @@ fun StickPropertyDialog(
                         Text("取消", style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = { onSave(buildUpdated()) }) {
+                    TextButton(onClick = {
+                        // 新建模式下必须选择所需键值
+                        if (isCreateMode) {
+                            if (isPad || isDigitalStick) {
+                                if (upValue.isBlank() || downValue.isBlank() || leftValue.isBlank() || rightValue.isBlank()) {
+                                    ToastUtil.show(context, "请先选择所有方向键值", Toast.LENGTH_SHORT)
+                                    return@TextButton
+                                }
+                            }
+                            if (element.type in listOf(ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK)) {
+                                if (middleValue.isBlank()) {
+                                    ToastUtil.show(context, "请先选择中值", Toast.LENGTH_SHORT)
+                                    return@TextButton
+                                }
+                            }
+                        }
+                        // 方向值内部互斥校验（十字键/数字摇杆：↑↓←→ 不可重复）
+                        if (isPad || isDigitalStick) {
+                            val dupMsg = findDuplicateKeyValues(mapOf(
+                                "↑上滑" to upValue,
+                                "↓下滑" to downValue,
+                                "←左滑" to leftValue,
+                                "→右滑" to rightValue,
+                            ))
+                            if (dupMsg != null) {
+                                ToastUtil.show(context, "方向值重复：$dupMsg", Toast.LENGTH_SHORT)
+                                return@TextButton
+                            }
+                        }
+                        onSave(buildUpdated())
+                    }) {
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("保存", style = MaterialTheme.typography.labelMedium)

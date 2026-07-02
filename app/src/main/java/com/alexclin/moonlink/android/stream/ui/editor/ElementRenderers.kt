@@ -93,7 +93,14 @@ fun DrawScope.drawDigitalButton(
     val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
     val valueLabel = getKeyLabelByValue(element.value) ?: element.value
 
-    if (element.text.isNotBlank() && !element.text.equals(valueLabel, ignoreCase = true)) {
+    // 组合键：text 为空时默认显示 "组合键{键值名}"
+    val displayText = if (element.type == ElementType.DIGITAL_COMBINE_BUTTON && element.text.isBlank()) {
+        "组合键"
+    } else {
+        element.text
+    }
+
+    if (displayText.isNotBlank() && !displayText.equals(valueLabel, ignoreCase = true)) {
         // 自定义按键名不为空且与键值名不同 → 两行显示：第一行按键名，第二行键值名（较小）
         val line1Size = fontSizePx * 0.7f
         val line2Size = fontSizePx * 0.5f
@@ -125,7 +132,7 @@ fun DrawScope.drawDigitalButton(
                 // Line 1: 自定义按键名
                 val line1CenterY = blockTop + h1 / 2f
                 val baseline1 = line1CenterY - (fm1.top + fm1.bottom) / 2f
-                drawText(element.text, element.centralX.toFloat(), baseline1, paint1)
+                drawText(displayText, element.centralX.toFloat(), baseline1, paint1)
 
                 // Line 2: 键值名（较小）
                 val line2CenterY = blockTop + h1 + spacing + h2 / 2f

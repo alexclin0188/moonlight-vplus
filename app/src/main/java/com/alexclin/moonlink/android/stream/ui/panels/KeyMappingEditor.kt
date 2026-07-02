@@ -94,6 +94,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.StickPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
+import com.alexclin.moonlink.android.stream.ui.editor.collectElementDisplayNames
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 import kotlin.math.roundToInt
@@ -471,6 +472,9 @@ fun KeyMappingEditor(
                 // 按钮在上半屏 → 面板在底部；按钮在下半屏 → 面板在顶部
                 if (showPanelAtBottom) {
                     Spacer(modifier = Modifier.weight(1f))
+                    val panelExistingNames = collectElementDisplayNames(
+                        elements, excludeElementId = selectedElement!!.elementId
+                    )
                     EditorPropertiesPanel(
                         element = selectedElement!!,
                         atTop = false,
@@ -498,8 +502,12 @@ fun KeyMappingEditor(
                         onElementChanged = { updated ->
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                         },
+                        existingTextNames = panelExistingNames,
                     )
                 } else {
+                    val panelExistingNames = collectElementDisplayNames(
+                        elements, excludeElementId = selectedElement!!.elementId
+                    )
                     EditorPropertiesPanel(
                         element = selectedElement!!,
                         atTop = true,
@@ -524,6 +532,7 @@ fun KeyMappingEditor(
                                 showTypeSpecificEditor = true
                             }
                         },
+                        existingTextNames = panelExistingNames,
                     )
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -596,6 +605,9 @@ fun KeyMappingEditor(
                 ElementType.INVISIBLE_ANALOG_STICK,
                 ElementType.DIGITAL_PAD,
             )
+            val existingTextNames = collectElementDisplayNames(
+                elements, excludeElementId = el.elementId
+            )
             if (el.type in stickTypes) {
                 StickPropertyDialog(
                     title = "${el.type.displayName}属性设置",
@@ -621,6 +633,7 @@ fun KeyMappingEditor(
                         ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
                     },
                     onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
+                    existingTextNames = existingTextNames,
                 )
             }
         }
@@ -667,6 +680,7 @@ fun KeyMappingEditor(
                 ElementType.DIGITAL_PAD,
             )
             val title = "新建${el.type.displayName}"
+            val existingTextNames = collectElementDisplayNames(elements)
             val onSaveNew: (EditorElement) -> Unit = { updated ->
                 val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
                 val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
@@ -689,6 +703,7 @@ fun KeyMappingEditor(
                     element = el,
                     onSave = onSaveNew,
                     onDismiss = { pendingNewElement = null },
+                    isCreateMode = true,
                 )
             } else {
                 ButtonPropertyDialog(
@@ -696,6 +711,8 @@ fun KeyMappingEditor(
                     element = el,
                     onSave = onSaveNew,
                     onDismiss = { pendingNewElement = null },
+                    existingTextNames = existingTextNames,
+                    isCreateMode = true,
                 )
             }
         }
@@ -706,6 +723,10 @@ fun KeyMappingEditor(
             ComboKeyEditorDialog(
                 title = if (editingEl != null) "组合键属性设置" else "新建组合键",
                 initialElement = editingEl,
+                existingTextNames = collectElementDisplayNames(
+                    elements, excludeElementId = editingEl?.elementId
+                ),
+                isCreateMode = editingEl == null,
                 onSaveNew = { newEl ->
                     if (editingEl != null) {
                         // 修改现有组合键

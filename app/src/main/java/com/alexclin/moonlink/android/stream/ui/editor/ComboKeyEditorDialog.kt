@@ -38,8 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.util.ToastUtil
+import android.widget.Toast
 
 /**
  * 组合键创建对话框。
@@ -59,14 +62,17 @@ fun ComboKeyEditorDialog(
     initialElement: EditorElement? = null,
     onSaveNew: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
+    existingTextNames: Set<String> = emptySet(),
+    isCreateMode: Boolean = false,
 ) {
-    var newText by remember { mutableStateOf(initialElement?.text ?: "组合键") }
+    var newText by remember { mutableStateOf(initialElement?.text ?: "") }
     var newMainValue by remember { mutableStateOf(initialElement?.value ?: "k29") }
     var newUpValue by remember { mutableStateOf(initialElement?.upValue ?: "") }
     var newDownValue by remember { mutableStateOf(initialElement?.downValue ?: "") }
     var newLeftValue by remember { mutableStateOf(initialElement?.leftValue ?: "") }
     var newRightValue by remember { mutableStateOf(initialElement?.rightValue ?: "") }
     var showKeyPickerForSlot by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
 
     Box(
         modifier = Modifier
@@ -98,11 +104,34 @@ fun ComboKeyEditorDialog(
                     }
                     Spacer(Modifier.width(4.dp))
                     TextButton(onClick = {
+                        // 新建模式下必须选择主键（单击）
+                        if (isCreateMode && newMainValue.isBlank()) {
+                            ToastUtil.show(context, "请先选择单击键值", Toast.LENGTH_SHORT)
+                            return@TextButton
+                        }
+                        // 名称查重
+                        if (isDuplicateElementName(newText, existingTextNames)) {
+                            val trimmedText = newText.trim()
+                            ToastUtil.show(context, "已存在同名元素「$trimmedText」，请修改名称", Toast.LENGTH_SHORT)
+                            return@TextButton
+                        }
+                        // 内部方向值互斥校验
+                        val dupMsg = findDuplicateKeyValues(mapOf(
+                            "单击" to newMainValue,
+                            "上滑" to newUpValue,
+                            "下滑" to newDownValue,
+                            "左滑" to newLeftValue,
+                            "右滑" to newRightValue,
+                        ))
+                        if (dupMsg != null) {
+                            ToastUtil.show(context, "方向值重复：$dupMsg", Toast.LENGTH_SHORT)
+                            return@TextButton
+                        }
                         val newEl = EditorElement(
                             elementId = initialElement?.elementId ?: 0L,
                             configId = initialElement?.configId ?: 0L,
                             type = ElementType.DIGITAL_COMBINE_BUTTON,
-                            text = newText.ifBlank { "组合键" },
+                            text = newText,
                             value = newMainValue.ifBlank { "k29" },
                             upValue = newUpValue,
                             downValue = newDownValue,
@@ -150,7 +179,7 @@ fun ComboKeyEditorDialog(
                             )
                             // 按钮文字为空时以单击键值名作为 hint
                             if (newText.isEmpty()) {
-                                val hintText = getKeyLabelByValue(newMainValue) ?: newMainValue
+                                val hintText = "组合键${getKeyLabelByValue(newMainValue) ?: newMainValue}"
                                 if (hintText.isNotEmpty()) {
                                     Text(
                                         hintText,

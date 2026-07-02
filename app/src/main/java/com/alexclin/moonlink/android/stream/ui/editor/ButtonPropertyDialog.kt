@@ -44,6 +44,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -53,6 +54,8 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.alexclin.moonlink.android.stream.ui.common.CompactChip
+import com.alexclin.moonlink.android.util.ToastUtil
+import android.widget.Toast
 import kotlin.math.roundToInt
 import org.json.JSONObject
 
@@ -68,6 +71,8 @@ fun ButtonPropertyDialog(
     element: EditorElement,
     onSave: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
+    existingTextNames: Set<String> = emptySet(),
+    isCreateMode: Boolean = false,
 ) {
     var text by remember(element.elementId) { mutableStateOf(element.text) }
     var value by remember(element.elementId) { mutableStateOf(element.value) }
@@ -90,6 +95,7 @@ fun ButtonPropertyDialog(
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val focusManager = LocalFocusManager.current
+    val context = LocalContext.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -126,7 +132,19 @@ fun ButtonPropertyDialog(
                         Text("取消", style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = { onSave(buildUpdated()) }) {
+                    TextButton(onClick = {
+                        // 新建模式下必须选择键值
+                        if (isCreateMode && value.isBlank()) {
+                            ToastUtil.show(context, "请先选择按键值", Toast.LENGTH_SHORT)
+                            return@TextButton
+                        }
+                        if (isDuplicateElementName(text, existingTextNames)) {
+                            val trimmedText = text.trim()
+                            ToastUtil.show(context, "已存在同名元素「$trimmedText」，请修改名称", Toast.LENGTH_SHORT)
+                            return@TextButton
+                        }
+                        onSave(buildUpdated())
+                    }) {
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("保存", style = MaterialTheme.typography.labelMedium)

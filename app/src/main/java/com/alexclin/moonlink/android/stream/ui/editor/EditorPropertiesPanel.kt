@@ -59,12 +59,15 @@ import androidx.compose.ui.focus.onFocusEvent
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexclin.moonlink.android.util.ToastUtil
+import android.widget.Toast
 import kotlin.math.roundToInt
 
 /**
@@ -87,6 +90,8 @@ fun EditorPropertiesPanel(
     onOpenTypeSpecificEditor: (EditorElement) -> Unit,
     /** 属性变化时实时回调，用于触发画布更新预览 */
     onElementChanged: ((EditorElement) -> Unit)? = null,
+    /** 其它元素的按键名集合（用于查重，排除自身） */
+    existingTextNames: Set<String> = emptySet(),
 ) {
     // ── 本地可编辑状态 ──
     var text by remember(element.elementId) { mutableStateOf(element.text) }
@@ -164,6 +169,7 @@ fun EditorPropertiesPanel(
     LaunchedEffect(element.extraAttributesJson) { extraAttributesJson = element.extraAttributesJson }
 
     var showKeyPicker by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     /** 获取当前宽度整数值 */
     fun currentWidth(): Int = width.toIntOrNull()?.coerceIn(10, 5000) ?: element.width
@@ -248,6 +254,12 @@ fun EditorPropertiesPanel(
                         onValueChange = { pendingText = it.take(10) },
                         modifier = Modifier.fillMaxWidth(),
                         onCommit = {
+                            if (isDuplicateElementName(pendingText, existingTextNames, currentText = text)) {
+                                val trimmed = pendingText.trim()
+                                ToastUtil.show(context, "已存在同名元素「$trimmed」，请修改名称", Toast.LENGTH_SHORT)
+                                pendingText = text
+                                return@InlineTextField
+                            }
                             if (pendingText != text) {
                                 text = pendingText
                                 onElementChanged?.invoke(snapshot())
