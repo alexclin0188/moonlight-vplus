@@ -374,6 +374,8 @@ class StreamActivity : ComponentActivity() {
                     val mouseRepeatMap = remember { HashMap<Int, java.lang.Runnable>() }
                     val gamepadRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
                     val scrollRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
+                    // 组合键长按计时器（元素ID → Runnable），3000ms 超时（参考旧 Crown DigitalCombineButton）
+                    val comboLongClickTimers = remember { HashMap<Long, java.lang.Runnable>() }
 
                     // ── 振动反馈（参考原 Crown buttonVibrator） ──
                     fun triggerVibration() {
@@ -814,8 +816,17 @@ class StreamActivity : ComponentActivity() {
                                         if (elementVibrationFired.put(el.elementId, true) == null) {
                                             triggerVibration()
                                         }
+                                        // 启动长按计时器（3000ms，参考旧 Crown DigitalCombineButton）
+                                        comboLongClickTimers.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
+                                        val longClickRunnable = java.lang.Runnable {
+                                            // 长按回调（旧 Crown onLongClick 为空实现，保留框架以待扩展）
+                                        }
+                                        comboLongClickTimers[el.elementId] = longClickRunnable
+                                        repeatHandler.postDelayed(longClickRunnable, 3000)
                                     } else {
                                         elementVibrationFired.remove(el.elementId)
+                                        // 取消长按计时器
+                                        comboLongClickTimers.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
                                     }
                                     val values = listOfNotNull(
                                         value.takeIf { it.isNotEmpty() },
@@ -824,7 +835,78 @@ class StreamActivity : ComponentActivity() {
                                         el.leftValue.takeIf { it.isNotEmpty() },
                                         el.rightValue.takeIf { it.isNotEmpty() },
                                     )
-                                    for (v in values) sendKeyboardKey(v, isPressed)
+                                    for (v in values) {
+                                        // 全类型分发（旧 Crown 通过 getSendEventHandler 统一处理所有类型）
+                                        when {
+                                            v == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
+                                            v == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
+                                            v.startsWith("k") -> sendKeyboardKey(v, isPressed)
+                                            v.startsWith("g") -> {
+                                                val flag = parseValueToFlag(v)
+                                                if (flag != 0) {
+                                                    btnState.value = if (isPressed) btnState.value or flag
+                                                        else btnState.value and flag.inv()
+                                                }
+                                            }
+                                            v.startsWith("m") -> {
+                                                val btnId = v.substring(1).toIntOrNull()
+                                                if (btnId != null) {
+                                                    if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                    else engine.conn?.sendMouseButtonUp(btnId.toByte())
+                                                    mouseRepeatMap.remove(btnId)?.let(repeatHandler::removeCallbacks)
+                                                    if (isPressed) {
+                                                        val r = java.lang.Runnable {
+                                                            engine.conn?.sendMouseButtonDown(btnId.toByte())
+                                                        }
+                                                        mouseRepeatMap[btnId] = r
+                                                        repeatHandler.postDelayed(r, 50)
+                                                        repeatHandler.postDelayed(r, 75)
+                                                    }
+                                                }
+                                            }
+                                            v == "SU" -> {
+                                                scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                                scrollRepeatRunnable.value = null
+                                                if (isPressed) {
+                                                    val upAmount = ((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5).toByte()
+                                                    engine.mouseVScroll(upAmount)
+                                                    val r = object : java.lang.Runnable {
+                                                        override fun run() {
+                                                            engine.mouseVScroll(upAmount)
+                                                            repeatHandler.postDelayed(this, 100)
+                                                        }
+                                                    }
+                                                    scrollRepeatRunnable.value = r
+                                                    repeatHandler.postDelayed(r, 150)
+                                                }
+                                            }
+                                            v == "SD" -> {
+                                                scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                                scrollRepeatRunnable.value = null
+                                                if (isPressed) {
+                                                    val downAmount = (-((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5)).toByte()
+                                                    engine.mouseVScroll(downAmount)
+                                                    val r = object : java.lang.Runnable {
+                                                        override fun run() {
+                                                            engine.mouseVScroll(downAmount)
+                                                            repeatHandler.postDelayed(this, 100)
+                                                        }
+                                                    }
+                                                    scrollRepeatRunnable.value = r
+                                                    repeatHandler.postDelayed(r, 150)
+                                                }
+                                            }
+                                            else -> sendKeyboardKey(v, isPressed)
+                                        }
+                                    }
+                                    // 手柄按键重复（参考旧 Crown sendGamepadEvent 的 50ms+75ms 双调度）
+                                    gamepadRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
+                                    if (isPressed) {
+                                        val r = java.lang.Runnable { sendFullState() }
+                                        gamepadRepeatRunnable.value = r
+                                        repeatHandler.postDelayed(r, 50)
+                                        repeatHandler.postDelayed(r, 75)
+                                    }
                                     sendFullState()
                                 }
                                 ElementType.DIGITAL_PAD -> {

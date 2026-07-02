@@ -225,6 +225,8 @@ fun KeyMappingEditor(
     // 全屏类型专属属性编辑对话框
     var showTypeSpecificEditor by remember { mutableStateOf(false) }
     var pendingTypeSpecificEditorElement by remember { mutableStateOf<EditorElement?>(null) }
+    // 组合键编辑（从属性面板进入）
+    var editingComboKeyElement by remember { mutableStateOf<EditorElement?>(null) }
 
     // ── 网格吸附辅助 ──
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
@@ -482,8 +484,13 @@ fun KeyMappingEditor(
                             showColorEditor = true
                         },
                         onOpenTypeSpecificEditor = { el ->
-                            pendingTypeSpecificEditorElement = el
-                            showTypeSpecificEditor = true
+                            if (el.type == ElementType.DIGITAL_COMBINE_BUTTON) {
+                                editingComboKeyElement = el
+                                showComboKeyEditor = true
+                            } else {
+                                pendingTypeSpecificEditorElement = el
+                                showTypeSpecificEditor = true
+                            }
                         },
                         onElementChanged = { updated ->
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
@@ -506,8 +513,13 @@ fun KeyMappingEditor(
                             showColorEditor = true
                         },
                         onOpenTypeSpecificEditor = { el ->
-                            pendingTypeSpecificEditorElement = el
-                            showTypeSpecificEditor = true
+                            if (el.type == ElementType.DIGITAL_COMBINE_BUTTON) {
+                                editingComboKeyElement = el
+                                showComboKeyEditor = true
+                            } else {
+                                pendingTypeSpecificEditorElement = el
+                                showTypeSpecificEditor = true
+                            }
                         },
                         onElementChanged = { updated ->
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
@@ -627,38 +639,48 @@ fun KeyMappingEditor(
             )
         }
 
-        // ── 组合键编辑弹窗 ──
+        // ── 组合键编辑弹窗（新建/修改共用） ──
         if (showComboKeyEditor) {
-            val comboKeys = elements.filter { it.type == ElementType.DIGITAL_COMBINE_BUTTON }
+            val editingEl = editingComboKeyElement
             ComboKeyEditorDialog(
-                existingComboKeys = comboKeys,
+                title = if (editingEl != null) "修改组合键" else "新建组合键",
+                initialElement = editingEl,
                 onSaveNew = { newEl ->
-                    val finalEl = newEl.copy(
-                        elementId = System.currentTimeMillis(),
-                        configId = currentConfigId,
-                        centralX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
-                        centralY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
-                        layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
-                    )
-                    editorState.addElement(finalEl)
-                    selectedIds = setOf(finalEl.elementId)
-                    reloadElements()
-                    ToastUtil.show(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT)
+                    if (editingEl != null) {
+                        // 修改现有组合键
+                        val finalEl = newEl.copy(
+                            elementId = editingEl.elementId,
+                            configId = editingEl.configId,
+                            centralX = editingEl.centralX,
+                            centralY = editingEl.centralY,
+                            width = editingEl.width,
+                            height = editingEl.height,
+                            layer = editingEl.layer,
+                        )
+                        editorState.saveElement(finalEl)
+                        reloadElements()
+                        ToastUtil.show(context, "组合键已更新", Toast.LENGTH_SHORT)
+                    } else {
+                        // 新建组合键
+                        val finalEl = newEl.copy(
+                            elementId = System.currentTimeMillis(),
+                            configId = currentConfigId,
+                            centralX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
+                            centralY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
+                            layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
+                        )
+                        editorState.addElement(finalEl)
+                        selectedIds = setOf(finalEl.elementId)
+                        reloadElements()
+                        ToastUtil.show(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT)
+                    }
                     showComboKeyEditor = false
+                    editingComboKeyElement = null
                 },
-                onSaveExisting = { updatedEl ->
-                    editorState.saveElement(updatedEl)
-                    ToastUtil.show(context, "组合键已更新", Toast.LENGTH_SHORT)
-                    reloadElements()
+                onDismiss = {
                     showComboKeyEditor = false
+                    editingComboKeyElement = null
                 },
-                onDeleteExisting = { targetEl ->
-                    editorState.deleteElement(targetEl.elementId)
-                    ToastUtil.show(context, "已删除组合键", Toast.LENGTH_SHORT)
-                    reloadElements()
-                    showComboKeyEditor = false
-                },
-                onDismiss = { showComboKeyEditor = false },
             )
         }
 
