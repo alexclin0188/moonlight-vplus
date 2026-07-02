@@ -74,8 +74,6 @@ import kotlin.math.roundToInt
  * - 十字键/组合键/键盘摇杆：方向值 ↑↓←→
  * - 摇杆类：中值 + 灵敏度
  * - 可移动按键：模式 + 灵敏度 + 触控板模式
- * - 组按键：子按键管理入口 + 子元素可见性 + 隐藏标志 + 可拖拽/永久独立开关
- * - 轮盘按键：分段数 + 分段编辑入口
  * - 简化信息：模板文本编辑 + 字号 + 恢复默认
  */
 @OptIn(ExperimentalLayoutApi::class)
@@ -85,8 +83,6 @@ fun TypeSpecificEditorDialog(
     allElements: List<EditorElement> = emptyList(),
     onSave: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
-    onManageChildren: (() -> Unit)? = null,
-    onManageSegments: (() -> Unit)? = null,
 ) {
     // 本地可编辑状态
     var mode by remember(element.elementId) { mutableStateOf(element.mode.toString()) }
@@ -98,15 +94,13 @@ fun TypeSpecificEditorDialog(
     var rightValue by remember(element.elementId) { mutableStateOf(element.rightValue) }
     var flag1 by remember(element.elementId) { mutableStateOf(element.flag1.toString()) }
     var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
-    // WheelPad 弹窗模式专用
-    var popupText by remember(element.elementId, element.text) { mutableStateOf(element.text) }
 
     var showKeyPicker by remember { mutableStateOf(false) }
     var directionPickerTarget by remember { mutableStateOf<String?>(null) }
 
     // 构建更新后的元素
     fun buildUpdated(): EditorElement {
-        val base = element.copy(
+        return element.copy(
             mode = mode.toIntOrNull() ?: element.mode,
             sense = sense.toIntOrNull()?.coerceIn(0, 500) ?: element.sense,
             middleValue = middleValue,
@@ -117,18 +111,9 @@ fun TypeSpecificEditorDialog(
             flag1 = flag1.toIntOrNull() ?: element.flag1,
             extraAttributesJson = extraAttributesJson,
         )
-        return if (element.type == ElementType.WHEEL_PAD) {
-            base.copy(text = popupText)
-        } else {
-            base
-        }
     }
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
-
-    // WheelPad 对话框宽度翻倍，其他类型维持原宽度
-    val isWheelPad = element.type == ElementType.WHEEL_PAD
-    val dialogWidth = if (isWheelPad) 624.dp else 312.dp
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -136,7 +121,7 @@ fun TypeSpecificEditorDialog(
     ) {
         Surface(
             modifier = Modifier
-                .width(dialogWidth)
+                .width(312.dp)
                 .wrapContentHeight()
                 .heightIn(max = (screenHeightDp * 0.95f).dp),
             color = MaterialTheme.colorScheme.surface,
@@ -315,367 +300,6 @@ fun TypeSpecificEditorDialog(
                         Spacer(Modifier.height(4.dp))
                     }
 
-                    // 组按键
-                    if (element.type == ElementType.GROUP_BUTTON) {
-                        // 第一行：子元素可见 + 隐藏本按钮
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(36.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("子元素可见", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.width(64.dp))
-                                val visible = (sense.toIntOrNull() ?: 1) == 1
-                                var checked by remember(element.elementId) { mutableStateOf(visible) }
-                                Switch(
-                                    checked = checked,
-                                    modifier = Modifier.scale(0.8f),
-                                    onCheckedChange = {
-                                        checked = it
-                                        sense = if (it) "1" else "0"
-                                    },
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("隐藏本按钮", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.width(64.dp))
-                                val hidden = (flag1.toIntOrNull() ?: 0) == 1
-                                var checked by remember(element.elementId) { mutableStateOf(hidden) }
-                                Switch(
-                                    checked = checked,
-                                    modifier = Modifier.scale(0.8f),
-                                    onCheckedChange = {
-                                        checked = it
-                                        flag1 = if (it) "1" else "0"
-                                    },
-                                )
-                            }
-                        }
-
-                        // 第二行：可拖拽 + 永久独立
-                        Row(
-                            modifier = Modifier.fillMaxWidth().height(36.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("可拖拽", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.width(64.dp))
-                                val movable = try {
-                                    JSONObject(extraAttributesJson).optBoolean("movableInNormalMode", false)
-                                } catch (_: Exception) { false }
-                                var checked by remember(element.elementId) { mutableStateOf(movable) }
-                                Switch(
-                                    checked = checked,
-                                    modifier = Modifier.scale(0.8f),
-                                    onCheckedChange = {
-                                        checked = it
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("movableInNormalMode", it)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("永久独立", style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.width(64.dp))
-                                val independent = try {
-                                    JSONObject(extraAttributesJson).optBoolean("isPermanentlyIndependent", false)
-                                } catch (_: Exception) { false }
-                                var checked by remember(element.elementId) { mutableStateOf(independent) }
-                                Switch(
-                                    checked = checked,
-                                    modifier = Modifier.scale(0.8f),
-                                    onCheckedChange = {
-                                        checked = it
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("isPermanentlyIndependent", it)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                        }
-
-                        // 子按键管理（放在第二行下面）
-                        val childCount = element.value
-                            .split(",")
-                            .mapNotNull { it.trim().toLongOrNull() }
-                            .count { it != -1L }
-                        PropertyRow("子按键") {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text(
-                                    if (childCount > 0) "${childCount} 个" else "无",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (childCount > 0) MaterialTheme.colorScheme.onSurface
-                                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                if (onManageChildren != null) {
-                                    TextButton(onClick = onManageChildren) {
-                                        Text(
-                                            if (childCount > 0) "管理" else "添加",
-                                            style = MaterialTheme.typography.labelSmall,
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                    }
-
-                    // 轮盘按键
-                    if (element.type == ElementType.WHEEL_PAD) {
-                        val isPopupNow = popupText.isNotBlank()
-
-                        // ── 中心文字 / 屏幕居中弹出 / 预览组子元素 ──
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // 中心文字：标签+输入框，填满剩余宽度
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                Text("中心文字",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Spacer(Modifier.width(6.dp))
-                                SmallTextField(
-                                    value = popupText,
-                                    onValueChange = { popupText = it },
-                                    modifier = Modifier.weight(1f),
-                                )
-                            }
-
-                            if (isPopupNow) {
-                                // 屏幕居中弹出：适应自身内容宽度
-                                Row(
-                                    modifier = Modifier.wrapContentWidth(),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text("屏幕居中弹出",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(Modifier.width(4.dp))
-                                    val checked = (flag1.toIntOrNull() ?: 1) == 1
-                                    var sw by remember(element.elementId) { mutableStateOf(checked) }
-                                    Switch(
-                                        checked = sw,
-                                        modifier = Modifier.wrapContentSize().scale(0.8f),
-                                        onCheckedChange = {
-                                            sw = it
-                                            flag1 = if (it) "1" else "0"
-                                        },
-                                    )
-                                }
-
-                                // 预览组子元素：适应自身内容宽度
-                                Row(
-                                    modifier = Modifier,
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
-                                    Text("预览组子元素",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                    Spacer(Modifier.width(4.dp))
-                                    val previewInit = try {
-                                        JSONObject(extraAttributesJson).optBoolean("previewGroupChildren", true)
-                                    } catch (_: Exception) { true }
-                                    var preview by remember(element.elementId) { mutableStateOf(previewInit) }
-                                    Switch(
-                                        checked = preview,
-                                        modifier = Modifier.wrapContentSize().scale(0.8f),
-                                        onCheckedChange = {
-                                            preview = it
-                                            try {
-                                                val jo = JSONObject(extraAttributesJson)
-                                                jo.put("previewGroupChildren", it)
-                                                extraAttributesJson = jo.toString()
-                                            } catch (_: Exception) {}
-                                        },
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(Modifier.height(4.dp))
-
-                        // 内圈半径 / 段文字颜色 JSON 读取
-                        val segTextSizeInit = try {
-                            JSONObject(extraAttributesJson).optInt("textSizePercent", 35)
-                        } catch (_: Exception) { 35 }
-                        val ctrTextSizeInit = try {
-                            JSONObject(extraAttributesJson).optInt("centerTextSizePercent", 60)
-                        } catch (_: Exception) { 60 }
-                        val ntc = try {
-                            JSONObject(extraAttributesJson).optInt("normalTextColor", -1)
-                        } catch (_: Exception) { -1 }
-                        val ctc = try {
-                            JSONObject(extraAttributesJson).optInt("centerTextColor", -1)
-                        } catch (_: Exception) { -1 }
-
-                        // ── Row 1: 内圈半径 | 分段数 ──
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                SliderWithValueAbove(
-                                    label = "内圈半径",
-                                    value = (sense.toIntOrNull() ?: 30).toFloat(),
-                                    onValueChange = { sense = it.roundToInt().toString() },
-                                    valueRange = 10f..90f,
-                                    formatValue = { "${it.roundToInt()}%" },
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                SliderWithValueAbove(
-                                    label = "分段数",
-                                    value = (mode.toIntOrNull() ?: 8).toFloat(),
-                                    onValueChange = { mode = it.roundToInt().toString() },
-                                    valueRange = 2f..24f,
-                                    steps = 21,
-                                    formatValue = { "${it.roundToInt()} 段" },
-                                )
-                            }
-                        }
-
-                        // ── Row 2: 段文字大小 | 中心文字大小 ──
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            // ── 触发器文字大小（中心文字行下方） ──
-                            if (isPopupNow) {
-                                val triggerSizeInit = try {
-                                    JSONObject(extraAttributesJson).optInt("triggerTextSizePercent", 40)
-                                } catch (_: Exception) { 40 }
-                                Column(modifier = Modifier.weight(1f).padding(vertical = 2.dp)) {
-                                    SliderWithValueAbove(
-                                        label = "触发器文字大小",
-                                        value = triggerSizeInit.toFloat(),
-                                        onValueChange = {
-                                            val v = it.roundToInt()
-                                            try {
-                                                val jo = JSONObject(extraAttributesJson)
-                                                jo.put("triggerTextSizePercent", v)
-                                                extraAttributesJson = jo.toString()
-                                            } catch (_: Exception) {}
-                                        },
-                                        valueRange = 5f..150f,
-                                        formatValue = { "${it.roundToInt()}%" },
-                                    )
-                                }
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                SliderWithValueAbove(
-                                    label = "段文字大小",
-                                    value = segTextSizeInit.toFloat(),
-                                    onValueChange = {
-                                        val v = it.roundToInt()
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("textSizePercent", v)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                    valueRange = 10f..100f,
-                                    formatValue = { "${it.roundToInt()}%" },
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                SliderWithValueAbove(
-                                    label = "中心文字大小",
-                                    value = ctrTextSizeInit.toFloat(),
-                                    onValueChange = {
-                                        val v = it.roundToInt()
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("centerTextSizePercent", v)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                    valueRange = 10f..150f,
-                                    formatValue = { "${it.roundToInt()}%" },
-                                )
-                            }
-                        }
-
-                        // ── Row 3: 段文字颜色 | 中心文字颜色 ──
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("段文字颜色",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                CompactColorSwatch(
-                                    color = ntc,
-                                    defaultColor = 0xFFFFFFFF.toInt(),
-                                    onColorChange = { c ->
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("normalTextColor", c)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("中心文字颜色",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                CompactColorSwatch(
-                                    color = ctc,
-                                    defaultColor = 0xFFFFFFFF.toInt(),
-                                    onColorChange = { c ->
-                                        try {
-                                            val jo = JSONObject(extraAttributesJson)
-                                            jo.put("centerTextColor", c)
-                                            extraAttributesJson = jo.toString()
-                                        } catch (_: Exception) {}
-                                    },
-                                )
-                            }
-                        }
-
-                        Spacer(Modifier.height(8.dp))
-
-                        // ── 分段编辑按钮 ──
-                        if (onManageSegments != null) {
-                            PropertyRow("分段编辑") {
-                                TextButton(onClick = onManageSegments) {
-                                    Text("编辑分段", style = MaterialTheme.typography.labelSmall)
-                                }
-                            }
-                        }
-                        Spacer(Modifier.height(4.dp))
-                    }
                 }
             }
         }

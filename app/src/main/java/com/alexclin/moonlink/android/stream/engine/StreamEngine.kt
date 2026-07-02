@@ -1253,7 +1253,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     /**
-     * 更新内存中指定元素的位置（供 GroupButton Normal 模式长按拖动使用）。
+     * 更新内存中指定元素的位置（供长按拖动使用）。
      * 立即反映到 Compose 状态，UI 层会重新渲染。
      */
     fun updateElementPosition(elementId: Long, centralX: Int, centralY: Int) {
@@ -1266,7 +1266,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     /**
-     * 持久化元素位置到数据库（供 GroupButton Normal 模式长按拖动使用）。
+     * 持久化元素位置到数据库（供长按拖动使用）。
      * 使用单线程 Executor 异步写入，避免多实例 SQLiteOpenHelper 并发锁问题。
      */
     fun saveElementPosition(elementId: Long, centralX: Int, centralY: Int) {

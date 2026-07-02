@@ -1,31 +1,19 @@
 package com.alexclin.moonlink.android.stream.ui.editor
 
 /**
- * 跨方案剪贴板 — 存储复制的元素及其子元素，用于跨方案粘贴。
- *
- * 支持两种场景：
- * 1. **GroupButton + 子元素**：复制组按键时，同时捕获其所有子元素
- * 2. **普通元素**：复制单个元素（不含子元素关联）
+ * 跨方案剪贴板 — 存储复制的元素，用于跨方案粘贴。
  */
 data class ClipboardData(
-    /** 复制的根元素（被选中的那个元素） */
+    /** 复制的元素 */
     val rootElement: EditorElement,
-    /** 所有关联的子元素（GroupButton 的子元素，或空） */
-    val childElements: List<EditorElement>,
-) {
-    /** 是否为 GroupButton 复制（包含子元素） */
-    val isGroupWithChildren: Boolean get() =
-        rootElement.type == ElementType.GROUP_BUTTON && childElements.isNotEmpty()
-}
+)
 
 /**
- * 粘贴操作的结果，包含所有需要插入数据库的元素。
+ * 粘贴操作的结果，包含需要插入数据库的元素。
  */
 data class PasteResult(
-    /** 粘贴后的根元素（已分配新 ID、已更新子元素引用） */
+    /** 粘贴后的元素（已分配新 ID） */
     val rootElement: EditorElement,
-    /** 粘贴后的子元素列表（已分配新 ID 和 configId） */
-    val childElements: List<EditorElement>,
 )
 
 /**
@@ -44,12 +32,9 @@ object EditorClipboard {
     /** 剪贴板是否有内容 */
     val hasData: Boolean get() = _data != null
 
-    /** 将元素及其子元素复制到剪贴板 */
-    fun copy(element: EditorElement, children: List<EditorElement> = emptyList()) {
-        _data = ClipboardData(
-            rootElement = element,
-            childElements = children,
-        )
+    /** 将元素复制到剪贴板 */
+    fun copy(element: EditorElement) {
+        _data = ClipboardData(rootElement = element)
     }
 
     /** 清空剪贴板 */
@@ -60,8 +45,7 @@ object EditorClipboard {
     /**
      * 将剪贴板内容粘贴到指定方案。
      *
-     * 自动为所有元素生成新的 [elementId] 和 [configId]，
-     * 并更新 GroupButton 的 [EditorElement.value] 字段以正确引用新的子元素 ID。
+     * 自动为所有元素生成新的 [elementId] 和 [configId]。
      *
      * @param configId 目标方案的 configId
      * @param existingIds 该方案已存在的 elementId 集合，用于分配不重复的 ID
@@ -79,65 +63,19 @@ object EditorClipboard {
     ): PasteResult? {
         val clipboard = _data ?: return null
 
-        // ── 为所有元素分配新 ID（从 1 开始，跳过已存在的） ──
-        val oldToNewId = mutableMapOf<Long, Long>()
+        // ── 分配不重复的新 ID ──
+        var newId = 1L
         val usedIds = existingIds.toMutableSet()
-        fun nextId(): Long {
-            var id = 1L
-            while (id in usedIds) id++
-            usedIds.add(id)
-            return id
-        }
+        while (newId in usedIds) newId++
 
-        // 根元素
-        val newRootId = nextId()
-        oldToNewId[clipboard.rootElement.elementId] = newRootId
-
-        // 子元素
-        val newChildElements = clipboard.childElements.map { child ->
-            val newId = nextId()
-            oldToNewId[child.elementId] = newId
-            child.copy(
-                elementId = newId,
-                configId = configId,
-                centralX = child.centralX + offsetX,
-                centralY = child.centralY + offsetY,
-            )
-        }
-
-        // ── 构建新的根元素 ──
-        val maxLayer = (clipboard.childElements.maxOfOrNull { it.layer } ?: clipboard.rootElement.layer) + layerOffset
-
-        val newRoot = clipboard.rootElement.copy(
-            elementId = newRootId,
+        val finalRoot = clipboard.rootElement.copy(
+            elementId = newId,
             configId = configId,
             centralX = clipboard.rootElement.centralX + offsetX,
             centralY = clipboard.rootElement.centralY + offsetY,
-            layer = maxLayer,
+            layer = clipboard.rootElement.layer + layerOffset,
         )
 
-        // ── 如果是 GroupButton，更新 value 字段中的子元素 ID 引用 ──
-        val finalRoot = if (newRoot.type == ElementType.GROUP_BUTTON) {
-            val oldChildIds = newRoot.value
-                .split(",")
-                .mapNotNull { it.trim().toLongOrNull() }
-                .filter { it != -1L }
-
-            if (oldChildIds.isNotEmpty()) {
-                val newValue = "-1," + oldChildIds.mapNotNull { oldId ->
-                    oldToNewId[oldId]?.toString()
-                }.joinToString(",")
-                newRoot.copy(value = newValue)
-            } else {
-                newRoot
-            }
-        } else {
-            newRoot
-        }
-
-        return PasteResult(
-            rootElement = finalRoot,
-            childElements = newChildElements,
-        )
+        return PasteResult(rootElement = finalRoot)
     }
 }

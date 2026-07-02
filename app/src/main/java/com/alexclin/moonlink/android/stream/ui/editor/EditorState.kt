@@ -14,13 +14,11 @@ enum class ElementType(val value: Int, val displayName: String) {
     DIGITAL_SWITCH_BUTTON(1, "开关按键"),
     DIGITAL_MOVABLE_BUTTON(2, "可移动按键"),
     DIGITAL_COMBINE_BUTTON(3, "组合键"),
-    GROUP_BUTTON(4, "组按键"),
     DIGITAL_PAD(20, "方向键"),
     ANALOG_STICK(30, "模拟摇杆"),
     DIGITAL_STICK(31, "数字摇杆"),
     INVISIBLE_ANALOG_STICK(32, "隐形模拟摇杆"),
     INVISIBLE_DIGITAL_STICK(33, "隐形数字摇杆"),
-    WHEEL_PAD(54, "滚轮面板"),
     UNKNOWN(-1, "未知");
 
     companion object {
@@ -44,7 +42,7 @@ fun ElementType.hasTypeSpecificProperties(): Boolean = when (this) {
 /**
  * 按键映射元素的纯 Compose 数据模型。
  *
- * 涵盖所有 12 种 [ElementType] 的共同属性和类型专属属性。
+ * 涵盖所有 [ElementType] 的共同属性和类型专属属性。
  * 类型专属属性通过 [extraAttributesJson]（JSON 兜底）和可选字段（mode/sense/方向值）表达。
  */
 data class EditorElement(
@@ -89,10 +87,10 @@ data class EditorElement(
     // ── 圆形模式 ──
     val isCircle: Boolean = false,    // 是否圆形按钮（UI 编辑辅助，持久化在 extraAttributesJson 中）
 
-    // ── 组按键标志 ──
-    val flag1: Int = 0,              // element_flag1: 组按键隐藏标志
+    // ── 通用标志 ──
+    val flag1: Int = 0,              // element_flag1: 通用标志
 
-    // ── 扩展 JSON（WheelPad 分段、MovableButton 触控板模式、GroupButton 额外状态） ──
+    // ── 扩展 JSON（MovableButton 触控板模式等） ──
     val extraAttributesJson: String = "{}",
 )
 
@@ -118,13 +116,13 @@ class EditorState(
     // 读取
     // ═══════════════════════════════════════════════════════════════════════
 
-    /** 加载当前方案的所有元素 */
+    /** 加载当前方案的所有元素（自动过滤已被删除的元素类型，如组按键、轮盘按键） */
     fun loadElements(): List<EditorElement> {
         val ids = db.queryAllElementIds(configId) ?: return emptyList()
         return ids.mapNotNull { id ->
             val attrs = db.queryAllElementAttributes(configId, id)
             if (attrs.isEmpty()) null else attrs.toEditorElement()
-        }
+        }.filter { it.type != ElementType.UNKNOWN }
     }
 
     /** 加载单个元素 */
@@ -170,83 +168,6 @@ class EditorState(
         db.deleteElement(configId, elementId)
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 清理
-    // ═══════════════════════════════════════════════════════════════════════
-
-    /**
-     * 通用孤儿引用清理 — 遍历 [elementTypes] 的元素，对其 [EditorElement.value]
-     * 按 `,` 拆分为项，用 [itemFilter] 逐项判断是否保留，移除不满足条件的项。
-     *
-     * @param currentElements 当前在内存中的元素列表
-     * @param elementTypes    需要处理的元素类型集合
-     * @param shouldSkip      附加跳过条件（返回 true 则跳过该元素，不解析 value）
-     * @param itemFilter      逐项过滤：(item字符串, 有效ID集合) → true 保留, false 移除
-     * @return 清理后的元素列表（内存副本已更新）
-     */
-    fun cleanupOrphanedRefs(
-        currentElements: List<EditorElement>,
-        elementTypes: Set<ElementType>,
-        shouldSkip: (EditorElement) -> Boolean = { false },
-        itemFilter: (item: String, validIds: Set<Long>) -> Boolean,
-    ): List<EditorElement> {
-        val validIds = currentElements.map { it.elementId }.toSet()
-        val result = currentElements.toMutableList()
-        var hasChanges = false
-
-        for ((index, el) in currentElements.withIndex()) {
-            if (el.type !in elementTypes) continue
-            if (el.value.isBlank() || shouldSkip(el)) continue
-
-            val items = el.value.split(",")
-            val cleaned = items.filter { item -> itemFilter(item, validIds) }
-
-            if (cleaned.size < items.size) {
-                val newValue = cleaned.joinToString(",")
-                val updated = el.copy(value = newValue)
-                result[index] = updated
-                db.updateElement(configId, el.elementId, updated.toContentValues())
-                hasChanges = true
-            }
-        }
-
-        return if (hasChanges) result else currentElements
-    }
-
-    /**
-     * 清理 GroupButton 的孤儿子元素 ID 引用。
-     * 委托给 [cleanupOrphanedRefs]。
-     */
-    fun cleanupOrphanedGroupButtonRefs(currentElements: List<EditorElement>): List<EditorElement> =
-        cleanupOrphanedRefs(
-            currentElements,
-            elementTypes = setOf(ElementType.GROUP_BUTTON),
-            shouldSkip = { it.value == "-1" },
-            itemFilter = { item, validIds ->
-                val id = item.trim().toLongOrNull()
-                id == null || id == -1L || id in validIds
-            },
-        )
-
-    /**
-     * 清理 WheelPad 的孤儿 GroupButton 引用（`gb{id}` 格式）。
-     * 委托给 [cleanupOrphanedRefs]。
-     */
-    fun cleanupOrphanedWheelPadRefs(currentElements: List<EditorElement>): List<EditorElement> =
-        cleanupOrphanedRefs(
-            currentElements,
-            elementTypes = setOf(ElementType.WHEEL_PAD),
-            itemFilter = { item, validIds ->
-                val valuePart = item.substringBefore("|").trim()
-                if (valuePart.startsWith("gb")) {
-                    val groupId = valuePart.substring(2).toLongOrNull()
-                    groupId != null && groupId in validIds
-                } else {
-                    true
-                }
-            },
-        )
-
     /** 批量插入（导入用，自动分配不重复 elementId，从 1 开始） */
     fun addElements(elements: List<EditorElement>) {
         val existingIds = db.queryAllElementIds(configId).toSet()
@@ -284,17 +205,13 @@ class EditorState(
             elementId = 0L,
             configId = configId,
             type = type,
-            text = when (type) {
-                ElementType.WHEEL_PAD -> ""
-                else -> ""
-            },
+            text = "",
             value = when (type) {
                 ElementType.DIGITAL_COMMON_BUTTON -> "k29"
                 ElementType.DIGITAL_SWITCH_BUTTON -> "k29"
                 ElementType.DIGITAL_MOVABLE_BUTTON -> "k29"
                 ElementType.DIGITAL_COMBINE_BUTTON -> "k29"
                 ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK -> "LS"
-                ElementType.WHEEL_PAD -> "k51,k32,k47,k29,k45,k33,k46,k31"
                 else -> ""
             },
             // 方向值（默认：DIGITAL_PAD=方向键↑↓←→, DIGITAL_STICK=WASD+Shift）
@@ -327,35 +244,29 @@ class EditorState(
                 isPad -> 300
                 isInvisible -> 400
                 isStick -> 200
-                type == ElementType.WHEEL_PAD -> 400
                 else -> 100
             },
             height = when {
                 isPad -> 300
                 isInvisible -> 400
                 isStick -> 200
-                type == ElementType.WHEEL_PAD -> 400
                 else -> 100
             },
             centralX = when {
-                isStick || type == ElementType.WHEEL_PAD -> 250
+                isStick -> 250
                 else -> 100
             },
             centralY = when {
-                isStick || type == ElementType.WHEEL_PAD -> 250
+                isStick -> 250
                 else -> 100
             },
             layer = when {
                 isInvisible -> 45
-                type == ElementType.WHEEL_PAD -> 40
                 else -> 50
             },
             normalColor = 0xF0888888.toInt(),
             pressedColor = 0xF00000FF.toInt(),
-            backgroundColor = when (type) {
-                ElementType.WHEEL_PAD -> 0xAA444444.toInt()
-                else -> 0x00FFFFFF
-            },
+            backgroundColor = 0x00FFFFFF,
             normalTextColor = 0xFFFFFFFF.toInt(),
             pressedTextColor = 0xFFCCCCCC.toInt(),
             textSizePercent = when (type) {
@@ -366,20 +277,16 @@ class EditorState(
             },
             thick = 5,
             sense = when {
-                type == ElementType.GROUP_BUTTON -> 1
                 isStick -> 30
-                type == ElementType.WHEEL_PAD -> 30
                 else -> 100
             },
             radius = when {
                 isStick -> 100
                 else -> 0
             },
-            flag1 = if (type == ElementType.WHEEL_PAD) 1 else 0,
+            flag1 = 0,
             extraAttributesJson = when (type) {
                 ElementType.DIGITAL_MOVABLE_BUTTON -> """{"isTrackpadMode":false}"""
-                ElementType.GROUP_BUTTON -> """{"movableInNormalMode":false,"userHasManuallySet":false,"isPermanentlyIndependent":false}"""
-                ElementType.WHEEL_PAD -> """{"normalTextColor":-1,"pressedTextColor":-1,"centerTextColor":-1,"textSizePercent":35,"centerTextSizePercent":60,"triggerTextSizePercent":40,"previewGroupChildren":true}"""
                 else -> "{}"
             },
         )

@@ -336,20 +336,10 @@ class StreamActivity : ComponentActivity() {
                         return mask
                     }
 
-                    // ── GroupButton 子元素显隐状态 ──
-                    val groupButtonHiddenIds = remember { mutableStateOf<Set<Long>>(emptySet()) }
-
                     // 十字方向键当前激活的方向（elementId → 方向），用于 MOVE 时的方向变更检测
                     val activeDpadDirections = remember { mutableStateMapOf<Long, Int>() }
                     // 摇杆当前激活的方向集合（elementId → 方向集合），支持对角线
                     val activeStickDirections = remember { HashMap<Long, MutableSet<String>>() }
-                    // WheelPad 状态：元素ID → {是否已激活(弹窗模式用), 当前选中的段索引}
-                    val wheelActiveMap = remember { HashMap<Long, Boolean>() }
-                    val wheelActiveIndex = remember { HashMap<Long, Int>() }
-                    // WheelPad 弹窗模式激活状态（点击中心圆后展开轮盘）
-                    val wheelPopupActive = remember { HashMap<Long, Boolean>() }
-                    // WheelPad 悬停的 GroupButton ID（用于子元素预览）
-                    val wheelHoveredGroupId = remember { HashMap<Long, Long>() }
                     // 摇杆上次点击时间（元素ID → 时间戳），用于双击 middleValue 检测
                     val stickLastClickTime = remember { HashMap<Long, Long>() }
                     // MovableButton 触控板模式：追踪上次触摸位置（元素ID → Pair(relX, relY)）
@@ -482,31 +472,9 @@ class StreamActivity : ComponentActivity() {
                                 repeatHandler.postDelayed(r, 150)
                             }
                         } else {
-                            // 特殊功能键 & gb 组引用（非键盘/鼠标/手柄值的兜底处理）
+                            // 特殊功能键（非键盘/鼠标/手柄值的兜底处理）
                             if (!isPressed) return@sendKeyboardKey
                             when {
-                                value.startsWith("gb") -> {
-                                    // gb{id} 格式：切换对应 GroupButton 的子元素显隐
-                                    val groupId = value.substring(2).toLongOrNull()
-                                    if (groupId != null && groupId > 0) {
-                                        val childIds = overlayElements
-                                            .find { it.elementId == groupId }
-                                            ?.value
-                                            ?.split(",")
-                                            ?.mapNotNull { it.trim().toLongOrNull() }
-                                            ?.filter { it != -1L }
-                                            ?.toSet() ?: emptySet()
-                                        if (childIds.isNotEmpty()) {
-                                            val currentHidden = groupButtonHiddenIds.value
-                                            val anyHidden = childIds.any { it in currentHidden }
-                                            groupButtonHiddenIds.value = if (anyHidden) {
-                                                currentHidden - childIds
-                                            } else {
-                                                currentHidden + childIds
-                                            }
-                                        }
-                                    }
-                                }
                                 value == "MMS" -> engine.applyTouchMode(if (engine.prefConfig.enableEnhancedTouch) 1 else 0)
                                 value == "CMS" -> engine.applyTouchMode(1)
                                 value == "TPM" -> engine.applyTouchMode(2)
@@ -1067,136 +1035,6 @@ class StreamActivity : ComponentActivity() {
                                     }
                                     sendFullState()
                                 }
-                                ElementType.GROUP_BUTTON -> {
-                                    if (isPressed) {
-                                        // 点击 GroupButton：切换子元素显隐
-                                        val childIds = el.value
-                                            .split(",")
-                                            .mapNotNull { it.trim().toLongOrNull() }
-                                            .filter { it != -1L }
-                                            .toSet()
-                                        if (childIds.isNotEmpty()) {
-                                            val currentHidden = groupButtonHiddenIds.value
-                                            // 如果当前任意子元素已隐藏 → 全部显示；否则全部隐藏
-                                            val anyHidden = childIds.any { it in currentHidden }
-                                            groupButtonHiddenIds.value = if (anyHidden) {
-                                                currentHidden - childIds
-                                            } else {
-                                                currentHidden + childIds
-                                            }
-                                        }
-                                    }
-                                }
-                                ElementType.WHEEL_PAD -> {
-                                    // 弹窗 / 直接两种模式（参照旧 Crown）
-                                    val isPopup = el.text.isNotBlank()
-                                    val popupAtCenter = el.flag1 == 1
-                                    val segments = el.value.split(",").filter { it.isNotBlank() }
-
-                                    if (isPopup) {
-                                        // ═══ 弹窗模式 ═══
-                                        if (isPressed) {
-                                            val w = el.width; val h = el.height
-                                            val cx = w / 2f; val cy = h / 2f
-                                            val outerR = min(w, h) / 2f - el.thick
-                                            val innerR = outerR * (el.sense.coerceIn(10, 90) / 100f)
-                                            val dx = relX; val dy = relY
-                                            val dist = kotlin.math.sqrt(dx * dx + dy * dy)
-
-                                            val alreadyActive = wheelPopupActive[el.elementId] == true
-                                            if (!alreadyActive) {
-                                                // 未激活 → 点击中心圆激活轮盘展开
-                                                if (dist <= innerR) {
-                                                    wheelPopupActive[el.elementId] = true
-                                                    triggerVibration()
-                                                }
-                                            } else {
-                                                // 已激活 → 选择分段（仅视觉更新，不实时发送）
-                                                if (dist > innerR && dist < outerR) {
-                                                    var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90
-                                                    if (angle < 0) angle += 360
-                                                    val segCount = el.mode.coerceIn(2, 24)
-                                                    val sweep = 360f / segCount
-                                                    val idx = ((angle + sweep / 2) % 360 / sweep).toInt()
-                                                    wheelActiveIndex[el.elementId] = idx
-
-                                                    // 检测 gb 组按键悬停
-                                                    if (idx in segments.indices) {
-                                                        val segValue = segments[idx]
-                                                        if (segValue.startsWith("gb")) {
-                                                            val gbId = segValue.substring(2).toLongOrNull()
-                                                            if (gbId != null && gbId > 0) {
-                                                                wheelHoveredGroupId[el.elementId] = gbId
-                                                            } else {
-                                                                wheelHoveredGroupId.remove(el.elementId)
-                                                            }
-                                                        } else {
-                                                            wheelHoveredGroupId.remove(el.elementId)
-                                                        }
-                                                    } else {
-                                                        wheelHoveredGroupId.remove(el.elementId)
-                                                    }
-                                                } else {
-                                                    wheelActiveIndex.remove(el.elementId)
-                                                    wheelHoveredGroupId.remove(el.elementId)
-                                                }
-                                            }
-                                        } else {
-                                            // 抬起 → 发送键值并停用
-                                            val wasActive = wheelPopupActive.remove(el.elementId) ?: false
-                                            if (wasActive) {
-                                                val activeIdx = wheelActiveIndex.remove(el.elementId)
-                                                if (activeIdx != null && activeIdx in segments.indices) {
-                                                    val segValue = segments[activeIdx]
-                                                    // 发送按下+释放对（模拟点击）
-                                                    sendKeyboardKey(segValue, true)
-                                                    repeatHandler.postDelayed({
-                                                        sendKeyboardKey(segValue, false)
-                                                    }, 50)
-                                                }
-                                            }
-                                            wheelHoveredGroupId.remove(el.elementId)
-                                        }
-                                    } else {
-                                        // ═══ 直接模式（触摸环带直接选择分段） ═══
-                                        if (isPressed) {
-                                            val w = el.width
-                                            val h = el.height
-                                            val cx = w / 2f
-                                            val cy = h / 2f
-                                            val outerR = min(w, h) / 2f - el.thick
-                                            val innerR = outerR * (el.sense.coerceIn(10, 90) / 100f)
-                                            val dx = relX
-                                            val dy = relY
-                                            val dist = kotlin.math.sqrt(dx * dx + dy * dy)
-                                            if (dist > innerR && dist < outerR) {
-                                                var angle = Math.toDegrees(kotlin.math.atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90
-                                                if (angle < 0) angle += 360
-                                                val segCount = el.mode.coerceIn(2, 24)
-                                                val sweep = 360f / segCount
-                                                val idx = ((angle + sweep / 2) % 360 / sweep).toInt()
-                                                val prevIdx = wheelActiveIndex[el.elementId] ?: -1
-                                                if (idx != prevIdx) {
-                                                    // 释放旧段，按下新段
-                                                    if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
-                                                    if (idx in segments.indices) sendKeyboardKey(segments[idx], true)
-                                                    wheelActiveIndex[el.elementId] = idx
-                                                }
-                                            } else {
-                                                val prevIdx = wheelActiveIndex.remove(el.elementId)
-                                                if (prevIdx != null) {
-                                                    if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
-                                                }
-                                            }
-                                        } else {
-                                            // 释放
-                                            val prevIdx = wheelActiveIndex.remove(el.elementId)
-                                            if (prevIdx != null) {
-                                                if (prevIdx in segments.indices) sendKeyboardKey(segments[prevIdx], false)
-                                            }
-                                        }
-                                    }
-                                }
                                 else -> { /* SIMPLIFY_PERFORMANCE 无交互操作 */ }
                             }
                         }
@@ -1238,30 +1076,15 @@ class StreamActivity : ComponentActivity() {
                     }
 
                     if (overlayElements.isNotEmpty() && !engine.isFullScreenPageActive) {
-                        // 过滤被 GroupButton 隐藏的子元素
-                        val hiddenIds = groupButtonHiddenIds.value
-                        val visibleElements = if (hiddenIds.isEmpty()) overlayElements
-                            else overlayElements.filter { it.elementId !in hiddenIds }
-
                         KeyMappingOverlay(
-                            elements = visibleElements,
+                            elements = overlayElements,
                             modifier = Modifier.fillMaxSize(),
                             onElementAction = onElementAction,
-                            onElementPositionChanged = { elementId, newCx, newCy, isFinal ->
-                                engine.updateElementPosition(elementId, newCx, newCy)
-                                if (isFinal) {
-                                    engine.saveElementPosition(elementId, newCx, newCy)
-                                }
-                            },
                             globalOpacity = globalOpacity,
                             enabled = touchEnabled,
                             touchSense = touchSense,
                             enhancedTouch = enhancedTouch,
                             activeDpadDirections = activeDpadDirections,
-                            wheelActiveIndex = wheelActiveIndex,
-                            wheelPopupActive = wheelPopupActive,
-                            wheelHoveredGroupId = wheelHoveredGroupId,
-                            allElements = overlayElements,
                         )
                     }
 

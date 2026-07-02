@@ -132,8 +132,6 @@ fun EditorPropertiesPanel(
         ElementType.INVISIBLE_ANALOG_STICK,
         ElementType.INVISIBLE_DIGITAL_STICK,
     )
-    // 轮盘按键：文字大小由专属编辑器管理，通用面板中禁用
-    val isWheelPad = element.type == ElementType.WHEEL_PAD
     LaunchedEffect(element.elementId) {
         if (isPadOrStick) isCircle = false
     }
@@ -399,19 +397,18 @@ fun EditorPropertiesPanel(
                 }
 
                 // Lbl4: 文字大小（右对齐）
-                GridLabel("文字大小", Modifier.weight(0.8f).then(if (isWheelPad) Modifier.alpha(0.38f) else Modifier), rightAlign = true)
+                GridLabel("文字大小", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
-                // Content: 滑块（占多格）— WheelPad 禁用（由专属弹窗管理）
-                Box(Modifier.weight(3f).padding(end = 4.dp).then(if (isWheelPad) Modifier.alpha(0.38f) else Modifier)) {
+                // Content: 滑块（占多格）
+                Box(Modifier.weight(3f).padding(end = 4.dp)) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(if (isWheelPad) "—" else "${textSizePercent.roundToInt()}%",
+                        Text("${textSizePercent.roundToInt()}%",
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 8.sp)
                         Slider(value = textSizePercent,
-                            onValueChange = if (!isWheelPad) {{ textSizePercent = it }} else {{ }},
-                            onValueChangeFinished = if (!isWheelPad) {{ onElementChanged?.invoke(snapshot()) }} else {{ }},
-                            enabled = !isWheelPad,
+                            onValueChange = { textSizePercent = it },
+                            onValueChangeFinished = { onElementChanged?.invoke(snapshot()) },
                             valueRange = 10f..150f,
                             modifier = Modifier.height(16.dp).fillMaxWidth())
                     }

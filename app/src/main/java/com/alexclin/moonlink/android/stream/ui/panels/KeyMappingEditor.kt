@@ -84,7 +84,6 @@ import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
 import com.alexclin.moonlink.android.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.EditorCanvas
-import com.alexclin.moonlink.android.stream.ui.editor.GroupChildListDialog
 import com.alexclin.moonlink.android.stream.ui.editor.EditorClipboard
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.EditorPropertiesPanel
@@ -92,7 +91,6 @@ import com.alexclin.moonlink.android.stream.ui.editor.EditorState
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.stream.ui.editor.TypeSpecificEditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
-import com.alexclin.moonlink.android.stream.ui.editor.WheelPadSegmentEditor
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
 import com.limelight.binding.input.advance_setting.config.PageConfigController
@@ -214,10 +212,6 @@ fun KeyMappingEditor(
     var isLoading by remember { mutableStateOf(true) }
     // 组合键编辑弹窗
     var showComboKeyEditor by remember { mutableStateOf(false) }
-    // 组按键子元素管理弹窗
-    var showChildManager by remember { mutableStateOf(false) }
-    // WheelPad 分段编辑弹窗
-    var showWheelPadSegmentEditor by remember { mutableStateOf(false) }
     // 画布尺寸缓存（用于自动居中）
     var canvasWidthPx by remember { mutableIntStateOf(1080) }
     var canvasHeightPx by remember { mutableIntStateOf(1920) }
@@ -236,11 +230,9 @@ fun KeyMappingEditor(
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
     val focusManager = LocalFocusManager.current
 
-    // ── 加载（自动清理 GroupButton 和 WheelPad 的孤儿引用） ──
+    // ── 加载 ──
     fun reloadElements() {
-        val raw = editorState.loadElements()
-        val afterGroup = editorState.cleanupOrphanedGroupButtonRefs(raw)
-        elements = editorState.cleanupOrphanedWheelPadRefs(afterGroup)
+        elements = editorState.loadElements()
         schemeName = editorState.getConfigName()
         isLoading = false
     }
@@ -268,22 +260,12 @@ fun KeyMappingEditor(
         ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT)
     }
 
-    // ── 复制到跨方案剪贴板（携带 GroupButton 子元素） ──
+    // ── 复制到跨方案剪贴板 ──
     fun copySelectedToClipboard() {
         val src = elements.find { it.elementId in selectedIds } ?: return
-        val children = if (src.type == ElementType.GROUP_BUTTON) {
-            val childIds = src.value
-                .split(",")
-                .mapNotNull { it.trim().toLongOrNull() }
-                .filter { it != -1L }
-            elements.filter { it.elementId in childIds }
-        } else {
-            emptyList()
-        }
-        EditorClipboard.copy(src, children)
+        EditorClipboard.copy(src)
         clipboardHasData = true
-        val childInfo = if (children.isNotEmpty()) "（含 ${children.size} 个子按键）" else ""
-        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」$childInfo 到剪贴板", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」到剪贴板", Toast.LENGTH_SHORT)
     }
 
     // ── 从跨方案剪贴板粘贴 ──
@@ -296,26 +278,17 @@ fun KeyMappingEditor(
             offsetY = 30,
         ) ?: return
 
-        // 插入所有子元素
-        for (child in result.childElements) {
-            editorState.addElement(child)
-        }
-
-        // 插入根元素（已更新子元素 ID 引用）
+        // 插入粘贴的元素
         editorState.addElement(result.rootElement)
 
         reloadElements()
         selectedIds = setOf(result.rootElement.elementId)
 
-        val summary = if (result.childElements.isNotEmpty()) {
-            "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」及 ${result.childElements.size} 个子按键"
-        } else {
-            "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」"
-        }
+        val summary = "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」"
         ToastUtil.show(context, summary, Toast.LENGTH_SHORT)
     }
 
-    // ── 删除元素（reloadElements 自动清理 GroupButton 的孤儿引用） ──
+    // ── 删除元素 ──
     fun deleteSelected() {
         val id = selectedIds.firstOrNull() ?: return
         editorState.deleteElement(id)
@@ -414,7 +387,6 @@ fun KeyMappingEditor(
     val toolbarActions = ToolbarActions(
         addElement = { showAddMenu = true },
         showElementList = { showElementList = true },
-        manageChildren = { showChildManager = true },
         clearAll = { showClearAllConfirm = true },
         copyToClipboard = { copySelectedToClipboard() },
         pasteClipboard = { pasteFromClipboard() },
@@ -554,7 +526,6 @@ fun KeyMappingEditor(
                     actions = toolbarActions,
                     hasSelection = false,
                     showSelectionBar = false,
-                    isGroupButtonSelected = false,
                     clipboardHasData = clipboardHasData,
                     gridWidth = gridWidth,
                     onGridWidthChange = { gridWidth = it },
@@ -691,47 +662,6 @@ fun KeyMappingEditor(
             )
         }
 
-        // ── WheelPad 分段编辑弹窗 ──
-        if (showWheelPadSegmentEditor) {
-            val wheelEl = selectedElement
-            if (wheelEl != null && wheelEl.type == ElementType.WHEEL_PAD) {
-                WheelPadSegmentEditor(
-                    element = wheelEl,
-                    allElements = elements,
-                    onSave = { updated ->
-                        editorState.saveElement(updated)
-                        reloadElements()
-                        ToastUtil.show(context, "分段已更新", Toast.LENGTH_SHORT)
-                        showWheelPadSegmentEditor = false
-                    },
-                    onDismiss = { showWheelPadSegmentEditor = false },
-                )
-            } else {
-                showWheelPadSegmentEditor = false
-            }
-        }
-
-        // ── 组按键子元素管理弹窗 ──
-        if (showChildManager) {
-            val groupEl = selectedElement
-            if (groupEl != null && groupEl.type == ElementType.GROUP_BUTTON) {
-                GroupChildListDialog(
-                    groupElement = groupEl,
-                    allElements = elements,
-                    editorState = editorState,
-                    onSave = { updatedGroup ->
-                        editorState.saveElement(updatedGroup)
-                        reloadElements()
-                        ToastUtil.show(context, "子按键列表已更新", Toast.LENGTH_SHORT)
-                        showChildManager = false
-                    },
-                    onDismiss = { showChildManager = false },
-                )
-            } else {
-                showChildManager = false
-            }
-        }
-
         // ── 删除确认 ──
         if (showDeleteConfirm) {
             val el = selectedElement
@@ -820,7 +750,6 @@ private fun SelectionInfoBar(element: EditorElement) {
 private data class ToolbarActions(
     val addElement: () -> Unit = {},
     val showElementList: () -> Unit = {},
-    val manageChildren: () -> Unit = {},
     val clearAll: () -> Unit = {},
     val copyToClipboard: () -> Unit = {},
     val pasteClipboard: () -> Unit = {},
@@ -843,7 +772,6 @@ private fun EditorToolbar(
     actions: ToolbarActions = ToolbarActions(),
     hasSelection: Boolean = false,
     showSelectionBar: Boolean = true,
-    isGroupButtonSelected: Boolean = false,
     clipboardHasData: Boolean = false,
     gridWidth: Int = 8,
     onGridWidthChange: (Int) -> Unit = {},
@@ -1032,13 +960,6 @@ private fun EditorToolbar(
                             Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
-                        // 组按键子元素管理按钮
-                        if (isGroupButtonSelected) {
-                            IconButton(onClick = actions.manageChildren, modifier = Modifier.size(32.dp)) {
-                                Icon(Icons.Default.Add, contentDescription = "子按键",
-                                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                            }
-                        }
                         IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.BorderColor, contentDescription = "属性",
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -1058,7 +979,6 @@ private fun EditorToolbar(
 @Composable
 private fun EditorSelectionBar(
     actions: ToolbarActions,
-    isGroupButtonSelected: Boolean = false,
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -1088,13 +1008,6 @@ private fun EditorSelectionBar(
             IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            }
-            // 组按键子元素管理按钮
-            if (isGroupButtonSelected) {
-                IconButton(onClick = actions.manageChildren, modifier = Modifier.size(32.dp)) {
-                    Icon(Icons.Default.Add, contentDescription = "子按键",
-                        tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                }
             }
             IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.BorderColor, contentDescription = "属性",
@@ -1279,19 +1192,6 @@ private fun buildElementSummary(el: EditorElement): String {
             dirLabel(el.leftValue, "←"),
             dirLabel(el.rightValue, "→"),
         ).joinToString(" ")
-
-        ElementType.WHEEL_PAD -> {
-            val segs = el.value.split(",").filter { it.isNotBlank() }
-            when {
-                segs.size >= 2 -> {
-                    val first = getKeyLabelByValue(segs.first()) ?: segs.first()
-                    val last = getKeyLabelByValue(segs.last()) ?: segs.last()
-                    "$first ~ $last"
-                }
-                segs.size == 1 -> getKeyLabelByValue(segs.first()) ?: segs.first()
-                else -> "—"
-            }
-        }
 
         ElementType.DIGITAL_PAD -> listOfNotNull(
             dirLabel(el.upValue, "↑"),

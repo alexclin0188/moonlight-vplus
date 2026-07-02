@@ -191,8 +191,6 @@ private fun DrawScope.drawElement(
         ElementType.DIGITAL_PAD -> drawDigitalPad(element)
         ElementType.ANALOG_STICK,
         ElementType.DIGITAL_STICK -> drawAnalogStick(element)
-        ElementType.GROUP_BUTTON -> drawGroupButton(element, isPressed)
-        ElementType.WHEEL_PAD -> drawWheelPad(element)
         ElementType.INVISIBLE_ANALOG_STICK,
         ElementType.INVISIBLE_DIGITAL_STICK -> drawInvisibleStickPreview(element)
         ElementType.UNKNOWN -> drawUnknownElement(element)
