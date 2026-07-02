@@ -472,12 +472,15 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
     }
     db.insertConfig(configValues)
 
-    // 写入 elements（带屏幕参数换算）
+    // 写入 elements（带屏幕参数换算，跳过已删除的元素类型）
     val existingIds = db.queryAllElementIds(newConfigId).toSet()
     var elementIdCounter = 1L
     while (elementIdCounter in existingIds) elementIdCounter++
     for (i in 0 until elementsArray.length()) {
         val elObj = elementsArray.getJSONObject(i)
+        // 跳过组按键（type=4）和轮盘按键（type=54）
+        val elType = elObj.optInt("element_type", -1)
+        if (elType == 4 || elType == 54) continue
         val elValues = ContentValues()
         elValues.put("config_id", newConfigId)
         elValues.put("element_id", elementIdCounter++)
@@ -668,5 +671,26 @@ private fun importMdatFromJson(
                 else -> "导入失败 (错误: $result)"
             }
         )
+    }
+
+    // 清理已删除的元素类型（组按键 type=4、轮盘按键 type=54）
+    val importedConfigId = if (overrideTargetId != 0L) overrideTargetId else {
+        db.queryAllConfigIds().maxOrNull() ?: return
+    }
+    cleanupDeletedElementTypes(db, importedConfigId)
+}
+
+/**
+ * 清理指定方案中已删除的元素类型（组按键 type=4、轮盘按键 type=54）。
+ */
+private fun cleanupDeletedElementTypes(db: SuperConfigDatabaseHelper, configId: Long) {
+    val deletedTypes = setOf(4, 54)
+    val elementIds = db.queryAllElementIds(configId) ?: return
+    for (eid in elementIds) {
+        val attrs = db.queryAllElementAttributes(configId, eid) ?: continue
+        val elementType = attrs["element_type"]
+        if (elementType is Number && elementType.toInt() in deletedTypes) {
+            db.deleteElement(configId, eid)
+        }
     }
 }

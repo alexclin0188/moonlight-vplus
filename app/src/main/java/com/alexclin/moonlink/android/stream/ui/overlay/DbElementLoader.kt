@@ -2,6 +2,7 @@ package com.alexclin.moonlink.android.stream.ui.overlay
 
 import android.content.Context
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
+import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.stream.ui.editor.toEditorElement
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
 import com.limelight.preferences.PreferenceConfiguration
@@ -51,10 +52,10 @@ object DbElementLoader {
             }
         }
 
-        // 用户方案：从 DB 读取
+        // 用户方案：从 DB 读取，过滤掉已删除的元素类型（组按键、轮盘按键）
         return db.queryAllElementIds(configId).mapNotNull { id ->
             val attrs = db.queryAllElementAttributes(configId, id)
             if (attrs.isEmpty()) null else attrs.toEditorElement()
-        }
+        }.filter { it.type != ElementType.UNKNOWN }
     }
 }

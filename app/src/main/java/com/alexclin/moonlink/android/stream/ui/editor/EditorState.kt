@@ -125,10 +125,12 @@ class EditorState(
         }.filter { it.type != ElementType.UNKNOWN }
     }
 
-    /** 加载单个元素 */
+    /** 加载单个元素（若为已删除的类型则返回 null） */
     fun loadElement(elementId: Long): EditorElement? {
         val attrs = db.queryAllElementAttributes(configId, elementId)
-        return if (attrs.isEmpty()) null else attrs.toEditorElement()
+        if (attrs.isEmpty()) return null
+        val el = attrs.toEditorElement()
+        return if (el.type == ElementType.UNKNOWN) null else el
     }
 
     /** 读取方案的 config 属性 */
