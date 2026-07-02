@@ -240,15 +240,38 @@ fun EditorPropertiesPanel(
                 GridLabel("按键名", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框（使用 pendingText，失焦时提交）
-                InlineTextField(getValue = { pendingText }, value = pendingText, onValueChange = { pendingText = it },
-                    modifier = Modifier.weight(1.5f).padding(end = 2.dp),
-                    onCommit = {
-                        if (pendingText != text) {
-                            text = pendingText
-                            onElementChanged?.invoke(snapshot())
+                Box(modifier = Modifier.weight(1.5f).padding(end = 2.dp)) {
+                    val isEnabled = !isPadOrStick
+                    InlineTextField(
+                        getValue = { pendingText },
+                        value = pendingText,
+                        onValueChange = { pendingText = it.take(10) },
+                        modifier = Modifier.fillMaxWidth(),
+                        onCommit = {
+                            if (pendingText != text) {
+                                text = pendingText
+                                onElementChanged?.invoke(snapshot())
+                            }
+                        },
+                        enabled = isEnabled,
+                    )
+                    // 按键名为空时以键值名作为 hint
+                    if (pendingText.isEmpty() && isEnabled) {
+                        val hintText = getKeyLabelByValue(value) ?: value
+                        if (hintText.isNotEmpty()) {
+                            Text(
+                                hintText,
+                                style = TextStyle(
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = 11.sp,
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 4.dp, vertical = 3.dp),
+                            )
                         }
-                    },
-                    enabled = !isPadOrStick)
+                    }
+                }
                 // Lbl1: 键值（右对齐）
                 GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
@@ -453,7 +476,7 @@ fun EditorPropertiesPanel(
                 Text(element.type.displayName,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.weight(1.5f).wrapContentHeight())
                 Spacer(Modifier.width(1.dp))

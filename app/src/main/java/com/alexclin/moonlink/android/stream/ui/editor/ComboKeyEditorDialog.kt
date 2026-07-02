@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.stream.ui.editor
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,23 +12,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -40,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -77,7 +74,7 @@ fun ComboKeyEditorDialog(
             .background(Color(0x88000000))
             .clickable(
                 indication = null,
-                interactionSource = androidx.compose.foundation.interaction.MutableInteractionSource()
+                interactionSource = MutableInteractionSource()
             ) { },
         contentAlignment = Alignment.Center,
     ) {
@@ -100,7 +97,7 @@ fun ComboKeyEditorDialog(
                         Text("取消")
                     }
                     Spacer(Modifier.width(4.dp))
-                    Button(onClick = {
+                    TextButton(onClick = {
                         val newEl = EditorElement(
                             elementId = initialElement?.elementId ?: 0L,
                             configId = initialElement?.configId ?: 0L,
@@ -115,11 +112,10 @@ fun ComboKeyEditorDialog(
                             height = 100,
                         )
                         onSaveNew(newEl)
-                    },
-                        modifier = Modifier.heightIn(min = 32.dp),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    ) {
-                        Text("保存")
+                    }) {
+                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("保存", style = MaterialTheme.typography.labelMedium)
                     }
                 }
                 HorizontalDivider()
@@ -135,22 +131,39 @@ fun ComboKeyEditorDialog(
                         Text("按钮文字", style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(2.dp))
-                        // 用 BasicTextField 代替 OutlinedTextField 以匹配 KeySlotItem 的紧凑高度
-                        androidx.compose.foundation.text.BasicTextField(
-                            value = newText,
-                            onValueChange = { newText = it.take(10) },
-                            singleLine = true,
-                            textStyle = MaterialTheme.typography.bodySmall.copy(
-                                color = MaterialTheme.colorScheme.onSurface,
-                            ),
-                            cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(MaterialTheme.colorScheme.surfaceVariant)
-                                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
-                        )
+                        Box(modifier = Modifier.fillMaxWidth()) {
+                            // 用 BasicTextField 代替 OutlinedTextField 以匹配 KeySlotItem 的紧凑高度
+                            androidx.compose.foundation.text.BasicTextField(
+                                value = newText,
+                                onValueChange = { newText = it.take(10) },
+                                singleLine = true,
+                                textStyle = MaterialTheme.typography.bodySmall.copy(
+                                    color = MaterialTheme.colorScheme.onSurface,
+                                ),
+                                cursorBrush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.primary),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                            )
+                            // 按钮文字为空时以单击键值名作为 hint
+                            if (newText.isEmpty()) {
+                                val hintText = getKeyLabelByValue(newMainValue) ?: newMainValue
+                                if (hintText.isNotEmpty()) {
+                                    Text(
+                                        hintText,
+                                        style = MaterialTheme.typography.bodySmall.copy(
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        ),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                                    )
+                                }
+                            }
+                        }
                     }
                     // 右：单击
                     KeySlotItem(
@@ -197,77 +210,4 @@ fun ComboKeyEditorDialog(
     }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-//  键值槽位对（两个槽位并列，各占一半宽度）
-// ════════════════════════════════════════════════════════════════════════════
 
-@Composable
-private fun KeySlotRowPair(
-    label1: String, value1: String, onClick1: () -> Unit, icon1: ImageVector? = null,
-    label2: String, value2: String, onClick2: () -> Unit, icon2: ImageVector? = null,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 3.dp),
-        verticalAlignment = Alignment.Top,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        KeySlotItem(
-            label = label1, value = value1, onClick = onClick1, icon = icon1,
-            modifier = Modifier.weight(1f),
-        )
-        KeySlotItem(
-            label = label2, value = value2, onClick = onClick2, icon = icon2,
-            modifier = Modifier.weight(1f),
-        )
-    }
-}
-
-// ════════════════════════════════════════════════════════════════════════════
-//  单个键值槽位（紧凑布局，标签在上、值在下）
-// ════════════════════════════════════════════════════════════════════════════
-
-@Composable
-private fun KeySlotItem(
-    label: String,
-    value: String,
-    onClick: () -> Unit,
-    icon: ImageVector? = null,
-    modifier: Modifier = Modifier,
-) {
-    val keyLabel = getKeyLabelByValue(value)
-    Column(modifier = modifier) {
-        Text(label, style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Spacer(Modifier.height(2.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(6.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(6.dp))
-                .clickable(onClick = onClick)
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (icon != null) {
-                Icon(icon, null, Modifier.size(12.dp),
-                    tint = MaterialTheme.colorScheme.primary)
-                Spacer(Modifier.width(4.dp))
-            }
-            Text(
-                if (value.isNotEmpty()) (keyLabel ?: value) else "点击选择",
-                style = MaterialTheme.typography.bodySmall.copy(
-                    color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-                modifier = Modifier.weight(1f),
-            )
-            if (value.isNotEmpty()) {
-                Text(value, style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-    }
-}

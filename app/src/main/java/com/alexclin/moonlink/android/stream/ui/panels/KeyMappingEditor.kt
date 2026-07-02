@@ -89,7 +89,8 @@ import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.android.stream.ui.editor.EditorState
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
-import com.alexclin.moonlink.android.stream.ui.editor.TypeSpecificEditorDialog
+import com.alexclin.moonlink.android.stream.ui.editor.ButtonPropertyDialog
+import com.alexclin.moonlink.android.stream.ui.editor.StickPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
@@ -227,6 +228,8 @@ fun KeyMappingEditor(
     var pendingTypeSpecificEditorElement by remember { mutableStateOf<EditorElement?>(null) }
     // 组合键编辑（从属性面板进入）
     var editingComboKeyElement by remember { mutableStateOf<EditorElement?>(null) }
+    // 新建元素临时状态（先打开对话框设置属性，确认后才创建）
+    var pendingNewElement by remember { mutableStateOf<EditorElement?>(null) }
 
     // ── 网格吸附辅助 ──
     val gridCellSize = if (gridWidth > 1 && canvasWidthPx > 0) canvasWidthPx / gridWidth else 0
@@ -521,9 +524,6 @@ fun KeyMappingEditor(
                                 showTypeSpecificEditor = true
                             }
                         },
-                        onElementChanged = { updated ->
-                            elements = elements.map { if (it.elementId == updated.elementId) updated else it }
-                        },
                     )
                     Spacer(modifier = Modifier.weight(1f))
                 }
@@ -588,17 +588,41 @@ fun KeyMappingEditor(
 
         // ── 类型专属属性设置对话框 ──
         if (showTypeSpecificEditor && pendingTypeSpecificEditorElement != null) {
-            TypeSpecificEditorDialog(
-                element = pendingTypeSpecificEditorElement!!,
-                onSave = { updated: EditorElement ->
-                    elements = elements.map { if (it.elementId == updated.elementId) updated else it }
-                    editorState.saveElement(updated)
-                    showTypeSpecificEditor = false
-                    pendingTypeSpecificEditorElement = null
-                    ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
-                },
-                onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
+            val el = pendingTypeSpecificEditorElement!!
+            val stickTypes = listOf(
+                ElementType.DIGITAL_STICK,
+                ElementType.INVISIBLE_DIGITAL_STICK,
+                ElementType.ANALOG_STICK,
+                ElementType.INVISIBLE_ANALOG_STICK,
+                ElementType.DIGITAL_PAD,
             )
+            if (el.type in stickTypes) {
+                StickPropertyDialog(
+                    title = "${el.type.displayName}属性设置",
+                    element = el,
+                    onSave = { updated: EditorElement ->
+                        elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                        editorState.saveElement(updated)
+                        showTypeSpecificEditor = false
+                        pendingTypeSpecificEditorElement = null
+                        ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
+                    },
+                    onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
+                )
+            } else {
+                ButtonPropertyDialog(
+                    title = "${el.type.displayName}属性设置",
+                    element = el,
+                    onSave = { updated: EditorElement ->
+                        elements = elements.map { if (it.elementId == updated.elementId) updated else it }
+                        editorState.saveElement(updated)
+                        showTypeSpecificEditor = false
+                        pendingTypeSpecificEditorElement = null
+                        ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
+                    },
+                    onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
+                )
+            }
         }
 
         // ── 按键列表弹窗 ──
@@ -620,30 +644,67 @@ fun KeyMappingEditor(
                 onSelect = { type ->
                     showAddMenu = false
                     if (type == ElementType.DIGITAL_COMBINE_BUTTON) {
+                        // 组合键：沿用已有的创建流程（initialElement=null）
+                        editingComboKeyElement = null
                         showComboKeyEditor = true
-                        return@AddElementMenu
+                    } else {
+                        // 其他类型：先打开属性对话框，保存后才实际创建
+                        val defaultEl = editorState.createDefaultElement(type)
+                        pendingNewElement = defaultEl
                     }
-                    val newEl = editorState.createDefaultElement(type)
-                    val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
-                    val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
-                    val elToInsert = newEl.copy(
-                        elementId = System.currentTimeMillis(),
-                        centralX = centerX,
-                        centralY = centerY,
-                    )
-                    editorState.addElement(elToInsert)
-                    selectedIds = setOf(elToInsert.elementId)
-                    reloadElements()
-                    ToastUtil.show(context, "已添加「${type.displayName}」", Toast.LENGTH_SHORT)
                 },
             )
+        }
+
+        // ── 新建元素属性设置对话框（非组合键） ──
+        if (pendingNewElement != null) {
+            val el = pendingNewElement!!
+            val stickTypes = listOf(
+                ElementType.DIGITAL_STICK,
+                ElementType.INVISIBLE_DIGITAL_STICK,
+                ElementType.ANALOG_STICK,
+                ElementType.INVISIBLE_ANALOG_STICK,
+                ElementType.DIGITAL_PAD,
+            )
+            val title = "新建${el.type.displayName}"
+            val onSaveNew: (EditorElement) -> Unit = { updated ->
+                val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
+                val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
+                val finalEl = updated.copy(
+                    elementId = System.currentTimeMillis(),
+                    configId = currentConfigId,
+                    centralX = centerX,
+                    centralY = centerY,
+                    layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
+                )
+                editorState.addElement(finalEl)
+                selectedIds = setOf(finalEl.elementId)
+                reloadElements()
+                pendingNewElement = null
+                ToastUtil.show(context, "已创建「${el.type.displayName}」", Toast.LENGTH_SHORT)
+            }
+            if (el.type in stickTypes) {
+                StickPropertyDialog(
+                    title = title,
+                    element = el,
+                    onSave = onSaveNew,
+                    onDismiss = { pendingNewElement = null },
+                )
+            } else {
+                ButtonPropertyDialog(
+                    title = title,
+                    element = el,
+                    onSave = onSaveNew,
+                    onDismiss = { pendingNewElement = null },
+                )
+            }
         }
 
         // ── 组合键编辑弹窗（新建/修改共用） ──
         if (showComboKeyEditor) {
             val editingEl = editingComboKeyElement
             ComboKeyEditorDialog(
-                title = if (editingEl != null) "修改组合键" else "新建组合键",
+                title = if (editingEl != null) "组合键属性设置" else "新建组合键",
                 initialElement = editingEl,
                 onSaveNew = { newEl ->
                     if (editingEl != null) {
