@@ -247,10 +247,6 @@ fun DeviceListScreen(
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     )
-                    Spacer(Modifier.height(16.dp))
-                    Button(onClick = { showAddMenu = true }) {
-                        Text(context.getString(R.string.btn_manual_add))
-                    }
                 }
             }
         }
