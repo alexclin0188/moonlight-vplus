@@ -1198,4 +1198,376 @@
     <string name="seekbar_decrease">减小</string>
     <string name="seekbar_increase">增大</string>
 
+
+    <!-- ── Compose UI 国际化字符串 ── -->
+
+    <!-- 主导航标签 -->
+    <string name="tab_my_devices">我的设备</string>
+    <string name="tab_virtual_lan">虚拟局域网</string>
+
+    <!-- 路由标题辅助 -->
+    <string name="title_device_overview">设备概要</string>
+    <string name="title_device_detail">设备详情</string>
+    <string name="title_stream_settings">串流设置</string>
+    <string name="title_touch_mode">触控模式</string>
+    <string name="title_display_settings">显示设置</string>
+    <string name="title_display_switches">画面开关</string>
+    <string name="title_sound_settings">声音设置</string>
+    <string name="title_gyro">体感</string>
+    <string name="title_other_settings">其它设置</string>
+    <string name="title_desktop_widget">桌面小部件</string>
+    <string name="title_performance_analytics">性能与统计分析</string>
+
+    <!-- 语言与主题 -->
+    <string name="title_language">语言</string>
+    <string name="title_theme_mode">主题模式</string>
+    <string name="language_follow_system">跟随系统</string>
+    <string name="language_simplified_chinese">简体中文</string>
+    <string name="theme_dark">深色</string>
+    <string name="theme_light">浅色</string>
+
+    <!-- 导航 / 内容描述 -->
+    <string name="cd_navigate_back">返回</string>
+    <string name="cd_refresh_status">刷新状态</string>
+    <string name="cd_edit_remote">编辑远程地址</string>
+    <string name="cd_add_device">添加设备</string>
+    <string name="cd_windows">Windows</string>
+    <string name="cd_more">更多</string>
+    <string name="cd_running">运行中</string>
+
+    <!-- 背景图片设置 -->
+    <string name="summary_background_api_placeholder">点击设置 API 地址</string>
+    <string name="label_api_address">图片 API 地址</string>
+    <string name="summary_restore_background">移除背景图片，恢复为默认主题背景</string>
+    <string name="dialog_restore_background_title">恢复默认背景</string>
+    <string name="dialog_restore_background_message">确定要移除背景图片，恢复为默认主题背景吗？</string>
+    <string name="toast_background_success">背景图片设置成功</string>
+    <string name="toast_image_save_failed">图片保存失败: %s</string>
+    <string name="toast_image_select_cancelled">图片选择已取消</string>
+    <string name="toast_restored_default_background">已恢复为默认主题背景</string>
+
+    <!-- 通用按钮 -->
+    <string name="btn_save">保存</string>
+
+    <!-- 设备列表 -->
+    <string name="section_paired_devices">可控设备</string>
+    <string name="section_unpaired_devices">未配对设备</string>
+    <string name="device_unknown">未知设备</string>
+    <string name="no_devices_found">未发现设备</string>
+    <string name="btn_manual_add">手动添加</string>
+    <string name="menu_resume_stream">恢复串流</string>
+    <string name="menu_quit_app">退出应用</string>
+
+    <!-- 设备列表提示 -->
+    <string name="toast_device_deleted">已删除设备: %s</string>
+    <string name="toast_wol_sent">已发送唤醒包</string>
+    <string name="toast_wol_failed">唤醒失败: %s</string>
+    <string name="toast_pair_success">配对成功</string>
+    <string name="toast_pair_already_paired">设备已配对</string>
+    <string name="toast_pair_error">配对异常: %s</string>
+
+    <!-- 桌面串流设置分类（用于标题辅助） -->
+    <string name="category_touch_mode">触控模式</string>
+    <string name="category_display_settings">显示设置</string>
+    <string name="category_display_switches">画面开关</string>
+    <string name="category_sound_settings">声音设置</string>
+    <string name="category_gyro">体感</string>
+    <string name="category_other_settings">其它设置</string>
+    <string name="category_key_mapping_management">按键映射</string>
+    <string name="category_desktop_widget">桌面小部件</string>
+    <string name="category_performance_analytics">性能与统计分析</string>
+
+
+
+
+    <!-- 设备串流设置 (Compose UI) -->
+    <string name="section_touch_mode_select">触控模式选择</string>
+    <string name="option_enhanced_multi_touch">增强式多点触控</string>
+    <string name="option_trackpad_mode">触控板模式</string>
+    <string name="option_mouse_mode">鼠标模式</string>
+    <string name="section_trackpad_settings">触控板设置</string>
+    <string name="section_mouse_settings">鼠标设置</string>
+    <string name="label_local_mouse_pointer">本地鼠标指针</string>
+    <string name="section_enhanced_touch_settings">增强触控设置</string>
+    <string name="label_enhanced_touch_on_right">增强触控区在右侧</string>
+    <string name="label_sensitivity">灵敏度</string>
+    <string name="label_zone_divider">分区界线</string>
+    <string name="label_pointer_speed">指针速度</string>
+    <string name="label_long_press_jitter">长按抖动消除</string>
+    <string name="label_key_mapping_enabled">启用按键映射</string>
+    <string name="label_current_scheme">当前方案</string>
+    <string name="label_loading">加载中…</string>
+    <string name="label_builtin_virtual_gamepad">内置虚拟手柄方案</string>
+    <string name="label_unknown">未知</string>
+    <string name="label_switch_scheme">切换方案</string>
+    <string name="title_select_key_mapping_scheme">选择按键映射方案</string>
+    <string name="btn_close">关闭</string>
+    <string name="section_general_touch_settings">通用触控设置</string>
+    <string name="label_keyboard_toggle_fingers">切换键盘手指数</string>
+    <string name="label_fingers_count">%d (0=禁用)</string>
+    <string name="section_video">画面</string>
+    <string name="label_bitrate_settings">码率设置</string>
+    <string name="label_bitrate">码率</string>
+    <string name="option_auto">自动</string>
+    <string name="option_custom">自定义</string>
+    <string name="label_abr_mode">智能码率模式</string>
+    <string name="label_video_codec">视频编码格式</string>
+    <string name="label_video_framerate">视频帧率</string>
+    <string name="label_unlock_framerate">解锁帧率</string>
+    <string name="label_frame_pacing">帧时序模式</string>
+    <string name="label_resolution">分辨率</string>
+    <string name="btn_add_custom_resolution">+自定义分辨率</string>
+    <string name="title_custom_resolution">自定义分辨率</string>
+    <string name="hint_width_range">宽度 (320-7680)</string>
+    <string name="hint_height_range">高度 (240-4320)</string>
+    <string name="error_width_out_of_range">宽度超出范围 (320-7680)</string>
+    <string name="error_height_out_of_range">高度超出范围 (240-4320)</string>
+    <string name="error_width_must_be_even">宽度必须为偶数</string>
+    <string name="error_height_must_be_even">高度必须为偶数</string>
+    <string name="btn_add">添加</string>
+    <string name="btn_cancel">取消</string>
+    <string name="label_output_buffer">输出缓冲区</string>
+    <string name="label_output_buffer_frames">%d 帧</string>
+    <string name="section_virtual_display">虚拟显示器</string>
+    <string name="desc_virtual_display">虚拟显示器在副屏串流时替代物理显示器使用</string>
+    <string name="label_virtual_display_resolution">虚拟显示器分辨率</string>
+    <string name="label_virtual_display_framerate">虚拟显示器帧率</string>
+    <string name="label_device_native">设备原生</string>
+    <string name="label_hdr_high_brightness">HDR 高亮度</string>
+    <string name="label_hdr_mode">HDR模式</string>
+    <string name="label_stretch_video">全屏拉伸画面</string>
+    <string name="label_reverse_resolution">反转分辨率</string>
+    <string name="label_rotable_screen">可旋转画面</string>
+    <string name="label_reduce_refresh_rate">减少刷新率</string>
+    <string name="label_full_range">全色域</string>
+    <string name="label_mtk_option">MTK 专属选项</string>
+    <string name="label_use_external_display">使用外接显示器</string>
+    <string name="label_control_only">仅控制模式</string>
+    <string name="label_pip">画中画 (PiP)</string>
+    <string name="label_lock_screen_after_disconnect">断开串流时锁定屏幕</string>
+    <string name="label_optimize_host_settings">自动优化主机设置 (SOPS)</string>
+    <string name="label_play_audio_on_pc">在电脑上播放声音</string>
+    <string name="label_sync_clipboard_text">同步剪贴板文本</string>
+    <string name="label_sync_clipboard_image">同步剪贴板图片</string>
+    <string name="section_output_settings">输出设置</string>
+    <string name="label_surround_sound">环绕声</string>
+    <string name="label_play_stream_audio">播放串流音频</string>
+    <string name="label_equalizer">均衡器</string>
+    <string name="label_spatial_audio">空间音频</string>
+    <string name="section_audio_passthrough">音频直通</string>
+    <string name="label_enable_audio_passthrough">启用音频直通</string>
+    <string name="label_passthrough_codec">直通编解码器</string>
+    <string name="label_passthrough_buffer">直通缓冲区</string>
+    <string name="section_audio_vibration">音频驱动振动</string>
+    <string name="label_enable_audio_vibration">启用音频振动</string>
+    <string name="label_vibration_strength">振动强度</string>
+    <string name="label_vibration_routing">振动路由</string>
+    <string name="option_speaker_only">仅扬声器</string>
+    <string name="option_headset_only">仅耳机</string>
+    <string name="label_scene_mode">场景模式</string>
+    <string name="option_general">通用</string>
+    <string name="option_game">游戏</string>
+    <string name="option_movie">电影</string>
+    <string name="option_music">音乐</string>
+    <string name="section_microphone">麦克风</string>
+    <string name="label_mic_redirect">麦克风重定向</string>
+    <string name="label_transmission_quality">传输音质</string>
+    <string name="label_transmission_quality_kbps">%d kbps</string>
+    <string name="label_icon_color">图标颜色</string>
+    <string name="option_solid_white">纯白</string>
+    <string name="option_accent">强调色</string>
+    <string name="label_gyro_switch">体感开关</string>
+    <string name="label_activation_key">激活按键</string>
+    <string name="option_always">始终</string>
+    <string name="label_mode">模式</string>
+    <string name="option_right_stick">右摇杆</string>
+    <string name="option_mouse">鼠标</string>
+    <string name="label_sensitivity_format">灵敏度: %.1fx</string>
+    <string name="section_axis_invert">轴反转</string>
+    <string name="label_x_axis_invert">X 轴反转</string>
+    <string name="label_y_axis_invert">Y 轴反转</string>
+    <string name="section_panel_auto_hide">操作面板自动隐藏</string>
+    <string name="option_hide_on_key_mapping">按键映射时隐藏</string>
+    <string name="option_auto_hide_2s">2秒后自动隐藏</string>
+    <string name="option_never_hide">不自动隐藏</string>
+    <string name="section_performance_display">性能与显示</string>
+    <string name="label_enable_perf_overlay">启用性能图层</string>
+    <string name="label_bg_opacity">背景不透明度</string>
+    <string name="label_bg_opacity_percent">%d%%</string>
+    <string name="label_lock_perf_overlay">锁定性能图层</string>
+    <string name="desc_perf_overlay_settings">性能图层详细设置请到主页-设置-性能和统计分析中设置</string>
+    <string name="label_show_latency_after_stream">串流结束后显示延迟信息</string>
+    <string name="label_disable_warnings">禁用警告提示</string>
+    <string name="label_pause_stream_support">暂停串流支持</string>
+    <string name="section_floating_elements">悬浮元素</string>
+    <string name="label_fab_opacity">悬浮按钮不透明度</string>
+
+    <!-- 按键映射管理页面 -->
+    <string name="title_export_key_mapping">导出按键映射方案</string>
+    <string name="summary_export_key_mapping">将按键映射方案导出为 .mlk 文件</string>
+    <string name="title_import_key_mapping">导入按键映射方案</string>
+    <string name="summary_import_key_mapping">从 .mlk 文件导入按键映射方案</string>
+    <string name="title_import_from_legacy_crown">从旧王冠配置导入</string>
+    <string name="summary_import_from_legacy_crown">从旧版 Crown 导出的 .mdat 文件导入按键映射方案</string>
+    <string name="toast_scheme_exported">按键方案已导出 (.mlk)</string>
+    <string name="toast_export_failed">导出失败: %s</string>
+    <string name="toast_file_empty">文件内容为空</string>
+    <string name="toast_invalid_mlk">这不是有效的 .mlk 文件，请选择后缀为 .mlk 的按键映射方案文件</string>
+    <string name="toast_file_read_failed">读取文件失败: %s</string>
+    <string name="toast_invalid_legacy_config">这不是有效的旧王冠配置文件</string>
+    <string name="title_export_mlk_dialog">导出按键映射方案 (.mlk)</string>
+    <string name="btn_export">导出</string>
+    <string name="title_import_mlk_dialog">导入按键映射方案</string>
+    <string name="title_import_legacy_crown_dialog">导入旧王冠配置</string>
+    <string name="hint_scheme_name">方案名称（1-10 字符）</string>
+    <string name="label_overwrite_existing">覆盖已有方案</string>
+    <string name="option_import_as_new">不覆盖，作为新方案导入</string>
+    <string name="btn_import">导入</string>
+    <string name="toast_scheme_imported">方案「%s」已导入</string>
+    <string name="toast_import_failed">导入失败: %s</string>
+    <string name="toast_scheme_imported_from_legacy">方案「%s」已从旧配置导入</string>
+    <string name="desc_legacy_crown_detected">检测到旧版 Crown 配置文件，将导入其中的按键映射方案。</string>
+    <string name="error_file_format">文件格式错误</string>
+    <string name="error_file_checksum">文件校验失败（已损坏）</string>
+    <string name="error_version_incompatible">版本不兼容</string>
+    <string name="error_import_failed_code">导入失败 (错误: %d)</string>
+    <string name="label_import_scheme">导入方案</string>
+
+    <!-- 设备概要页面 -->
+    <string name="title_device_not_found">设备未找到</string>
+    <string name="btn_back">返回</string>
+    <string name="title_quick_launch">快速启动</string>
+    <string name="desc_no_apps_available">暂无应用，请确保设备在线并已配对</string>
+    <string name="label_quick_actions">快捷操作</string>
+    <string name="label_device_details">设备详情</string>
+    <string name="label_stream_settings">串流设置</string>
+    <string name="action_shutdown">关机</string>
+    <string name="toast_shutdown_sent">关机命令已发送</string>
+    <string name="toast_shutdown_failed">关机失败</string>
+    <string name="toast_shutdown_error">关机异常: %s</string>
+    <string name="action_sleep">睡眠</string>
+    <string name="action_secondary_screen">作为副屏串流（基地适用）</string>
+    <string name="action_open_web_ui">打开 Web 管理（Sunshine）</string>
+    <string name="action_send_wol">发送 Wake-On-LAN 请求</string>
+    <string name="action_delete_pc">删除电脑</string>
+    <string name="action_quit_app">退出应用</string>
+    <string name="action_iperf3_test">网络带宽测试 (iPerf3)</string>
+    <string name="toast_device_address_unavailable">设备地址不可用，请确认设备在线</string>
+    <string name="toast_cannot_get_address">无法获取设备地址</string>
+    <string name="action_disable_ipv6">禁用 IPv6</string>
+    <string name="action_test_network">测试网络连接</string>
+    <string name="action_gamestream_eol">NVIDIA GameStream 终止服务</string>
+    <string name="badge_online">在线</string>
+    <string name="badge_offline">离线</string>
+    <string name="label_enter_desktop">进入桌面 ></string>
+    <string name="label_virtual_display">虚拟显示器</string>
+    <string name="label_display">显示器</string>
+    <string name="status_detecting">检测中…</string>
+    <string name="toast_from_pip_resume">从画中画恢复串流…</string>
+    <string name="toast_stopped_other_pip">已停止另一台设备的画中画串流…</string>
+    <string name="toast_device_offline_waking">设备离线，正在尝试唤醒…</string>
+    <string name="toast_no_launchable_app">无可启动的应用，请先打开应用列表加载</string>
+
+    <!-- 设备详情页面 -->
+    <string name="label_device_name">设备名称</string>
+    <string name="label_uuid">UUID</string>
+    <string name="label_status">状态</string>
+    <string name="label_pair_state">配对状态</string>
+    <string name="label_running_app_id">运行中应用 ID</string>
+    <string name="label_paired">已配对</string>
+    <string name="label_not_paired">未配对</string>
+    <string name="section_network_info">网络信息</string>
+    <string name="label_active_address">当前活跃地址</string>
+    <string name="label_local_address">局域网地址</string>
+    <string name="label_remote_address">远程地址</string>
+    <string name="label_manual_address">手动地址</string>
+    <string name="label_ipv6_address">IPv6 地址</string>
+    <string name="label_https_port">HTTPS 端口</string>
+    <string name="label_mac_address">MAC 地址</string>
+    <string name="label_ipv6_status">IPv6</string>
+    <string name="label_disabled">已禁用</string>
+    <string name="label_enabled">已启用</string>
+    <string name="section_sunshine_info">Sunshine 信息</string>
+    <string name="label_sunshine_version">Sunshine 版本</string>
+    <string name="label_nvidia_server">NVIDIA Server</string>
+    <string name="label_yes">是</string>
+    <string name="label_no">否</string>
+    <string name="label_multi_address">支持多地址</string>
+    <string name="label_desktop_quick_start">支持桌面快速启动</string>
+    <string name="title_edit_remote_address">编辑远程地址</string>
+    <string name="hint_host_port">host:port</string>
+    <string name="placeholder_ip">192.168.1.100:47989</string>
+    <string name="btn_confirm">确定</string>
+    <string name="toast_remote_address_updated">远程地址已更新</string>
+    <string name="toast_details_copied">详情已复制到剪贴板</string>
+
+    <!-- VPN 页面 -->
+    <string name="tab_network_status">网络状态</string>
+    <string name="tab_edit_config">编辑配置</string>
+    <string name="label_service_not_running">服务未运行或正在连接…\n请点击刷新按钮获取最新状态。</string>
+    <string name="label_local_info">本机信息</string>
+    <string name="label_hostname">主机名</string>
+    <string name="label_virtual_ip">虚拟 IP</string>
+    <string name="label_public_ip">公网 IP</string>
+    <string name="label_nat_type">NAT 类型</string>
+    <string name="label_peers">对等节点</string>
+    <string name="label_relay">(中转)</string>
+    <string name="label_subnet_mismatch">(网段不匹配!)</string>
+    <string name="label_physical_addr">物理地址</string>
+    <string name="label_next_hop">下一跳</string>
+    <string name="label_latency">延迟</string>
+    <string name="label_traffic">流量 (Rx/Tx)</string>
+    <string name="btn_start_service">启动服务</string>
+    <string name="btn_stop_service">停止服务</string>
+    <string name="btn_save_config">保存配置</string>
+    <string name="toast_config_saved">配置已保存</string>
+    <string name="label_network_name">网络名称</string>
+    <string name="label_network_secret">网络密钥</string>
+    <string name="label_local_ipv4">本地虚拟 IPv4 地址</string>
+    <string name="label_listeners">监听地址</string>
+    <string name="label_peers_config">对等节点</string>
+    <string name="hint_network_name">例如 easytier</string>
+    <string name="hint_local_ipv4">例如 10.0.0.6</string>
+    <string name="hint_listeners">每行一个，例如 udp://0.0.0.0:11010</string>
+    <string name="hint_peers">每行一个，例如 tcp://1.2.3.4:11010</string>
+    <string name="label_advanced_flags">高级功能标志</string>
+    <string name="section_core_network">核心网络行为</string>
+    <string name="section_proxy_protocol">代理与协议</string>
+    <string name="section_security">安全与连接</string>
+    <string name="flag_use_smoltcp">使用 Smoltcp</string>
+    <string name="flag_latency_first">延迟优先</string>
+    <string name="flag_disable_p2p">禁用 P2P（强制中转）</string>
+    <string name="flag_private_mode">私有模式</string>
+    <string name="flag_disable_ipv6">禁用 IPv6</string>
+    <string name="flag_enable_kcp_proxy">启用 KCP 代理</string>
+    <string name="flag_disable_kcp_input">禁用 KCP 输入</string>
+    <string name="flag_enable_quic_proxy">启用 QUIC 代理</string>
+    <string name="flag_disable_quic_input">禁用 QUIC 输入</string>
+    <string name="flag_proxy_forward_system">使用系统代理转发</string>
+    <string name="flag_disable_encryption">禁用加密</string>
+    <string name="flag_disable_udp_hole">禁用 UDP 打洞</string>
+    <string name="flag_disable_sym_hole">禁用对称 NAT 打洞</string>
+
+
+
+    <!-- 设备概览页 (Compose UI) -->
+    <string name="toast_device_not_found_overview">设备未找到</string>
+    <string name="label_quick_launch">快速启动</string>
+    <string name="label_no_apps_available">暂无应用，请确保设备在线并已配对</string>
+    <string name="label_running">运行中</string>
+    <string name="title_quick_actions">快捷操作</string>
+    <string name="toast_shutdown_exception">关机异常</string>
+    <string name="action_secondary_stream">作为副屏串流（基地适用）</string>
+    <string name="action_open_web_admin">打开 Web 管理（Sunshine）</string>
+    <string name="action_delete_computer">删除电脑</string>
+    <string name="action_network_bandwidth_test">网络带宽测试 (iPerf3)</string>
+    <string name="toast_address_unavailable">设备地址不可用，请确认设备在线</string>
+    <string name="toast_pip_recover">从画中画恢复串流…</string>
+    <string name="toast_pip_stopped">已停止另一台设备的画中画串流…</string>
+    <string name="toast_no_app_to_launch">无可启动的应用，请先打开应用列表加载</string>
+
+
+    <!-- 状态和显示标签 -->
+    <string name="label_online">在线</string>
+    <string name="label_offline">离线</string>
 </resources>

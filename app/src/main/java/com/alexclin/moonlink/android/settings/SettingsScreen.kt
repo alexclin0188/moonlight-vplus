@@ -1,11 +1,13 @@
 package com.alexclin.moonlink.android.settings
 
+import android.content.Context
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.NavigateNext
 import androidx.compose.material.icons.filled.*
@@ -16,8 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
+import com.alexclin.moonlink.android.R
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 
@@ -32,16 +36,20 @@ data class SettingsCategory(
     val route: String,
 )
 
-val SETTINGS_CATEGORIES = listOf(
-    SettingsCategory("ui",          "界面设置",           Icons.Default.Palette,         "settings_ui"),
-    SettingsCategory("performance", "性能与统计分析",      Icons.Default.Speed,           "settings_performance"),
-    SettingsCategory("gamepad",     "手柄设置",           Icons.Default.Gamepad,         "settings_gamepad"),
-    SettingsCategory("input",       "输入设置",           Icons.Default.Keyboard,        "settings_input"),
-    SettingsCategory("keymapping",  "按键映射管理",        Icons.Default.Tune,            "settings_keymapping"),
-    SettingsCategory("widget",      "桌面小部件",         Icons.Default.Widgets,         "_widget"),
-    SettingsCategory("connection",  "连接设置",           Icons.Default.Lan,             "settings_connection"),
-    SettingsCategory("help",        "帮助",              Icons.Default.HelpOutline,     "settings_help"),
-)
+/** Resolve category title from string resources. Call from within @Composable. */
+@Composable
+private fun rememberSettingsCategories(context: Context): List<SettingsCategory> = remember {
+    listOf(
+        SettingsCategory("ui",          context.getString(R.string.category_ui_settings),             Icons.Default.Palette,         "settings_ui"),
+        SettingsCategory("performance", context.getString(R.string.category_performance_analytics),    Icons.Default.Speed,           "settings_performance"),
+        SettingsCategory("gamepad",     context.getString(R.string.category_gamepad_settings),        Icons.Default.Gamepad,         "settings_gamepad"),
+        SettingsCategory("input",       context.getString(R.string.category_input_settings),          Icons.Default.Keyboard,        "settings_input"),
+        SettingsCategory("keymapping",  context.getString(R.string.category_crown_features),          Icons.Default.Tune,            "settings_keymapping"),
+        SettingsCategory("widget",      context.getString(R.string.category_desktop_widget),          Icons.Default.Widgets,         "_widget"),
+        SettingsCategory("connection",  context.getString(R.string.category_connection_settings),     Icons.Default.Lan,             "settings_connection"),
+        SettingsCategory("help",        context.getString(R.string.category_help),                    Icons.Default.HelpOutline,     "settings_help"),
+    )
+}
 
 @Composable
 fun SettingsScreen(
@@ -49,17 +57,20 @@ fun SettingsScreen(
     managerBinder: ComputerManagerService.ComputerManagerBinder? = null,
     computers: List<ComputerDetails>? = null,
 ) {
+    val context = LocalContext.current
+    val categories = rememberSettingsCategories(context)
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
     if (isLandscape) {
         LandscapeSettingsContent(
+            categories = categories,
             onNavigate = onNavigate,
             managerBinder = managerBinder,
             computers = computers,
         )
     } else {
-        PortraitSettingsList(onNavigate = onNavigate)
+        PortraitSettingsList(categories = categories, onNavigate = onNavigate)
     }
 }
 
@@ -70,6 +81,7 @@ fun SettingsScreen(
 
 @Composable
 private fun LandscapeSettingsContent(
+    categories: List<SettingsCategory>,
     onNavigate: (String) -> Unit,
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     computers: List<ComputerDetails>?,
@@ -98,8 +110,8 @@ private fun LandscapeSettingsContent(
                     .width(leftWidth)
                     .fillMaxHeight(),
             ) {
-                items(SETTINGS_CATEGORIES.size) { index ->
-                    val cat = SETTINGS_CATEGORIES[index]
+                items(categories.size) { index ->
+                    val cat = categories[index]
                     val expanded = cat.key == expandedKey
                     ListItem(
                         headlineContent = {
@@ -179,14 +191,15 @@ private fun LandscapeSettingsContent(
 
 @Composable
 private fun PortraitSettingsList(
+    categories: List<SettingsCategory>,
     onNavigate: (String) -> Unit,
 ) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize(),
     ) {
-        items(SETTINGS_CATEGORIES.size) { index ->
-            val cat = SETTINGS_CATEGORIES[index]
+        items(categories.size) { index ->
+            val cat = categories[index]
             ListItem(
                 headlineContent = {
                     Text(cat.title, style = MaterialTheme.typography.bodyLarge)

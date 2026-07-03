@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import com.alexclin.moonlink.android.R
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
@@ -19,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -166,9 +168,9 @@ fun DeviceOverviewScreen(
         // Device not found
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("设备未找到", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.title_device_not_found), style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(12.dp))
-                Button(onClick = onBack) { Text("返回") }
+                Button(onClick = onBack) { Text(stringResource(R.string.btn_back)) }
             }
         }
         return
@@ -264,7 +266,7 @@ fun DeviceOverviewScreen(
                                 .verticalScroll(rememberScrollState()),
                         ) {
                             Text(
-                                "快速启动",
+                                stringResource(R.string.label_quick_launch),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onBackground,
                             )
@@ -288,7 +290,7 @@ fun DeviceOverviewScreen(
                             contentAlignment = Alignment.Center,
                         ) {
                             Text(
-                                "暂无应用，请确保设备在线并已配对",
+                                stringResource(R.string.label_no_apps_available),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -368,7 +370,7 @@ fun DeviceOverviewScreen(
                 if (canShowActions && appList.isNotEmpty()) {
                     Spacer(Modifier.height(24.dp))
                     Text(
-                        "快速启动",
+                        stringResource(R.string.label_quick_launch),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -522,7 +524,7 @@ private fun AppIconItem(
             if (isRunning) {
                 Icon(
                     Icons.Default.PlayCircle,
-                    contentDescription = "运行中",
+                    contentDescription = stringResource(R.string.label_running),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -572,14 +574,14 @@ private fun QuickActionsDialog(
                     .padding(horizontal = 12.dp, vertical = 8.dp),
             ) {
                 Text(
-                    "快捷操作",
+                    stringResource(R.string.title_quick_actions),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 if (isOnline) {
-                    DialogActionRow("关机") {
+                    DialogActionRow(stringResource(R.string.action_shutdown)) {
                     if (activity != null && managerBinder != null) {
                         scope.launch {
                             try {
@@ -596,12 +598,12 @@ private fun QuickActionsDialog(
                                     val success = httpConn.pcShutdown()
                                     withContext(Dispatchers.Main) {
                                         snackBarHostState.showSnackbar(
-                                            if (success) "关机命令已发送" else "关机失败"
+                                            if (success) context.getString(R.string.toast_shutdown_sent) else context.getString(R.string.toast_shutdown_failed)
                                         )
                                     }
                                 }
                             } catch (e: Exception) {
-                                snackBarHostState.showSnackbar("关机异常: ${e.message}")
+                                snackBarHostState.showSnackbar(context.getString(R.string.toast_shutdown_exception) + ": ${e.message}")
                             }
                         }
                     }
@@ -609,7 +611,7 @@ private fun QuickActionsDialog(
                 }
                 }
                 if (isOnline) {
-                    DialogActionRow("睡眠") {
+                    DialogActionRow(stringResource(R.string.action_sleep)) {
                     if (activity != null && managerBinder != null) {
                         ServerHelper.pcSleep(activity, computer, managerBinder, null)
                     }
@@ -617,7 +619,7 @@ private fun QuickActionsDialog(
                 }
                 }
                 if (isOnline) {
-                    DialogActionRow("作为副屏串流（基地适用）") {
+                    DialogActionRow(stringResource(R.string.action_secondary_stream)) {
                         computer.useVdd = true
                         launchStreamFromOverview(
                             context = context,
@@ -631,7 +633,7 @@ private fun QuickActionsDialog(
                     }
                 }
                 if (isOnline) {
-                    DialogActionRow("打开 Web 管理（Sunshine）") {
+                    DialogActionRow(stringResource(R.string.action_open_web_admin)) {
                     val addr = computer.activeAddress?.address
                     val url = if (addr != null) "https://$addr:${computer.httpsPort}" else ""
                     val intent = Intent(context, SunshineWebUiActivity::class.java).apply {
@@ -645,19 +647,19 @@ private fun QuickActionsDialog(
                 }
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 if (!isOnline) {
-                    DialogActionRow("发送 Wake-On-LAN 请求") {
+                    DialogActionRow(stringResource(R.string.pcview_menu_send_wol)) {
                         scope.launch(Dispatchers.IO) {
                             try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
                         }
                         onDismiss()
                     }
                 }
-                DialogActionRow("删除电脑") {
+                DialogActionRow(stringResource(R.string.action_delete_computer)) {
                     managerBinder?.removeComputer(computer)
                     onDismiss()
                 }
                 if (isOnline && hasRunningGame) {
-                    DialogActionRow("退出应用") {
+                    DialogActionRow(stringResource(R.string.action_quit_app)) {
                         if (context is android.app.Activity && managerBinder != null) {
                             val app = NvApp().apply { appId = computer.runningGameId; appName = "Running" }
                             ServerHelper.doQuit(context, computer, app, managerBinder, null)
@@ -665,33 +667,33 @@ private fun QuickActionsDialog(
                         onDismiss()
                     }
                 }
-                DialogActionRow("网络带宽测试 (iPerf3)") {
+                DialogActionRow(stringResource(R.string.action_network_bandwidth_test)) {
                     val iperfActivity = context as? android.app.Activity
                     if (iperfActivity != null) {
                         try {
                             val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
                             Iperf3Tester(iperfActivity, ip).show()
                         } catch (e: java.io.IOException) {
-                            ToastUtil.show(context, "设备地址不可用，请确认设备在线", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.toast_address_unavailable), Toast.LENGTH_SHORT)
                         }
                     } else {
-                        ToastUtil.show(context, "无法获取设备地址", Toast.LENGTH_SHORT)
+                        ToastUtil.show(context, context.getString(R.string.toast_cannot_get_address), Toast.LENGTH_SHORT)
                     }
                     onDismiss()
                 }
-                DialogActionRow("禁用 IPv6") {
+                DialogActionRow(stringResource(R.string.pcview_menu_disable_ipv6)) {
                     computer.ipv6Disabled = !computer.ipv6Disabled
                     managerBinder?.updateComputer(computer)
                     onDismiss()
                 }
-                DialogActionRow("测试网络连接") {
+                DialogActionRow(stringResource(R.string.pcview_menu_test_network)) {
                     if (context is android.app.Activity) {
                         ServerHelper.doNetworkTest(context)
                     }
                     onDismiss()
                 }
                 if (computer.nvidiaServer) {
-                    DialogActionRow("NVIDIA GameStream 终止服务") {
+                    DialogActionRow(stringResource(R.string.action_gamestream_eol)) {
                         val intent = Intent(Intent.ACTION_VIEW,
                             "https://github.com/moonlight-stream/moonlight-android/wiki/GameStream-EOL".toUri())
                         context.startActivity(intent)
@@ -766,7 +768,7 @@ private fun DesktopThumbnailBox(
 
         // Status badge (top-start)
         val badgeColor = if (isOnline) statusOnline else statusOffline
-        val badgeText  = if (isOnline) "在线" else "离线"
+        val badgeText  = if (isOnline) stringResource(R.string.label_online) else stringResource(R.string.label_offline)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)
@@ -854,7 +856,7 @@ private fun DesktopThumbnailBox(
         // Bottom overlay: "进入桌面 >"（仅在线时显示）
         if (isOnline) {
             Text(
-                "进入桌面 >",
+                stringResource(R.string.label_enter_desktop),
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold,
                 ),
@@ -893,7 +895,7 @@ private fun DesktopActionRow(
         if (showQuickActionButton) {
             OverviewActionButton(
                 icon = Icons.Default.Bolt,
-                label = "快捷操作",
+                label = stringResource(R.string.title_quick_actions),
                 modifier = Modifier.weight(1f),
                 onClick = onShowQuickActions,
             )
@@ -901,14 +903,14 @@ private fun DesktopActionRow(
         VerticalDivider(modifier = Modifier.height(dividerHeight))
         OverviewActionButton(
             icon = Icons.Default.Info,
-            label = "设备详情",
+            label = stringResource(R.string.title_device_detail),
             modifier = Modifier.weight(1f),
             onClick = onNavigateToDetail,
         )
         VerticalDivider(modifier = Modifier.height(dividerHeight))
         OverviewActionButton(
             icon = Icons.Default.Settings,
-            label = "串流设置",
+            label = stringResource(R.string.title_stream_settings),
             modifier = Modifier.weight(1f),
             onClick = onNavigateToStreamSettings,
         )
@@ -1001,7 +1003,7 @@ private fun DisplayChipRow(
             VddChip(
                 isSelected = selectedVddEnabled,
                 onClick = onVddSelected,
-                name = zakoDisplay?.name ?: "虚拟显示器",
+                name = zakoDisplay?.name ?: stringResource(R.string.label_virtual_display),
             )
         }
     }
@@ -1044,7 +1046,7 @@ private fun DisplayChip(
             // "显示器" + 主屏星标（蓝色文字）
             Text(
                 text = buildString {
-                    append("显示器")
+                    append(stringResource(R.string.label_display))
                     if (display.isPrimary) append(" ★")
                 },
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
@@ -1070,7 +1072,7 @@ private fun DisplayChip(
 private fun VddChip(
     isSelected: Boolean,
     onClick: () -> Unit,
-    name: String = "虚拟显示器",
+    name: String = stringResource(R.string.label_virtual_display),
 ) {
     val containerColor = if (isSelected)
         MaterialTheme.colorScheme.primaryContainer
@@ -1097,7 +1099,7 @@ private fun VddChip(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
         ) {
             Text(
-                text = "虚拟显示器",
+                text = stringResource(R.string.label_virtual_display),
                 style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp),
                 color = MaterialTheme.colorScheme.primary,
                 maxLines = 1,
@@ -1141,13 +1143,13 @@ private fun launchStreamFromOverview(
         val pipUuid = StreamEngine.currentPipUuid
         if (pipUuid != null && pipUuid == computer.uuid) {
             // 同一设备：关闭 PiP Activity，然后启动新流
-            ToastUtil.show(context, "从画中画恢复串流…", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_pip_recover), Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
         } else {
             // 不同设备：关闭 PiP Activity 停止旧流。
             // finish() 会触发旧 Activity 的 onDestroy → engine.release() 完整清理。
             // 但 onDestroy 是异步执行的，主动清除静态引用避免新流启动时读到脏数据。
-            ToastUtil.show(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_pip_stopped), Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
             StreamEngine.currentPipActivity = null
             StreamEngine.currentPipUuid = null
@@ -1155,13 +1157,13 @@ private fun launchStreamFromOverview(
     }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
-        ToastUtil.show(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.toast_device_offline_waking), Toast.LENGTH_SHORT)
         try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
         return
     }
 
     val targetApp = app ?: getDefaultQuickStartApp(computer, context) ?: run {
-        ToastUtil.show(context, "无可启动的应用，请先打开应用列表加载", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.toast_no_app_to_launch), Toast.LENGTH_SHORT)
         return
     }
 

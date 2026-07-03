@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.BuildConfig
+import com.alexclin.moonlink.android.R
 import com.limelight.utils.UpdateManager
 
 /**
@@ -25,8 +26,8 @@ fun HelpSettingsScreen() {
             .fillMaxSize(),
     ) {
             ListItem(
-                headlineContent = { Text("检查更新") },
-                supportingContent = { Text("当前版本: ${BuildConfig.VERSION_NAME}") },
+                headlineContent = { Text(context.getString(R.string.check_for_updates)) },
+                supportingContent = { Text(context.getString(R.string.summary_check_for_updates) + ": ${BuildConfig.VERSION_NAME}") },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -37,7 +38,7 @@ fun HelpSettingsScreen() {
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
             ListItem(
-                headlineContent = { Text("Moonlight X PC 版下载") },
+                headlineContent = { Text(context.getString(R.string.title_moonlight_X_pc_download)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()
@@ -52,7 +53,7 @@ fun HelpSettingsScreen() {
             HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
 
             ListItem(
-                headlineContent = { Text("隐私政策") },
+                headlineContent = { Text(context.getString(R.string.title_privacy_policy)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier
                     .fillMaxWidth()

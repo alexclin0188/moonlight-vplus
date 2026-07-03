@@ -105,7 +105,7 @@ sealed class BackgroundSource(val prefValue: String) {
         private val ALL = listOf(Auto, Pipw, Picsum, Api, Local, None)
 
         fun fromPrefValue(value: String?): BackgroundSource =
-            ALL.firstOrNull { it.prefValue == value } ?: Auto
+            ALL.firstOrNull { it.prefValue == value } ?: None
 
         /** Read the currently active source, running a one-shot legacy migration. */
         fun current(ctx: Context): BackgroundSource {

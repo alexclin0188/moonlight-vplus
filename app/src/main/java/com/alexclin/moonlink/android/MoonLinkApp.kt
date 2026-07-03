@@ -1,8 +1,11 @@
 package com.alexclin.moonlink.android
 
+import android.content.SharedPreferences
+import android.graphics.Color as AndroidColor
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -19,8 +22,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -29,6 +35,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.device.detail.DeviceDetailScreen
 import com.alexclin.moonlink.android.device.overview.DeviceOverviewScreen
 import com.alexclin.moonlink.android.device.streamsettings.AudioCategory
@@ -45,51 +52,71 @@ import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
 import com.alexclin.moonlink.android.stream.engine.DeviceStateManager
 import com.alexclin.moonlink.android.vpn.VpnScreen
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.RequestOptions
 import com.limelight.computers.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
+import com.limelight.preferences.BackgroundSource
+import jp.wasabeef.glide.transformations.BlurTransformation
+import jp.wasabeef.glide.transformations.ColorFilterTransformation
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 
 // ── Bottom tab descriptor ─────────────────────────────────────────
 
 private data class TopLevelTab(
     val route: String,
-    val title: String,
+    val titleResId: Int,
     val selectedIcon: ImageVector,
     val unselectedIcon: ImageVector,
 )
 
-private val TOP_TABS = listOf(
-    TopLevelTab(MoonLinkRoute.DeviceList.route, "我的设备", Icons.Filled.Devices, Icons.Outlined.Devices),
-    TopLevelTab("tab_vpn",     "虚拟局域网", Icons.Filled.Wifi,    Icons.Outlined.Wifi),
-    TopLevelTab("tab_settings","设置",       Icons.Filled.Settings,Icons.Outlined.Settings),
-)
+@Composable
+private fun rememberTopTabs(context: android.content.Context): List<TopLevelTab> = remember {
+    listOf(
+        TopLevelTab(MoonLinkRoute.DeviceList.route, R.string.tab_my_devices,   Icons.Filled.Devices, Icons.Outlined.Devices),
+        TopLevelTab("tab_vpn",     R.string.tab_virtual_lan,   Icons.Filled.Wifi,    Icons.Outlined.Wifi),
+        TopLevelTab("tab_settings",R.string.title_settings,     Icons.Filled.Settings,Icons.Outlined.Settings),
+    )
+}
 
-private val TOP_LEVEL_ROUTES = TOP_TABS.map { it.route }
+private val TOP_LEVEL_ROUTES = listOf(
+    MoonLinkRoute.DeviceList.route,
+    "tab_vpn",
+    "tab_settings",
+)
 
 // ── Title helper ──────────────────────────────────────────────────
 
-private fun computeTitle(route: String?, deviceManager: DeviceStateManager, uuid: String?): String = when (route) {
-    MoonLinkRoute.DeviceList.route       -> "我的设备"
-    "tab_vpn"                            -> "虚拟局域网"
-    "tab_settings"                       -> "设置"
-    MoonLinkRoute.DeviceOverview.route   -> deviceManager.getDevice(uuid ?: "")?.name ?: "设备概要"
-    MoonLinkRoute.DeviceDetail.route     -> "设备详情"
-    MoonLinkRoute.DeviceStreamSettings.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "串流设置"
-    MoonLinkRoute.DeviceStreamSettingsTouch.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "触控模式"
-    MoonLinkRoute.DeviceStreamSettingsDisplay.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "显示设置"
-    MoonLinkRoute.DeviceStreamSettingsSwitches.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "画面开关"
-    MoonLinkRoute.DeviceStreamSettingsHost.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "主机设置"
-    MoonLinkRoute.DeviceStreamSettingsAudio.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "声音设置"
-    MoonLinkRoute.DeviceStreamSettingsGyro.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "体感"
-    MoonLinkRoute.DeviceStreamSettingsOther.route -> (deviceManager.getDevice(uuid ?: "")?.name ?: "") + "其它设置"
-    MoonLinkRoute.SettingsUi.route       -> "界面设置"
-    MoonLinkRoute.SettingsGamepad.route  -> "手柄设置"
-    MoonLinkRoute.SettingsInput.route    -> "输入设置"
-    MoonLinkRoute.SettingsKeyMapping.route -> "按键映射管理"
-    MoonLinkRoute.SettingsHelp.route       -> "帮助"
-    MoonLinkRoute.SettingsWidget.route     -> "桌面小部件"
-    MoonLinkRoute.SettingsPerformance.route -> "性能与统计分析"
-    MoonLinkRoute.SettingsConnection.route  -> "连接设置"
-    else                                 -> ""
+@Composable
+private fun computeTitle(context: android.content.Context, route: String?, deviceManager: DeviceStateManager, uuid: String?): String {
+    val deviceName = deviceManager.getDevice(uuid ?: "")?.name ?: ""
+    return when (route) {
+        MoonLinkRoute.DeviceList.route       -> context.getString(R.string.tab_my_devices)
+        "tab_vpn"                            -> context.getString(R.string.tab_virtual_lan)
+        "tab_settings"                       -> context.getString(R.string.title_settings)
+        MoonLinkRoute.DeviceOverview.route   -> deviceName.ifEmpty { context.getString(R.string.title_device_overview) }
+        MoonLinkRoute.DeviceDetail.route     -> context.getString(R.string.title_device_detail)
+        MoonLinkRoute.DeviceStreamSettings.route -> deviceName + context.getString(R.string.title_stream_settings)
+        MoonLinkRoute.DeviceStreamSettingsTouch.route -> deviceName + context.getString(R.string.title_touch_mode)
+        MoonLinkRoute.DeviceStreamSettingsDisplay.route -> deviceName + context.getString(R.string.title_display_settings)
+        MoonLinkRoute.DeviceStreamSettingsSwitches.route -> deviceName + context.getString(R.string.title_display_switches)
+        MoonLinkRoute.DeviceStreamSettingsHost.route -> deviceName + context.getString(R.string.category_host_settings)
+        MoonLinkRoute.DeviceStreamSettingsAudio.route -> deviceName + context.getString(R.string.title_sound_settings)
+        MoonLinkRoute.DeviceStreamSettingsGyro.route -> deviceName + context.getString(R.string.title_gyro)
+        MoonLinkRoute.DeviceStreamSettingsOther.route -> deviceName + context.getString(R.string.title_other_settings)
+        MoonLinkRoute.SettingsUi.route       -> context.getString(R.string.category_ui_settings)
+        MoonLinkRoute.SettingsGamepad.route  -> context.getString(R.string.category_gamepad_settings)
+        MoonLinkRoute.SettingsInput.route    -> context.getString(R.string.category_input_settings)
+        MoonLinkRoute.SettingsKeyMapping.route -> context.getString(R.string.category_crown_features)
+        MoonLinkRoute.SettingsHelp.route       -> context.getString(R.string.help)
+        MoonLinkRoute.SettingsWidget.route     -> context.getString(R.string.category_desktop_widget)
+        MoonLinkRoute.SettingsPerformance.route -> context.getString(R.string.category_performance_analytics)
+        MoonLinkRoute.SettingsConnection.route  -> context.getString(R.string.category_connection_settings)
+        else                                 -> ""
+    }
 }
 
 // ── Shared navigation bar tab click ───────────────────────────────
@@ -103,6 +130,79 @@ private fun navigateToTab(navController: androidx.navigation.NavController, curr
             launchSingleTop = true
             restoreState = true
         }
+    }
+}
+
+// ── Background image overlay ───────────────────────────────────────────
+
+@Composable
+internal fun BackgroundOverlay(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    var backgroundBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    var refreshTrigger by remember { mutableIntStateOf(0) }
+
+    // Listen for background preference changes to trigger a reload
+    DisposableEffect(Unit) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            when (key) {
+                BackgroundSource.KEY_SOURCE,
+                BackgroundSource.KEY_LOCAL_PATH,
+                BackgroundSource.KEY_API_URL -> refreshTrigger++
+            }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+    }
+
+    // Load background image from the current source
+    val configuration = LocalConfiguration.current
+    LaunchedEffect(refreshTrigger, configuration.orientation) {
+        withContext(Dispatchers.IO) {
+            try {
+                val source = BackgroundSource.current(context)
+                val orientation = configuration.orientation
+                val target = source.resolveTarget(context, orientation)
+
+                if (target == null) {
+                    withContext(Dispatchers.Main) { backgroundBitmap = null }
+                    return@withContext
+                }
+
+                val glideTarget: Any = if (target.startsWith("http")) {
+                    target
+                } else {
+                    val f = File(target)
+                    if (f.exists()) f else target
+                }
+
+                val bitmap = Glide.with(context)
+                    .asBitmap()
+                    .load(glideTarget)
+                    .skipMemoryCache(true)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .apply(RequestOptions.bitmapTransform(BlurTransformation(2, 3)))
+                    .transform(ColorFilterTransformation(AndroidColor.argb(120, 0, 0, 0)))
+                    .submit()
+                    .get()
+
+                withContext(Dispatchers.Main) {
+                    backgroundBitmap = bitmap.asImageBitmap()
+                }
+            } catch (_: Exception) {
+                // Background is a nice-to-have; never crash on failure
+                withContext(Dispatchers.Main) { backgroundBitmap = null }
+            }
+        }
+    }
+
+    backgroundBitmap?.let { bmp ->
+        Image(
+            bitmap = bmp,
+            contentDescription = null,
+            modifier = modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
     }
 }
 
@@ -133,7 +233,8 @@ fun MoonLinkApp(
     val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
     // Top bar configuration derived from current route
-    val topBarTitle = computeTitle(currentRoute, deviceManager, currentUuid)
+    val context = LocalContext.current
+    val topBarTitle = computeTitle(context, currentRoute, deviceManager, currentUuid)
     val showBack = currentRoute != null && currentRoute !in TOP_LEVEL_ROUTES
 
     // External refresh trigger for VPN screen
@@ -408,9 +509,10 @@ fun MoonLinkApp(
     // ── NavigationRail (landscape left sidebar) ──────────────────
     @Composable
     fun LandscapeNavigationRail() {
+        val topTabs = rememberTopTabs(context)
         NavigationRail(
             modifier = Modifier.fillMaxHeight().width(80.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
             windowInsets = WindowInsets(0.dp),
         ) {
             Column(
@@ -418,17 +520,17 @@ fun MoonLinkApp(
                 verticalArrangement = Arrangement.SpaceEvenly,
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                TOP_TABS.forEach { tab ->
+                topTabs.forEach { tab ->
                     val selected = currentRoute == tab.route
                     NavigationRailItem(
                         icon = {
                             Icon(
                                 imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                contentDescription = tab.title,
+                                contentDescription = context.getString(tab.titleResId),
                                 modifier = Modifier.size(22.dp),
                             )
                         },
-                        label = { Text(tab.title, style = MaterialTheme.typography.labelSmall) },
+                        label = { Text(context.getString(tab.titleResId), style = MaterialTheme.typography.labelSmall) },
                         selected = selected,
                         onClick = { navigateToTab(navController, currentRoute, tab.route) },
                         modifier = Modifier.fillMaxWidth(),
@@ -460,7 +562,7 @@ fun MoonLinkApp(
                     navigationIcon = {
                         if (showBack) {
                             IconButton(onClick = { navController.popBackStack() }) {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "返回")
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = context.getString(R.string.cd_navigate_back))
                             }
                         }
                     },
@@ -468,21 +570,22 @@ fun MoonLinkApp(
                         when (currentRoute) {
                             "tab_vpn" -> {
                                 IconButton(onClick = { vpnRefreshTrigger.intValue++ }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = "刷新状态")
+                                    Icon(Icons.Default.Refresh, contentDescription = context.getString(R.string.cd_refresh_status))
                                 }
                             }
                             MoonLinkRoute.DeviceDetail.route -> {
                                 IconButton(onClick = { detailCopyTrigger.intValue++ }) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "复制详情")
+                                    Icon(Icons.Default.ContentCopy, contentDescription = context.getString(R.string.copy_details))
                                 }
                                 IconButton(onClick = { detailEditTrigger.intValue++ }) {
-                                    Icon(Icons.Default.Edit, contentDescription = "编辑远程地址")
+                                    Icon(Icons.Default.Edit, contentDescription = context.getString(R.string.cd_edit_remote))
                                 }
                             }
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
+                        containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                        scrolledContainerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
                         titleContentColor = MaterialTheme.colorScheme.onBackground,
                     ),
                 )
@@ -491,23 +594,24 @@ fun MoonLinkApp(
         // ── Bottom tab bar (portrait only) ──────────────────────
         bottomBar = {
             if (!isLandscape && showBottomBar) {
+                val topTabs = rememberTopTabs(context)
                 NavigationBar(
                     tonalElevation = 3.dp,
-                    containerColor = MaterialTheme.colorScheme.surface,
+                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
                 ) {
-                    TOP_TABS.forEach { tab ->
+                    topTabs.forEach { tab ->
                         val selected = currentRoute == tab.route
                         NavigationBarItem(
                             icon = {
                                 Icon(
                                     imageVector = if (selected) tab.selectedIcon else tab.unselectedIcon,
-                                    contentDescription = tab.title,
+                                    contentDescription = context.getString(tab.titleResId),
                                     modifier = Modifier.size(18.dp),
                                 )
                             },
                             label = {
                                 Text(
-                                    tab.title,
+                                    context.getString(tab.titleResId),
                                     style = MaterialTheme.typography.labelSmall,
                                 )
                             },
@@ -537,15 +641,21 @@ fun MoonLinkApp(
                     .padding(top = innerPadding.calculateTopPadding()),
             ) {
                 LandscapeNavigationRail()
-                // Right: content area
+                // Right: content area — background fills full height, content padded below
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    NavHostContent()
+                    BackgroundOverlay()
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NavHostContent()
+                    }
                 }
             }
         } else {
-            // ── 竖屏 / 横屏非主页：全方向避让 ─────────────────
-            Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-                NavHostContent()
+            // ── 竖屏 / 横屏非主页：背景铺满，内容避开 bars ─────
+            Box(modifier = Modifier.fillMaxSize()) {
+                BackgroundOverlay()
+                Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
+                    NavHostContent()
+                }
             }
         }
     }

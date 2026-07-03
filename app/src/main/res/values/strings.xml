@@ -1256,5 +1256,376 @@
     <string name="seekbar_decrease">Decrease</string>
     <string name="seekbar_increase">Increase</string>
 
-</resources>
 
+
+    <!-- ── Compose UI internationalization strings ── -->
+
+    <!-- Main tab labels -->
+    <string name="tab_my_devices">My Devices</string>
+    <string name="tab_virtual_lan">Virtual LAN</string>
+
+    <!-- Title helpers for routes -->
+    <string name="title_device_overview">Device Overview</string>
+    <string name="title_device_detail">Device Details</string>
+    <string name="title_stream_settings">Stream Settings</string>
+    <string name="title_touch_mode">Touch Mode</string>
+    <string name="title_display_settings">Display Settings</string>
+    <string name="title_display_switches">Display Switches</string>
+    <string name="title_sound_settings">Sound Settings</string>
+    <string name="title_gyro">Gyro</string>
+    <string name="title_other_settings">Other Settings</string>
+    <string name="title_desktop_widget">Desktop Widget</string>
+    <string name="title_performance_analytics">Performance &amp; Analytics</string>
+
+    <!-- Language and theme -->
+    <string name="title_language">Language</string>
+    <string name="title_theme_mode">Theme Mode</string>
+    <string name="language_follow_system">Follow System</string>
+    <string name="language_simplified_chinese">Simplified Chinese</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
+
+    <!-- Navigation / Content descriptions -->
+    <string name="cd_navigate_back">Navigate back</string>
+    <string name="cd_refresh_status">Refresh status</string>
+    <string name="cd_edit_remote">Edit remote address</string>
+    <string name="cd_add_device">Add device</string>
+    <string name="cd_windows">Windows</string>
+    <string name="cd_more">More</string>
+    <string name="cd_running">Running</string>
+
+    <!-- Background image settings -->
+    <string name="summary_background_api_placeholder">Tap to set API address</string>
+    <string name="label_api_address">Image API Address</string>
+    <string name="summary_restore_background">Remove background image, restore to default theme</string>
+    <string name="dialog_restore_background_title">Restore Default Background</string>
+    <string name="dialog_restore_background_message">Are you sure you want to remove the background image and restore the default theme background?</string>
+    <string name="toast_background_success">Background image set successfully</string>
+    <string name="toast_image_save_failed">Image save failed: %s</string>
+    <string name="toast_image_select_cancelled">Image selection cancelled</string>
+    <string name="toast_restored_default_background">Restored to default theme background</string>
+
+    <!-- Generic buttons -->
+    <string name="btn_save">Save</string>
+
+    <!-- Device list -->
+    <string name="section_paired_devices">Paired Devices</string>
+    <string name="section_unpaired_devices">Unpaired Devices</string>
+    <string name="device_unknown">Unknown Device</string>
+    <string name="no_devices_found">No devices found</string>
+    <string name="btn_manual_add">Manual Add</string>
+    <string name="menu_resume_stream">Resume Stream</string>
+    <string name="menu_quit_app">Quit App</string>
+
+    <!-- Device list toasts -->
+    <string name="toast_device_deleted">Device deleted: %s</string>
+    <string name="toast_wol_sent">Wake-On-LAN packet sent</string>
+    <string name="toast_wol_failed">Wake-On-LAN failed: %s</string>
+    <string name="toast_pair_success">Pairing successful</string>
+    <string name="toast_pair_already_paired">Device already paired</string>
+    <string name="toast_pair_error">Pairing error: %s</string>
+
+    <!-- Desktop streaming settings categories (for title helpers) -->
+    <string name="category_touch_mode">Touch Mode</string>
+    <string name="category_display_settings">Display Settings</string>
+    <string name="category_display_switches">Display Switches</string>
+    <string name="category_sound_settings">Sound Settings</string>
+    <string name="category_gyro">Gyro</string>
+    <string name="category_other_settings">Other Settings</string>
+    <string name="category_key_mapping_management">Key Mapping</string>
+    <string name="category_desktop_widget">Desktop Widget</string>
+    <string name="category_performance_analytics">Performance &amp; Analytics</string>
+
+
+
+    <!-- Device Stream Settings (Compose UI) -->
+    <string name="section_touch_mode_select">Touch Mode Selection</string>
+    <string name="option_enhanced_multi_touch">Enhanced Multi-Touch</string>
+    <string name="option_trackpad_mode">Trackpad Mode</string>
+    <string name="option_mouse_mode">Mouse Mode</string>
+    <string name="section_trackpad_settings">Trackpad Settings</string>
+    <string name="section_mouse_settings">Mouse Settings</string>
+    <string name="label_local_mouse_pointer">Local Mouse Pointer</string>
+    <string name="section_enhanced_touch_settings">Enhanced Touch Settings</string>
+    <string name="label_enhanced_touch_on_right">Enhanced Touch Zone on Right</string>
+    <string name="label_sensitivity">Sensitivity</string>
+    <string name="label_zone_divider">Zone Divider</string>
+    <string name="label_pointer_speed">Pointer Speed</string>
+    <string name="label_long_press_jitter">Long Press Jitter Removal</string>
+    <string name="label_key_mapping_enabled">Enable Key Mapping</string>
+    <string name="label_current_scheme">Current Scheme</string>
+    <string name="label_loading">Loading…</string>
+    <string name="label_builtin_virtual_gamepad">Built-in Virtual Gamepad Scheme</string>
+    <string name="label_unknown">Unknown</string>
+    <string name="label_switch_scheme">Switch Scheme</string>
+    <string name="title_select_key_mapping_scheme">Select Key Mapping Scheme</string>
+    <string name="btn_close">Close</string>
+    <string name="section_general_touch_settings">General Touch Settings</string>
+    <string name="label_keyboard_toggle_fingers">Keyboard Toggle Fingers</string>
+    <string name="label_fingers_count">%d (0=disabled)</string>
+    <string name="section_video">Video</string>
+    <string name="label_bitrate_settings">Bitrate Settings</string>
+    <string name="label_bitrate">Bitrate</string>
+    <string name="option_auto">Auto</string>
+    <string name="option_custom">Custom</string>
+    <string name="label_abr_mode">Adaptive Bitrate Mode</string>
+    <string name="label_video_codec">Video Codec</string>
+    <string name="label_video_framerate">Video Framerate</string>
+    <string name="label_unlock_framerate">Unlock Framerate</string>
+    <string name="label_frame_pacing">Frame Pacing</string>
+    <string name="label_resolution">Resolution</string>
+    <string name="btn_add_custom_resolution">+Custom Resolution</string>
+    <string name="title_custom_resolution">Custom Resolution</string>
+    <string name="hint_width_range">Width (320-7680)</string>
+    <string name="hint_height_range">Height (240-4320)</string>
+    <string name="error_width_out_of_range">Width out of range (320-7680)</string>
+    <string name="error_height_out_of_range">Height out of range (240-4320)</string>
+    <string name="error_width_must_be_even">Width must be even</string>
+    <string name="error_height_must_be_even">Height must be even</string>
+    <string name="btn_add">Add</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="label_output_buffer">Output Buffer</string>
+    <string name="label_output_buffer_frames">%d frames</string>
+    <string name="section_virtual_display">Virtual Display</string>
+    <string name="desc_virtual_display">Virtual display replaces physical display during secondary screen streaming</string>
+    <string name="label_virtual_display_resolution">Virtual Display Resolution</string>
+    <string name="label_virtual_display_framerate">Virtual Display Framerate</string>
+    <string name="label_device_native">Device Native</string>
+    <string name="label_hdr_high_brightness">HDR High Brightness</string>
+    <string name="label_hdr_mode">HDR Mode</string>
+    <string name="label_stretch_video">Stretch Video to Full Screen</string>
+    <string name="label_reverse_resolution">Reverse Resolution</string>
+    <string name="label_rotable_screen">Rotatable Screen</string>
+    <string name="label_reduce_refresh_rate">Reduce Refresh Rate</string>
+    <string name="label_full_range">Full Color Range</string>
+    <string name="label_mtk_option">MTK Exclusive Option</string>
+    <string name="label_use_external_display">Use External Display</string>
+    <string name="label_control_only">Control Only Mode</string>
+    <string name="label_pip">Picture-in-Picture (PiP)</string>
+    <string name="label_lock_screen_after_disconnect">Lock Screen After Disconnect</string>
+    <string name="label_optimize_host_settings">Auto-Optimize Host Settings (SOPS)</string>
+    <string name="label_play_audio_on_pc">Play Audio on PC</string>
+    <string name="label_sync_clipboard_text">Sync Clipboard Text</string>
+    <string name="label_sync_clipboard_image">Sync Clipboard Image</string>
+    <string name="section_output_settings">Output Settings</string>
+    <string name="label_surround_sound">Surround Sound</string>
+    <string name="label_play_stream_audio">Play Stream Audio</string>
+    <string name="label_equalizer">Equalizer</string>
+    <string name="label_spatial_audio">Spatial Audio</string>
+    <string name="section_audio_passthrough">Audio Passthrough</string>
+    <string name="label_enable_audio_passthrough">Enable Audio Passthrough</string>
+    <string name="label_passthrough_codec">Passthrough Codec</string>
+    <string name="label_passthrough_buffer">Passthrough Buffer</string>
+    <string name="section_audio_vibration">Audio-Driven Vibration</string>
+    <string name="label_enable_audio_vibration">Enable Audio Vibration</string>
+    <string name="label_vibration_strength">Vibration Strength</string>
+    <string name="label_vibration_routing">Vibration Routing</string>
+    <string name="option_speaker_only">Speaker Only</string>
+    <string name="option_headset_only">Headset Only</string>
+    <string name="label_scene_mode">Scene Mode</string>
+    <string name="option_general">General</string>
+    <string name="option_game">Game</string>
+    <string name="option_movie">Movie</string>
+    <string name="option_music">Music</string>
+    <string name="section_microphone">Microphone</string>
+    <string name="label_mic_redirect">Microphone Redirect</string>
+    <string name="label_transmission_quality">Transmission Quality</string>
+    <string name="label_transmission_quality_kbps">%d kbps</string>
+    <string name="label_icon_color">Icon Color</string>
+    <string name="option_solid_white">Solid White</string>
+    <string name="option_accent">Accent</string>
+    <string name="label_gyro_switch">Gyro Switch</string>
+    <string name="label_activation_key">Activation Key</string>
+    <string name="option_always">Always</string>
+    <string name="label_mode">Mode</string>
+    <string name="option_right_stick">Right Stick</string>
+    <string name="option_mouse">Mouse</string>
+    <string name="label_sensitivity_format">Sensitivity: %.1fx</string>
+    <string name="section_axis_invert">Axis Invert</string>
+    <string name="label_x_axis_invert">X Axis Invert</string>
+    <string name="label_y_axis_invert">Y Axis Invert</string>
+    <string name="section_panel_auto_hide">Panel Auto-Hide</string>
+    <string name="option_hide_on_key_mapping">Hide on Key Mapping</string>
+    <string name="option_auto_hide_2s">Auto-Hide After 2s</string>
+    <string name="option_never_hide">Never Auto-Hide</string>
+    <string name="section_performance_display">Performance &amp; Display</string>
+    <string name="label_enable_perf_overlay">Enable Performance Overlay</string>
+    <string name="label_bg_opacity">Background Opacity</string>
+    <string name="label_bg_opacity_percent">%d%%</string>
+    <string name="label_lock_perf_overlay">Lock Performance Overlay</string>
+    <string name="desc_perf_overlay_settings">For detailed performance overlay settings go to Home → Settings → Performance &amp; Analytics</string>
+    <string name="label_show_latency_after_stream">Show Latency Info After Streaming</string>
+    <string name="label_disable_warnings">Disable Warning Prompts</string>
+    <string name="label_pause_stream_support">Pause Stream Support</string>
+    <string name="section_floating_elements">Floating Elements</string>
+    <string name="label_fab_opacity">FAB Opacity</string>
+
+    <!-- Key Mapping Management Screen -->
+    <string name="title_export_key_mapping">Export Key Mapping Scheme</string>
+    <string name="summary_export_key_mapping">Export key mapping scheme as .mlk file</string>
+    <string name="title_import_key_mapping">Import Key Mapping Scheme</string>
+    <string name="summary_import_key_mapping">Import key mapping scheme from .mlk file</string>
+    <string name="title_import_from_legacy_crown">Import from Legacy Crown Config</string>
+    <string name="summary_import_from_legacy_crown">Import key mapping scheme from legacy Crown .mdat file</string>
+    <string name="toast_scheme_exported">Key mapping scheme exported (.mlk)</string>
+    <string name="toast_export_failed">Export failed: %s</string>
+    <string name="toast_file_empty">File content is empty</string>
+    <string name="toast_invalid_mlk">This is not a valid .mlk file. Please select a .mlk key mapping scheme file.</string>
+    <string name="toast_file_read_failed">Failed to read file: %s</string>
+    <string name="toast_invalid_legacy_config">This is not a valid legacy Crown config file</string>
+    <string name="title_export_mlk_dialog">Export Key Mapping Scheme (.mlk)</string>
+    <string name="btn_export">Export</string>
+    <string name="title_import_mlk_dialog">Import Key Mapping Scheme</string>
+    <string name="title_import_legacy_crown_dialog">Import Legacy Crown Config</string>
+    <string name="hint_scheme_name">Scheme Name (1-10 chars)</string>
+    <string name="label_overwrite_existing">Overwrite Existing Scheme</string>
+    <string name="option_import_as_new">Import as new scheme (don\'t overwrite)</string>
+    <string name="btn_import">Import</string>
+    <string name="toast_scheme_imported">Scheme "%s" imported</string>
+    <string name="toast_import_failed">Import failed: %s</string>
+    <string name="toast_scheme_imported_from_legacy">Scheme "%s" imported from legacy config</string>
+    <string name="desc_legacy_crown_detected">Legacy Crown config file detected. The key mapping scheme will be imported.</string>
+    <string name="error_file_format">File format error</string>
+    <string name="error_file_checksum">File checksum failed (corrupted)</string>
+    <string name="error_version_incompatible">Version incompatible</string>
+    <string name="error_import_failed_code">Import failed (error: %d)</string>
+    <string name="label_import_scheme">Import Scheme</string>
+
+    <!-- Device Overview Screen -->
+    <string name="title_device_not_found">Device Not Found</string>
+    <string name="btn_back">Back</string>
+    <string name="title_quick_launch">Quick Launch</string>
+    <string name="desc_no_apps_available">No apps available. Make sure the device is online and paired.</string>
+    <string name="label_quick_actions">Quick Actions</string>
+    <string name="label_device_details">Device Details</string>
+    <string name="label_stream_settings">Stream Settings</string>
+    <string name="action_shutdown">Shutdown</string>
+    <string name="toast_shutdown_sent">Shutdown command sent</string>
+    <string name="toast_shutdown_failed">Shutdown failed</string>
+    <string name="toast_shutdown_error">Shutdown error: %s</string>
+    <string name="action_sleep">Sleep</string>
+    <string name="action_secondary_screen">Secondary Screen Stream (Foundation)</string>
+    <string name="action_open_web_ui">Open Web Management (Sunshine)</string>
+    <string name="action_send_wol">Send Wake-On-LAN Request</string>
+    <string name="action_delete_pc">Delete PC</string>
+    <string name="action_quit_app">Quit App</string>
+    <string name="action_iperf3_test">Network Bandwidth Test (iPerf3)</string>
+    <string name="toast_device_address_unavailable">Device address unavailable. Make sure the device is online.</string>
+    <string name="toast_cannot_get_address">Unable to get device address</string>
+    <string name="action_disable_ipv6">Disable IPv6</string>
+    <string name="action_test_network">Test Network Connection</string>
+    <string name="action_gamestream_eol">NVIDIA GameStream End-of-Service</string>
+    <string name="badge_online">Online</string>
+    <string name="badge_offline">Offline</string>
+    <string name="label_enter_desktop">Enter Desktop &gt;</string>
+    <string name="label_virtual_display">Virtual Display</string>
+    <string name="label_display">Display</string>
+    <string name="status_detecting">Detecting…</string>
+    <string name="toast_from_pip_resume">Resuming from PiP…</string>
+    <string name="toast_stopped_other_pip">Stopped PiP stream from another device…</string>
+    <string name="toast_device_offline_waking">Device offline, attempting to wake…</string>
+    <string name="toast_no_launchable_app">No launchable app. Please open the app list first.</string>
+
+    <!-- Device Detail Screen -->
+    <string name="label_device_name">Device Name</string>
+    <string name="label_uuid">UUID</string>
+    <string name="label_status">Status</string>
+    <string name="label_pair_state">Pair State</string>
+    <string name="label_running_app_id">Running App ID</string>
+    <string name="label_paired">Paired</string>
+    <string name="label_not_paired">Not Paired</string>
+    <string name="section_network_info">Network Info</string>
+    <string name="label_active_address">Active Address</string>
+    <string name="label_local_address">Local Address</string>
+    <string name="label_remote_address">Remote Address</string>
+    <string name="label_manual_address">Manual Address</string>
+    <string name="label_ipv6_address">IPv6 Address</string>
+    <string name="label_https_port">HTTPS Port</string>
+    <string name="label_mac_address">MAC Address</string>
+    <string name="label_ipv6_status">IPv6</string>
+    <string name="label_disabled">Disabled</string>
+    <string name="label_enabled">Enabled</string>
+    <string name="section_sunshine_info">Sunshine Info</string>
+    <string name="label_sunshine_version">Sunshine Version</string>
+    <string name="label_nvidia_server">NVIDIA Server</string>
+    <string name="label_yes">Yes</string>
+    <string name="label_no">No</string>
+    <string name="label_multi_address">Multi-Address Support</string>
+    <string name="label_desktop_quick_start">Desktop Quick Start Support</string>
+    <string name="title_edit_remote_address">Edit Remote Address</string>
+    <string name="hint_host_port">host:port</string>
+    <string name="placeholder_ip">192.168.1.100:47989</string>
+    <string name="btn_confirm">Confirm</string>
+    <string name="toast_remote_address_updated">Remote address updated</string>
+    <string name="toast_details_copied">Details copied to clipboard</string>
+
+    <!-- VPN Screen -->
+    <string name="tab_network_status">Network Status</string>
+    <string name="tab_edit_config">Edit Configuration</string>
+    <string name="label_service_not_running">Service not running or connecting…\nTap refresh to check status.</string>
+    <string name="label_local_info">Local Info</string>
+    <string name="label_hostname">Hostname</string>
+    <string name="label_virtual_ip">Virtual IP</string>
+    <string name="label_public_ip">Public IP</string>
+    <string name="label_nat_type">NAT Type</string>
+    <string name="label_peers">Peers</string>
+    <string name="label_relay">(Relay)</string>
+    <string name="label_subnet_mismatch">(Subnet Mismatch!)</string>
+    <string name="label_physical_addr">Physical Address</string>
+    <string name="label_next_hop">Next Hop</string>
+    <string name="label_latency">Latency</string>
+    <string name="label_traffic">Traffic (Rx/Tx)</string>
+    <string name="btn_start_service">Start Service</string>
+    <string name="btn_stop_service">Stop Service</string>
+    <string name="btn_save_config">Save Config</string>
+    <string name="toast_config_saved">Configuration saved</string>
+    <string name="label_network_name">Network Name</string>
+    <string name="label_network_secret">Network Secret</string>
+    <string name="label_local_ipv4">Local Virtual IPv4 Address</string>
+    <string name="label_listeners">Listeners</string>
+    <string name="label_peers_config">Peers</string>
+    <string name="hint_network_name">e.g. easytier</string>
+    <string name="hint_local_ipv4">e.g. 10.0.0.6</string>
+    <string name="hint_listeners">One per line, e.g. udp://0.0.0.0:11010</string>
+    <string name="hint_peers">One per line, e.g. tcp://1.2.3.4:11010</string>
+    <string name="label_advanced_flags">Advanced Feature Flags</string>
+    <string name="section_core_network">Core Network Behavior</string>
+    <string name="section_proxy_protocol">Proxy &amp; Protocol</string>
+    <string name="section_security">Security &amp; Connection</string>
+    <string name="flag_use_smoltcp">Use Smoltcp</string>
+    <string name="flag_latency_first">Latency First</string>
+    <string name="flag_disable_p2p">Disable P2P (Force Relay)</string>
+    <string name="flag_private_mode">Private Mode</string>
+    <string name="flag_disable_ipv6">Disable IPv6</string>
+    <string name="flag_enable_kcp_proxy">Enable KCP Proxy</string>
+    <string name="flag_disable_kcp_input">Disable KCP Input</string>
+    <string name="flag_enable_quic_proxy">Enable QUIC Proxy</string>
+    <string name="flag_disable_quic_input">Disable QUIC Input</string>
+    <string name="flag_proxy_forward_system">Use System Proxy Forwarding</string>
+    <string name="flag_disable_encryption">Disable Encryption</string>
+    <string name="flag_disable_udp_hole">Disable UDP Hole Punching</string>
+    <string name="flag_disable_sym_hole">Disable Symmetric NAT Hole Punching</string>
+
+
+
+    <!-- Device Overview Screen (Compose UI) -->
+    <string name="toast_device_not_found_overview">Device not found</string>
+    <string name="label_quick_launch">Quick Launch</string>
+    <string name="label_no_apps_available">No apps available. Please make sure the device is online and paired.</string>
+    <string name="label_running">Running</string>
+    <string name="title_quick_actions">Quick Actions</string>
+    <string name="toast_shutdown_exception">Shutdown error</string>
+    <string name="action_secondary_stream">Stream as Secondary Display (for Base Station)</string>
+    <string name="action_open_web_admin">Open Web Admin (Sunshine)</string>
+    <string name="action_delete_computer">Delete Computer</string>
+    <string name="action_network_bandwidth_test">Network Bandwidth Test (iPerf3)</string>
+    <string name="toast_address_unavailable">Device address unavailable. Please confirm the device is online.</string>
+    <string name="toast_pip_recover">Recovering from picture-in-picture…</string>
+    <string name="toast_pip_stopped">Stopped picture-in-picture stream from another device…</string>
+    <string name="toast_no_app_to_launch">No apps to launch. Please open the app list first.</string>
+
+
+    <!-- Status and display labels -->
+    <string name="label_online">Online</string>
+    <string name="label_offline">Offline</string>
+</resources>

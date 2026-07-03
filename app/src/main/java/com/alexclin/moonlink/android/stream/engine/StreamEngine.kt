@@ -1904,6 +1904,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     override fun displayTransientMessage(message: String) {
+        if (prefConfig.disableWarnings) return
         handler.post { ToastUtil.show(activity, message, Toast.LENGTH_SHORT) }
     }
 
@@ -1928,9 +1929,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 不要覆写 prefConfig.width/height —— 那是用户的偏好设置，
         // 在 prepareConnection()/createConnection() 中需要保持原始值发送给 Sunshine。
         decoderRenderer?.onResolutionChanged(width, height)
+        // 更新实际串流分辨率，触发 Compose 重组 → SurfaceView 重新计算宽高比
+        actualStreamWidth = width
+        actualStreamHeight = height
         handler.post {
             val orientation = if (width > height) "横屏" else "竖屏"
             LimeLog.info("StreamEngine: 方向 $orientation")
+            ToastUtil.show(activity, "主机分辨率已变更为 ${width}x${height}", Toast.LENGTH_SHORT)
         }
     }
 

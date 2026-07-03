@@ -33,6 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.limelight.binding.input.advance_setting.config.PageConfigController
 import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
@@ -45,17 +46,16 @@ import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import com.alexclin.moonlink.android.R
 
 @Composable
 fun KeyMappingScreen() {
     val context = LocalContext.current
 
-    // ── 加载方案列表 ──
     var schemes by remember { mutableStateOf<List<SchemeInfo>>(emptyList()) }
-
     LaunchedEffect(Unit) { schemes = loadUserSchemes(context) }
 
-    // ── .mlk 导出 ──
+    // ── .mlk export ──
     var showExportMlkDialog by remember { mutableStateOf(false) }
     var exportMlkTarget by remember { mutableLongStateOf(0L) }
 
@@ -70,13 +70,13 @@ fun KeyMappingScreen() {
             context.contentResolver.openOutputStream(uri)?.use {
                 it.write(json.toByteArray(Charsets.UTF_8))
             }
-            ToastUtil.show(context, "按键方案已导出 (.mlk)", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_scheme_exported), Toast.LENGTH_SHORT)
         } catch (e: Exception) {
-            ToastUtil.show(context, "导出失败: ${e.message}", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_export_failed, e.message ?: ""), Toast.LENGTH_SHORT)
         }
     }
 
-    // ── .mlk 导入 ──
+    // ── .mlk import ──
     var showImportMlkDialog by remember { mutableStateOf(false) }
     var importMlkJson by remember { mutableStateOf("") }
     val mlkOpenLauncher = rememberLauncherForActivityResult(
@@ -86,23 +86,22 @@ fun KeyMappingScreen() {
         try {
             val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
             if (json.isBlank()) {
-                ToastUtil.show(context, "文件内容为空", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.toast_file_empty), Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
-            // 验证是否为有效的 .mlk 文件（含 format: "mlk" 标记）
             val root = JSONObject(json)
             if (root.optString("format") != "mlk") {
-                ToastUtil.show(context, "这不是有效的 .mlk 文件，请选择后缀为 .mlk 的按键映射方案文件", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.toast_invalid_mlk), Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             importMlkJson = json
             showImportMlkDialog = true
         } catch (e: Exception) {
-            ToastUtil.show(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_file_read_failed, e.message ?: ""), Toast.LENGTH_SHORT)
         }
     }
 
-    // ── .mdat 旧王冠配置导入 ──
+    // ── .mdat legacy Crown import ──
     var showImportMdatDialog by remember { mutableStateOf(false) }
     var importMdatJson by remember { mutableStateOf("") }
     val mdatOpenLauncher = rememberLauncherForActivityResult(
@@ -112,70 +111,54 @@ fun KeyMappingScreen() {
         try {
             val json = context.contentResolver.openInputStream(uri)?.bufferedReader()?.readText() ?: ""
             if (json.isBlank()) {
-                ToastUtil.show(context, "文件内容为空", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.toast_file_empty), Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
-            // 验证是否为有效的旧版配置文件（ExportFile 格式）
             val root = JSONObject(json)
             if (!root.has("version") || !root.has("settings") || !root.has("elements")) {
-                ToastUtil.show(context, "这不是有效的旧王冠配置文件", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.toast_invalid_legacy_config), Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
             importMdatJson = json
             showImportMdatDialog = true
         } catch (e: Exception) {
-            ToastUtil.show(context, "读取文件失败: ${e.message}", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_file_read_failed, e.message ?: ""), Toast.LENGTH_SHORT)
         }
     }
 
-    // ════════════════════════════════════════════
-    // 页面主体
-    // ════════════════════════════════════════════
     Column(modifier = Modifier.fillMaxSize()) {
         LazyColumn(modifier = Modifier.fillMaxSize()) {
             item { HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) }
 
-            // ── 导出按键映射方案 (.mlk) ──
             item {
                 ClickablePreference(
-                    title = "导出按键映射方案",
-                    summary = "将按键映射方案导出为 .mlk 文件",
+                    title = stringResource(R.string.title_export_key_mapping),
+                    summary = stringResource(R.string.summary_export_key_mapping),
                     onClick = { if (schemes.isNotEmpty()) showExportMlkDialog = true },
                 )
             }
-
-            // ── 导入按键映射方案 (.mlk) ──
             item {
                 ClickablePreference(
-                    title = "导入按键映射方案",
-                    summary = "从 .mlk 文件导入按键映射方案",
-                    onClick = {
-                        mlkOpenLauncher.launch(arrayOf("*/*"))
-                    },
+                    title = stringResource(R.string.title_import_key_mapping),
+                    summary = stringResource(R.string.summary_import_key_mapping),
+                    onClick = { mlkOpenLauncher.launch(arrayOf("*/*")) },
                 )
             }
-
-            // ── 从旧王冠配置导入 (.mdat) ──
             item {
                 ClickablePreference(
-                    title = "从旧王冠配置导入",
-                    summary = "从旧版 Crown 导出的 .mdat 文件导入按键映射方案",
-                    onClick = {
-                        mdatOpenLauncher.launch(arrayOf("application/json", "*/*"))
-                    },
+                    title = stringResource(R.string.title_import_from_legacy_crown),
+                    summary = stringResource(R.string.summary_import_from_legacy_crown),
+                    onClick = { mdatOpenLauncher.launch(arrayOf("application/json", "*/*")) },
                 )
             }
-
             item { Spacer(Modifier.height(32.dp)) }
         }
     }
 
-    // ════════════════════════════════════════════
-    // Dialog：导出 .mlk
-    // ════════════════════════════════════════════
+    // ── Dialog: Export .mlk ──
     if (showExportMlkDialog) {
         SchemeSelectionDialog(
-            title = "导出按键映射方案 (.mlk)",
+            title = stringResource(R.string.title_export_mlk_dialog),
             schemes = schemes,
             onSelect = { scheme ->
                 exportMlkTarget = scheme.configId
@@ -187,9 +170,7 @@ fun KeyMappingScreen() {
         )
     }
 
-    // ════════════════════════════════════════════
-    // Dialog：导入 .mlk
-    // ════════════════════════════════════════════
+    // ── Dialog: Import .mlk ──
     if (showImportMlkDialog) {
         ImportMlkDialog(
             json = importMlkJson,
@@ -198,9 +179,9 @@ fun KeyMappingScreen() {
                 try {
                     importMlkFromJson(context, importMlkJson, name, overrideTargetId)
                     schemes = loadUserSchemes(context)
-                    ToastUtil.show(context, "方案「$name」已导入", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.toast_scheme_imported, name), Toast.LENGTH_SHORT)
                 } catch (e: Exception) {
-                    ToastUtil.show(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.toast_import_failed, e.message ?: ""), Toast.LENGTH_SHORT)
                 }
                 showImportMlkDialog = false
             },
@@ -208,9 +189,7 @@ fun KeyMappingScreen() {
         )
     }
 
-    // ════════════════════════════════════════════
-    // Dialog：导入旧王冠配置 (.mdat)
-    // ════════════════════════════════════════════
+    // ── Dialog: Import legacy Crown .mdat ──
     if (showImportMdatDialog) {
         ImportMdatDialog(
             json = importMdatJson,
@@ -219,9 +198,9 @@ fun KeyMappingScreen() {
                 try {
                     importMdatFromJson(context, importMdatJson, name, overrideTargetId)
                     schemes = loadUserSchemes(context)
-                    ToastUtil.show(context, "方案「$name」已从旧配置导入", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.toast_scheme_imported_from_legacy, name), Toast.LENGTH_SHORT)
                 } catch (e: Exception) {
-                    ToastUtil.show(context, "导入失败: ${e.message}", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.toast_import_failed, e.message ?: ""), Toast.LENGTH_SHORT)
                 }
                 showImportMdatDialog = false
             },
@@ -230,9 +209,7 @@ fun KeyMappingScreen() {
     }
 }
 
-// ════════════════════════════════════════════════════════════
-//  通用组件（使用 PreferenceComponents 中的 ClickablePreference）
-// ════════════════════════════════════════════════════════════
+// ── Scheme selection dialog ──
 
 @Composable
 private fun SchemeSelectionDialog(
@@ -268,19 +245,15 @@ private fun SchemeSelectionDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    schemes.find { it.configId == selectedId }?.let { onSelect(it) }
-                },
+                onClick = { schemes.find { it.configId == selectedId }?.let { onSelect(it) } },
                 enabled = schemes.any { it.configId == selectedId },
-            ) { Text("导出") }
+            ) { Text(stringResource(R.string.btn_export)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
 }
 
-// ════════════════════════════════════════════════════════════
-//  .mlk 导入弹窗
-// ════════════════════════════════════════════════════════════
+// ── .mlk import dialog ──
 
 @Composable
 private fun ImportMlkDialog(
@@ -289,33 +262,31 @@ private fun ImportMlkDialog(
     onConfirm: (name: String, overrideTargetId: Long) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    // 尝试从 JSON 中提取 name
-    val parsedName = remember {
-        try {
-            JSONObject(json).optString("name", "导入方案")
-        } catch (_: Exception) { "导入方案" }
+    val context = LocalContext.current
+    val defaultName = context.getString(R.string.label_import_scheme)
+    val parsedName = remember(json, defaultName) {
+        try { JSONObject(json).optString("name", defaultName) }
+        catch (_: Exception) { defaultName }
     }
     var name by remember { mutableStateOf(parsedName) }
     var selectedId by remember { mutableLongStateOf(0L) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("导入按键映射方案") },
+        title = { Text(stringResource(R.string.title_import_mlk_dialog)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { if (it.length <= 10) name = it },
-                    label = { Text("方案名称（1-10 字符）") },
+                    label = { Text(stringResource(R.string.hint_scheme_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
-
                 Spacer(Modifier.height(12.dp))
-                Text("覆盖已有方案", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.label_overwrite_existing), style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(4.dp))
 
-                // 不覆盖，作为新方案导入
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -325,10 +296,9 @@ private fun ImportMlkDialog(
                 ) {
                     RadioButton(selected = selectedId == 0L, onClick = { selectedId = 0L })
                     Spacer(Modifier.width(8.dp))
-                    Text("不覆盖，作为新方案导入", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.option_import_as_new), style = MaterialTheme.typography.bodyMedium)
                 }
 
-                // 已有方案列表
                 schemes.forEach { scheme ->
                     Row(
                         modifier = Modifier
@@ -337,8 +307,7 @@ private fun ImportMlkDialog(
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        RadioButton(selected = selectedId == scheme.configId,
-                                    onClick = { selectedId = scheme.configId })
+                        RadioButton(selected = selectedId == scheme.configId, onClick = { selectedId = scheme.configId })
                         Spacer(Modifier.width(8.dp))
                         Text(scheme.name, style = MaterialTheme.typography.bodySmall)
                     }
@@ -347,25 +316,16 @@ private fun ImportMlkDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    val n = name.trim()
-                    if (n.isNotEmpty()) onConfirm(n, selectedId)
-                },
+                onClick = { val n = name.trim(); if (n.isNotEmpty()) onConfirm(n, selectedId) },
                 enabled = name.trim().isNotEmpty(),
-            ) { Text("导入") }
+            ) { Text(stringResource(R.string.btn_import)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
 }
 
-// ════════════════════════════════════════════════════════════
-//  .mlk 构建与解析（T-14）
-// ════════════════════════════════════════════════════════════
+// ── .mlk build & parse ──
 
-/**
- * 构建 .mlk 简化 JSON。
- * 不含 MD5/版本号等内部元数据。
- */
 private fun buildMlkJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: SchemeInfo): String {
     val configJson = JSONObject()
     val configAttrs = listOf(
@@ -395,7 +355,6 @@ private fun buildMlkJson(context: android.content.Context, db: SuperConfigDataba
         val attrs = db.queryAllElementAttributes(scheme.configId, eid) ?: continue
         val el = JSONObject()
         for ((k, v) in attrs) {
-            // 保留元素属性的原始类型（Boolean/Number/String）
             when (v) {
                 is Boolean -> el.put(k, v)
                 is Number -> el.put(k, v)
@@ -408,10 +367,9 @@ private fun buildMlkJson(context: android.content.Context, db: SuperConfigDataba
 
     val root = JSONObject().apply {
         put("format", "mlk")
-        put("version", 2)  // v2: 增加 sourceWidth/sourceHeight 用于屏幕参数换算
+        put("version", 2)
         put("name", scheme.name)
         put("created", SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()))
-        // 写入源设备屏幕尺寸，供导入时坐标缩放
         try {
             val (w, h) = ScreenScaleHelper.getDeviceScreenSize(context)
             put(ScreenScaleHelper.KEY_SOURCE_WIDTH, w)
@@ -423,38 +381,26 @@ private fun buildMlkJson(context: android.content.Context, db: SuperConfigDataba
     return root.toString(2)
 }
 
-/**
- * 从 .mlk JSON 导入方案到数据库。
- * @param overrideTargetId 不为 0L 时覆盖该已有方案，否则创建新方案。
- */
 private fun importMlkFromJson(context: android.content.Context, json: String, newName: String, overrideTargetId: Long = 0L) {
     val root = JSONObject(json)
     val configObj = root.optJSONObject("config") ?: JSONObject()
     val elementsArray = root.optJSONArray("elements") ?: JSONArray()
-
-    // ── 读取源设备屏幕尺寸，计算缩放 ──
     val sourceWidth = root.optInt(ScreenScaleHelper.KEY_SOURCE_WIDTH, 0)
     val sourceHeight = root.optInt(ScreenScaleHelper.KEY_SOURCE_HEIGHT, 0)
-
     val db = SuperConfigDatabaseHelper(context)
 
-    // 覆盖模式：先删除旧数据，复用原有 config_id
     if (overrideTargetId != 0L) {
         db.deleteConfig(overrideTargetId)
     }
 
     val newConfigId = if (overrideTargetId != 0L) overrideTargetId else System.currentTimeMillis()
-
-    // ── 获取目标设备屏幕尺寸 ──
     val (targetWidth, targetHeight) = try {
         ScreenScaleHelper.getDeviceScreenSize(context)
     } catch (_: Exception) { Pair(0, 0) }
 
-    // 写入 config
     val configValues = ContentValues().apply {
         put(PageConfigController.COLUMN_LONG_CONFIG_ID, newConfigId)
         put(PageConfigController.COLUMN_STRING_CONFIG_NAME, newName)
-        // 复制可用的 config 属性
         for (key in configObj.keys()) {
             val v = configObj.opt(key)
             when (v) {
@@ -465,27 +411,23 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
                 is Double -> put(key, v.toFloat())
             }
         }
-        // 如果导出的配置中没有触控开关值，默认打开
         if (!containsKey(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE)) {
             put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
         }
     }
     db.insertConfig(configValues)
 
-    // 写入 elements（带屏幕参数换算，跳过已删除的元素类型）
     val existingIds = db.queryAllElementIds(newConfigId).toSet()
     var elementIdCounter = 1L
     while (elementIdCounter in existingIds) elementIdCounter++
     for (i in 0 until elementsArray.length()) {
         val elObj = elementsArray.getJSONObject(i)
-        // 跳过组按键（type=4）和轮盘按键（type=54）
         val elType = elObj.optInt("element_type", -1)
         if (elType == 4 || elType == 54) continue
         val elValues = ContentValues()
         elValues.put("config_id", newConfigId)
         elValues.put("element_id", elementIdCounter++)
         for (key in elObj.keys()) {
-            // 跳过已由代码设置的内部ID字段，防止覆盖新分配的ID值
             if (key == "config_id" || key == "element_id" || key == "_id") continue
             val v = elObj.opt(key)
             when (v) {
@@ -494,35 +436,23 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
                 is String -> elValues.put(key, v)
             }
         }
-        // 对每个元素应用坐标缩放
         if (sourceWidth > 0 && sourceHeight > 0 && targetWidth > 0 && targetHeight > 0) {
-            ScreenScaleHelper.scaleElementContentValues(
-                elValues, sourceWidth, sourceHeight, targetWidth, targetHeight
-            )
+            ScreenScaleHelper.scaleElementContentValues(elValues, sourceWidth, sourceHeight, targetWidth, targetHeight)
         }
         db.insertElement(elValues)
     }
 }
 
-// ════════════════════════════════════════════════════════════
-//  旧王冠配置 (.mdat) 导入弹窗
-// ════════════════════════════════════════════════════════════
+// ── Legacy Crown .mdat import dialog ──
 
-/**
- * 从旧版 Crown 导出的 .mdat 文件中解析按键方案名称。
- * .mdat 是 ExportFile JSON 格式：{ version, settings, elements, md5, ... }
- * 方案名称存储在 settings 对象的 config_name 字段中。
- */
 private fun parseMdatSchemeName(json: String): String {
     return try {
         val root = JSONObject(json)
         val settingsStr = root.optString("settings", "{}")
         val settingsObj = JSONObject(settingsStr)
-        settingsObj.optString(
-            PageConfigController.COLUMN_STRING_CONFIG_NAME,
-            settingsObj.optString("config_name", "旧 Crown 方案")
-        )
-    } catch (_: Exception) { "旧 Crown 方案" }
+        settingsObj.optString(PageConfigController.COLUMN_STRING_CONFIG_NAME,
+            settingsObj.optString("config_name", "Old Crown Scheme"))
+    } catch (_: Exception) { "Old Crown Scheme" }
 }
 
 @Composable
@@ -538,28 +468,24 @@ private fun ImportMdatDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("导入旧王冠配置") },
+        title = { Text(stringResource(R.string.title_import_legacy_crown_dialog)) },
         text = {
             Column {
-                Text(
-                    "检测到旧版 Crown 配置文件，将导入其中的按键映射方案。",
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                Text(stringResource(R.string.desc_legacy_crown_detected), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { if (it.length <= 10) name = it },
-                    label = { Text("方案名称（1-10 字符）") },
+                    label = { Text(stringResource(R.string.hint_scheme_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
 
                 Spacer(Modifier.height(12.dp))
-                Text("覆盖已有方案", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.label_overwrite_existing), style = MaterialTheme.typography.labelMedium)
                 Spacer(Modifier.height(4.dp))
 
-                // 不覆盖，作为新方案导入
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -569,10 +495,9 @@ private fun ImportMdatDialog(
                 ) {
                     RadioButton(selected = selectedId == 0L, onClick = { selectedId = 0L })
                     Spacer(Modifier.width(8.dp))
-                    Text("不覆盖，作为新方案导入", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.option_import_as_new), style = MaterialTheme.typography.bodyMedium)
                 }
 
-                // 已有方案列表
                 schemes.forEach { scheme ->
                     Row(
                         modifier = Modifier
@@ -581,8 +506,7 @@ private fun ImportMdatDialog(
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        RadioButton(selected = selectedId == scheme.configId,
-                            onClick = { selectedId = scheme.configId })
+                        RadioButton(selected = selectedId == scheme.configId, onClick = { selectedId = scheme.configId })
                         Spacer(Modifier.width(8.dp))
                         Text(scheme.name, style = MaterialTheme.typography.bodySmall)
                     }
@@ -591,36 +515,16 @@ private fun ImportMdatDialog(
         },
         confirmButton = {
             TextButton(
-                onClick = {
-                    val n = name.trim()
-                    if (n.isNotEmpty()) onConfirm(n, selectedId)
-                },
+                onClick = { val n = name.trim(); if (n.isNotEmpty()) onConfirm(n, selectedId) },
                 enabled = name.trim().isNotEmpty(),
-            ) { Text("导入") }
+            ) { Text(stringResource(R.string.btn_import)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
     )
 }
 
-// ════════════════════════════════════════════════════════════
-//  旧王冠配置 (.mdat) 导入逻辑
-// ════════════════════════════════════════════════════════════
+// ── Legacy Crown .mdat import logic ──
 
-/**
- * 从旧版 Crown 导出的 .mdat 文件导入按键映射方案。
- *
- * .mdat 格式与 [SuperConfigDatabaseHelper.exportConfig] 输出的 ExportFile 一致，
- * 但版本号可能不同（旧 Crown 为 version 8，当前为 1）。
- *
- * 处理流程：
- * 1. 解析 settings 中旧的 config_name 并用新名称替换
- * 2. 将 version 重写为当前 DATABASE_VERSION (1)
- * 3. 重新计算 MD5 校验和
- * 4. 调用 [SuperConfigDatabaseHelper.importConfig] 执行实际导入
- *    （包含元素引用修复、屏幕坐标缩放、normalizeGlobalStyleSettings 等完整处理）
- *
- * @param overrideTargetId 不为 0L 时覆盖该已有方案，否则创建新方案
- */
 private fun importMdatFromJson(
     context: android.content.Context,
     json: String,
@@ -628,8 +532,6 @@ private fun importMdatFromJson(
     overrideTargetId: Long = 0L,
 ) {
     val root = JSONObject(json)
-
-    // 提取并更新 settings 中的方案名称
     val settingsStr = root.getString("settings")
     val elementsStr = root.getString("elements")
     val sourceWidth = root.optInt("sourceWidth", 0)
@@ -637,19 +539,15 @@ private fun importMdatFromJson(
 
     val settingsObj = JSONObject(settingsStr)
     settingsObj.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, newName)
-    // 移除 config_id 让 importConfig 自动分配新的（避免冲突）
     settingsObj.remove(PageConfigController.COLUMN_LONG_CONFIG_ID)
     val updatedSettingsStr = settingsObj.toString()
 
     val db = SuperConfigDatabaseHelper(context)
-
-    // 覆盖模式：先删除旧方案数据
     if (overrideTargetId != 0L) {
         db.deleteConfig(overrideTargetId)
     }
 
-    // 构建新的 ExportFile JSON（version=1, 全新 MD5）
-    val CURRENT_DB_VERSION = 1  // SuperConfigDatabaseHelper.DATABASE_VERSION
+    val CURRENT_DB_VERSION = 1
     val md5 = MathUtils.computeMD5("$CURRENT_DB_VERSION$updatedSettingsStr$elementsStr")
 
     val exportObj = JSONObject().apply {
@@ -665,24 +563,20 @@ private fun importMdatFromJson(
     if (result != 0) {
         throw Exception(
             when (result) {
-                -1 -> "文件格式错误"
-                -2 -> "文件校验失败（已损坏）"
-                -3 -> "版本不兼容"
-                else -> "导入失败 (错误: $result)"
+                -1 -> context.getString(R.string.error_file_format)
+                -2 -> context.getString(R.string.error_file_checksum)
+                -3 -> context.getString(R.string.error_version_incompatible)
+                else -> context.getString(R.string.error_import_failed_code, result)
             }
         )
     }
 
-    // 清理已删除的元素类型（组按键 type=4、轮盘按键 type=54）
     val importedConfigId = if (overrideTargetId != 0L) overrideTargetId else {
         db.queryAllConfigIds().maxOrNull() ?: return
     }
     cleanupDeletedElementTypes(db, importedConfigId)
 }
 
-/**
- * 清理指定方案中已删除的元素类型（组按键 type=4、轮盘按键 type=54）。
- */
 private fun cleanupDeletedElementTypes(db: SuperConfigDatabaseHelper, configId: Long) {
     val deletedTypes = setOf(4, 54)
     val elementIds = db.queryAllElementIds(configId) ?: return

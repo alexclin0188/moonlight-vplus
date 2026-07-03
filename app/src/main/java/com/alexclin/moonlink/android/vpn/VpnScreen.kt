@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.easytier.jni.EasyTierJNI
@@ -30,8 +31,7 @@ import com.easytier.jni.EasyTierManager
 import org.json.JSONObject
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
-
-// ── Data classes (mirrors EasyTierController) ─────────────────────
+import com.alexclin.moonlink.android.R
 
 private data class PeerInfo(
     val hostname: String,
@@ -52,28 +52,23 @@ private data class LocalNodeInfo(
     val natType: String = "",
 )
 
-// ── Main VPN screen ───────────────────────────────────────────────
-
 @Composable
 fun VpnScreen(externalRefreshTrigger: Int) {
     val context = LocalContext.current
     val activity = context as? Activity ?: return
 
-    // ── State ──
-    var selectedTab by remember { mutableIntStateOf(0) } // 0=Status, 1=Config
+    var selectedTab by remember { mutableIntStateOf(0) }
     var isRunning by remember { mutableStateOf(false) }
     var statusJson by remember { mutableStateOf<String?>(null) }
     var localInfo by remember { mutableStateOf(LocalNodeInfo()) }
     var peers by remember { mutableStateOf<List<PeerInfo>>(emptyList()) }
 
-    // Config form state
     var networkName by remember { mutableStateOf("easytier") }
     var networkSecret by remember { mutableStateOf("") }
     var localIpv4 by remember { mutableStateOf("10.0.0.1") }
     var listeners by remember { mutableStateOf("tcp://0.0.0.0:11010\nudp://0.0.0.0:11010\nwg://0.0.0.0:11011") }
     var peersText by remember { mutableStateOf("tcp://public.easytier.top:11010\nudp://public.easytier.top:11010") }
 
-    // Advanced flags
     var advancedExpanded by remember { mutableStateOf(false) }
     var useSmoltcp by remember { mutableStateOf(false) }
     var latencyFirst by remember { mutableStateOf(false) }
@@ -89,7 +84,6 @@ fun VpnScreen(externalRefreshTrigger: Int) {
     var disableUdpHolePunching by remember { mutableStateOf(false) }
     var disableSymHolePunching by remember { mutableStateOf(false) }
 
-    // EasyTierManager (lazy init)
     val easyTierManager = remember {
         val prefs = context.getSharedPreferences("easytier_preferences", Context.MODE_PRIVATE)
         val savedToml = prefs.getString("toml_config_string", null)
@@ -97,7 +91,6 @@ fun VpnScreen(externalRefreshTrigger: Int) {
         EasyTierManager(activity, "Default", config)
     }
 
-    // Load saved config into form on first composition
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("easytier_preferences", Context.MODE_PRIVATE)
         val savedToml = prefs.getString("toml_config_string", null)
@@ -110,7 +103,6 @@ fun VpnScreen(externalRefreshTrigger: Int) {
         }
     }
 
-    // VPN permission launcher
     val vpnPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -122,14 +114,12 @@ fun VpnScreen(externalRefreshTrigger: Int) {
                 proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
             )
             saveConfig(context, config)
-            // Re-create manager with new config and start
             easyTierManager.stop()
             easyTierManager.start()
             isRunning = true
         }
     }
 
-    // Refresh status
     fun refreshStatus() {
         statusJson = easyTierManager.latestNetworkInfoJson
         statusJson?.let { json ->
@@ -140,131 +130,116 @@ fun VpnScreen(externalRefreshTrigger: Int) {
         }
     }
 
-    // Observe external refresh trigger (from top bar Refresh button)
-    LaunchedEffect(externalRefreshTrigger) {
-        refreshStatus()
-    }
+    LaunchedEffect(externalRefreshTrigger) { refreshStatus() }
 
     Column(modifier = Modifier.fillMaxSize()) {
-            // ── Tab buttons ──
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    label = { Text("网络状态") },
-                    leadingIcon = if (selectedTab == 0) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null,
-                )
-                FilterChip(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    label = { Text("编辑配置") },
-                    leadingIcon = if (selectedTab == 1) {
-                        { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
-                    } else null,
-                )
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            FilterChip(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                label = { Text(stringResource(R.string.tab_network_status)) },
+                leadingIcon = if (selectedTab == 0) {
+                    { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                } else null,
+            )
+            FilterChip(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                label = { Text(stringResource(R.string.tab_edit_config)) },
+                leadingIcon = if (selectedTab == 1) {
+                    { Icon(Icons.Default.Check, null, Modifier.size(18.dp)) }
+                } else null,
+            )
+        }
 
-            // ── Content ──
-            if (selectedTab == 0) {
-                // Status tab
-                StatusTab(
-                    localInfo = localInfo,
-                    peers = peers,
-                    isRunning = isRunning,
-                    modifier = Modifier.weight(1f),
-                )
-            } else {
-                // Config tab
-                ConfigTab(
-                    networkName = networkName, onNetworkNameChange = { networkName = it },
-                    networkSecret = networkSecret, onNetworkSecretChange = { networkSecret = it },
-                    localIpv4 = localIpv4, onLocalIpv4Change = { localIpv4 = it },
-                    listeners = listeners, onListenersChange = { listeners = it },
-                    peersText = peersText, onPeersTextChange = { peersText = it },
-                    advancedExpanded = advancedExpanded,
-                    onAdvancedToggle = { advancedExpanded = !advancedExpanded },
-                    flags = AdvancedFlags(
+        if (selectedTab == 0) {
+            StatusTab(localInfo = localInfo, peers = peers, isRunning = isRunning, modifier = Modifier.weight(1f))
+        } else {
+            ConfigTab(
+                networkName = networkName, onNetworkNameChange = { networkName = it },
+                networkSecret = networkSecret, onNetworkSecretChange = { networkSecret = it },
+                localIpv4 = localIpv4, onLocalIpv4Change = { localIpv4 = it },
+                listeners = listeners, onListenersChange = { listeners = it },
+                peersText = peersText, onPeersTextChange = { peersText = it },
+                advancedExpanded = advancedExpanded,
+                onAdvancedToggle = { advancedExpanded = !advancedExpanded },
+                flags = AdvancedFlags(
+                    useSmoltcp, latencyFirst, disableP2p, privateMode, disableIpv6,
+                    enableKcpProxy, disableKcpInput, enableQuicProxy, disableQuicInput,
+                    proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
+                ),
+                onFlagChange = { flag, value ->
+                    when (flag) {
+                        "smoltcp" -> useSmoltcp = value
+                        "latency" -> latencyFirst = value
+                        "p2p" -> disableP2p = value
+                        "private" -> privateMode = value
+                        "ipv6" -> disableIpv6 = value
+                        "kcp_proxy" -> enableKcpProxy = value
+                        "kcp_input" -> disableKcpInput = value
+                        "quic_proxy" -> enableQuicProxy = value
+                        "quic_input" -> disableQuicInput = value
+                        "proxy_system" -> proxyForwardBySystem = value
+                        "encryption" -> disableEncryption = value
+                        "udp_hole" -> disableUdpHolePunching = value
+                        "sym_hole" -> disableSymHolePunching = value
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Button(
+                onClick = {
+                    if (isRunning) {
+                        easyTierManager.stop()
+                        isRunning = false
+                    } else {
+                        val vpnIntent = android.net.VpnService.prepare(activity)
+                        if (vpnIntent != null) {
+                            vpnPermissionLauncher.launch(vpnIntent)
+                        } else {
+                            val config = buildTomlFromUi(
+                                networkName, networkSecret, localIpv4, listeners, peersText,
+                                useSmoltcp, latencyFirst, disableP2p, privateMode, disableIpv6,
+                                enableKcpProxy, disableKcpInput, enableQuicProxy, disableQuicInput,
+                                proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
+                            )
+                            saveConfig(context, config)
+                            easyTierManager.start()
+                            isRunning = true
+                        }
+                    }
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Text(if (isRunning) stringResource(R.string.btn_stop_service) else stringResource(R.string.btn_start_service))
+            }
+            OutlinedButton(
+                onClick = {
+                    val config = buildTomlFromUi(
+                        networkName, networkSecret, localIpv4, listeners, peersText,
                         useSmoltcp, latencyFirst, disableP2p, privateMode, disableIpv6,
                         enableKcpProxy, disableKcpInput, enableQuicProxy, disableQuicInput,
                         proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
-                    ),
-                    onFlagChange = { flag, value ->
-                        when (flag) {
-                            "smoltcp" -> useSmoltcp = value
-                            "latency" -> latencyFirst = value
-                            "p2p" -> disableP2p = value
-                            "private" -> privateMode = value
-                            "ipv6" -> disableIpv6 = value
-                            "kcp_proxy" -> enableKcpProxy = value
-                            "kcp_input" -> disableKcpInput = value
-                            "quic_proxy" -> enableQuicProxy = value
-                            "quic_input" -> disableQuicInput = value
-                            "proxy_system" -> proxyForwardBySystem = value
-                            "encryption" -> disableEncryption = value
-                            "udp_hole" -> disableUdpHolePunching = value
-                            "sym_hole" -> disableSymHolePunching = value
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            // ── Bottom action buttons ──
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    )
+                    saveConfig(context, config)
+                    ToastUtil.show(context, context.getString(R.string.toast_config_saved), Toast.LENGTH_SHORT)
+                },
+                modifier = Modifier.weight(1f),
             ) {
-                Button(
-                    onClick = {
-                        if (isRunning) {
-                            easyTierManager.stop()
-                            isRunning = false
-                        } else {
-                            val vpnIntent = android.net.VpnService.prepare(activity)
-                            if (vpnIntent != null) {
-                                vpnPermissionLauncher.launch(vpnIntent)
-                            } else {
-                                val config = buildTomlFromUi(
-                                    networkName, networkSecret, localIpv4, listeners, peersText,
-                                    useSmoltcp, latencyFirst, disableP2p, privateMode, disableIpv6,
-                                    enableKcpProxy, disableKcpInput, enableQuicProxy, disableQuicInput,
-                                    proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
-                                )
-                                saveConfig(context, config)
-                                easyTierManager.start()
-                                isRunning = true
-                            }
-                        }
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text(if (isRunning) "停止服务" else "启动服务")
-                }
-                OutlinedButton(
-                    onClick = {
-                        val config = buildTomlFromUi(
-                            networkName, networkSecret, localIpv4, listeners, peersText,
-                            useSmoltcp, latencyFirst, disableP2p, privateMode, disableIpv6,
-                            enableKcpProxy, disableKcpInput, enableQuicProxy, disableQuicInput,
-                            proxyForwardBySystem, disableEncryption, disableUdpHolePunching, disableSymHolePunching,
-                        )
-                        saveConfig(context, config)
-                        ToastUtil.show(context, "配置已保存", Toast.LENGTH_SHORT)
-                    },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Text("保存配置")
-                }
+                Text(stringResource(R.string.btn_save_config))
             }
+        }
     }
 }
-
-// ── Status tab content ────────────────────────────────────────────
 
 @Composable
 private fun StatusTab(
@@ -276,7 +251,7 @@ private fun StatusTab(
     if (!isRunning && peers.isEmpty() && localInfo.hostname.isEmpty()) {
         Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text(
-                "服务未运行或正在连接…\n请点击刷新按钮获取最新状态。",
+                stringResource(R.string.label_service_not_running),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             )
@@ -286,59 +261,42 @@ private fun StatusTab(
             modifier = modifier.fillMaxSize().padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            // Local node info
             item {
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                ) {
+                Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.padding(16.dp)) {
-                        Text("本机信息", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                        Text(stringResource(R.string.label_local_info), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
-                        InfoRow("主机名", localInfo.hostname)
-                        InfoRow("虚拟 IP", localInfo.virtualIp)
-                        InfoRow("公网 IP", localInfo.publicIp)
-                        InfoRow("NAT 类型", localInfo.natType)
+                        InfoRow(stringResource(R.string.label_hostname), localInfo.hostname)
+                        InfoRow(stringResource(R.string.label_virtual_ip), localInfo.virtualIp)
+                        InfoRow(stringResource(R.string.label_public_ip), localInfo.publicIp)
+                        InfoRow(stringResource(R.string.label_nat_type), localInfo.natType)
                     }
                 }
             }
 
-            // Peers
             if (peers.isNotEmpty()) {
                 item {
                     Text(
-                        "对等节点 (${peers.size})",
+                        stringResource(R.string.label_peers) + " (${peers.size})",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.padding(vertical = 4.dp),
                     )
                 }
                 items(peers) { peer ->
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    ) {
+                    Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                         Column(Modifier.padding(16.dp)) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    peer.hostname,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                if (!peer.isDirect) {
-                                    Text("(中转)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                                }
-                                if (!peer.isInSameSubnet) {
-                                    Text("(网段不匹配!)", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
-                                }
+                                Text(peer.hostname, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                                if (!peer.isDirect) Text(stringResource(R.string.label_relay), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                                if (!peer.isInSameSubnet) Text(stringResource(R.string.label_subnet_mismatch), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
                             }
                             Spacer(Modifier.height(4.dp))
-                            InfoRow("虚拟 IP", peer.virtualIp)
-                            InfoRow("NAT 类型", peer.natType)
-                            InfoRow(if (peer.isDirect) "物理地址" else "下一跳", peer.connectionDetail)
-                            InfoRow("延迟", peer.latency)
-                            InfoRow("流量 (Rx/Tx)", peer.traffic)
+                            InfoRow(stringResource(R.string.label_virtual_ip), peer.virtualIp)
+                            InfoRow(stringResource(R.string.label_nat_type), peer.natType)
+                            InfoRow(if (peer.isDirect) stringResource(R.string.label_physical_addr) else stringResource(R.string.label_next_hop), peer.connectionDetail)
+                            InfoRow(stringResource(R.string.label_latency), peer.latency)
+                            InfoRow(stringResource(R.string.label_traffic), peer.traffic)
                         }
                     }
                 }
@@ -354,8 +312,6 @@ private fun InfoRow(label: String, value: String) {
         Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface)
     }
 }
-
-// ── Config tab content ────────────────────────────────────────────
 
 private data class AdvancedFlags(
     val smoltcp: Boolean, val latency: Boolean, val p2p: Boolean, val private: Boolean, val ipv6: Boolean,
@@ -377,19 +333,15 @@ private fun ConfigTab(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
+        modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ConfigField("网络名称", networkName, onNetworkNameChange, "例如 easytier")
-        ConfigField("网络密钥", networkSecret, onNetworkSecretChange)
-        ConfigField("本地虚拟 IPv4 地址", localIpv4, onLocalIpv4Change, "例如 10.0.0.6", KeyboardType.Number)
-        ConfigMultilineField("监听地址", listeners, onListenersChange, "每行一个，例如 udp://0.0.0.0:11010")
-        ConfigMultilineField("对等节点", peersText, onPeersTextChange, "每行一个，例如 tcp://1.2.3.4:11010")
+        ConfigField(stringResource(R.string.label_network_name), networkName, onNetworkNameChange, stringResource(R.string.hint_network_name))
+        ConfigField(stringResource(R.string.label_network_secret), networkSecret, onNetworkSecretChange)
+        ConfigField(stringResource(R.string.label_local_ipv4), localIpv4, onLocalIpv4Change, stringResource(R.string.hint_local_ipv4), KeyboardType.Number)
+        ConfigMultilineField(stringResource(R.string.label_listeners), listeners, onListenersChange, stringResource(R.string.hint_listeners))
+        ConfigMultilineField(stringResource(R.string.label_peers_config), peersText, onPeersTextChange, stringResource(R.string.hint_peers))
 
-        // Advanced flags collapsible
         Card(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onAdvancedToggle),
             shape = RoundedCornerShape(16.dp),
@@ -401,36 +353,32 @@ private fun ConfigTab(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("高级功能标志", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                    Icon(
-                        Icons.Default.KeyboardArrowDown,
-                        contentDescription = null,
-                        modifier = Modifier.rotate(if (advancedExpanded) 180f else 0f),
-                    )
+                    Text(stringResource(R.string.label_advanced_flags), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Icon(Icons.Default.KeyboardArrowDown, contentDescription = null, modifier = Modifier.rotate(if (advancedExpanded) 180f else 0f))
                 }
 
                 AnimatedVisibility(visible = advancedExpanded) {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text("核心网络行为", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        FlagSwitch("使用 Smoltcp", flags.smoltcp) { onFlagChange("smoltcp", it) }
-                        FlagSwitch("延迟优先", flags.latency) { onFlagChange("latency", it) }
-                        FlagSwitch("禁用 P2P（强制中转）", flags.p2p) { onFlagChange("p2p", it) }
-                        FlagSwitch("私有模式", flags.private) { onFlagChange("private", it) }
-                        FlagSwitch("禁用 IPv6", flags.ipv6) { onFlagChange("ipv6", it) }
+                        Text(stringResource(R.string.section_core_network), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        FlagSwitch(stringResource(R.string.flag_use_smoltcp), flags.smoltcp) { onFlagChange("smoltcp", it) }
+                        FlagSwitch(stringResource(R.string.flag_latency_first), flags.latency) { onFlagChange("latency", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_p2p), flags.p2p) { onFlagChange("p2p", it) }
+                        FlagSwitch(stringResource(R.string.flag_private_mode), flags.private) { onFlagChange("private", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_ipv6), flags.ipv6) { onFlagChange("ipv6", it) }
 
                         Spacer(Modifier.height(8.dp))
-                        Text("代理与协议", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        FlagSwitch("启用 KCP 代理", flags.kcpProxy) { onFlagChange("kcp_proxy", it) }
-                        FlagSwitch("禁用 KCP 输入", flags.kcpInput) { onFlagChange("kcp_input", it) }
-                        FlagSwitch("启用 QUIC 代理", flags.quicProxy) { onFlagChange("quic_proxy", it) }
-                        FlagSwitch("禁用 QUIC 输入", flags.quicInput) { onFlagChange("quic_input", it) }
-                        FlagSwitch("使用系统代理转发", flags.proxySystem) { onFlagChange("proxy_system", it) }
+                        Text(stringResource(R.string.section_proxy_protocol), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        FlagSwitch(stringResource(R.string.flag_enable_kcp_proxy), flags.kcpProxy) { onFlagChange("kcp_proxy", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_kcp_input), flags.kcpInput) { onFlagChange("kcp_input", it) }
+                        FlagSwitch(stringResource(R.string.flag_enable_quic_proxy), flags.quicProxy) { onFlagChange("quic_proxy", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_quic_input), flags.quicInput) { onFlagChange("quic_input", it) }
+                        FlagSwitch(stringResource(R.string.flag_proxy_forward_system), flags.proxySystem) { onFlagChange("proxy_system", it) }
 
                         Spacer(Modifier.height(8.dp))
-                        Text("安全与连接", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                        FlagSwitch("禁用加密", flags.encryption) { onFlagChange("encryption", it) }
-                        FlagSwitch("禁用 UDP 打洞", flags.udpHole) { onFlagChange("udp_hole", it) }
-                        FlagSwitch("禁用对称 NAT 打洞", flags.symHole) { onFlagChange("sym_hole", it) }
+                        Text(stringResource(R.string.section_security), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                        FlagSwitch(stringResource(R.string.flag_disable_encryption), flags.encryption) { onFlagChange("encryption", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_udp_hole), flags.udpHole) { onFlagChange("udp_hole", it) }
+                        FlagSwitch(stringResource(R.string.flag_disable_sym_hole), flags.symHole) { onFlagChange("sym_hole", it) }
                     }
                 }
             }
@@ -442,15 +390,9 @@ private fun ConfigTab(
 private fun ConfigField(label: String, value: String, onChange: (String) -> Unit, hint: String = "", keyboardType: KeyboardType = KeyboardType.Text) {
     Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
     OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        modifier = Modifier.fillMaxWidth(),
-        placeholder = if (hint.isNotEmpty()) {
-            { Text(hint) }
-        } else null,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        shape = RoundedCornerShape(12.dp),
+        value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth(),
+        placeholder = if (hint.isNotEmpty()) { { Text(hint) } } else null,
+        singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = keyboardType), shape = RoundedCornerShape(12.dp),
     )
 }
 
@@ -458,34 +400,24 @@ private fun ConfigField(label: String, value: String, onChange: (String) -> Unit
 private fun ConfigMultilineField(label: String, value: String, onChange: (String) -> Unit, hint: String = "") {
     Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onBackground)
     OutlinedTextField(
-        value = value,
-        onValueChange = onChange,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp),
-        placeholder = if (hint.isNotEmpty()) {
-            { Text(hint) }
-        } else null,
-        minLines = 2,
-        shape = RoundedCornerShape(12.dp),
+        value = value, onValueChange = onChange, modifier = Modifier.fillMaxWidth().heightIn(min = 80.dp),
+        placeholder = if (hint.isNotEmpty()) { { Text(hint) } } else null,
+        minLines = 2, shape = RoundedCornerShape(12.dp),
     )
 }
 
 @Composable
 private fun FlagSwitch(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }
 
-// ── TOML utilities ────────────────────────────────────────────────
+// ── TOML utilities ──
 
 private fun saveConfig(context: Context, toml: String) {
-    context.getSharedPreferences("easytier_preferences", Context.MODE_PRIVATE)
-        .edit().putString("toml_config_string", toml).apply()
+    context.getSharedPreferences("easytier_preferences", Context.MODE_PRIVATE).edit().putString("toml_config_string", toml).apply()
 }
 
 private fun buildDefaultToml() = """
@@ -530,18 +462,12 @@ private fun buildTomlFromUi(
     sb.appendLine()
     sb.appendLine("[network]")
     sb.appendLine("ipv4 = \"${ipv4}/24\"")
-
     val listenerList = listeners.lines().filter { it.isNotBlank() }
     sb.appendLine("listeners = [${listenerList.joinToString(", ") { "\"$it\"" }}]")
     sb.appendLine()
-
     peers.lines().filter { it.isNotBlank() }.forEach { uri ->
-        sb.appendLine("[[peer]]")
-        sb.appendLine("uri = \"$uri\"")
-        sb.appendLine()
+        sb.appendLine("[[peer]]"); sb.appendLine("uri = \"$uri\""); sb.appendLine()
     }
-
-    // Flags — only write non-default values
     sb.appendLine("[flags]")
     if (smoltcp) sb.appendLine("use_smoltcp = true")
     if (latency) sb.appendLine("latency_first = true")
@@ -556,7 +482,6 @@ private fun buildTomlFromUi(
     if (encryption) sb.appendLine("enable_encryption = false")
     if (udpHole) sb.appendLine("disable_udp_hole_punching = true")
     if (symHole) sb.appendLine("disable_sym_hole_punching = true")
-
     return sb.toString()
 }
 
@@ -565,9 +490,7 @@ private fun extractValue(toml: String, key: String, default: String): String {
         val trimmed = line.trim()
         if (trimmed.startsWith("$key")) {
             val eqIdx = trimmed.indexOf('=')
-            if (eqIdx > 0) {
-                return trimmed.substring(eqIdx + 1).trim().removeSurrounding("\"")
-            }
+            if (eqIdx > 0) return trimmed.substring(eqIdx + 1).trim().removeSurrounding("\"")
         }
     }
     return default
@@ -584,14 +507,10 @@ private fun extractPeerUris(toml: String): String {
     return regex.findAll(toml).map { it.groupValues[1] }.joinToString("\n")
 }
 
-// ── Status JSON parser ────────────────────────────────────────────
-
 private fun parseStatusJson(json: String, instanceName: String): Pair<LocalNodeInfo, List<PeerInfo>>? {
     return try {
         val root = JSONObject(json)
         val instanceData = root.optJSONObject(instanceName) ?: return null
-
-        // Local info
         val myNodeInfo = instanceData.optJSONObject("my_node_info") ?: return null
         val localInfo = LocalNodeInfo(
             hostname = myNodeInfo.optString("hostname", ""),
@@ -601,10 +520,8 @@ private fun parseStatusJson(json: String, instanceName: String): Pair<LocalNodeI
             natType = parseNatType(myNodeInfo.optJSONObject("stun_info")?.optInt("udp_nat_type", 0) ?: 0),
         )
 
-        // Parse routes and peers
         val routesArr = instanceData.optJSONArray("routes")
         val peersArr = instanceData.optJSONArray("peers")
-
         val routeMap = mutableMapOf<String, JSONObject>()
         if (routesArr != null) {
             for (i in 0 until routesArr.length()) {
@@ -613,7 +530,6 @@ private fun parseStatusJson(json: String, instanceName: String): Pair<LocalNodeI
                 if (peerId.isNotEmpty()) routeMap[peerId] = r
             }
         }
-
         val peerConnMap = mutableMapOf<String, JSONObject>()
         if (peersArr != null) {
             for (i in 0 until peersArr.length()) {
@@ -633,7 +549,6 @@ private fun parseStatusJson(json: String, instanceName: String): Pair<LocalNodeI
             val conn = peerConnMap[peerId]
             val isDirect = conn != null
             val peerVirtualIp = route.optString("ipv4_addr", "")
-
             PeerInfo(
                 hostname = route.optString("hostname", peerId.take(8)),
                 virtualIp = peerVirtualIp,
@@ -642,28 +557,15 @@ private fun parseStatusJson(json: String, instanceName: String): Pair<LocalNodeI
                 isDirect = isDirect,
                 isInSameSubnet = isInSameSubnet(localIp, peerVirtualIp, prefix),
                 latency = conn?.optLong("latency_us", 0)?.let { if (it > 0) "${it / 1000}ms" else "—" } ?: "—",
-                traffic = conn?.let {
-                    val rx = it.optLong("rx_bytes", 0)
-                    val tx = it.optLong("tx_bytes", 0)
-                    "${formatBytes(rx)} / ${formatBytes(tx)}"
-                } ?: "—",
+                traffic = conn?.let { val rx = it.optLong("rx_bytes", 0); val tx = it.optLong("tx_bytes", 0); "${formatBytes(rx)} / ${formatBytes(tx)}" } ?: "—",
             )
         }
-
         localInfo to peerList
-    } catch (e: Exception) {
-        null
-    }
+    } catch (e: Exception) { null }
 }
 
 private fun parseNatType(code: Int): String = when (code) {
-    0 -> "Unknown"
-    1 -> "Full Cone"
-    2 -> "Restricted Cone"
-    3 -> "Port Restricted"
-    4 -> "Symmetric"
-    5 -> "Symmetric Easy"
-    else -> "Type $code"
+    0 -> "Unknown"; 1 -> "Full Cone"; 2 -> "Restricted Cone"; 3 -> "Port Restricted"; 4 -> "Symmetric"; 5 -> "Symmetric Easy"; else -> "Type $code"
 }
 
 private fun isInSameSubnet(ip1: String, ip2: String, prefix: Int): Boolean {

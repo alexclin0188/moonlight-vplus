@@ -48,6 +48,7 @@ import com.alexclin.moonlink.android.theme.windowsBlue
 import com.alexclin.moonlink.android.stream.StreamActivity
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.R
+import com.alexclin.moonlink.android.BackgroundOverlay
 import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import android.widget.Toast
@@ -73,28 +74,28 @@ import kotlinx.coroutines.withContext
 
 data class DeviceMenuAction(
     val id: String,
-    val label: String,
+    val labelResId: Int,
     val isVisible: (ComputerDetails) -> Boolean,
 )
 
 private val ALL_MENU_ACTIONS = listOf(
-    DeviceMenuAction("pair",           "和电脑配对")            { it.pairState != PairingManager.PairState.PAIRED },
-    DeviceMenuAction("wol",            "发送 Wake-On-LAN 请求") { it.state == ComputerDetails.State.OFFLINE },
-    DeviceMenuAction("delete",         "删除电脑")              { it.pairState == PairingManager.PairState.PAIRED },
-    DeviceMenuAction("resume",         "恢复串流")              { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
-    DeviceMenuAction("quit",           "退出应用")              { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
-    DeviceMenuAction("applist",        "浏览游戏列表")           { true },
-    DeviceMenuAction("detail",         "查看详情")              { true },
-    DeviceMenuAction("sleep",          "发送睡眠指令")           { it.state == ComputerDetails.State.ONLINE },
-    DeviceMenuAction("iperf",          "网络带宽测试 (iPerf3)")  { true },
-    DeviceMenuAction("webui",          "打开 Web 管理（Sunshine）") { true },
-    DeviceMenuAction("disable_ipv6",   "禁用 IPv6")             { true },
-    DeviceMenuAction("nettest",        "测试网络连接")           { true },
-    DeviceMenuAction("secondary_screen", "作为副屏串流（基地适用）") {
+    DeviceMenuAction("pair",           R.string.pcview_menu_pair_pc)            { it.pairState != PairingManager.PairState.PAIRED },
+    DeviceMenuAction("wol",            R.string.pcview_menu_send_wol)           { it.state == ComputerDetails.State.OFFLINE },
+    DeviceMenuAction("delete",         R.string.pcview_menu_delete_pc)          { it.pairState == PairingManager.PairState.PAIRED },
+    DeviceMenuAction("resume",         R.string.menu_resume_stream)             { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
+    DeviceMenuAction("quit",           R.string.menu_quit_app)                  { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
+    DeviceMenuAction("applist",        R.string.pcview_menu_app_list)           { true },
+    DeviceMenuAction("detail",         R.string.pcview_menu_details)            { true },
+    DeviceMenuAction("sleep",          R.string.send_sleep_command)             { it.state == ComputerDetails.State.ONLINE },
+    DeviceMenuAction("iperf",          R.string.network_bandwidth_test)         { true },
+    DeviceMenuAction("webui",          R.string.pcview_menu_open_webui)         { true },
+    DeviceMenuAction("disable_ipv6",   R.string.pcview_menu_disable_ipv6)       { true },
+    DeviceMenuAction("nettest",        R.string.pcview_menu_test_network)       { true },
+    DeviceMenuAction("secondary_screen", R.string.pcview_menu_secondary_screen) {
         it.state == ComputerDetails.State.ONLINE &&
         it.pairState == PairingManager.PairState.PAIRED
     },
-    DeviceMenuAction("gs_eol",         "NVIDIA GameStream 终止服务") { it.nvidiaServer },
+    DeviceMenuAction("gs_eol",         R.string.pcview_menu_eol)                { it.nvidiaServer },
 )
 
 // ── Main screen composable ────────────────────────────────────────
@@ -155,7 +156,7 @@ fun DeviceListScreen(
                     }
                 }
             } catch (e: Exception) {
-                snackbarHostState.showSnackbar("配对异常: ${e.message ?: e.javaClass.simpleName}")
+                snackbarHostState.showSnackbar(context.getString(R.string.toast_pair_error, e.message ?: e.javaClass.simpleName))
             } finally {
                 isPairingLoading = false
             }
@@ -213,6 +214,8 @@ fun DeviceListScreen(
     val unpaired = computers.filter { it.pairState != com.limelight.nvstream.http.PairingManager.PairState.PAIRED }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        BackgroundOverlay()
+
         // Pairing loading indicator at top
         if (isPairingLoading) {
             CircularProgressIndicator(
@@ -239,13 +242,13 @@ fun DeviceListScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        "未发现设备",
+                        context.getString(R.string.no_devices_found),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                     )
                     Spacer(Modifier.height(16.dp))
                     Button(onClick = { showAddMenu = true }) {
-                        Text("手动添加")
+                        Text(context.getString(R.string.btn_manual_add))
                     }
                 }
             }
@@ -273,7 +276,7 @@ fun DeviceListScreen(
                                 .fillMaxHeight(),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            item { SectionHeader("可控设备") }
+                            item { SectionHeader(context.getString(R.string.section_paired_devices)) }
                             items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
                                 DeviceCard(
                                     computer = computer,
@@ -306,7 +309,7 @@ fun DeviceListScreen(
                         if (unpaired.isNotEmpty()) {
                             item {
                                 SectionHeader(
-                                    title = if (showUnpairedLeft) "未配对设备" else "未配对设备",
+                                    title = context.getString(R.string.section_unpaired_devices),
                                 )
                             }
                             items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
@@ -347,7 +350,7 @@ fun DeviceListScreen(
                 ) {
                     // ── Paired devices ─────────────────────
                     if (paired.isNotEmpty()) {
-                        item(key = "header_paired") { SectionHeader("可控设备") }
+                        item(key = "header_paired") { SectionHeader(context.getString(R.string.section_paired_devices)) }
                         items(paired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
                             DeviceCard(
                                 computer = computer,
@@ -368,7 +371,7 @@ fun DeviceListScreen(
                     if (unpaired.isNotEmpty()) {
                         item(key = "header_unpaired") {
                             SectionHeader(
-                                title = "未配对设备",
+                                title = context.getString(R.string.section_unpaired_devices),
                             )
                         }
                         items(unpaired, key = { it.uuid ?: it.name.orEmpty() }) { computer ->
@@ -405,7 +408,7 @@ fun DeviceListScreen(
                 onClick = { showAddMenu = true },
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
             ) {
-                Icon(Icons.Default.Add, contentDescription = "添加设备")
+                Icon(Icons.Default.Add, contentDescription = context.getString(R.string.cd_add_device))
             }
 
             // 自定义弹窗带动画 — 从 FAB 上方展开/收起
@@ -627,7 +630,7 @@ private fun DeviceCard(
                 // Status badge (bottom-start) – shown for known states or paired+unknown
                 if (!isUnknown || isPairedUnknown) {
                     val badgeColor = if (isOnline) statusOnline else statusOffline
-                    val badgeText  = if (isOnline) "在线" else "离线"
+                    val badgeText  = if (isOnline) context.getString(R.string.pcview_menu_header_online) else context.getString(R.string.pcview_menu_header_offline)
                     Box(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -720,7 +723,7 @@ private fun DeviceCard(
                     verticalArrangement = Arrangement.Center,
                 ) {
                     MarqueeText(
-                        text = computer.name ?: "未知设备",
+                        text = computer.name ?: context.getString(R.string.device_unknown),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurface,
                     )
@@ -731,7 +734,7 @@ private fun DeviceCard(
                         // OS type icon
                         Icon(
                             imageVector = Icons.Default.DesktopWindows,
-                            contentDescription = "Windows",
+                            contentDescription = context.getString(R.string.cd_windows),
                             modifier = Modifier.size(16.dp),
                             tint = windowsBlue.copy(alpha = if (isOnline) 1f else 0.5f),
                         )
@@ -741,13 +744,13 @@ private fun DeviceCard(
                             Spacer(Modifier.width(6.dp))
                             Icon(
                                 Icons.Default.PlayCircle,
-                                contentDescription = "运行中",
+                                contentDescription = context.getString(R.string.cd_running),
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary,
                             )
                             Spacer(Modifier.width(3.dp))
                             Text(
-                                "运行中",
+                                context.getString(R.string.cd_running),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary,
                             )
@@ -768,7 +771,7 @@ private fun DeviceCard(
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = "更多",
+                    contentDescription = context.getString(R.string.cd_more),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -782,12 +785,12 @@ private fun DeviceCard(
         onDismissRequest = { showMenu = false },
     ) {
         // ── Header: 主机名 - 在线/离线 ────────────────
-        val statusText = if (isOnline) "在线" else "离线"
+        val statusText = if (isOnline) context.getString(R.string.pcview_menu_header_online) else context.getString(R.string.pcview_menu_header_offline)
         val headerColor = if (isOnline) statusOnline else Color.Black
         DropdownMenuItem(
             text = {
                 Text(
-                    text = "${computer.name ?: "未知设备"} - $statusText",
+                    text = "${computer.name ?: context.getString(R.string.device_unknown)} - $statusText",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.SemiBold,
                     color = headerColor,
@@ -801,7 +804,7 @@ private fun DeviceCard(
         val visibleActions = ALL_MENU_ACTIONS.filter { it.isVisible(computer) }
         visibleActions.forEach { action ->
             DropdownMenuItem(
-                text = { Text(action.label) },
+                text = { Text(context.getString(action.labelResId)) },
                 onClick = {
                     showMenu = false
                     handleMenuAction(
@@ -839,7 +842,7 @@ private fun handleMenuAction(
             managerBinder?.removeComputer(computer)
             computer.uuid?.let { onComputerRemoved?.invoke(it) }
             scope.launch {
-                snackbarHostState.showSnackbar("已删除设备: ${computer.name}")
+                snackbarHostState.showSnackbar(context.getString(R.string.toast_device_deleted, computer.name))
             }
         }
         "wol" -> {
@@ -847,11 +850,11 @@ private fun handleMenuAction(
                 try {
                     WakeOnLanSender.sendWolPacket(computer)
                     with(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("已发送唤醒包")
+                        snackbarHostState.showSnackbar(context.getString(R.string.toast_wol_sent))
                     }
                 } catch (e: Exception) {
                     with(Dispatchers.Main) {
-                        snackbarHostState.showSnackbar("唤醒失败: ${e.message}")
+                        snackbarHostState.showSnackbar(context.getString(R.string.toast_wol_failed, e.message ?: ""))
                     }
                 }
             }
@@ -910,7 +913,7 @@ private fun handleMenuAction(
                 com.limelight.utils.Iperf3Tester(activity, ip).show()
             } catch (e: java.io.IOException) {
                 scope.launch {
-                    snackbarHostState.showSnackbar("无法获取设备地址: ${e.message}")
+                    snackbarHostState.showSnackbar(context.getString(R.string.unable_to_get_pc_address, e.message ?: ""))
                 }
             }
         }
@@ -918,8 +921,8 @@ private fun handleMenuAction(
             computer.ipv6Disabled = !computer.ipv6Disabled
             managerBinder?.updateComputer(computer)
             scope.launch {
-                val msg = if (computer.ipv6Disabled) "已禁用 IPv6" else "已启用 IPv6"
-                snackbarHostState.showSnackbar("$msg: ${computer.name}")
+                val msgRes = if (computer.ipv6Disabled) R.string.pcview_ipv6_disabled else R.string.pcview_ipv6_enabled
+                snackbarHostState.showSnackbar("${context.getString(msgRes)}: ${computer.name}")
             }
         }
         "gs_eol" -> {
@@ -947,18 +950,18 @@ private fun launchStream(
         val pipUuid = StreamEngine.currentPipUuid
         if (pipUuid != null && pipUuid == computer.uuid) {
             // 同一设备：关闭 PiP Activity（它会清理流），然后启动新流
-            ToastUtil.show(context, "从画中画恢复串流…", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_from_pip_resume), Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
             // Activity finish 后继续执行下面的正常启动逻辑
         } else {
             // 不同设备：关闭 PiP Activity 停止旧流，然后启动新流
-            ToastUtil.show(context, "已停止另一台设备的画中画串流…", Toast.LENGTH_SHORT)
+            ToastUtil.show(context, context.getString(R.string.toast_stopped_other_pip), Toast.LENGTH_SHORT)
             StreamEngine.currentPipActivity!!.finish()
         }
     }
 
     if (computer.state != ComputerDetails.State.ONLINE) {
-        ToastUtil.show(context, "设备离线，正在尝试唤醒…", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.toast_device_offline_waking), Toast.LENGTH_SHORT)
         try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) {}
         return
     }
@@ -969,7 +972,7 @@ private fun launchStream(
         target.activeAddress = target.selectBestAddress()
     }
     if (target.activeAddress == null) {
-        ToastUtil.show(context, "设备地址不可用", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.toast_device_address_unavailable), Toast.LENGTH_SHORT)
         return
     }
 
@@ -990,7 +993,7 @@ private fun launchStream(
         if (cachedApps.isEmpty()) {
             ToastUtil.show(
                 context,
-                "无可启动的应用，请先打开应用列表加载",
+                context.getString(R.string.toast_no_launchable_app),
                 Toast.LENGTH_SHORT
             )
             return
@@ -1034,7 +1037,7 @@ private fun doPair(
     setLoading: (Boolean) -> Unit = {},
 ) {
     if (computer.state == ComputerDetails.State.OFFLINE || computer.activeAddress == null) {
-        ToastUtil.show(activity, "设备离线，无法配对", Toast.LENGTH_SHORT)
+        ToastUtil.show(activity, activity.getString(R.string.pair_pc_offline), Toast.LENGTH_SHORT)
         return
     }
     if (managerBinder == null) return
@@ -1063,10 +1066,10 @@ private fun doPair(
 
                 kotlinx.coroutines.withContext(Dispatchers.Main) {
                     val dlg = android.app.AlertDialog.Builder(activity)
-                        .setTitle("配对")
-                        .setMessage("请在主机上输入以下 PIN 码:\n\n$pin\n\n（主机屏幕上会显示输入框）")
+                        .setTitle(activity.getString(R.string.pair_pairing_title))
+                        .setMessage(activity.getString(R.string.pair_pairing_msg) + "\n\n$pin")
                         .setCancelable(false)
-                        .setPositiveButton("确定", null)
+                        .setPositiveButton(activity.getString(R.string.yes), null)
                         .create()
                     pinDialog = dlg
                     dlg.show()
@@ -1100,7 +1103,7 @@ private fun doPair(
             }
 
             val msg = when {
-                result == "already_paired" -> "设备已配对"
+                result == "already_paired" -> activity.getString(R.string.toast_pair_already_paired)
                 result.startsWith("success") -> {
                     val pairName = result.substringAfter("success:", "")
                     if (pairName.isNotEmpty()) {
@@ -1108,13 +1111,13 @@ private fun doPair(
                             .edit().putString(computer.uuid, pairName).apply()
                     }
                     managerBinder.invalidateStateForComputer(computer.uuid!!)
-                    "配对成功"
+                    activity.getString(R.string.toast_pair_success)
                 }
-                result == "pin_wrong" -> "PIN 码错误"
-                result == "failed_in_game" -> "配对失败：主机正在运行游戏"
-                result == "failed" -> "配对失败"
-                result == "in_progress" -> "配对已在进行中"
-                else -> "配对失败"
+                result == "pin_wrong" -> activity.getString(R.string.pair_incorrect_pin)
+                result == "failed_in_game" -> activity.getString(R.string.pair_pc_ingame)
+                result == "failed" -> activity.getString(R.string.pair_fail)
+                result == "in_progress" -> activity.getString(R.string.pair_already_in_progress)
+                else -> activity.getString(R.string.pair_fail)
             }
 
             with(Dispatchers.Main) {
@@ -1123,7 +1126,7 @@ private fun doPair(
         } catch (e: Exception) {
             pinDialog?.dismiss()
             with(Dispatchers.Main) {
-                snackbarHostState.showSnackbar("配对异常: ${e.message}")
+                snackbarHostState.showSnackbar(activity.getString(R.string.toast_pair_error, e.message ?: ""))
             }
         } finally {
             setLoading(false)
