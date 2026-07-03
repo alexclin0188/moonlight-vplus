@@ -235,7 +235,7 @@ object UpdateManager {
                                     }
                                 }
                             }
-                            // 优先匹配root/nonRoot
+                            // 优先匹配APK
                             for (a in apkAssets) {
                                 val name = a.optString("name", "")
                                 val isRootApk = name.lowercase().contains("root")

@@ -77,6 +77,7 @@
 
     <application
         android:name="com.alexclin.moonlink.android.app.MoonLinkApplication"
+        android:label="@string/app_label"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/backup_rules_s"

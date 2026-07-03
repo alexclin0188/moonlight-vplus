@@ -1,22 +1,15 @@
 package com.limelight.binding.input.evdev
 
 import android.app.Activity
-import com.alexclin.moonlink.android.BuildConfig
 import com.limelight.binding.input.capture.InputCaptureProvider
 
 object EvdevCaptureProviderShim {
     fun isCaptureProviderSupported(): Boolean {
-        return BuildConfig.ROOT_BUILD
+        return false
     }
 
-    // We need to construct our capture provider using reflection because it isn't included in non-root builds
+    // evdev capture provider removed (non-root build only)
     fun createEvdevCaptureProvider(activity: Activity, listener: EvdevListener): InputCaptureProvider {
-        try {
-            val providerClass = Class.forName("com.limelight.binding.input.evdev.EvdevCaptureProvider")
-            return providerClass.constructors[0].newInstance(activity, listener) as InputCaptureProvider
-        } catch (e: Exception) {
-            e.printStackTrace()
-            throw RuntimeException(e)
-        }
+        throw UnsupportedOperationException("Evdev capture provider is not available (root build removed)")
     }
 }

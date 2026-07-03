@@ -76,7 +76,6 @@ object CrashReporter {
             pw.println("time:        $time")
             pw.println("thread:      ${thread.name}")
             pw.println("appVersion:  ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
-            pw.println("flavor:      ${BuildConfig.FLAVOR}")
             pw.println("build:       ${BuildConfig.BUILD_TYPE}")
             pw.println("device:      ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE})")
             pw.println("android:     ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
