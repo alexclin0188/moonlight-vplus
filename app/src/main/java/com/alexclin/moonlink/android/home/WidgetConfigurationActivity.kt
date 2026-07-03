@@ -1,5 +1,5 @@
 @file:Suppress("DEPRECATION")
-package com.limelight.widget
+package com.alexclin.moonlink.android.home
 
 import android.app.Activity
 import android.appwidget.AppWidgetManager

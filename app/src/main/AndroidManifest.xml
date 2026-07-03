@@ -76,7 +76,7 @@
         tools:ignore="ProtectedPermissions" />
 
     <application
-        android:name="com.limelight.LimelightApplication"
+        android:name="com.alexclin.moonlink.android.app.MoonLinkApplication"
         android:allowBackup="true"
         android:fullBackupContent="@xml/backup_rules"
         android:dataExtractionRules="@xml/backup_rules_s"
@@ -92,7 +92,7 @@
         tools:targetApi="vanillaIceCream">
 
         <provider
-            android:name="com.limelight.PosterContentProvider"
+            android:name="com.alexclin.moonlink.android.home.BoxArtProvider"
             android:authorities="poster.${applicationId}"
             android:enabled="true"
             android:exported="false">
@@ -184,7 +184,7 @@
 
         <!-- Small hack to support launcher shortcuts without relaunching over and over again when the back button is pressed -->
         <activity
-            android:name="com.limelight.ShortcutTrampoline"
+            android:name="com.alexclin.moonlink.android.home.ShortcutTrampoline"
             android:noHistory="true"
             android:exported="true"
             android:resizeableActivity="true"
@@ -193,33 +193,15 @@
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
         <activity
-            android:name="com.limelight.SunshineWebUiActivity"
+            android:name="com.alexclin.moonlink.android.device.SunshineWebUiActivity"
             android:resizeableActivity="true"
             android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
             android:label="@string/pcview_menu_open_webui">
             <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
             <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
         </activity>
-        <activity
-            android:name="com.limelight.preferences.StreamSettings"
-            android:theme="@style/SettingsThemeCompat"
-            android:resizeableActivity="true"
-            android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
-            android:label="Streaming Settings">
-            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
-            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
-        </activity>
-        <activity
-            android:name="com.limelight.preferences.CapabilityDiagnosticActivity"
-            android:resizeableActivity="true"
-            android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection"
-            android:label="Capability Diagnostic">
-            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
-            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
-        </activity>
 
-
-        <!-- MoonLink 新版串流 Activity — 与旧版 Game 并行存在，验证通过后可删除旧版 -->
+        <!-- MoonLink 新版串流 Activity -->
         <activity
             android:name="com.alexclin.moonlink.android.stream.StreamActivity"
             android:configChanges="mcc|mnc|locale|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection|density"
@@ -238,17 +220,17 @@
         </activity>
 
         <service
-            android:name="com.limelight.discovery.DiscoveryService"
+            android:name="com.alexclin.moonlink.android.home.DiscoveryService"
             android:label="mDNS PC Auto-Discovery Service" />
         <service
             android:name="com.limelight.computers.ComputerManagerService"
             android:label="Computer Management Service" />
         <service
-            android:name="com.limelight.binding.input.driver.UsbDriverService"
+            android:name="com.alexclin.moonlink.android.stream.engine.UsbDriverService"
             android:label="Usb Driver Service" />
 
         <service
-            android:name="com.limelight.services.KeyboardAccessibilityService"
+            android:name="com.alexclin.moonlink.android.stream.KeyboardAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:label="@string/accessibility_service_label"
             android:exported="false"
@@ -272,7 +254,7 @@
 
         <!-- stopWithTask="false" 表示当用户从最近任务划掉 App 时，服务尝试不立即停止 -->
         <service
-            android:name="com.limelight.services.StreamNotificationService"
+            android:name="com.alexclin.moonlink.android.stream.StreamNotificationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="mediaPlayback"
@@ -280,23 +262,15 @@
 
         <!-- Download complete receiver for auto-update -->
         <receiver
-            android:name="com.limelight.utils.UpdateDownloadReceiver"
+            android:name="com.alexclin.moonlink.android.settings.UpdateDownloadReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.DOWNLOAD_COMPLETE" />
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name="com.limelight.HelpActivity"
-            android:resizeableActivity="true"
-            android:configChanges="mcc|mnc|touchscreen|keyboard|keyboardHidden|navigation|screenLayout|fontScale|uiMode|orientation|screenSize|smallestScreenSize|layoutDirection">
-            <meta-data android:name="WindowManagerPreference:FreeformWindowSize" android:value="system-default" />
-            <meta-data android:name="WindowManagerPreference:FreeformWindowOrientation" android:value="landscape" />
-        </activity>
-
         <receiver
-            android:name="com.limelight.widget.GameListWidgetProvider"
+            android:name="com.alexclin.moonlink.android.home.GameListWidgetProvider"
             android:exported="true"
             android:label="@string/widget_name">
             <intent-filter>
@@ -309,12 +283,12 @@
         </receiver>
 
         <service
-            android:name="com.limelight.widget.GameListWidgetService"
+            android:name="com.alexclin.moonlink.android.home.GameListWidgetService"
             android:exported="false"
             android:permission="android.permission.BIND_REMOTEVIEWS" />
 
         <activity
-            android:name="com.limelight.widget.WidgetConfigurationActivity"
+            android:name="com.alexclin.moonlink.android.home.WidgetConfigurationActivity"
             android:excludeFromRecents="true"
             android:noHistory="true"
             android:exported="true">

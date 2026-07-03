@@ -1,4 +1,4 @@
-package com.limelight.binding.input.driver
+package com.alexclin.moonlink.android.stream.engine
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -20,6 +20,14 @@ import android.widget.Toast
 import com.limelight.LimeLog
 import com.alexclin.moonlink.android.R
 import com.limelight.preferences.PreferenceConfiguration
+import com.limelight.binding.input.driver.UsbDriverListener
+import com.limelight.binding.input.driver.AbstractController
+import com.limelight.binding.input.driver.XboxOneController
+import com.limelight.binding.input.driver.Xbox360Controller
+import com.limelight.binding.input.driver.Xbox360WirelessDongle
+import com.limelight.binding.input.driver.SwitchProController
+import com.limelight.binding.input.driver.DualSenseController
+import com.limelight.binding.input.driver.Dualshock4Controller
 
 class UsbDriverService : Service(), UsbDriverListener {
 
@@ -228,7 +236,7 @@ class UsbDriverService : Service(), UsbDriverListener {
     }
 
     companion object {
-        private const val ACTION_USB_PERMISSION = "com.limelight.USB_PERMISSION"
+        private const val ACTION_USB_PERMISSION = "com.alexclin.moonlink.USB_PERMISSION"
 
         @JvmStatic
         fun isRecognizedInputDevice(device: UsbDevice): Boolean {

@@ -11,7 +11,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.grid.AppGridAdapter
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp

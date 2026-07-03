@@ -3,7 +3,7 @@ package com.alexclin.moonlink.android.stream.engine
 import android.content.Context
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

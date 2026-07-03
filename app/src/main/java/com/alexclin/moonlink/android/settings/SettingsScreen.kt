@@ -22,7 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.R
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 
 /**

@@ -10,7 +10,7 @@ import java.util.Collections
 import java.util.concurrent.LinkedBlockingQueue
 
 import com.alexclin.moonlink.android.R
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.jni.MoonBridge

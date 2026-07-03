@@ -55,7 +55,7 @@ import com.alexclin.moonlink.android.vpn.VpnScreen
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.preferences.BackgroundSource
 import jp.wasabeef.glide.transformations.BlurTransformation

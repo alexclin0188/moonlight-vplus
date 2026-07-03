@@ -18,7 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.tvprovider.media.tv.TvContractCompat
 
 import com.limelight.LimeLog
-import com.limelight.PosterContentProvider
+import com.alexclin.moonlink.android.home.BoxArtProvider
 import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
@@ -131,7 +131,7 @@ class TvChannelHelper(private var context: Activity) {
                 .setType(TYPE_GAME)
                 .setTitle(app.appName)
                 .setPosterArtAspectRatio(ASPECT_RATIO_MOVIE_POSTER)
-                .setPosterArtUri(PosterContentProvider.createBoxArtUri(computer.uuid!!, "" + app.appId))
+                .setPosterArtUri(com.alexclin.moonlink.android.home.BoxArtProvider.createBoxArtUri(computer.uuid!!, "" + app.appId))
                 .setIntent(ServerHelper.createAppShortcutIntent(context, computer, app))
                 .setInternalProviderId("" + app.appId)
                 .setWeight(((System.currentTimeMillis() - 1500000000000L) / 1000).toInt())

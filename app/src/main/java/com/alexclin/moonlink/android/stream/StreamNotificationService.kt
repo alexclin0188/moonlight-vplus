@@ -1,4 +1,4 @@
-package com.limelight.services
+package com.alexclin.moonlink.android.stream
 
 import android.app.Notification
 import android.app.NotificationChannel

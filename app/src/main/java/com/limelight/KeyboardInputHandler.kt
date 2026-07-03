@@ -11,7 +11,7 @@ import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.nvstream.input.KeyboardPacket
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge
-import com.limelight.services.KeyboardAccessibilityService
+import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 
 /**
  * 键盘/按键事件处理器。

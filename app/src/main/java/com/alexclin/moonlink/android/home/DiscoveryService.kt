@@ -1,4 +1,4 @@
-package com.limelight.discovery
+package com.alexclin.moonlink.android.home
 
 import android.app.Service
 import android.content.Intent

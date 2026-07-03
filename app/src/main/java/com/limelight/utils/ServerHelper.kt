@@ -6,9 +6,9 @@ import android.widget.Toast
 import com.limelight.AppView
 import com.limelight.Game
 import com.alexclin.moonlink.android.R
-import com.limelight.ShortcutTrampoline
+import com.alexclin.moonlink.android.home.ShortcutTrampoline
 import com.limelight.binding.PlatformBinding
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.HostHttpResponseException
 import com.limelight.nvstream.http.NvApp
@@ -57,7 +57,7 @@ object ServerHelper {
         screenCombinationMode: Int = -1,
         forceResumeCurrentSession: Boolean = false
     ): Intent {
-        return Intent(parent, Game::class.java).apply {
+        return Intent(parent, com.alexclin.moonlink.android.stream.StreamActivity::class.java).apply {
             putExtra(Game.EXTRA_HOST, computer.activeAddress!!.address)
             putExtra(Game.EXTRA_PORT, computer.activeAddress!!.port)
             putExtra(Game.EXTRA_HTTPS_PORT, computer.httpsPort)

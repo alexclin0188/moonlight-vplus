@@ -1,5 +1,5 @@
 @file:Suppress("DEPRECATION")
-package com.limelight.computers
+package com.alexclin.moonlink.android.home
 
 import java.io.IOException
 import java.io.StringReader
@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock
 
 import com.limelight.LimeLog
 import com.limelight.binding.PlatformBinding
-import com.limelight.discovery.DiscoveryService
+import com.alexclin.moonlink.android.home.DiscoveryService
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
@@ -25,6 +25,10 @@ import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.utils.CacheHelper
 import com.limelight.utils.NetHelper
 import com.limelight.utils.ServerHelper
+import com.limelight.computers.ComputerDatabaseManager
+import com.limelight.computers.IdentityManager
+import com.limelight.computers.NetworkDiagnostics
+import com.limelight.computers.DynamicTimeoutManager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -907,9 +911,9 @@ class ComputerManagerService : Service() {
                                 }
 
                                 // Trigger widget refresh
-                                val refreshIntent = Intent(com.limelight.widget.GameListWidgetProvider.ACTION_REFRESH_WIDGET)
-                                refreshIntent.component = ComponentName(this@ComputerManagerService, com.limelight.widget.GameListWidgetProvider::class.java)
-                                refreshIntent.putExtra(com.limelight.widget.GameListWidgetProvider.EXTRA_COMPUTER_UUID, computer.uuid!!)
+                                val refreshIntent = Intent(com.alexclin.moonlink.android.home.GameListWidgetProvider.ACTION_REFRESH_WIDGET)
+                                refreshIntent.component = ComponentName(this@ComputerManagerService, com.alexclin.moonlink.android.home.GameListWidgetProvider::class.java)
+                                refreshIntent.putExtra(com.alexclin.moonlink.android.home.GameListWidgetProvider.EXTRA_COMPUTER_UUID, computer.uuid!!)
                                 sendBroadcast(refreshIntent)
 
                                 if (list.isNotEmpty()) {

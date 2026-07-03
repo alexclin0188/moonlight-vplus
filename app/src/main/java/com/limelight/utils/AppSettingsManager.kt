@@ -6,7 +6,7 @@ import android.content.Intent
 import android.view.KeyEvent
 
 import com.alexclin.moonlink.android.R
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.preferences.PreferenceConfiguration

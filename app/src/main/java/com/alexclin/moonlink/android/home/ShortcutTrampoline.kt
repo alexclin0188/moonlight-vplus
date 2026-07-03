@@ -1,4 +1,4 @@
-package com.limelight
+package com.alexclin.moonlink.android.home
 
 import android.app.Activity
 import android.app.Service
@@ -9,7 +9,7 @@ import android.os.Bundle
 import android.os.IBinder
 
 import com.limelight.computers.ComputerDatabaseManager
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
@@ -21,6 +21,8 @@ import com.limelight.utils.ServerHelper
 import com.limelight.utils.SpinnerDialog
 import com.limelight.utils.UiHelper
 import com.limelight.utils.AppCacheManager
+import com.limelight.AppView
+import com.limelight.Game
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -145,13 +147,10 @@ class ShortcutTrampoline : Activity() {
             } else {
                 finish()
 
-                var i = Intent(this@ShortcutTrampoline, PcView::class.java)
+                // 跳转到新版 Compose 主页，不再经过 PcView/AppView
+                val i = Intent(this@ShortcutTrampoline, com.alexclin.moonlink.android.MoonLinkMainActivity::class.java)
                 i.action = Intent.ACTION_MAIN
                 i.flags = Intent.FLAG_ACTIVITY_CLEAR_TASK or Intent.FLAG_ACTIVITY_NEW_TASK
-                intentStack.add(i)
-
-                i = Intent(intent)
-                i.setClass(this@ShortcutTrampoline, AppView::class.java)
                 intentStack.add(i)
 
                 if (details.runningGameId != 0) {

@@ -7,7 +7,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import com.limelight.binding.input.ControllerHandler
-import com.limelight.binding.input.driver.UsbDriverService
+import com.alexclin.moonlink.android.stream.engine.UsbDriverService
 
 /**
  * 管理 USB 驱动服务的绑定和生命周期。

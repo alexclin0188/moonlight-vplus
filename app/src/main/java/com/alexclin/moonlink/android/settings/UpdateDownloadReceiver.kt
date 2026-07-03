@@ -1,10 +1,12 @@
-package com.limelight.utils
+package com.alexclin.moonlink.android.settings
 
 import android.app.DownloadManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+
+import com.limelight.utils.UpdateManager
 
 /**
  * 监听系统下载管理器的下载完成事件，

@@ -1,4 +1,4 @@
-package com.limelight
+package com.alexclin.moonlink.android.app
 
 import android.app.Application
 import android.util.Log
@@ -22,7 +22,7 @@ import com.limelight.crash.CrashReporter
  * 调用全部静默失败（这些类内部都已包了 try-catch + 空指针守卫）。本地崩溃文件
  * 上报路径仍然有效。
  */
-class LimelightApplication : Application() {
+class MoonLinkApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
@@ -77,6 +77,6 @@ class LimelightApplication : Application() {
     }
 
     companion object {
-        private const val TAG = "LimelightApp"
+        private const val TAG = "MoonLinkApp"
     }
 }

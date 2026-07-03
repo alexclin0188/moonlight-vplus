@@ -3,7 +3,7 @@ package com.alexclin.moonlink.android.home
 import android.content.Context
 import com.alexclin.moonlink.android.R
 import com.limelight.binding.PlatformBinding
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager

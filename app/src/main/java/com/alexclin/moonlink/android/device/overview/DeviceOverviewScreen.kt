@@ -37,8 +37,8 @@ import com.alexclin.moonlink.android.home.getDefaultQuickStartApp
 import com.alexclin.moonlink.android.home.loadCachedAppList
 import com.alexclin.moonlink.android.stream.StreamActivity
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
-import com.limelight.SunshineWebUiActivity
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.device.SunshineWebUiActivity
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP

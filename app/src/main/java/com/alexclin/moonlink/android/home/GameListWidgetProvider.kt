@@ -1,5 +1,5 @@
 @file:Suppress("DEPRECATION")
-package com.limelight.widget
+package com.alexclin.moonlink.android.home
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -10,9 +10,8 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.RemoteViews
 
-import com.limelight.AppSelectionActivity
 import com.alexclin.moonlink.android.R
-import com.limelight.ShortcutTrampoline
+import com.alexclin.moonlink.android.home.ShortcutTrampoline
 
 class GameListWidgetProvider : AppWidgetProvider() {
 
@@ -62,8 +61,8 @@ class GameListWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        const val ACTION_REFRESH_WIDGET = "com.limelight.widget.ACTION_REFRESH_WIDGET"
-        const val EXTRA_COMPUTER_UUID = "com.limelight.widget.EXTRA_COMPUTER_UUID"
+        const val ACTION_REFRESH_WIDGET = "com.alexclin.moonlink.android.home.ACTION_REFRESH_WIDGET"
+        const val EXTRA_COMPUTER_UUID = "com.alexclin.moonlink.android.home.EXTRA_COMPUTER_UUID"
 
         fun updateAppWidget(context: Context, appWidgetManager: AppWidgetManager, appWidgetId: Int) {
             val prefs = context.getSharedPreferences("widget_prefs", Context.MODE_PRIVATE)
@@ -107,7 +106,7 @@ class GameListWidgetProvider : AppWidgetProvider() {
                 views.setPendingIntentTemplate(R.id.widget_grid, launchPendingIntent)
 
                 // Header click to open AppSelectionActivity
-                val headerIntent = Intent(context, AppSelectionActivity::class.java).apply {
+                val headerIntent = Intent(context, com.limelight.AppSelectionActivity::class.java).apply {
                     putExtra("UUID", computerUuid)
                     putExtra("Name", computerName)
                 }

@@ -23,7 +23,7 @@ import android.view.MotionEvent
 import com.limelight.LimeLog
 import com.limelight.binding.input.driver.AbstractController
 import com.limelight.binding.input.driver.UsbDriverListener
-import com.limelight.binding.input.driver.UsbDriverService
+import com.alexclin.moonlink.android.stream.engine.UsbDriverService
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.input.ControllerPacket
 import com.limelight.nvstream.input.MouseButtonPacket

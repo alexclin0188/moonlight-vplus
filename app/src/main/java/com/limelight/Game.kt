@@ -18,7 +18,7 @@ import com.limelight.binding.input.touch.AbsoluteTouchContext
 import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.binding.input.touch.RelativeTouchContext
 import com.limelight.binding.input.touch.TouchContext
-import com.limelight.binding.input.driver.UsbDriverService
+import com.alexclin.moonlink.android.stream.engine.UsbDriverService
 import com.limelight.binding.input.evdev.EvdevListener
 import com.limelight.binding.input.virtual_controller.VirtualController
 import com.limelight.binding.video.MediaCodecDecoderRenderer
@@ -37,7 +37,7 @@ import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
-import com.limelight.services.StreamNotificationService
+import com.alexclin.moonlink.android.stream.StreamNotificationService
 import com.limelight.ui.CursorView
 import com.limelight.ui.GameGestures
 import com.limelight.ui.StreamView
@@ -49,7 +49,7 @@ import com.limelight.utils.NetHelper
 import com.limelight.utils.AnalyticsManager
 import com.limelight.utils.AppCacheManager
 import com.limelight.utils.AppSettingsManager
-import com.limelight.services.KeyboardAccessibilityService
+import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 
 import android.annotation.SuppressLint
 import android.app.Activity

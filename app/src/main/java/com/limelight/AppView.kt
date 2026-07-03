@@ -44,7 +44,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.xmlpull.v1.XmlPullParserException
 
 import com.limelight.binding.PlatformBinding
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.grid.AppGridAdapter
 import com.limelight.grid.assets.CachedAppAssetLoader
 import com.limelight.nvstream.http.ComputerDetails

@@ -65,7 +65,7 @@ import com.alexclin.moonlink.android.theme.MoonLinkTheme
 import com.limelight.LimeLog
 import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.nvstream.input.KeyboardPacket
-import com.limelight.services.StreamNotificationService
+import com.alexclin.moonlink.android.stream.StreamNotificationService
 
 /**
  * MoonLink 新版串流 Activity。

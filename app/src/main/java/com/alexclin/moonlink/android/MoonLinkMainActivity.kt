@@ -26,7 +26,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.stream.engine.DeviceStateManager
 import com.alexclin.moonlink.android.theme.MoonLinkTheme
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

@@ -22,7 +22,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.limelight.binding.PlatformBinding
 import com.limelight.binding.crypto.AndroidCryptoProvider
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.dialogs.AddressSelectionDialog
 import com.limelight.grid.PcGridAdapter
 import com.limelight.grid.assets.DiskAssetLoader
@@ -37,7 +37,7 @@ import com.limelight.preferences.BackgroundSource
 import com.limelight.preferences.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.preferences.StreamSettings
-import com.limelight.services.KeyboardAccessibilityService
+import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 import com.limelight.ui.AdapterFragment
 import com.limelight.ui.AdapterFragmentCallbacks
 import com.limelight.utils.AnalyticsManager
@@ -2091,7 +2091,7 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
         }
         try {
             val certDer = details.serverCert?.encoded
-            val intent = SunshineWebUiActivity.createIntent(
+            val intent = com.alexclin.moonlink.android.device.SunshineWebUiActivity.createIntent(
                 this,
                 url,
                 getString(R.string.pcview_menu_open_webui) + " - " + (details.name ?: ""),
@@ -2340,7 +2340,7 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
                 .setView(dialogView)
                 .setPositiveButton(R.string.about_dialog_official_site) { _, _ ->
                     startActivity(
-                        SunshineWebUiActivity.createIntent(
+                        com.alexclin.moonlink.android.device.SunshineWebUiActivity.createIntent(
                             this,
                             OFFICIAL_SITE_URL,
                             getString(R.string.about_dialog_official_site),

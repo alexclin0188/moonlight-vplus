@@ -53,7 +53,7 @@ import com.journeyapps.barcodescanner.ScanContract
 import com.journeyapps.barcodescanner.ScanOptions
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
-import com.limelight.computers.ComputerManagerService
+import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
@@ -893,10 +893,10 @@ private fun handleMenuAction(
         "webui" -> {
             val addr = computer.activeAddress?.address ?: return
             val url = "https://$addr:${computer.httpsPort}"
-            val intent = android.content.Intent(context, com.limelight.SunshineWebUiActivity::class.java).apply {
-                putExtra(com.limelight.SunshineWebUiActivity.EXTRA_URL, url)
-                putExtra(com.limelight.SunshineWebUiActivity.EXTRA_TITLE, computer.name ?: "Sunshine")
-                computer.serverCert?.let { putExtra(com.limelight.SunshineWebUiActivity.EXTRA_SERVER_CERT, it.encoded) }
+            val intent = android.content.Intent(context, com.alexclin.moonlink.android.device.SunshineWebUiActivity::class.java).apply {
+                putExtra(com.alexclin.moonlink.android.device.SunshineWebUiActivity.EXTRA_URL, url)
+                putExtra(com.alexclin.moonlink.android.device.SunshineWebUiActivity.EXTRA_TITLE, computer.name ?: "Sunshine")
+                computer.serverCert?.let { putExtra(com.alexclin.moonlink.android.device.SunshineWebUiActivity.EXTRA_SERVER_CERT, it.encoded) }
             }
             context.startActivity(intent)
         }
