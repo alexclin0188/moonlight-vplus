@@ -223,7 +223,7 @@
             android:name="com.alexclin.moonlink.android.home.DiscoveryService"
             android:label="mDNS PC Auto-Discovery Service" />
         <service
-            android:name="com.limelight.computers.ComputerManagerService"
+            android:name="com.alexclin.moonlink.android.home.ComputerManagerService"
             android:label="Computer Management Service" />
         <service
             android:name="com.alexclin.moonlink.android.stream.engine.UsbDriverService"
