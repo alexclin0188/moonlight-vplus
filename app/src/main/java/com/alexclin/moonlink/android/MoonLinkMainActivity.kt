@@ -134,6 +134,7 @@ class MoonLinkMainActivity : ComponentActivity() {
                     onComputerRemoved = { uuid ->
                         deviceManager.devices.removeAll { it.uuid == uuid }
                     },
+                    initialNavigateToUuid = intent.getStringExtra("navigate_to_uuid"),
                 )
             }
         }

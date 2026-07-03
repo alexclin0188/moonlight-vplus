@@ -87,7 +87,7 @@ import com.alexclin.moonlink.android.stream.ui.common.RestartHintBanner
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
 import com.alexclin.moonlink.android.stream.ui.common.getActionLabel
 import com.alexclin.moonlink.android.stream.ui.panels.QuickActionRow
-import com.limelight.QuickActionRegistry
+import com.alexclin.moonlink.android.util.QuickActionRegistry
 import android.view.KeyEvent
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil

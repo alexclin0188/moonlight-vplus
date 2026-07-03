@@ -9,7 +9,7 @@ import android.media.audiofx.NoiseSuppressor
 import android.os.Process
 import android.os.SystemClock
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 import java.nio.ByteBuffer
 import java.util.concurrent.atomic.AtomicBoolean

@@ -6,7 +6,7 @@ import android.net.nsd.NsdServiceInfo
 import android.os.Build
 import androidx.annotation.RequiresApi
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 import java.net.Inet4Address
 import java.net.Inet6Address

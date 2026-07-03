@@ -17,7 +17,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.preference.PreferenceManager
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.PcView
 import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails
@@ -25,7 +25,7 @@ import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
 import com.limelight.preferences.PreferenceConfiguration
-import com.limelight.utils.CacheHelper
+import com.alexclin.moonlink.android.util.CacheHelper
 
 import java.io.StringReader
 import java.lang.ref.WeakReference

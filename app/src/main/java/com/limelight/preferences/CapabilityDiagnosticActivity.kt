@@ -27,7 +27,7 @@ import android.widget.Toast
 
 import com.alexclin.moonlink.android.R
 import com.limelight.utils.HdrCapabilityHelper
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.UiHelper
 
 /**
  * 编解码与屏幕能力检测页面

@@ -1,7 +1,7 @@
 package com.limelight.grid.assets
 
 import android.util.LruCache
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import java.lang.ref.SoftReference
 
 class MemoryAssetLoader {

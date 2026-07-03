@@ -1,6 +1,6 @@
 package com.limelight.nvstream.wol
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.http.ComputerDetails
 
 import java.io.IOException

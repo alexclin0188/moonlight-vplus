@@ -6,7 +6,7 @@ import android.net.ConnectivityManager
 import android.os.Build
 import android.provider.Settings
 
-import com.limelight.utils.NetHelper
+import com.alexclin.moonlink.android.util.NetHelper
 
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -24,7 +24,7 @@ import javax.crypto.SecretKey
 
 import org.xmlpull.v1.XmlPullParserException
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.av.audio.AudioRenderer
 import com.limelight.nvstream.av.video.VideoDecoderRenderer

@@ -1,6 +1,6 @@
 package com.limelight.binding.audio
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.jni.MoonBridge
 

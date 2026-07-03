@@ -2,7 +2,7 @@ package com.limelight.nvstream.http
 
 import com.google.gson.Gson
 import com.google.gson.JsonArray
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 class NvApp {
     var appName: String = ""

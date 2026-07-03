@@ -2,7 +2,7 @@ package com.limelight.binding.input.capture
 
 import android.app.Activity
 import com.alexclin.moonlink.android.BuildConfig
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.evdev.EvdevCaptureProviderShim
 import com.limelight.binding.input.evdev.EvdevListener

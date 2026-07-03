@@ -1,9 +1,9 @@
 package com.alexclin.moonlink.android.stream.ui.editor
 
 import android.content.ContentValues
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.element.Element
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.element.Element
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 
 // ════════════════════════════════════════════════════════════════════════════
 //  元素类型枚举（与旧 Element.java 常量完全对应）

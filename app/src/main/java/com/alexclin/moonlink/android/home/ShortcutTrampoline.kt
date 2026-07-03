@@ -8,19 +8,19 @@ import android.content.ServiceConnection
 import android.os.Bundle
 import android.os.IBinder
 
-import com.limelight.computers.ComputerDatabaseManager
+import com.alexclin.moonlink.android.home.ComputerDatabaseManager
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
 import com.limelight.nvstream.wol.WakeOnLanSender
-import com.limelight.utils.CacheHelper
-import com.limelight.utils.Dialog
-import com.limelight.utils.ServerHelper
-import com.limelight.utils.SpinnerDialog
-import com.limelight.utils.UiHelper
-import com.limelight.utils.AppCacheManager
+import com.alexclin.moonlink.android.util.CacheHelper
+import com.alexclin.moonlink.android.util.Dialog
+import com.alexclin.moonlink.android.util.ServerHelper
+import com.alexclin.moonlink.android.util.SpinnerDialog
+import com.alexclin.moonlink.android.util.UiHelper
+import com.alexclin.moonlink.android.util.AppCacheManager
 import com.limelight.AppView
 import com.limelight.Game
 

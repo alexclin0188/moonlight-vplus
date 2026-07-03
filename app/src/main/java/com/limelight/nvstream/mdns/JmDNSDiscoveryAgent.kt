@@ -3,7 +3,7 @@ package com.limelight.nvstream.mdns
 import android.content.Context
 import android.net.wifi.WifiManager
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 import java.io.IOException
 import java.io.UnsupportedEncodingException

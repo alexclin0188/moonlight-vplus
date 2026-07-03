@@ -2,7 +2,7 @@ package com.alexclin.moonlink.android.stream.engine
 
 import android.content.Context
 import android.os.Environment
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import java.io.File
 import java.io.FileWriter
 import java.text.SimpleDateFormat

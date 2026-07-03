@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
+import com.alexclin.moonlink.android.util.LimeLog
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -22,7 +23,7 @@ import com.limelight.binding.video.MediaCodecDecoderRenderer
 import com.limelight.nvstream.NvConnection
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.StreamView
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.UiHelper
 import com.alexclin.moonlink.android.R
 
 /**

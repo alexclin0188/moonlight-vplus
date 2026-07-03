@@ -18,7 +18,7 @@ import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.VideogameAsset
 import androidx.compose.material.icons.filled.VolumeOff
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.limelight.QuickActionRegistry
+import com.alexclin.moonlink.android.util.QuickActionRegistry
 
 object MoonLinkQuickActions {
     const val TOGGLE_PIP = "toggle_pip"

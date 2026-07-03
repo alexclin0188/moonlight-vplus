@@ -40,7 +40,7 @@ import org.xmlpull.v1.XmlPullParserException
 import org.xmlpull.v1.XmlPullParserFactory
 
 import com.alexclin.moonlink.android.BuildConfig
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.ConnectionContext
 import com.limelight.nvstream.http.PairingManager.PairState
 import com.limelight.nvstream.jni.MoonBridge

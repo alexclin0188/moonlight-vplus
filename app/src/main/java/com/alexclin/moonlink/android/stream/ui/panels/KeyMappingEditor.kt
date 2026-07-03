@@ -95,8 +95,8 @@ import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
 import com.alexclin.moonlink.android.stream.ui.editor.collectElementDisplayNames
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 import kotlin.math.roundToInt
 
 private const val MAX_SCREEN_PX = 5000
@@ -583,8 +583,8 @@ fun KeyMappingEditor(
                     // 编辑了单个元素颜色 → 关闭该方案的全局颜色开关
                     try {
                         val cv = android.content.ContentValues()
-                        cv.putNull(com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
-                        cv.putNull(com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                        cv.putNull(com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
+                        cv.putNull(com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
                         db.updateConfig(editorState.configId, cv)
                     } catch (_: Exception) { }
                     showColorEditor = false

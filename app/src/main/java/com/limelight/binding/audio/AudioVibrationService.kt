@@ -10,7 +10,7 @@ import android.view.InputDevice
 
 import androidx.annotation.RequiresApi
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.binding.input.ControllerHandler
 
 /**

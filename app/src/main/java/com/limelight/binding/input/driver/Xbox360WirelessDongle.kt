@@ -7,7 +7,7 @@ import android.hardware.usb.UsbEndpoint
 import android.hardware.usb.UsbInterface
 import android.view.InputDevice
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 class Xbox360WirelessDongle(
     private val device: UsbDevice,

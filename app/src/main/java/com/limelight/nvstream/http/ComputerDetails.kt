@@ -2,7 +2,7 @@ package com.limelight.nvstream.http
 
 import android.content.Context
 
-import com.limelight.utils.NetHelper
+import com.alexclin.moonlink.android.util.NetHelper
 
 import java.net.Inet4Address
 import java.net.InetAddress

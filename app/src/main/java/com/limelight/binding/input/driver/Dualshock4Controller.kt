@@ -4,7 +4,7 @@ import android.hardware.usb.UsbDevice
 import android.hardware.usb.UsbDeviceConnection
 import android.util.Log
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.input.ControllerPacket
 
 import java.nio.ByteBuffer

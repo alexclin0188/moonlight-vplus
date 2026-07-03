@@ -10,7 +10,7 @@ import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.FileProvider
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.http.ClipboardBlobUploadResult
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.jni.MoonBridge

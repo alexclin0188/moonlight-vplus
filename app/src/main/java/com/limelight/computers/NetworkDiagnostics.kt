@@ -1,8 +1,8 @@
 package com.limelight.computers
 
 import android.content.Context
-import com.limelight.LimeLog
-import com.limelight.utils.NetHelper
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.NetHelper
 import java.util.concurrent.atomic.AtomicReference
 
 /**

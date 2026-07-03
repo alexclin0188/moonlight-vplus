@@ -35,12 +35,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 import com.alexclin.moonlink.android.stream.ui.panels.SchemeInfo
 import com.alexclin.moonlink.android.stream.ui.panels.loadUserSchemes
 import com.alexclin.moonlink.android.stream.ui.ScreenScaleHelper
-import com.limelight.utils.MathUtils
+import com.alexclin.moonlink.android.util.MathUtils
 import org.json.JSONArray
 import org.json.JSONObject
 import java.text.SimpleDateFormat

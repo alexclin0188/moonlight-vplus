@@ -4,7 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 import java.io.BufferedReader
 import java.io.InputStreamReader
 

@@ -1,4 +1,6 @@
 package com.limelight
+import com.alexclin.moonlink.android.util.QuickActionRegistry
+import com.alexclin.moonlink.android.util.LimeLog
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -29,8 +31,8 @@ import android.widget.Toast
 import com.google.gson.JsonArray
 import com.limelight.binding.input.GameInputDevice
 import com.limelight.binding.input.KeyboardTranslator
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.element.ElementController
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.element.ElementController
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.input.KeyboardPacket

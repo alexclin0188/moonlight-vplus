@@ -11,8 +11,8 @@ import java.util.LinkedList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
-import com.limelight.LimeLog
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.alexclin.moonlink.android.home.DiscoveryService
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.http.ComputerDetails
@@ -22,11 +22,11 @@ import com.limelight.nvstream.http.PairingManager
 import com.limelight.nvstream.mdns.MdnsComputer
 import com.limelight.nvstream.mdns.MdnsDiscoveryListener
 import com.limelight.preferences.PreferenceConfiguration
-import com.limelight.utils.CacheHelper
-import com.limelight.utils.NetHelper
-import com.limelight.utils.ServerHelper
-import com.limelight.computers.ComputerDatabaseManager
-import com.limelight.computers.IdentityManager
+import com.alexclin.moonlink.android.util.CacheHelper
+import com.alexclin.moonlink.android.util.NetHelper
+import com.alexclin.moonlink.android.util.ServerHelper
+import com.alexclin.moonlink.android.home.ComputerDatabaseManager
+import com.alexclin.moonlink.android.home.IdentityManager
 import com.limelight.computers.NetworkDiagnostics
 import com.limelight.computers.DynamicTimeoutManager
 

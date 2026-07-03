@@ -58,10 +58,11 @@ import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
-import com.limelight.binding.PlatformBinding
-import com.limelight.preferences.AddComputerManually
-import com.limelight.utils.ServerHelper
-import com.limelight.utils.CacheHelper
+import com.alexclin.moonlink.android.util.PlatformBinding
+import com.alexclin.moonlink.android.settings.AddComputerManually
+import com.alexclin.moonlink.android.util.ServerHelper
+import com.alexclin.moonlink.android.util.Iperf3Tester
+import com.alexclin.moonlink.android.util.CacheHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import com.alexclin.moonlink.android.home.loadCachedAppList
 import kotlinx.coroutines.Dispatchers
@@ -910,7 +911,7 @@ private fun handleMenuAction(
         "iperf" -> {
             try {
                 val ip = ServerHelper.getCurrentAddressFromComputer(computer).address
-                com.limelight.utils.Iperf3Tester(activity, ip).show()
+                com.alexclin.moonlink.android.util.Iperf3Tester(activity, ip).show()
             } catch (e: java.io.IOException) {
                 scope.launch {
                     snackbarHostState.showSnackbar(context.getString(R.string.unable_to_get_pc_address, e.message ?: ""))

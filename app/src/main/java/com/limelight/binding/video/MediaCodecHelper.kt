@@ -11,7 +11,7 @@ import android.media.MediaCodecInfo.CodecProfileLevel
 import android.media.MediaCodecList
 import android.media.MediaFormat
 import android.os.Build
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileReader

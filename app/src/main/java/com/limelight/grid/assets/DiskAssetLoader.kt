@@ -8,8 +8,8 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.os.Build
 
-import com.limelight.LimeLog
-import com.limelight.utils.CacheHelper
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.CacheHelper
 
 import java.io.File
 import java.io.IOException

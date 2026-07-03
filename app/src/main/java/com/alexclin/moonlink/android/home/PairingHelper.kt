@@ -2,12 +2,12 @@ package com.alexclin.moonlink.android.home
 
 import android.content.Context
 import com.alexclin.moonlink.android.R
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.ServerHelper
 
 sealed class PairQrResult {
     data object Success : PairQrResult()

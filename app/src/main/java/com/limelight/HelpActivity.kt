@@ -9,7 +9,7 @@ import android.webkit.WebViewClient
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 
-import com.limelight.utils.SpinnerDialog
+import com.alexclin.moonlink.android.util.SpinnerDialog
 import com.alexclin.moonlink.android.R
 
 class HelpActivity : Activity() {

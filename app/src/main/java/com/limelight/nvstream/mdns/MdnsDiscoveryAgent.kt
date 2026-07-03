@@ -1,6 +1,6 @@
 package com.limelight.nvstream.mdns
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 import java.net.Inet4Address
 import java.net.Inet6Address

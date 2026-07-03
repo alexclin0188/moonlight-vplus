@@ -12,7 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.BuildConfig
 import com.alexclin.moonlink.android.R
-import com.limelight.utils.UpdateManager
+import com.alexclin.moonlink.android.util.UpdateManager
 
 /**
  * 帮助 — 3 items per design doc section 6.8.

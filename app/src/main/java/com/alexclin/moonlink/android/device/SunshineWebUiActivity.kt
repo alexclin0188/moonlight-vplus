@@ -23,7 +23,7 @@ import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.Toast
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.UiHelper
 import java.io.ByteArrayInputStream
 import java.security.MessageDigest
 import java.security.cert.CertificateFactory

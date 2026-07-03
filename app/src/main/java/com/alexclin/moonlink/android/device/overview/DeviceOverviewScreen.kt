@@ -43,10 +43,10 @@ import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
-import com.limelight.binding.PlatformBinding
-import com.limelight.utils.Iperf3Tester
-import com.limelight.utils.AppSettingsManager
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.PlatformBinding
+import com.alexclin.moonlink.android.util.Iperf3Tester
+import com.alexclin.moonlink.android.util.AppSettingsManager
+import com.alexclin.moonlink.android.util.ServerHelper
 import com.limelight.nvstream.wol.WakeOnLanSender
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory

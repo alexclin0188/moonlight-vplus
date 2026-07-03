@@ -4,7 +4,7 @@ import android.content.Context
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.stream.ui.editor.toEditorElement
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 import com.limelight.preferences.PreferenceConfiguration
 
 /**

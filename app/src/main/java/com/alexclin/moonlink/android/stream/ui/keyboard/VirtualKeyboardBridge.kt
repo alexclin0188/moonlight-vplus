@@ -2,7 +2,7 @@ package com.alexclin.moonlink.android.stream.ui.keyboard
 
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.limelight.binding.input.KeyboardTranslator
-import com.limelight.binding.input.advance_setting.KeyboardUIController
+import com.alexclin.moonlink.android.stream.editor.KeyboardUIController
 
 /**
  * 将旧 [KeyboardUIController] 的按键事件桥接到 [StreamEngine]。

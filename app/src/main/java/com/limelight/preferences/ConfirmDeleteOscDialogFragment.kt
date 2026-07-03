@@ -5,7 +5,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.preference.PreferenceDialogFragmentCompat
 import com.alexclin.moonlink.android.R
-import com.limelight.binding.input.virtual_controller.VirtualControllerConfigurationLoader.OSC_PREFERENCE
+import com.alexclin.moonlink.android.stream.editor.virtual_controller.VirtualControllerConfigurationLoader.OSC_PREFERENCE
 
 class ConfirmDeleteOscDialogFragment : PreferenceDialogFragmentCompat() {
 

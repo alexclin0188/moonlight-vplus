@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
+import com.alexclin.moonlink.android.util.LimeLog
 
 import com.alexclin.moonlink.android.R
 import java.io.File
@@ -20,8 +21,8 @@ import java.util.concurrent.ExecutionException
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
-import com.limelight.binding.PlatformBinding
-import com.limelight.binding.crypto.AndroidCryptoProvider
+import com.alexclin.moonlink.android.util.PlatformBinding
+import com.alexclin.moonlink.android.util.AndroidCryptoProvider
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.dialogs.AddressSelectionDialog
 import com.limelight.grid.PcGridAdapter
@@ -32,26 +33,26 @@ import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
 import com.limelight.nvstream.http.PairingManager.PairState
 import com.limelight.nvstream.wol.WakeOnLanSender
-import com.limelight.preferences.AddComputerManually
-import com.limelight.preferences.BackgroundSource
-import com.limelight.preferences.GlPreferences
+import com.alexclin.moonlink.android.settings.AddComputerManually
+import com.alexclin.moonlink.android.settings.BackgroundSource
+import com.alexclin.moonlink.android.settings.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.preferences.StreamSettings
 import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 import com.limelight.ui.AdapterFragment
 import com.limelight.ui.AdapterFragmentCallbacks
-import com.limelight.utils.AnalyticsManager
-import com.limelight.utils.AppCacheManager
-import com.limelight.utils.CacheHelper
-import com.limelight.utils.Dialog
+import com.alexclin.moonlink.android.util.AnalyticsManager
+import com.alexclin.moonlink.android.util.AppCacheManager
+import com.alexclin.moonlink.android.util.CacheHelper
+import com.alexclin.moonlink.android.util.Dialog
 import com.limelight.utils.EasyTierController
 import com.limelight.utils.HelpLauncher
-import com.limelight.utils.Iperf3Tester
-import com.limelight.utils.NetHelper
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.Iperf3Tester
+import com.alexclin.moonlink.android.util.NetHelper
+import com.alexclin.moonlink.android.util.ServerHelper
 import com.limelight.utils.ShortcutHelper
-import com.limelight.utils.UiHelper
-import com.limelight.utils.UpdateManager
+import com.alexclin.moonlink.android.util.UiHelper
+import com.alexclin.moonlink.android.util.UpdateManager
 import com.squareup.seismic.ShakeDetector
 
 import kotlinx.coroutines.CancellationException
@@ -740,7 +741,17 @@ class PcView : Activity(), AdapterFragmentCallbacks, ShakeDetector.Listener, Eas
 
     /** 把 Glide / 网络异常翻译成给用户看的简短提示，避免展示 stack trace 风格的英文。 */
     private fun friendlyNetworkError(e: Throwable): String {
-        return com.limelight.friendlyNetworkError(e) { getString(R.string.refresh_failed_network) }
+        val msg = e.message ?: return getString(R.string.refresh_failed_network)
+        return when {
+            msg.contains("Unable to resolve host") -> "无法解析主机地址，请检查网络连接"
+            msg.contains("Failed to connect") -> "连接失败，请确认设备在线"
+            msg.contains("timeout") || msg.contains("Timeout") -> "连接超时，请检查网络"
+            msg.contains("404") || msg.contains("not found") -> "请求的资源不存在"
+            msg.contains("403") || msg.contains("forbidden") -> "访问被拒绝"
+            msg.contains("500") || msg.contains("server error") -> "服务器内部错误"
+            msg.contains("ssl") || msg.contains("SSL") -> "SSL 连接错误"
+            else -> getString(R.string.refresh_failed_network)
+        }
     }
 
     // Image Save Methods

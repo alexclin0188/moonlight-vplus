@@ -21,12 +21,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.home.ComputerManagerService
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.ComputerDetails
-import com.limelight.utils.CacheHelper
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.CacheHelper
+import com.alexclin.moonlink.android.util.ServerHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.StringReader

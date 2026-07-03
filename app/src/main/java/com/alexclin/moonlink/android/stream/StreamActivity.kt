@@ -62,7 +62,7 @@ import com.alexclin.moonlink.android.stream.ui.overlay.KeyMappingOverlay
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.theme.MoonLinkTheme
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.nvstream.input.KeyboardPacket
 import com.alexclin.moonlink.android.stream.StreamNotificationService

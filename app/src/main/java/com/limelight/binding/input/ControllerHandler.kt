@@ -20,7 +20,7 @@ import android.view.InputEvent
 import android.view.KeyEvent
 import android.view.MotionEvent
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.binding.input.driver.AbstractController
 import com.limelight.binding.input.driver.UsbDriverListener
 import com.alexclin.moonlink.android.stream.engine.UsbDriverService

@@ -5,7 +5,7 @@ import androidx.preference.DialogPreference
 import android.util.AttributeSet
 
 import com.alexclin.moonlink.android.R
-import com.limelight.binding.input.virtual_controller.VirtualControllerConfigurationLoader.OSC_PREFERENCE
+import com.alexclin.moonlink.android.stream.editor.virtual_controller.VirtualControllerConfigurationLoader.OSC_PREFERENCE
 
 class ConfirmDeleteOscPreference : DialogPreference {
     constructor(context: Context, attrs: AttributeSet?, defStyleAttr: Int, defStyleRes: Int) :

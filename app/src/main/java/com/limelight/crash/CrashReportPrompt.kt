@@ -18,7 +18,8 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 
 import com.alexclin.moonlink.android.R
-import com.limelight.preferences.BackgroundSource
+import com.alexclin.moonlink.android.settings.BackgroundSource
+import com.alexclin.moonlink.android.app.CrashReporter
 
 import java.security.MessageDigest
 import java.util.Locale

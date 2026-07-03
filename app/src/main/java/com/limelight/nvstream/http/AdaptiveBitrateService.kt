@@ -9,7 +9,7 @@
  */
 package com.limelight.nvstream.http
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture

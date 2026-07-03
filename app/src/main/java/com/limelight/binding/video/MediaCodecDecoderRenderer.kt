@@ -14,7 +14,7 @@ import android.os.HandlerThread
 import android.os.Process
 import android.os.SystemClock
 import android.view.SurfaceHolder
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.av.video.VideoDecoderRenderer
 import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration

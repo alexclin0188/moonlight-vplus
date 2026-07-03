@@ -8,7 +8,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Process
 import android.view.Choreographer
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.preferences.PreferenceConfiguration
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.locks.LockSupport

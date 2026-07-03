@@ -1,4 +1,7 @@
 package com.limelight
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.SpinnerDialog
+import com.alexclin.moonlink.android.util.Dialog
 
 import android.os.Handler
 import android.os.Looper
@@ -8,10 +11,9 @@ import androidx.preference.PreferenceManager
 import com.limelight.binding.audio.MicrophoneManager
 import com.limelight.nvstream.http.ComputerDetails
 import com.limelight.nvstream.jni.MoonBridge
-import com.limelight.utils.Dialog
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.ServerHelper
 import com.limelight.utils.ShortcutHelper
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.UiHelper
 import com.alexclin.moonlink.android.R
 
 /**

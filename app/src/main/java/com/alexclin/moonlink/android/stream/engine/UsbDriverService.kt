@@ -17,7 +17,7 @@ import android.os.Looper
 import android.view.InputDevice
 import android.widget.Toast
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.R
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.binding.input.driver.UsbDriverListener

@@ -105,10 +105,9 @@ class GameListWidgetProvider : AppWidgetProvider() {
                 )
                 views.setPendingIntentTemplate(R.id.widget_grid, launchPendingIntent)
 
-                // Header click to open AppSelectionActivity
-                val headerIntent = Intent(context, com.limelight.AppSelectionActivity::class.java).apply {
-                    putExtra("UUID", computerUuid)
-                    putExtra("Name", computerName)
+                // Header click → 新版设备概览页
+                val headerIntent = Intent(context, com.alexclin.moonlink.android.MoonLinkMainActivity::class.java).apply {
+                    putExtra("navigate_to_uuid", computerUuid)
                 }
                 val headerPendingIntent = PendingIntent.getActivity(
                     context, appWidgetId, headerIntent,

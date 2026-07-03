@@ -1,7 +1,7 @@
 package com.limelight.binding.video
 
 import android.os.Build
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import org.jcodec.codecs.h264.H264Utils
 import org.jcodec.codecs.h264.io.model.SeqParameterSet
 import org.jcodec.codecs.h264.io.model.VUIParameters

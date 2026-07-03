@@ -1,6 +1,6 @@
 package com.limelight.binding.audio
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 class OpusEncoder(
     private val sampleRate: Int,

@@ -2,8 +2,8 @@ package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.content.Context
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 
 /**
  * 按键方案数据模型（共享版本，替换各文件中重复的 SchemeInfo / ConfigScheme）。

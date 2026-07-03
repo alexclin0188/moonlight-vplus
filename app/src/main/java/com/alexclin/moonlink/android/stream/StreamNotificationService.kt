@@ -16,7 +16,7 @@ import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.alexclin.moonlink.android.stream.StreamActivity
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.R
 import androidx.core.content.edit
 

@@ -5,7 +5,7 @@ import android.os.Build
 import android.os.PerformanceHintManager
 import android.os.PowerManager
 import android.os.Process
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 /**
  * Manages system performance hints and thermal monitoring for low-latency video decoding.

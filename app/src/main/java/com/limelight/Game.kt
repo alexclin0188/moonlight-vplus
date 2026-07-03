@@ -1,8 +1,10 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
 
+import com.alexclin.moonlink.android.util.LimeLog
+
 import com.alexclin.moonlink.android.R
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.limelight.binding.audio.AndroidAudioRenderer
 import com.limelight.binding.audio.AudioDiagnostics
 import com.limelight.binding.audio.AudioVibrationService
@@ -10,8 +12,8 @@ import com.limelight.binding.audio.MicrophoneManager
 import com.limelight.binding.input.ControllerHandler
 import com.limelight.binding.input.GameInputDevice
 import com.limelight.binding.input.KeyboardTranslator
-import com.limelight.binding.input.advance_setting.ControllerManager
-import com.limelight.binding.input.advance_setting.KeyboardUIController
+import com.alexclin.moonlink.android.stream.editor.ControllerManager
+import com.alexclin.moonlink.android.stream.editor.KeyboardUIController
 import com.limelight.binding.input.capture.InputCaptureManager
 import com.limelight.binding.input.capture.InputCaptureProvider
 import com.limelight.binding.input.touch.AbsoluteTouchContext
@@ -20,7 +22,7 @@ import com.limelight.binding.input.touch.RelativeTouchContext
 import com.limelight.binding.input.touch.TouchContext
 import com.alexclin.moonlink.android.stream.engine.UsbDriverService
 import com.limelight.binding.input.evdev.EvdevListener
-import com.limelight.binding.input.virtual_controller.VirtualController
+import com.alexclin.moonlink.android.stream.editor.virtual_controller.VirtualController
 import com.limelight.binding.video.MediaCodecDecoderRenderer
 import com.limelight.binding.video.MediaCodecHelper
 import com.limelight.binding.video.PerfOverlayListener
@@ -35,20 +37,20 @@ import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.input.ClipboardSyncManager
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge
-import com.limelight.preferences.GlPreferences
+import com.alexclin.moonlink.android.settings.GlPreferences
 import com.limelight.preferences.PreferenceConfiguration
 import com.alexclin.moonlink.android.stream.StreamNotificationService
 import com.limelight.ui.CursorView
 import com.limelight.ui.GameGestures
 import com.limelight.ui.StreamView
-import com.limelight.utils.Dialog
+import com.alexclin.moonlink.android.util.Dialog
 import com.limelight.utils.PanZoomHandler
-import com.limelight.utils.FullscreenProgressOverlay
-import com.limelight.utils.UiHelper
-import com.limelight.utils.NetHelper
-import com.limelight.utils.AnalyticsManager
-import com.limelight.utils.AppCacheManager
-import com.limelight.utils.AppSettingsManager
+import com.alexclin.moonlink.android.util.FullscreenProgressOverlay
+import com.alexclin.moonlink.android.util.UiHelper
+import com.alexclin.moonlink.android.util.NetHelper
+import com.alexclin.moonlink.android.util.AnalyticsManager
+import com.alexclin.moonlink.android.util.AppCacheManager
+import com.alexclin.moonlink.android.util.AppSettingsManager
 import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 
 import android.annotation.SuppressLint

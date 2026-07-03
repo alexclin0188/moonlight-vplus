@@ -102,7 +102,7 @@ fun KeyMappingSchemeSelector(
                 Button(
                     onClick = {
                         try {
-                            val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(context)
+                            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(context)
                             db.deleteConfig(target.configId)
                             schemes = loadUserSchemes(context)
                             if (currentConfigId == target.configId) {

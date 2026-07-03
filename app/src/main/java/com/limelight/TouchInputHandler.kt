@@ -1,5 +1,6 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
+import com.alexclin.moonlink.android.util.LimeLog
 
 import android.graphics.Point
 import android.os.Build
@@ -11,7 +12,7 @@ import com.limelight.binding.input.touch.AbsoluteTouchContext
 import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.binding.input.touch.RelativeTouchContext
 import com.limelight.binding.input.touch.TouchContext
-import com.limelight.binding.input.virtual_controller.VirtualController
+import com.alexclin.moonlink.android.stream.editor.virtual_controller.VirtualController
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge

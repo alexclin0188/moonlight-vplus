@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.params.KeyParameter
 
 import org.xmlpull.v1.XmlPullParserException
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 import java.io.*
 import java.security.*

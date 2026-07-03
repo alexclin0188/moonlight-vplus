@@ -1,6 +1,6 @@
 package com.limelight.computers
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 

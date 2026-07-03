@@ -6,7 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioTrack
 import android.os.Build
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.av.audio.AudioRenderer
 import com.limelight.nvstream.jni.MoonBridge
 

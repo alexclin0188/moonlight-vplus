@@ -57,7 +57,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
-import com.limelight.preferences.BackgroundSource
+import com.alexclin.moonlink.android.settings.BackgroundSource
 import jp.wasabeef.glide.transformations.BlurTransformation
 import jp.wasabeef.glide.transformations.ColorFilterTransformation
 import kotlinx.coroutines.Dispatchers
@@ -214,6 +214,7 @@ fun MoonLinkApp(
     managerBinder: ComputerManagerService.ComputerManagerBinder?,
     deviceManager: DeviceStateManager,
     onComputerRemoved: ((String) -> Unit)? = null,
+    initialNavigateToUuid: String? = null,
 ) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
@@ -246,6 +247,13 @@ fun MoonLinkApp(
 
     // Snackbar host state shared across screens
     val snackbarHostState = remember { SnackbarHostState() }
+
+    // 从 Widget 启动时自动导航到设备概览页
+    LaunchedEffect(initialNavigateToUuid) {
+        if (initialNavigateToUuid != null) {
+            navController.navigate(MoonLinkRoute.DeviceOverview.createRoute(initialNavigateToUuid))
+        }
+    }
 
     // ── NavHost content (shared between portrait and landscape) ──
     @Composable

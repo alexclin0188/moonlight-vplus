@@ -15,8 +15,8 @@ import android.widget.FrameLayout
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
 import com.limelight.Game
-import com.limelight.LimeLog
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.limelight.binding.audio.SmartAudioRenderer
 import com.limelight.binding.input.ControllerHandler
 import com.limelight.binding.input.GameInputDevice
@@ -46,9 +46,9 @@ import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration
-import com.limelight.preferences.GlPreferences
-import com.limelight.utils.AppSettingsManager
-import com.limelight.utils.NetHelper
+import com.alexclin.moonlink.android.settings.GlPreferences
+import com.alexclin.moonlink.android.util.AppSettingsManager
+import com.alexclin.moonlink.android.util.NetHelper
 import com.alexclin.moonlink.android.device.streamsettings.HostSettings
 import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import android.net.TrafficStats
@@ -1198,22 +1198,22 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
      */
     fun loadConfigFromDb() {
         try {
-            val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
             val configId = currentSchemeConfigId
             configTouchEnabled = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
             )
             configGameVibrator = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
             )
             configButtonVibrator = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
             )
             configWheelSpeed = ((db.queryConfigAttribute(configId, "mouse_wheel_speed", 20L) as? Long) ?: 20L).toInt()
             configEnhancedTouch = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
             )
-            configGlobalOpacity = ((db.queryConfigAttribute(configId, com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
+            configGlobalOpacity = ((db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
         } catch (_: Exception) {
             // 保持默认值
         }
@@ -1226,13 +1226,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             return
         }
         try {
-            val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
             currentOverlayElements.value = com.alexclin.moonlink.android.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
             // 应用全局颜色（覆盖元素的边框色和文字色）
             val borderColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long
+                com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long
             val textColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long
+                com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long
             if (borderColor != null || textColor != null) {
                 val bc = borderColor?.toInt()
                 val tc = textColor?.toInt()
@@ -1274,7 +1274,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         val appCtx = activity.applicationContext
         dbWriteExecutor.execute {
             try {
-                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(appCtx)
+                val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(appCtx)
                 val cv = android.content.ContentValues().apply {
                     put("element_central_x", centralX.toLong())
                     put("element_central_y", centralY.toLong())
@@ -1310,10 +1310,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         get() {
             if (currentSchemeConfigId == 0L) return "内置虚拟手柄方案"
             try {
-                val db = com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper(activity)
+                val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
                     currentSchemeConfigId,
-                    com.limelight.binding.input.advance_setting.config.PageConfigController.COLUMN_STRING_CONFIG_NAME,
+                    com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_STRING_CONFIG_NAME,
                     "未命名"
                 )
                 return name as? String ?: "未命名"

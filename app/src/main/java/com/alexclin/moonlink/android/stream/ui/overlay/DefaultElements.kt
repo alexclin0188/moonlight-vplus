@@ -1,7 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.overlay
 
 import android.content.ContentValues
-import com.limelight.binding.input.advance_setting.element.Element
+import com.alexclin.moonlink.android.stream.editor.element.Element
 
 /**
  * 内置方案默认元素生成。

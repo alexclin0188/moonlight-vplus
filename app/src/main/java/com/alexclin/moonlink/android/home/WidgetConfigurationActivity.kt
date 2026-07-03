@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 import com.alexclin.moonlink.android.R
-import com.limelight.computers.ComputerDatabaseManager
+import com.alexclin.moonlink.android.home.ComputerDatabaseManager
 import com.limelight.nvstream.http.ComputerDetails
 
 class WidgetConfigurationActivity : Activity() {

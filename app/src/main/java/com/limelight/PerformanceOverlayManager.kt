@@ -35,12 +35,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 
 import com.limelight.binding.video.PerformanceInfo
-import com.limelight.preferences.PerfOverlayDisplayItemsPreference
+import com.alexclin.moonlink.android.settings.PerfOverlayDisplayItemsPreference
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.StreamView
-import com.limelight.utils.MoonPhaseUtils
-import com.limelight.utils.NetHelper
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.MoonPhaseUtils
+import com.alexclin.moonlink.android.util.NetHelper
+import com.alexclin.moonlink.android.util.UiHelper
 
 import java.text.SimpleDateFormat
 import java.util.Calendar

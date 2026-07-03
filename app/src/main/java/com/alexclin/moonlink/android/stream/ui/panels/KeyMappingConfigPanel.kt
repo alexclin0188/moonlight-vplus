@@ -44,8 +44,8 @@ import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 
 /**
  * 按键映射方案配置页面（子面板内页面）。

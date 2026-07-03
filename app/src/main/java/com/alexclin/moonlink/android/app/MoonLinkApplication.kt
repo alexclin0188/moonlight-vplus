@@ -4,8 +4,8 @@ import android.app.Application
 import android.util.Log
 
 import com.google.firebase.FirebaseApp
-import com.limelight.binding.crypto.AndroidCryptoProvider
-import com.limelight.crash.CrashReporter
+import com.alexclin.moonlink.android.util.AndroidCryptoProvider
+import com.alexclin.moonlink.android.app.CrashReporter
 
 /**
  * Custom Application that wires up crash diagnostics as early as possible.

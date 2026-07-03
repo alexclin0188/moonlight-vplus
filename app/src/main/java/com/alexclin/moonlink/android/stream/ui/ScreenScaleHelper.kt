@@ -5,7 +5,7 @@ import android.content.ContentValues
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import com.limelight.binding.input.advance_setting.element.Element
+import com.alexclin.moonlink.android.stream.editor.element.Element
 import kotlin.math.roundToLong
 
 /**

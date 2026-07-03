@@ -17,7 +17,8 @@ import android.os.Build
 import androidx.core.content.ContextCompat
 import androidx.tvprovider.media.tv.TvContractCompat
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.ServerHelper
 import com.alexclin.moonlink.android.home.BoxArtProvider
 import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.ComputerDetails

@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.preference.PreferenceDialogFragmentCompat
 
 import com.alexclin.moonlink.android.R
+import com.alexclin.moonlink.android.settings.SeekBarPreference
 import kotlin.math.roundToInt
 
 class SeekBarPreferenceDialogFragment : PreferenceDialogFragmentCompat() {

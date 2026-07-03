@@ -11,7 +11,8 @@ import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.PreferenceManager
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.settings.BackgroundSource
 
 import java.io.File
 import java.io.FileOutputStream

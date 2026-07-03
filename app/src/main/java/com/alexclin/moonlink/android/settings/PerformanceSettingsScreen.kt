@@ -11,7 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.limelight.preferences.PerfOverlayDisplayItemsPreference
+import com.alexclin.moonlink.android.settings.PerfOverlayDisplayItemsPreference
 
 @Composable
 fun PerformanceSettingsScreen() {

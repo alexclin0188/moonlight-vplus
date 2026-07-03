@@ -61,17 +61,19 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.PcView
 import com.alexclin.moonlink.android.R
+import com.alexclin.moonlink.android.settings.SeekBarPreference
+import com.alexclin.moonlink.android.settings.GlPreferences
 import com.limelight.ExternalDisplayManager
-import com.limelight.binding.input.advance_setting.config.PageConfigController
-import com.limelight.binding.input.advance_setting.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
+import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
 import com.limelight.binding.video.MediaCodecHelper
 import com.limelight.utils.AspectRatioConverter
-import com.limelight.utils.Dialog
-import com.limelight.utils.UiHelper
-import com.limelight.utils.UpdateManager
+import com.alexclin.moonlink.android.util.Dialog
+import com.alexclin.moonlink.android.util.UiHelper
+import com.alexclin.moonlink.android.util.UpdateManager
 
 import jp.wasabeef.glide.transformations.BlurTransformation
 import jp.wasabeef.glide.transformations.ColorFilterTransformation

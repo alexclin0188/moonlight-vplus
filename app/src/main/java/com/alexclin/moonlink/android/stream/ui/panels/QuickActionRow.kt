@@ -44,7 +44,7 @@ import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.MoonLinkQuickActions
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
 import com.alexclin.moonlink.android.stream.ui.common.getActionLabel
-import com.limelight.QuickActionRegistry
+import com.alexclin.moonlink.android.util.QuickActionRegistry
 import com.limelight.binding.input.KeyboardTranslator
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil

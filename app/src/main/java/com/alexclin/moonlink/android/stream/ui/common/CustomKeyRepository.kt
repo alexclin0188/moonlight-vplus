@@ -1,7 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.common
 
 import android.content.Context
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException

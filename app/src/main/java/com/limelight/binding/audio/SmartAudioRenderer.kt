@@ -2,7 +2,7 @@ package com.limelight.binding.audio
 
 import android.content.Context
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.av.audio.AudioRenderer
 import com.limelight.nvstream.jni.MoonBridge
 

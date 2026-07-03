@@ -17,7 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import com.limelight.preferences.BackgroundSource
+import com.alexclin.moonlink.android.settings.BackgroundSource
 import com.alexclin.moonlink.android.R
 import java.io.File
 import java.io.FileOutputStream

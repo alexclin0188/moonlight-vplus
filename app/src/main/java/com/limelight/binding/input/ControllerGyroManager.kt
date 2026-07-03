@@ -6,7 +6,7 @@ import android.hardware.SensorEventListener
 import android.view.KeyEvent
 import android.view.Surface
 
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.nvstream.jni.MoonBridge
 
 /**

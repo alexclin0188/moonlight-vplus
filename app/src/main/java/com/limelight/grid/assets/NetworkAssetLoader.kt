@@ -1,10 +1,10 @@
 package com.limelight.grid.assets
 
 import android.content.Context
-import com.limelight.LimeLog
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.LimeLog
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.limelight.nvstream.http.NvHTTP
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.ServerHelper
 import java.io.IOException
 import java.io.InputStream
 

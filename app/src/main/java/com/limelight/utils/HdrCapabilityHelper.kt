@@ -8,7 +8,7 @@ import android.os.Build
 import android.provider.Settings
 import android.view.Display
 import android.view.WindowManager
-import com.limelight.LimeLog
+import com.alexclin.moonlink.android.util.LimeLog
 
 /**
  * 统一的 HDR 与屏幕能力检测工具类

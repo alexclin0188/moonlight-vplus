@@ -1,9 +1,10 @@
 package com.limelight
+import com.alexclin.moonlink.android.util.LimeLog
 
 import android.os.Build
 import android.view.Display
 import com.limelight.preferences.PreferenceConfiguration
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.UiHelper
 import kotlin.math.abs
 import kotlin.math.roundToInt
 

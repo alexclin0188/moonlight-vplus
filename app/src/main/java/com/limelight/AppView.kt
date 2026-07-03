@@ -1,6 +1,8 @@
 @file:Suppress("DEPRECATION")
 package com.limelight
 
+import com.alexclin.moonlink.android.util.LimeLog
+
 import com.alexclin.moonlink.android.R
 import java.io.IOException
 import java.io.StringReader
@@ -43,7 +45,7 @@ import androidx.recyclerview.widget.RecyclerView
 
 import org.xmlpull.v1.XmlPullParserException
 
-import com.limelight.binding.PlatformBinding
+import com.alexclin.moonlink.android.util.PlatformBinding
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.grid.AppGridAdapter
 import com.limelight.grid.assets.CachedAppAssetLoader
@@ -57,14 +59,14 @@ import com.limelight.ui.AdapterFragment
 import com.limelight.ui.AdapterFragmentCallbacks
 import com.limelight.ui.AdapterRecyclerBridge
 import com.limelight.ui.SelectionIndicatorAnimator
-import com.limelight.utils.AppSettingsManager
+import com.alexclin.moonlink.android.util.AppSettingsManager
 import com.limelight.utils.BackgroundImageManager
-import com.limelight.utils.CacheHelper
-import com.limelight.utils.Dialog
-import com.limelight.utils.ServerHelper
+import com.alexclin.moonlink.android.util.CacheHelper
+import com.alexclin.moonlink.android.util.Dialog
+import com.alexclin.moonlink.android.util.ServerHelper
 import com.limelight.utils.ShortcutHelper
-import com.limelight.utils.SpinnerDialog
-import com.limelight.utils.UiHelper
+import com.alexclin.moonlink.android.util.SpinnerDialog
+import com.alexclin.moonlink.android.util.UiHelper
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
