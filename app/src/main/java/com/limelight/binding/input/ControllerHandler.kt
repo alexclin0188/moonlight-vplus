@@ -30,8 +30,6 @@ import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.GameGestures
-import com.limelight.utils.Vector2d
-
 import org.cgutman.shieldcontrollerextensions.SceManager
 
 import java.lang.reflect.InvocationTargetException
@@ -1075,7 +1073,7 @@ class ControllerHandler(
 
     internal fun getActiveControllerMask(): Short {
         return if (prefConfig.multiController) {
-            (currentControllers.toInt() or initialControllers.toInt() or (if (prefConfig.onscreenController or prefConfig.onscreenKeyboard) 1 else 0)).toShort()
+            (currentControllers.toInt() or initialControllers.toInt() or (if (prefConfig.onscreenController) 1 else 0)).toShort()
         } else {
             // Only Player 1 is active with multi-controller disabled
             1
@@ -2336,4 +2334,13 @@ class ControllerHandler(
     @TargetApi(31)
     fun handleSetControllerLED(controllerNumber: Short, r: Byte, g: Byte, b: Byte) =
         rumbleManager.handleSetControllerLED(controllerNumber, r, g, b)
+}
+
+/** Minimal 2D vector helper */
+class Vector2d {
+    var x = 0f
+    var y = 0f
+    val magnitude: Double get() = kotlin.math.sqrt((x * x + y * y).toDouble())
+    fun initialize(x: Float, y: Float) { this.x = x; this.y = y }
+    fun scalarMultiply(scale: Double) { x = (x * scale).toFloat(); y = (y * scale).toFloat() }
 }

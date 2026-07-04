@@ -4,8 +4,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 
-import com.limelight.Game
 import com.limelight.nvstream.NvConnection
+import com.alexclin.moonlink.android.stream.StreamIntentKeys
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.preferences.PreferenceConfiguration
 import com.limelight.ui.CursorView
@@ -151,8 +151,8 @@ class RelativeTouchContext(
 
     override fun touchDownEvent(eventX: Int, eventY: Int, eventTime: Long, isNewFinger: Boolean): Boolean {
         // Get the view dimensions to scale inputs on this touch
-        xFactor = Game.REFERENCE_HORIZ_RES / targetView.width.toDouble() * sense
-        yFactor = Game.REFERENCE_VERT_RES / targetView.height.toDouble() * sense
+xFactor = StreamIntentKeys.REFERENCE_HORIZ_RES / targetView.width.toDouble() * sense
+yFactor = StreamIntentKeys.REFERENCE_VERT_RES / targetView.height.toDouble() * sense
 
         originalTouchX = eventX
         lastTouchX = eventX

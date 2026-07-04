@@ -2,8 +2,8 @@ package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.content.Context
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
-import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 
 /**
  * 按键方案数据模型（共享版本，替换各文件中重复的 SchemeInfo / ConfigScheme）。
@@ -19,12 +19,12 @@ data class SchemeInfo(
  */
 fun loadUserSchemes(context: Context): List<SchemeInfo> {
     return try {
-        val db = SuperConfigDatabaseHelper(context)
+        val db = KeymappingDatabaseHelper(context)
         val ids = db.queryAllConfigIds()
         ids.mapNotNull { id ->
             if (id == 0L) return@mapNotNull null
             val name = db.queryConfigAttribute(
-                id, PageConfigController.COLUMN_STRING_CONFIG_NAME, "未命名"
+                id, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "未命名"
             ) as? String ?: "未命名"
             SchemeInfo(configId = id, name = name)
         }
@@ -38,10 +38,10 @@ fun loadUserSchemes(context: Context): List<SchemeInfo> {
  */
 fun loadAllSchemeNames(context: Context): List<String> {
     return try {
-        val db = SuperConfigDatabaseHelper(context)
+        val db = KeymappingDatabaseHelper(context)
         db.queryAllConfigIds().mapNotNull { id ->
             if (id == 0L) return@mapNotNull null
-            db.queryConfigAttribute(id, PageConfigController.COLUMN_STRING_CONFIG_NAME, null) as? String
+            db.queryConfigAttribute(id, ConfigColumns.COLUMN_STRING_CONFIG_NAME, null) as? String
         }
     } catch (_: Exception) {
         emptyList()

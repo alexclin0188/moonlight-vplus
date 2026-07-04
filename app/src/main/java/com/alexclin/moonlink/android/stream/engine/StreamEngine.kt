@@ -11,10 +11,9 @@ import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
 import android.view.WindowManager
-import android.widget.FrameLayout
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
-import com.limelight.Game
+import com.alexclin.moonlink.android.stream.StreamIntentKeys
 import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.util.PlatformBinding
 import com.limelight.binding.audio.SmartAudioRenderer
@@ -27,7 +26,6 @@ import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.nvstream.input.ClipboardSyncManager
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.ui.GameGestures
-import com.limelight.ui.StreamView
 import android.net.ConnectivityManager
 import android.hardware.input.InputManager
 import android.view.InputDevice
@@ -58,6 +56,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import kotlin.math.roundToInt
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
@@ -97,10 +96,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 剪贴板同步管理器 */
     private var clipboardSyncManager: ClipboardSyncManager? = null
-
-    /** 光标服务管理器（网络光标 + 本地渲染器），Compose 模式下暂为空 */
-    @Suppress("unused")
-    private var cursorServiceManager: Any? = null
 
     /** PiP 模式标志 */
     var isInPipMode = false
@@ -268,7 +263,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
             // 2a. 应用主机级串流配置（覆盖全局默认值）
             // 注意：Intent 中的"最近配置"在第 2b 步执行，但第 2c 步会重新应用主机级配置以保持优先级。
-            val pcUuidFromIntent = intent.getStringExtra(Game.EXTRA_PC_UUID)
+            val pcUuidFromIntent = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_UUID)
             var hostSettingsForReapply: HostSettings? = null
             if (pcUuidFromIntent != null) {
                 try {
@@ -311,19 +306,19 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             syncNativeTouchContext()
 
             // 3. 从 Intent 提取参数
-            host = intent.getStringExtra(Game.EXTRA_HOST) ?: return fail("缺少 host")
-            port = intent.getIntExtra(Game.EXTRA_PORT, NvHTTP.DEFAULT_HTTP_PORT)
-            httpsPort = intent.getIntExtra(Game.EXTRA_HTTPS_PORT, 0)
-            uniqueId = intent.getStringExtra(Game.EXTRA_UNIQUEID) ?: ""
-            pairName = intent.getStringExtra(Game.EXTRA_PAIR_NAME) ?: ""
-            displayName = intent.getStringExtra(Game.EXTRA_DISPLAY_NAME)
-            forceResumeCurrentSession = intent.getBooleanExtra(Game.EXTRA_FORCE_RESUME_CURRENT_SESSION, false)
-            pcUseVdd = intent.getBooleanExtra(Game.EXTRA_PC_USEVDD, false)
-            pcUuid = intent.getStringExtra(Game.EXTRA_PC_UUID)
-            pcName = intent.getStringExtra(Game.EXTRA_PC_NAME)
+            host = intent.getStringExtra(StreamIntentKeys.EXTRA_HOST) ?: return fail("缺少 host")
+            port = intent.getIntExtra(StreamIntentKeys.EXTRA_PORT, NvHTTP.DEFAULT_HTTP_PORT)
+            httpsPort = intent.getIntExtra(StreamIntentKeys.EXTRA_HTTPS_PORT, 0)
+            uniqueId = intent.getStringExtra(StreamIntentKeys.EXTRA_UNIQUEID) ?: ""
+            pairName = intent.getStringExtra(StreamIntentKeys.EXTRA_PAIR_NAME) ?: ""
+            displayName = intent.getStringExtra(StreamIntentKeys.EXTRA_DISPLAY_NAME)
+            forceResumeCurrentSession = intent.getBooleanExtra(StreamIntentKeys.EXTRA_FORCE_RESUME_CURRENT_SESSION, false)
+            pcUseVdd = intent.getBooleanExtra(StreamIntentKeys.EXTRA_PC_USEVDD, false)
+            pcUuid = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_UUID)
+            pcName = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_NAME)
 
             // 解析服务器证书
-            val certBytes = intent.getByteArrayExtra(Game.EXTRA_SERVER_CERT)
+            val certBytes = intent.getByteArrayExtra(StreamIntentKeys.EXTRA_SERVER_CERT)
             if (certBytes != null) {
                 val cf = CertificateFactory.getInstance("X.509")
                 serverCert = cf.generateCertificate(ByteArrayInputStream(certBytes)) as X509Certificate
@@ -331,10 +326,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
             // 处理 VDD 屏幕组合模式（若 Intent 中携带则覆盖 Preferences 默认值）
             prefConfig.vddScreenCombinationMode = intent.getIntExtra(
-                Game.EXTRA_VDD_SCREEN_COMBINATION_MODE, prefConfig.vddScreenCombinationMode
+                StreamIntentKeys.EXTRA_VDD_SCREEN_COMBINATION_MODE, prefConfig.vddScreenCombinationMode
             )
             prefConfig.screenCombinationMode = intent.getIntExtra(
-                Game.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
+                StreamIntentKeys.EXTRA_SCREEN_COMBINATION_MODE, prefConfig.screenCombinationMode
             )
 
             // 如果没有指定显示器、且未使用虚拟显示器：不指定目标显示器，
@@ -347,13 +342,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             }
 
             // 4. 构建 NvApp 对象
-            val appName = intent.getStringExtra(Game.EXTRA_APP_NAME) ?: "Desktop"
-            appId = intent.getIntExtra(Game.EXTRA_APP_ID, NvApp.DESKTOP_APP_ID)
-            val appHdr = intent.getBooleanExtra(Game.EXTRA_APP_HDR, false)
+            val appName = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_NAME) ?: "Desktop"
+            appId = intent.getIntExtra(StreamIntentKeys.EXTRA_APP_ID, NvApp.DESKTOP_APP_ID)
+            val appHdr = intent.getBooleanExtra(StreamIntentKeys.EXTRA_APP_HDR, false)
             app = NvApp(appName, appId, appHdr)
 
             // 处理 cmdList
-            val cmdListJson = intent.getStringExtra(Game.EXTRA_APP_CMD)
+            val cmdListJson = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_CMD)
             if (!cmdListJson.isNullOrEmpty()) {
                 app.setCmdList(cmdListJson)
             }
@@ -777,13 +772,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         LimeLog.info("StreamEngine: ControllerHandler 已初始化")
     }
 
-    /** 初始化光标服务管理器 — 在连接后调用 */
-    private fun initCursorService(hostAddress: String?) {
-        // CursorServiceManager 需要 StreamView/CursorView（旧 View 架构），
-        // 新版 Compose 架构使用原生 PointerIcon API 替代。此处保留结构占位。
-        LimeLog.info("StreamEngine: CursorServiceManager 暂不初始化（Compose 下无 StreamView）")
-    }
-
     /** 初始化剪贴板同步管理器 — 在连接建立后（onStageStarting）调用 */
     private fun initClipboardSync() {
         val wantText = prefConfig.enableClipboardSyncText
@@ -1021,10 +1009,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         syncToHostSettings { it.copy(showPauseStream = enabled) }
     }
 
-    fun toggleVirtualController() {
-        displayTransientMessage("虚拟手柄切换（待实现）")
-    }
-
     // ── 新 Compose 按键映射覆盖层 ──
 
     /** 当前按键映射覆盖层的元素列表。由 [reloadOverlay] 更新。 */
@@ -1198,22 +1182,22 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
      */
     fun loadConfigFromDb() {
         try {
-            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
+            val db = KeymappingDatabaseHelper(activity)
             val configId = currentSchemeConfigId
             configTouchEnabled = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
             )
             configGameVibrator = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
             )
             configButtonVibrator = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
             )
-            configWheelSpeed = ((db.queryConfigAttribute(configId, "mouse_wheel_speed", 20L) as? Long) ?: 20L).toInt()
+            configWheelSpeed = ((db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_MOUSE_WHEEL_SPEED, 20L) as? Long) ?: 20L).toInt()
             configEnhancedTouch = java.lang.Boolean.parseBoolean(
-                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
+                (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
             )
-            configGlobalOpacity = ((db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
+            configGlobalOpacity = ((db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
         } catch (_: Exception) {
             // 保持默认值
         }
@@ -1226,13 +1210,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             return
         }
         try {
-            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
+            val db = KeymappingDatabaseHelper(activity)
             currentOverlayElements.value = com.alexclin.moonlink.android.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
             // 应用全局颜色（覆盖元素的边框色和文字色）
             val borderColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long
+                com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long
             val textColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long
+                com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long
             if (borderColor != null || textColor != null) {
                 val bc = borderColor?.toInt()
                 val tc = textColor?.toInt()
@@ -1274,7 +1258,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         val appCtx = activity.applicationContext
         dbWriteExecutor.execute {
             try {
-                val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(appCtx)
+                val db = KeymappingDatabaseHelper(appCtx)
                 val cv = android.content.ContentValues().apply {
                     put("element_central_x", centralX.toLong())
                     put("element_central_y", centralY.toLong())
@@ -1310,10 +1294,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         get() {
             if (currentSchemeConfigId == 0L) return "内置虚拟手柄方案"
             try {
-                val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(activity)
+                val db = KeymappingDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
                     currentSchemeConfigId,
-                    com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_STRING_CONFIG_NAME,
+                    com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_STRING_CONFIG_NAME,
                     "未命名"
                 )
                 return name as? String ?: "未命名"

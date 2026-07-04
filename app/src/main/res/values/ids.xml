@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 串流画面的 SurfaceView ID，被 StreamActivity.kt 和 InputCaptureManager.kt 使用 -->
+    <item type="id" name="surfaceView" />
+</resources>

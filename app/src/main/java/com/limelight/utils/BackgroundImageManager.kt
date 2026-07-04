@@ -1,123 +1,17 @@
 package com.limelight.utils
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 import android.widget.ImageView
 import java.util.concurrent.Executors
 
-import com.alexclin.moonlink.android.R
-
 /**
- * 背景图片管理器，用于处理AppView背景图片的平滑切换。
- * - 横屏：模糊层(blurImageView) + 清晰层(clearImageView) 双层视觉。
- * - 竖屏 / 单层模式：blurImageView 传 null + blurOnly=true，使用 clearImageView 作为
- *   唯一画布并对其应用模糊效果，铺满屏幕。
- * 仅通过 imageAlpha 调整透明度，不再为每张图复制 Bitmap。
+ * 背景图片模糊工具方法。
+ * 仅提供静态 blur 与 overlay 工具方法，由 [FullscreenProgressOverlay] 等组件使用。
  */
-class BackgroundImageManager(
-    private val context: Context,
-    private val blurImageView: ImageView?,
-    private val clearImageView: ImageView,
-    private val blurOnly: Boolean = false
-) {
-    var currentBackground: Bitmap? = null
-        private set
-
-    /**
-     * 平滑地切换到新的背景图片
-     * @param newBackground 新的背景图片
-     */
-    fun setBackgroundSmoothly(newBackground: Bitmap?) {
-        if (newBackground == null || newBackground.isRecycled) {
-            return
-        }
-
-        // 如果背景图片相同，不需要切换
-        if (currentBackground == newBackground) {
-            return
-        }
-
-        // 如果当前没有背景图片，直接设置
-        if (currentBackground == null) {
-            currentBackground = newBackground
-            applyBitmap(newBackground)
-            val fadeIn = AnimationUtils.loadAnimation(context, R.anim.background_fadein)
-            blurImageView?.startAnimation(fadeIn)
-            clearImageView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.background_fadein))
-            return
-        }
-
-        // 执行平滑切换动画
-        val fadeOutAnimation = AnimationUtils.loadAnimation(context, R.anim.background_fadeout)
-        fadeOutAnimation.setAnimationListener(object : Animation.AnimationListener {
-            override fun onAnimationStart(animation: Animation) {}
-
-            override fun onAnimationEnd(animation: Animation) {
-                currentBackground = newBackground
-                applyBitmap(newBackground)
-                val fadeIn = AnimationUtils.loadAnimation(context, R.anim.background_fadein)
-                blurImageView?.startAnimation(fadeIn)
-                clearImageView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.background_fadein))
-            }
-
-            override fun onAnimationRepeat(animation: Animation) {}
-        })
-
-        (blurImageView ?: clearImageView).startAnimation(fadeOutAnimation)
-        if (blurImageView != null) {
-            clearImageView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.background_fadeout))
-        }
-    }
-
-    /** 同一张 Bitmap 同时驱动模糊层与清晰层；仅通过 imageAlpha 调整透明度，零额外 Bitmap 分配。 */
-    private fun applyBitmap(bitmap: Bitmap) {
-        // 横屏双层：blur 层用更大半径与更低 alpha，让中间清晰大图更突出
-        blurImageView?.let {
-            setBlurredBitmap(it, bitmap, BLUR_IMAGE_ALPHA_PAIRED, RENDER_EFFECT_RADIUS_PAIRED, BLUR_RADIUS_PAIRED)
-        }
-        if (blurOnly) {
-            // 单层模式：clearImageView 作为唯一画布并应用默认强度模糊
-            setBlurredBitmap(clearImageView, bitmap, BLUR_IMAGE_ALPHA)
-        } else {
-            clearImageView.setImageBitmap(bitmap)
-            clearImageView.imageAlpha = CLEAR_IMAGE_ALPHA
-        }
-    }
-
-    /**
-     * 清除背景图片
-     */
-    fun clearBackground() {
-        if (currentBackground != null) {
-            val fadeOutAnimation = AnimationUtils.loadAnimation(context, R.anim.background_fadeout)
-            fadeOutAnimation.setAnimationListener(object : Animation.AnimationListener {
-                override fun onAnimationStart(animation: Animation) {}
-
-                override fun onAnimationEnd(animation: Animation) {
-                    blurImageView?.setImageBitmap(null)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        blurImageView?.setRenderEffect(null)
-                    }
-                    clearImageView.setImageBitmap(null)
-                    currentBackground = null
-                }
-
-                override fun onAnimationRepeat(animation: Animation) {}
-            })
-
-            (blurImageView ?: clearImageView).startAnimation(fadeOutAnimation)
-            if (blurImageView != null) {
-                clearImageView.startAnimation(AnimationUtils.loadAnimation(context, R.anim.background_fadeout))
-            }
-        }
-    }
-
-    companion object {
+object BackgroundImageManager {
         private const val CLEAR_IMAGE_ALPHA = 160 // ~63%
         private const val BLUR_IMAGE_ALPHA = 160  // ~63%
         // 横屏双层下的 blur 背景：更朗弱且更胧胧朝朝，让中间清晰大图更突出
@@ -349,5 +243,4 @@ class BackgroundImageManager(
                 return original
             }
         }
-    }
 }

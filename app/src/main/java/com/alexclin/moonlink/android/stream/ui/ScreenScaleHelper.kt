@@ -5,7 +5,7 @@ import android.content.ContentValues
 import android.os.Build
 import android.util.DisplayMetrics
 import android.view.WindowManager
-import com.alexclin.moonlink.android.stream.editor.element.Element
+import com.alexclin.moonlink.android.stream.data.ElementColumns
 import kotlin.math.roundToLong
 
 /**
@@ -13,8 +13,8 @@ import kotlin.math.roundToLong
  * 导入时根据原屏幕与目标屏幕的比例自动缩放元素坐标和大小。
  *
  * 元素存储的属性：
- * - [Element.COLUMN_INT_ELEMENT_CENTRAL_X] / [Element.COLUMN_INT_ELEMENT_CENTRAL_Y] — 中心坐标 (px)
- * - [Element.COLUMN_INT_ELEMENT_WIDTH] / [Element.COLUMN_INT_ELEMENT_HEIGHT] — 尺寸 (px)
+ * - [ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X] / [ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y] — 中心坐标 (px)
+ * - [ElementColumns.COLUMN_INT_ELEMENT_WIDTH] / [ElementColumns.COLUMN_INT_ELEMENT_HEIGHT] — 尺寸 (px)
  *
  * 缩放策略：
  * - 位置用独立 X/Y 缩放（保持相对位置百分比）
@@ -65,30 +65,30 @@ object ScreenScaleHelper {
                 kotlin.math.min(sourceWidth, sourceHeight).toFloat()
 
         // 位置：独立 X/Y 缩放（用 roundToLong 与 Java Math.round() 保持一致）
-        val cx = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_CENTRAL_X)
+        val cx = elementCv.getAsLong(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X)
         if (cx != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_CENTRAL_X, (cx * scaleX).roundToLong())
+            elementCv.put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X, (cx * scaleX).roundToLong())
         }
-        val cy = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_CENTRAL_Y)
+        val cy = elementCv.getAsLong(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y)
         if (cy != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, (cy * scaleY).roundToLong())
+            elementCv.put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y, (cy * scaleY).roundToLong())
         }
 
         // 尺寸：用统一缩放因子 min(scaleX,scaleY)，保持按钮宽高比不变
         val uniformScale = kotlin.math.min(scaleX, scaleY)
-        val w = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_WIDTH)
+        val w = elementCv.getAsLong(ElementColumns.COLUMN_INT_ELEMENT_WIDTH)
         if (w != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_WIDTH, kotlin.math.max(1L, (w * uniformScale).roundToLong()))
+            elementCv.put(ElementColumns.COLUMN_INT_ELEMENT_WIDTH, kotlin.math.max(1L, (w * uniformScale).roundToLong()))
         }
-        val h = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_HEIGHT)
+        val h = elementCv.getAsLong(ElementColumns.COLUMN_INT_ELEMENT_HEIGHT)
         if (h != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_HEIGHT, kotlin.math.max(1L, (h * uniformScale).roundToLong()))
+            elementCv.put(ElementColumns.COLUMN_INT_ELEMENT_HEIGHT, kotlin.math.max(1L, (h * uniformScale).roundToLong()))
         }
 
         // 半径（DigitalPad 等使用）：用统一缩放因子
-        val radius = elementCv.getAsLong(Element.COLUMN_INT_ELEMENT_RADIUS)
+        val radius = elementCv.getAsLong(ElementColumns.COLUMN_INT_ELEMENT_RADIUS)
         if (radius != null) {
-            elementCv.put(Element.COLUMN_INT_ELEMENT_RADIUS, kotlin.math.max(1L, (radius * uniformScale).roundToLong()))
+            elementCv.put(ElementColumns.COLUMN_INT_ELEMENT_RADIUS, kotlin.math.max(1L, (radius * uniformScale).roundToLong()))
         }
     }
 

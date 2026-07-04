@@ -65,6 +65,12 @@ sealed class MoonLinkRoute(val route: String) {
     data object SettingsKeyMapping : MoonLinkRoute("settings_keymapping")
     data object SettingsHelp : MoonLinkRoute("settings_help")
 
+    /** 设备应用列表页 — 需要 uuid 参数（替代旧 AppView Activity） */
+    data object AppList : MoonLinkRoute("app_list/{uuid}") {
+        const val ARG_UUID = "uuid"
+        fun createRoute(uuid: String) = "app_list/$uuid"
+    }
+
     /** 桌面小组件管理 */
     data object SettingsWidget : MoonLinkRoute("settings_widget")
 

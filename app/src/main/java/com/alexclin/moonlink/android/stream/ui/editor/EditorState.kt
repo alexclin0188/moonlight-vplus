@@ -1,9 +1,9 @@
 package com.alexclin.moonlink.android.stream.ui.editor
 
 import android.content.ContentValues
-import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
-import com.alexclin.moonlink.android.stream.editor.element.Element
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.ElementColumns
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 
 // ════════════════════════════════════════════════════════════════════════════
 //  元素类型枚举（与旧 Element.java 常量完全对应）
@@ -99,14 +99,14 @@ data class EditorElement(
 /**
  * 纯 Compose 编辑器的状态管理 + 数据库 CRUD 层。
  *
- * 通过 [SuperConfigDatabaseHelper] 读写旧 Crown 系统的 element 表和 config 表，
+ * 通过 [KeymappingDatabaseHelper] 读写旧 Crown 系统的 element 表和 config 表，
  * 与旧代码数据完全互通。
  *
  * @param context Android 上下文
  * @param configId 当前编辑的按键方案 ID
  */
 class EditorState(
-    private val db: SuperConfigDatabaseHelper,
+    private val db: KeymappingDatabaseHelper,
     val configId: Long,
 ) {
 
@@ -133,7 +133,7 @@ class EditorState(
 
     /** 读取方案的 config 属性 */
     fun getConfigName(): String {
-        return db.queryConfigAttribute(configId, PageConfigController.COLUMN_STRING_CONFIG_NAME, "按键方案") as? String
+        return db.queryConfigAttribute(configId, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "按键方案") as? String
             ?: "按键方案"
     }
 
@@ -159,7 +159,7 @@ class EditorState(
         val existingIds = db.queryAllElementIds(configId).toSet()
         var newId = 1L
         while (newId in existingIds) newId++
-        cv.put(Element.COLUMN_LONG_ELEMENT_ID, newId)
+        cv.put(ElementColumns.COLUMN_LONG_ELEMENT_ID, newId)
         db.insertElement(cv)
     }
 
@@ -342,7 +342,7 @@ private fun Map<String, Any?>.optBoolean(key: String, default: Boolean = false):
 /**
  * 将 DB 查询结果 [Map<String, Object>] 转换为 [EditorElement]。
  *
- * DB 返回约定（来自 [SuperConfigDatabaseHelper.queryAllElementAttributes]）：
+ * DB 返回约定（来自 [KeymappingDatabaseHelper.queryAllElementAttributes]）：
  * - INTEGER 列 → `Long`
  * - TEXT 列 → `String`
  * - FLOAT 列 → `Double`
@@ -350,40 +350,40 @@ private fun Map<String, Any?>.optBoolean(key: String, default: Boolean = false):
  */
 fun Map<String, Any?>.toEditorElement(): EditorElement {
     return EditorElement(
-        elementId = this.optLong(Element.COLUMN_LONG_ELEMENT_ID),
-        configId = this.optLong(Element.COLUMN_LONG_CONFIG_ID),
-        type = ElementType.fromValue(this.optInt(Element.COLUMN_INT_ELEMENT_TYPE)),
+        elementId = this.optLong(ElementColumns.COLUMN_LONG_ELEMENT_ID),
+        configId = this.optLong(ElementColumns.COLUMN_LONG_CONFIG_ID),
+        type = ElementType.fromValue(this.optInt(ElementColumns.COLUMN_INT_ELEMENT_TYPE)),
 
-        text = this.optString(Element.COLUMN_STRING_ELEMENT_TEXT),
-        value = this.optString(Element.COLUMN_STRING_ELEMENT_VALUE),
+        text = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_TEXT),
+        value = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_VALUE),
 
-        centralX = this.optInt(Element.COLUMN_INT_ELEMENT_CENTRAL_X, 100),
-        centralY = this.optInt(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, 100),
-        width = this.optInt(Element.COLUMN_INT_ELEMENT_WIDTH, 100),
-        height = this.optInt(Element.COLUMN_INT_ELEMENT_HEIGHT, 100),
-        layer = this.optInt(Element.COLUMN_INT_ELEMENT_LAYER, 50),
+        centralX = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X, 100),
+        centralY = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y, 100),
+        width = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_WIDTH, 100),
+        height = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_HEIGHT, 100),
+        layer = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_LAYER, 50),
 
-        radius = this.optInt(Element.COLUMN_INT_ELEMENT_RADIUS),
-        opacity = this.optInt(Element.COLUMN_INT_ELEMENT_OPACITY, 100),
-        thick = this.optInt(Element.COLUMN_INT_ELEMENT_THICK, 5),
-        normalColor = this.optInt(Element.COLUMN_INT_ELEMENT_NORMAL_COLOR, 0xF0888888.toInt()),
-        pressedColor = this.optInt(Element.COLUMN_INT_ELEMENT_PRESSED_COLOR, 0xF00000FF.toInt()),
-        backgroundColor = this.optInt(Element.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, 0x00FFFFFF),
-        normalTextColor = this.optInt(Element.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, 0xFFFFFFFF.toInt()),
-        pressedTextColor = this.optInt(Element.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, 0xFFCCCCCC.toInt()),
-        textSizePercent = this.optInt(Element.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25),
+        radius = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_RADIUS),
+        opacity = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_OPACITY, 100),
+        thick = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_THICK, 5),
+        normalColor = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_COLOR, 0xF0888888.toInt()),
+        pressedColor = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_COLOR, 0xF00000FF.toInt()),
+        backgroundColor = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, 0x00FFFFFF),
+        normalTextColor = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, 0xFFFFFFFF.toInt()),
+        pressedTextColor = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, 0xFFCCCCCC.toInt()),
+        textSizePercent = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 25),
 
-        mode = this.optInt(Element.COLUMN_INT_ELEMENT_MODE),
-        sense = this.optInt(Element.COLUMN_INT_ELEMENT_SENSE, 100),
+        mode = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_MODE),
+        sense = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_SENSE, 100),
 
-        middleValue = this.optString(Element.COLUMN_STRING_ELEMENT_MIDDLE_VALUE),
-        upValue = this.optString(Element.COLUMN_STRING_ELEMENT_UP_VALUE),
-        downValue = this.optString(Element.COLUMN_STRING_ELEMENT_DOWN_VALUE),
-        leftValue = this.optString(Element.COLUMN_STRING_ELEMENT_LEFT_VALUE),
-        rightValue = this.optString(Element.COLUMN_STRING_ELEMENT_RIGHT_VALUE),
+        middleValue = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_MIDDLE_VALUE),
+        upValue = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_UP_VALUE),
+        downValue = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_DOWN_VALUE),
+        leftValue = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_LEFT_VALUE),
+        rightValue = this.optString(ElementColumns.COLUMN_STRING_ELEMENT_RIGHT_VALUE),
 
-        flag1 = this.optInt(Element.COLUMN_INT_ELEMENT_FLAG1),
-        extraAttributesJson = this.optString(Element.COLUMN_STRING_EXTRA_ATTRIBUTES, "{}"),
+        flag1 = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_FLAG1),
+        extraAttributesJson = this.optString(ElementColumns.COLUMN_STRING_EXTRA_ATTRIBUTES, "{}"),
     ).let { el ->
         // 从 extraAttributesJson 反序列化 isCircle
         val isCircle = try {
@@ -414,38 +414,38 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
         }
 
     return ContentValues().apply {
-        put(Element.COLUMN_LONG_ELEMENT_ID, elementId)
-        put(Element.COLUMN_LONG_CONFIG_ID, configId)
-        put(Element.COLUMN_INT_ELEMENT_TYPE, type.value.toLong())
-        put(Element.COLUMN_STRING_ELEMENT_TEXT, text)
-        put(Element.COLUMN_STRING_ELEMENT_VALUE, value)
+        put(ElementColumns.COLUMN_LONG_ELEMENT_ID, elementId)
+        put(ElementColumns.COLUMN_LONG_CONFIG_ID, configId)
+        put(ElementColumns.COLUMN_INT_ELEMENT_TYPE, type.value.toLong())
+        put(ElementColumns.COLUMN_STRING_ELEMENT_TEXT, text)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_VALUE, value)
 
-        put(Element.COLUMN_INT_ELEMENT_CENTRAL_X, centralX.toLong())
-        put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, centralY.toLong())
-        put(Element.COLUMN_INT_ELEMENT_WIDTH, width.toLong())
-        put(Element.COLUMN_INT_ELEMENT_HEIGHT, height.toLong())
-        put(Element.COLUMN_INT_ELEMENT_LAYER, layer.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X, centralX.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y, centralY.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_WIDTH, width.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_HEIGHT, height.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_LAYER, layer.toLong())
 
-        put(Element.COLUMN_INT_ELEMENT_RADIUS, radius.toLong())
-        put(Element.COLUMN_INT_ELEMENT_OPACITY, opacity.toLong())
-        put(Element.COLUMN_INT_ELEMENT_THICK, thick.toLong())
-        put(Element.COLUMN_INT_ELEMENT_NORMAL_COLOR, normalColor.toLong())
-        put(Element.COLUMN_INT_ELEMENT_PRESSED_COLOR, pressedColor.toLong())
-        put(Element.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, backgroundColor.toLong())
-        put(Element.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, normalTextColor.toLong())
-        put(Element.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedTextColor.toLong())
-        put(Element.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, textSizePercent.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_RADIUS, radius.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_OPACITY, opacity.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_THICK, thick.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_COLOR, normalColor.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_COLOR, pressedColor.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, backgroundColor.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, normalTextColor.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedTextColor.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, textSizePercent.toLong())
 
-        put(Element.COLUMN_INT_ELEMENT_MODE, mode.toLong())
-        put(Element.COLUMN_INT_ELEMENT_SENSE, sense.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_MODE, mode.toLong())
+        put(ElementColumns.COLUMN_INT_ELEMENT_SENSE, sense.toLong())
 
-        put(Element.COLUMN_STRING_ELEMENT_MIDDLE_VALUE, middleValue)
-        put(Element.COLUMN_STRING_ELEMENT_UP_VALUE, upValue)
-        put(Element.COLUMN_STRING_ELEMENT_DOWN_VALUE, downValue)
-        put(Element.COLUMN_STRING_ELEMENT_LEFT_VALUE, leftValue)
-        put(Element.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_MIDDLE_VALUE, middleValue)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_UP_VALUE, upValue)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_DOWN_VALUE, downValue)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_LEFT_VALUE, leftValue)
+        put(ElementColumns.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
 
-        put(Element.COLUMN_INT_ELEMENT_FLAG1, flag1.toLong())
-        put(Element.COLUMN_STRING_EXTRA_ATTRIBUTES, mergedJson)
+        put(ElementColumns.COLUMN_INT_ELEMENT_FLAG1, flag1.toLong())
+        put(ElementColumns.COLUMN_STRING_EXTRA_ATTRIBUTES, mergedJson)
     }
 }

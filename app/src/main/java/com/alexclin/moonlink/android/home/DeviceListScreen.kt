@@ -109,6 +109,7 @@ fun DeviceListScreen(
     snackbarHostState: SnackbarHostState,
     onNavigateToOverview: (String) -> Unit,
     onNavigateToDetail: (String) -> Unit,
+    onNavigateToAppList: ((String) -> Unit)? = null,
     onComputerRemoved: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
@@ -286,6 +287,7 @@ fun DeviceListScreen(
                                     refreshKey = refreshTrigger,
                                     setPairingLoading = { isPairingLoading = it },
                                     onComputerRemoved = onComputerRemoved,
+                                    onNavigateToAppList = onNavigateToAppList,
                                 )
                             }
                         }
@@ -321,6 +323,7 @@ fun DeviceListScreen(
                                     refreshKey = refreshTrigger,
                                     setPairingLoading = { isPairingLoading = it },
                                     onComputerRemoved = onComputerRemoved,
+                                    onNavigateToAppList = onNavigateToAppList,
                                 )
                             }
                         }
@@ -360,6 +363,7 @@ fun DeviceListScreen(
                                 refreshKey = refreshTrigger,
                                 setPairingLoading = { isPairingLoading = it },
                                 onComputerRemoved = onComputerRemoved,
+                                onNavigateToAppList = onNavigateToAppList,
                             )
                         }
                     }
@@ -383,6 +387,7 @@ fun DeviceListScreen(
                                 refreshKey = refreshTrigger,
                                 setPairingLoading = { isPairingLoading = it },
                                 onComputerRemoved = onComputerRemoved,
+                                onNavigateToAppList = onNavigateToAppList,
                             )
                         }
                     }
@@ -570,6 +575,7 @@ private fun DeviceCard(
     refreshKey: Int = 0,
     setPairingLoading: (Boolean) -> Unit = {},
     onComputerRemoved: ((String) -> Unit)? = null,
+    onNavigateToAppList: ((String) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val isOnline = computer.state == ComputerDetails.State.ONLINE
@@ -612,6 +618,7 @@ private fun DeviceCard(
                                 onNavigateToDetail = onNavigateToDetail,
                                 setLoading = setPairingLoading,
                                 onComputerRemoved = onComputerRemoved,
+                                onNavigateToAppList = onNavigateToAppList,
                             )
                         }
                     },
@@ -707,6 +714,7 @@ private fun DeviceCard(
                                     onNavigateToDetail = onNavigateToDetail,
                                     setLoading = setPairingLoading,
                                     onComputerRemoved = onComputerRemoved,
+                                    onNavigateToAppList = onNavigateToAppList,
                                 )
                             }
                         },
@@ -814,6 +822,7 @@ private fun DeviceCard(
                         onNavigateToDetail = onNavigateToDetail,
                         setLoading = setPairingLoading,
                         onComputerRemoved = onComputerRemoved,
+                        onNavigateToAppList = onNavigateToAppList,
                     )
                 },
             )
@@ -831,6 +840,7 @@ private fun handleMenuAction(
     onNavigateToDetail: () -> Unit,
     setLoading: (Boolean) -> Unit = {},
     onComputerRemoved: ((String) -> Unit)? = null,
+    onNavigateToAppList: ((String) -> Unit)? = null,
 ) {
     val activity = context as? android.app.Activity ?: return
 
@@ -880,12 +890,9 @@ private fun handleMenuAction(
             launchStream(context, computer, managerBinder, forceResume = true)
         }
         "applist" -> {
-            // Navigate to AppView for full app list
-            val intent = android.content.Intent(context, com.limelight.AppView::class.java).apply {
-                putExtra(com.limelight.AppView.NAME_EXTRA, computer.name)
-                putExtra(com.limelight.AppView.UUID_EXTRA, computer.uuid)
-            }
-            context.startActivity(intent)
+            // Navigate to Compose AppListScreen
+            val uuid = computer.uuid ?: return
+            onNavigateToAppList?.invoke(uuid)
         }
         "webui" -> {
             val addr = computer.activeAddress?.address ?: return

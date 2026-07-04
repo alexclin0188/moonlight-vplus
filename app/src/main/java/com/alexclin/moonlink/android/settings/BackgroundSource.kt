@@ -2,7 +2,6 @@ package com.alexclin.moonlink.android.settings
 
 import android.app.UiModeManager
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import androidx.preference.PreferenceManager
@@ -95,9 +94,6 @@ sealed class BackgroundSource(val prefValue: String) {
         /** First-run dialog idempotency flag. */
         const val KEY_DIALOG_SHOWN = "background_source_dialog_shown"
 
-        /** Broadcast action consumed by PcView to trigger a reload. */
-        const val ACTION_REFRESH = "com.limelight.REFRESH_BACKGROUND_IMAGE"
-
         // Legacy pref key from before the unified source refactor. Kept only
         // long enough to migrate existing installs, then erased.
         private const val LEGACY_KEY_TYPE = "background_image_type"
@@ -130,7 +126,6 @@ sealed class BackgroundSource(val prefValue: String) {
             if (source !is Api) editor.remove(KEY_API_URL)
             if (source !is Local) editor.remove(KEY_LOCAL_PATH)
             editor.apply()
-            ctx.sendBroadcast(Intent(ACTION_REFRESH).setPackage(ctx.packageName))
         }
 
         /** Like [setActive] but keeps the URL/path (used by the picker prefs themselves). */
@@ -141,7 +136,6 @@ sealed class BackgroundSource(val prefValue: String) {
                 .putBoolean(KEY_DIALOG_SHOWN, true)
                 .remove(LEGACY_KEY_TYPE)
                 .apply()
-            ctx.sendBroadcast(Intent(ACTION_REFRESH).setPackage(ctx.packageName))
         }
 
         fun isDialogShown(ctx: Context): Boolean =

@@ -1,7 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.overlay
 
 import android.content.ContentValues
-import com.alexclin.moonlink.android.stream.editor.element.Element
+import com.alexclin.moonlink.android.stream.data.ElementColumns
 
 /**
  * 内置方案默认元素生成。
@@ -110,29 +110,29 @@ object DefaultElements {
             downValue: String = "", leftValue: String = "", rightValue: String = "",
             radius: Int = 0,
         ) = ContentValues().apply {
-            put(Element.COLUMN_LONG_ELEMENT_ID, elementId)
-            put(Element.COLUMN_INT_ELEMENT_TYPE, type.toLong())
-            put(Element.COLUMN_STRING_ELEMENT_TEXT, text)
-            put(Element.COLUMN_STRING_ELEMENT_VALUE, value)
-            put(Element.COLUMN_INT_ELEMENT_CENTRAL_X, cx.toLong())
-            put(Element.COLUMN_INT_ELEMENT_CENTRAL_Y, cy.toLong())
-            put(Element.COLUMN_INT_ELEMENT_WIDTH, w.toLong())
-            put(Element.COLUMN_INT_ELEMENT_HEIGHT, h.toLong())
-            put(Element.COLUMN_INT_ELEMENT_LAYER, layer.toLong())
-            put(Element.COLUMN_INT_ELEMENT_RADIUS, radius.toLong())
-            put(Element.COLUMN_INT_ELEMENT_OPACITY, 100L)
-            put(Element.COLUMN_INT_ELEMENT_THICK, 5L)
-            put(Element.COLUMN_INT_ELEMENT_NORMAL_COLOR, normalColor)
-            put(Element.COLUMN_INT_ELEMENT_PRESSED_COLOR, pressedColor)
-            put(Element.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, bgColor)
-            put(Element.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, textColor)
-            put(Element.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedTextColor)
-            put(Element.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 50L)
-            put(Element.COLUMN_STRING_ELEMENT_MIDDLE_VALUE, middleValue)
-            put(Element.COLUMN_STRING_ELEMENT_UP_VALUE, upValue)
-            put(Element.COLUMN_STRING_ELEMENT_DOWN_VALUE, downValue)
-            put(Element.COLUMN_STRING_ELEMENT_LEFT_VALUE, leftValue)
-            put(Element.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
+            put(ElementColumns.COLUMN_LONG_ELEMENT_ID, elementId)
+            put(ElementColumns.COLUMN_INT_ELEMENT_TYPE, type.toLong())
+            put(ElementColumns.COLUMN_STRING_ELEMENT_TEXT, text)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_VALUE, value)
+            put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_X, cx.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_CENTRAL_Y, cy.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_WIDTH, w.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_HEIGHT, h.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_LAYER, layer.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_RADIUS, radius.toLong())
+            put(ElementColumns.COLUMN_INT_ELEMENT_OPACITY, 100L)
+            put(ElementColumns.COLUMN_INT_ELEMENT_THICK, 5L)
+            put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_COLOR, normalColor)
+            put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_COLOR, pressedColor)
+            put(ElementColumns.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, bgColor)
+            put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, textColor)
+            put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedTextColor)
+            put(ElementColumns.COLUMN_INT_ELEMENT_TEXT_SIZE_PERCENT, 50L)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_MIDDLE_VALUE, middleValue)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_UP_VALUE, upValue)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_DOWN_VALUE, downValue)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_LEFT_VALUE, leftValue)
+            put(ElementColumns.COLUMN_STRING_ELEMENT_RIGHT_VALUE, rightValue)
         }
 
         if (!onlyL3R3) {

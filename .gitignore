@@ -31,9 +31,6 @@ Thumbs.db
 
 # All root-level dot-directories (except .git and .github)
 /.*/
-!/.git/
-!/.github/
-!/.opencode/
 
 # Android Studio
 .kotlin/.idea

@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 
 /**
@@ -102,7 +103,7 @@ fun KeyMappingSchemeSelector(
                 Button(
                     onClick = {
                         try {
-                            val db = com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper(context)
+                            val db = KeymappingDatabaseHelper(context)
                             db.deleteConfig(target.configId)
                             schemes = loadUserSchemes(context)
                             if (currentConfigId == target.configId) {

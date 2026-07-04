@@ -44,7 +44,7 @@ private fun rememberSettingsCategories(context: Context): List<SettingsCategory>
         SettingsCategory("performance", context.getString(R.string.category_performance_analytics),    Icons.Default.Speed,           "settings_performance"),
         SettingsCategory("gamepad",     context.getString(R.string.category_gamepad_settings),        Icons.Default.Gamepad,         "settings_gamepad"),
         SettingsCategory("input",       context.getString(R.string.category_input_settings),          Icons.Default.Keyboard,        "settings_input"),
-        SettingsCategory("keymapping",  context.getString(R.string.category_crown_features),          Icons.Default.Tune,            "settings_keymapping"),
+        SettingsCategory("keymapping",  context.getString(R.string.category_key_mapping_features),          Icons.Default.Tune,            "settings_keymapping"),
         SettingsCategory("widget",      context.getString(R.string.category_desktop_widget),          Icons.Default.Widgets,         "_widget"),
         SettingsCategory("connection",  context.getString(R.string.category_connection_settings),     Icons.Default.Lan,             "settings_connection"),
         SettingsCategory("help",        context.getString(R.string.category_help),                    Icons.Default.HelpOutline,     "settings_help"),

@@ -300,18 +300,14 @@
     <string name="add_resolution">Agregar Resolución</string>
     <string name="applist_menu_start_with_vdd"> Iniciar Con Pantalla Virtual </string>
     <string name="author_web">https://space.bilibili.com/393593468</string>
-    <string name="category_crown_features">Área de Asignación de Teclas</string>
+    <string name="category_key_mapping_features">Área de Asignación de Teclas</string>
     <string name="category_enhanced_touch_settings">👆 Toque Multi-Punto Mejorado</string>
     <string name="category_screen_position_settings">Configuración de Pantalla</string>
     <string name="check_for_updates">Buscar actualizaciones</string>
     <string name="copy_content">Copiar Contenido</string>
     <string name="copy_details">Copiar Detalles</string>
     <string name="copy_success">Contenido copiado al portapapeles</string>
-    <string name="crown_mode_crown">Modo Asignación de Teclas</string>
-    <string name="crown_mode_normal">Modo Normal</string>
-    <string name="crown_switch_to_crown">Cambiar a Modo Asignación de Teclas</string>
-    <string name="crown_switch_to_normal">Salir de Asignación de Teclas</string>
-    <string name="crown_toggle_button">Asignación de Teclas</string>
+
     <string name="custom_resolution_input_title">Ingresar Resolución Personalizada</string>
     <string name="dialog_button_cancel">CANCELAR</string>
     <string name="dialog_button_clear">LIMPIAR</string>
@@ -339,13 +335,12 @@
     <string name="game_menu_bitrate_range_value">0.5 - 200 Mbps</string>
     <string name="game_menu_bitrate_tip">Arrastra el deslizador para ajustar la tasa de bits en tiempo real. Valores más altos significan mejor calidad pero requieren mejor red.</string>
     <string name="game_menu_cancel">Cancelar</string>
-    <string name="game_menu_configure_crown_function">Configurar Función Crown</string>
-    <string name="game_menu_configure_settings">Modo de configuración de botón Crown</string>
-    <string name="game_menu_crown_function">Función Crown</string>
+
+
     <string name="game_menu_delete_custom_key">Eliminar botón personalizado</string>
     <string name="game_menu_disconnect">Desconectar</string>
     <string name="game_menu_disconnect_and_quit">Desconectar y Salir</string>
-    <string name="game_menu_edit_mode">Modo de edición de botón Crown</string>
+
     <string name="game_menu_ok">OK</string>
     <string name="game_menu_send_keys">Enviar tecla(s) especial(es)</string>
     <string name="game_menu_send_keys_alt_home">Enviar ALT + HOME (Alternar RTSS)</string>
@@ -414,7 +409,7 @@
     <string name="suffix_seekbar_flat_region_pixels">píxeles</string>
     <string name="suffix_seekbar_keyboard_toggle_fingers_native_touch"> </string>
     <string name="suffix_seekbar_mic_bitrate_kbps">kbps</string>
-    <string name="summary_about_author">Crown\'s Bilibili: XiguaHub, por favor síguelos. GitHub: https://github.com/WACrown/moonlight-android</string>
+
     <string name="summary_about_mode">Ver información de la aplicación y detalles del proyecto</string>
     <string name="summary_background_image_api">Ingresa una API de imagen de fondo personalizada, o una URL de imagen única. Deja vacío para ver imágenes aleatorias</string>
     <string name="summary_check_for_updates">Verificar si hay una nueva versión disponible</string>
@@ -425,7 +420,7 @@
     <string name="summary_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada a la izquierda (predeterminado: en el lado derecho de la pantalla)</string>
     <string name="summary_checkbox_reverse_resolution">Intercambiar valores de ancho y alto para requisitos especiales de visualización</string>
     <string name="summary_checkbox_sync_touch_event_with_display">Si está habilitado, el evento de toque se sincronizará con la tasa de refresco de la pantalla, como 60Hz.</string>
-    <string name="summary_crown_super_features">Botones y configuraciones personalizadas durante la transmisión, guardadas en configuraciones personalizadas para cambio rápido</string>
+    <string name="summary_key_mapping_features">Botones y configuraciones personalizadas durante la transmisión, guardadas en configuraciones personalizadas para cambio rápido</string>
     <string name="summary_custom_resolutions">Crear tus propias resoluciones personalizadas</string>
     <string name="summary_enable_analytics">Ayudar a mejorar la aplicación compartiendo estadísticas de uso anónimas</string>
     <string name="summary_enable_perf_overlay">Mostrar información de rendimiento de transmisión en tiempo real mientras transmites</string>
@@ -475,7 +470,7 @@
     <string name="title_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada</string>
     <string name="title_checkbox_reverse_resolution">Resolución Inversa</string>
     <string name="title_checkbox_sync_touch_event_with_display">Sincronizar evento de toque con refresco de pantalla </string>
-    <string name="title_crown_super_features">Características Super Crown</string>
+    <string name="title_key_mapping_features">Características Super Crown</string>
     <string name="title_custom_resolutions">Resoluciones personalizadas</string>
     <string name="title_enable_analytics">Habilitar Análisis</string>
     <string name="title_enable_perf_overlay">Mostrar estadísticas de rendimiento mientras transmites</string>
@@ -499,8 +494,7 @@
     <string name="title_seekbar_scale">Escala de Resolución del Host</string>
     <string name="title_show_guide_button">Mostrar Botón de Guía</string>
     <string name="title_use_external_display">Usar Pantalla Externa</string>
-    <string name="toast_back_key_menu_switch_1">La configuración de función crown ha sido salida</string>
-    <string name="toast_back_key_menu_switch_2">Entrado en la configuración de función crown</string>
+
     <string name="toast_custom_key_saved">El botón personalizado \'%s\' ha sido guardado</string>
     <string name="toast_delete_failed">Eliminación falló</string>
     <string name="toast_elements_hidden">Botón virtual oculto</string>

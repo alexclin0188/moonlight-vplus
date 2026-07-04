@@ -190,7 +190,7 @@ fun TouchModeCategory(settings: HostSettings, onSettingsChange: (HostSettings) -
         }
         item {
             Divider()
-            SectionTitle(stringResource(R.string.title_crown_super_features))
+            SectionTitle(stringResource(R.string.title_key_mapping_features))
             SettingSwitchRow(stringResource(R.string.label_key_mapping_enabled), settings.keyMappingEnabled) { onSettingsChange(settings.copy(keyMappingEnabled = it)) }
             AnimatedVisibility(visible = settings.keyMappingEnabled) {
                 Column(Modifier.padding(start = 16.dp)) {

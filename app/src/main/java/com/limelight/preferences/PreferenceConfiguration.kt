@@ -104,8 +104,7 @@ class PreferenceConfiguration {
     var usbDriver = false
     @JvmField var flipFaceButtons = false
     var onscreenController = false
-    var onscreenKeyboard = false
-    // 按键映射开关（替代旧 onscreenKeyboard 在按键映射中的角色）
+    // 按键映射开关
     var keyMappingEnabled = false
     @JvmField var onlyL3R3 = false
     @JvmField var showGuideButton = false
@@ -402,7 +401,6 @@ class PreferenceConfiguration {
         private const val MULTI_CONTROLLER_PREF_STRING = "checkbox_multi_controller"
         private const val USB_DRIVER_PREF_SRING = "checkbox_usb_driver"
         private const val VIDEO_FORMAT_PREF_STRING = "video_format"
-        private const val ONSCREEN_KEYBOARD_PREF_STRING = "checkbox_show_onscreen_keyboard"
         const val KEY_MAPPING_ENABLED_PREF_STRING = "checkbox_enable_key_mapping"
         private const val ONLY_L3_R3_PREF_STRING = "checkbox_only_show_L3R3"
         private const val SHOW_GUIDE_BUTTON_PREF_STRING = "checkbox_show_guide_button"
@@ -603,7 +601,6 @@ class PreferenceConfiguration {
         }
 
         private const val ONSCREEN_CONTROLLER_DEFAULT = false
-        private const val ONSCREEN_KEYBOARD_DEFAULT = false
         private const val ONLY_L3_R3_DEFAULT = false
         private const val SHOW_GUIDE_BUTTON_DEFAULT = true
         private const val HALF_HEIGHT_OSC_PORTRAIT_DEFAULT = true
@@ -1130,7 +1127,6 @@ class PreferenceConfiguration {
             config.multiController = prefs.getBoolean(MULTI_CONTROLLER_PREF_STRING, DEFAULT_MULTI_CONTROLLER)
             config.usbDriver = prefs.getBoolean(USB_DRIVER_PREF_SRING, DEFAULT_USB_DRIVER)
             config.onscreenController = prefs.getBoolean(ONSCREEN_CONTROLLER_PREF_STRING, ONSCREEN_CONTROLLER_DEFAULT)
-            config.onscreenKeyboard = prefs.getBoolean(ONSCREEN_KEYBOARD_PREF_STRING, ONSCREEN_KEYBOARD_DEFAULT)
             config.keyMappingEnabled = prefs.getBoolean(KEY_MAPPING_ENABLED_PREF_STRING, false)
             config.showPauseStream = prefs.getBoolean(SHOW_PAUSE_STREAM_PREF_STRING, false)
             config.onlyL3R3 = prefs.getBoolean(ONLY_L3_R3_PREF_STRING, ONLY_L3_R3_DEFAULT)

@@ -263,7 +263,7 @@ private fun executeAction(id: String, engine: StreamEngine) {
             (KeyboardTranslator.VK_F1 + 3).toShort(),
         ))
         "toggle_keyboard" -> engine.toggleKeyboard()
-        "toggle_controller" -> engine.toggleVirtualController()
+        "toggle_controller" -> { /* toggleVirtualController: 待实现 */ }
         "toggle_perf" -> engine.togglePerformanceOverlay()
         MoonLinkQuickActions.TOGGLE_PIP -> engine.togglePip()
         MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> engine.toggleAdaptiveBitrate()

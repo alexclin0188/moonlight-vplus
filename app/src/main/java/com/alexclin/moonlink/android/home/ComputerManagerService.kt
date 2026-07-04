@@ -28,7 +28,6 @@ import com.alexclin.moonlink.android.util.ServerHelper
 import com.alexclin.moonlink.android.home.ComputerDatabaseManager
 import com.alexclin.moonlink.android.home.IdentityManager
 import com.limelight.computers.NetworkDiagnostics
-import com.limelight.computers.DynamicTimeoutManager
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -90,9 +89,8 @@ class ComputerManagerService : Service() {
 
     private lateinit var networkCallback: ConnectivityManager.NetworkCallback
 
-    // 网络诊断和动态超时管理
+    // 网络诊断
     private lateinit var networkDiagnostics: NetworkDiagnostics
-    private var timeoutManager: DynamicTimeoutManager? = null
 
     private var discoveryBinder: DiscoveryService.DiscoveryBinder? = null
     private val discoveryServiceConnection = object : ServiceConnection {
@@ -369,7 +367,7 @@ class ComputerManagerService : Service() {
             val activeNetworkIsVpn = NetHelper.isActiveNetworkVpn(this)
             val connMgr = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-            val stunTimeout = timeoutManager?.stunTimeout ?: 5000
+            val stunTimeout = 5000
 
             LimeLog.info("Starting async STUN request for ${details.name} with timeout: ${stunTimeout}ms")
 
@@ -406,10 +404,8 @@ class ComputerManagerService : Service() {
                         if (stunResolvedAddress != null) {
                             details.remoteAddress = ComputerDetails.AddressTuple(stunResolvedAddress, details.guessExternalPort())
                             LimeLog.info("STUN success for ${details.name} in ${duration}ms: $stunResolvedAddress")
-                            timeoutManager?.recordSuccess("STUN-${details.name}", duration)
                         } else {
                             LimeLog.warning("STUN failed for ${details.name} after ${duration}ms, timeout: ${stunTimeout}ms")
-                            timeoutManager?.recordFailure("STUN-${details.name}")
                         }
                     }
                 } finally {
@@ -597,39 +593,28 @@ class ComputerManagerService : Service() {
 
             val isLikelyOnline = details.state == ComputerDetails.State.ONLINE && address == details.activeAddress
 
-            val timeoutConfig = timeoutManager?.getDynamicTimeoutConfig(address.address, isLikelyOnline)
-            if (timeoutConfig != null) {
-                LimeLog.info("Polling $address with timeout config: $timeoutConfig")
-            }
-
             val newDetails = http.getComputerDetails(isLikelyOnline)
 
             if (newDetails.uuid == null) {
                 LimeLog.severe("Polling returned no UUID!")
-                timeoutManager?.recordFailure(address.address)
                 return null
             }
             if (details.uuid != null && details.uuid != newDetails.uuid) {
                 LimeLog.info("Polling returned the wrong PC!")
-                timeoutManager?.recordFailure(address.address)
                 return null
             }
 
             val responseTime = System.currentTimeMillis() - startTime
-            timeoutManager?.recordSuccess(address.address, responseTime)
             LimeLog.info("Poll success for $address in ${responseTime}ms")
 
             return newDetails
         } catch (e: XmlPullParserException) {
             e.printStackTrace()
-            timeoutManager?.recordFailure(address.address)
             return null
         } catch (e: IOException) {
-            timeoutManager?.recordFailure(address.address)
             return null
         } catch (e: InterruptedException) {
             Thread.currentThread().interrupt()
-            timeoutManager?.recordFailure(address.address)
             return null
         }
     }
@@ -749,7 +734,6 @@ class ComputerManagerService : Service() {
 
     override fun onCreate() {
         networkDiagnostics = NetworkDiagnostics(this)
-        timeoutManager = DynamicTimeoutManager(networkDiagnostics)
 
         networkDiagnostics.diagnoseNetwork()
 

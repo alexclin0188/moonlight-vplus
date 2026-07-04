@@ -47,6 +47,7 @@ import com.alexclin.moonlink.android.device.streamsettings.HostCategory
 import com.alexclin.moonlink.android.device.streamsettings.HostSettingsManager
 import com.alexclin.moonlink.android.device.streamsettings.OtherCategory
 import com.alexclin.moonlink.android.device.streamsettings.TouchModeCategory
+import com.alexclin.moonlink.android.device.overview.AppListScreen
 import com.alexclin.moonlink.android.home.DeviceListScreen
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
@@ -110,7 +111,8 @@ private fun computeTitle(context: android.content.Context, route: String?, devic
         MoonLinkRoute.SettingsUi.route       -> context.getString(R.string.category_ui_settings)
         MoonLinkRoute.SettingsGamepad.route  -> context.getString(R.string.category_gamepad_settings)
         MoonLinkRoute.SettingsInput.route    -> context.getString(R.string.category_input_settings)
-        MoonLinkRoute.SettingsKeyMapping.route -> context.getString(R.string.category_crown_features)
+        MoonLinkRoute.SettingsKeyMapping.route -> context.getString(R.string.category_key_mapping_features)
+        MoonLinkRoute.AppList.route           -> deviceName + context.getString(R.string.title_device_app_list)
         MoonLinkRoute.SettingsHelp.route       -> context.getString(R.string.help)
         MoonLinkRoute.SettingsWidget.route     -> context.getString(R.string.category_desktop_widget)
         MoonLinkRoute.SettingsPerformance.route -> context.getString(R.string.category_performance_analytics)
@@ -279,6 +281,9 @@ fun MoonLinkApp(
                     onNavigateToDetail = { uuid ->
                         navController.navigate(MoonLinkRoute.DeviceDetail.createRoute(uuid))
                     },
+                    onNavigateToAppList = { uuid ->
+                        navController.navigate(MoonLinkRoute.AppList.createRoute(uuid))
+                    },
                     onComputerRemoved = onComputerRemoved,
                 )
             }
@@ -334,6 +339,22 @@ fun MoonLinkApp(
             // ── 连接设置 ─────────────────────────────────
             composable(MoonLinkRoute.SettingsConnection.route) {
                 ConnectionSettingsScreen()
+            }
+
+            // ── 设备应用列表页（替代旧 AppView）────────────────────
+            composable(
+                route = MoonLinkRoute.AppList.route,
+                arguments = listOf(navArgument(MoonLinkRoute.AppList.ARG_UUID) {
+                    type = NavType.StringType
+                }),
+            ) { backStack ->
+                val uuid = backStack.arguments?.getString(MoonLinkRoute.AppList.ARG_UUID) ?: return@composable
+                AppListScreen(
+                    uuid          = uuid,
+                    managerBinder = managerBinder,
+                    computers     = deviceManager.devices,
+                    onBack        = { navController.popBackStack() },
+                )
             }
 
             // ── 设备概要页 ────────────────────────────────────

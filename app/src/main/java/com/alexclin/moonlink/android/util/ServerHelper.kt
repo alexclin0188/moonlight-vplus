@@ -3,8 +3,7 @@ package com.alexclin.moonlink.android.util
 import android.app.Activity
 import android.content.Intent
 import android.widget.Toast
-import com.limelight.AppView
-import com.limelight.Game
+import com.alexclin.moonlink.android.stream.StreamIntentKeys
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.home.ShortcutTrampoline
 import com.alexclin.moonlink.android.util.PlatformBinding
@@ -31,19 +30,19 @@ object ServerHelper {
 
     fun createPcShortcutIntent(parent: Activity, computer: ComputerDetails): Intent {
         return Intent(parent, ShortcutTrampoline::class.java).apply {
-            putExtra(AppView.NAME_EXTRA, computer.name)
-            putExtra(AppView.UUID_EXTRA, computer.uuid)
+            putExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_NAME, computer.name)
+            putExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_UUID, computer.uuid)
             action = Intent.ACTION_DEFAULT
         }
     }
 
     fun createAppShortcutIntent(parent: Activity, computer: ComputerDetails, app: NvApp): Intent {
         return Intent(parent, ShortcutTrampoline::class.java).apply {
-            putExtra(AppView.NAME_EXTRA, computer.name)
-            putExtra(AppView.UUID_EXTRA, computer.uuid)
-            putExtra(Game.EXTRA_APP_NAME, app.appName)
-            putExtra(Game.EXTRA_APP_ID, "" + app.appId)
-            putExtra(Game.EXTRA_APP_HDR, app.isHdrSupported())
+            putExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_NAME, computer.name)
+            putExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_UUID, computer.uuid)
+            putExtra(StreamIntentKeys.EXTRA_APP_NAME, app.appName)
+            putExtra(StreamIntentKeys.EXTRA_APP_ID, "" + app.appId)
+            putExtra(StreamIntentKeys.EXTRA_APP_HDR, app.isHdrSupported())
             action = Intent.ACTION_DEFAULT
         }
     }
@@ -58,20 +57,20 @@ object ServerHelper {
         forceResumeCurrentSession: Boolean = false
     ): Intent {
         return Intent(parent, com.alexclin.moonlink.android.stream.StreamActivity::class.java).apply {
-            putExtra(Game.EXTRA_HOST, computer.activeAddress!!.address)
-            putExtra(Game.EXTRA_PORT, computer.activeAddress!!.port)
-            putExtra(Game.EXTRA_HTTPS_PORT, computer.httpsPort)
-            putExtra(Game.EXTRA_APP_NAME, app.appName)
-            putExtra(Game.EXTRA_APP_ID, app.appId)
-            putExtra(Game.EXTRA_APP_HDR, app.isHdrSupported())
-            putExtra(Game.EXTRA_UNIQUEID, managerBinder.getUniqueId())
-            putExtra(Game.EXTRA_PC_UUID, computer.uuid)
-            putExtra(Game.EXTRA_PC_NAME, computer.name)
-            putExtra(Game.EXTRA_PAIR_NAME, computer.getPairName(parent))
-            putExtra(Game.EXTRA_PC_USEVDD, computer.useVdd)
-            app.cmdList?.let { putExtra(Game.EXTRA_APP_CMD, it.toString()) }
+            putExtra(StreamIntentKeys.EXTRA_HOST, computer.activeAddress!!.address)
+            putExtra(StreamIntentKeys.EXTRA_PORT, computer.activeAddress!!.port)
+            putExtra(StreamIntentKeys.EXTRA_HTTPS_PORT, computer.httpsPort)
+            putExtra(StreamIntentKeys.EXTRA_APP_NAME, app.appName)
+            putExtra(StreamIntentKeys.EXTRA_APP_ID, app.appId)
+            putExtra(StreamIntentKeys.EXTRA_APP_HDR, app.isHdrSupported())
+            putExtra(StreamIntentKeys.EXTRA_UNIQUEID, managerBinder.getUniqueId())
+            putExtra(StreamIntentKeys.EXTRA_PC_UUID, computer.uuid)
+            putExtra(StreamIntentKeys.EXTRA_PC_NAME, computer.name)
+            putExtra(StreamIntentKeys.EXTRA_PAIR_NAME, computer.getPairName(parent))
+            putExtra(StreamIntentKeys.EXTRA_PC_USEVDD, computer.useVdd)
+            app.cmdList?.let { putExtra(StreamIntentKeys.EXTRA_APP_CMD, it.toString()) }
             try {
-                computer.serverCert?.let { putExtra(Game.EXTRA_SERVER_CERT, it.encoded) }
+                computer.serverCert?.let { putExtra(StreamIntentKeys.EXTRA_SERVER_CERT, it.encoded) }
             } catch (e: CertificateEncodingException) {
                 e.printStackTrace()
             }
@@ -79,10 +78,10 @@ object ServerHelper {
                 AppSettingsManager.addLastSettingsToIntent(this, lastSettings)
             }
             if (screenCombinationMode != -1) {
-                putExtra(Game.EXTRA_SCREEN_COMBINATION_MODE, screenCombinationMode)
+                putExtra(StreamIntentKeys.EXTRA_SCREEN_COMBINATION_MODE, screenCombinationMode)
             }
             if (forceResumeCurrentSession) {
-                putExtra(Game.EXTRA_FORCE_RESUME_CURRENT_SESSION, true)
+                putExtra(StreamIntentKeys.EXTRA_FORCE_RESUME_CURRENT_SESSION, true)
             }
         }
     }

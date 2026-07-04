@@ -576,9 +576,9 @@
     <string name="summary_screen_offset_y">Vertical offset of the screen</string>
     
     <!-- Key Mapping feature area (renamed from Crown) -->
-    <string name="category_crown_features">Key Mapping Features</string>
-    <string name="title_crown_super_features">Key Mapping</string>
-    <string name="summary_crown_super_features">Custom buttons and settings during streaming, saved to custom configurations for quick switching</string>
+    <string name="category_key_mapping_features">Key Mapping Features</string>
+    <string name="title_key_mapping_features">Key Mapping</string>
+    <string name="summary_key_mapping_features">Custom buttons and settings during streaming, saved to custom configurations for quick switching</string>
     <string name="title_export_super_config">Export Configuration</string>
     <string name="summary_export_super_config">Export custom button and streaming settings configuration file</string>
     <string name="title_import_super_config">Import Configuration</string>
@@ -586,23 +586,12 @@
     <string name="title_merge_super_config">Merge Configuration</string>
     <string name="summary_merge_super_config">Merge new configuration buttons into existing configuration</string>
     <string name="title_about_author">This is V+ X Royal Edition</string>
-    <string name="summary_about_author">Crown\'s Bilibili: XiguaHub, please follow them. GitHub: https://github.com/WACrown/moonlight-android</string>
+
     
     <!-- Key Mapping toggle (renamed from Crown) -->
-    <string name="crown_toggle_button">Key Mapping</string>
-    <string name="crown_mode_normal">Normal Mode</string>
-    <string name="crown_mode_crown">Key Mapping Mode</string>
-    <string name="crown_switch_to_normal">Exit Key Mapping</string>
-    <string name="crown_switch_to_crown">Enable Key Mapping</string>
-    <string name="game_menu_crown_function">Key Mapping</string>
     <string name="game_menu_toggle_elements_visibility">Show/Hide Virtual Keys</string>
-    <string name="game_menu_configure_crown_function">Configure Key Mapping</string>
     <string name="toast_elements_visible">Virtual button displayed</string>
     <string name="toast_elements_hidden">Virtual button hidden</string>
-    <string name="toast_back_key_menu_switch_1">Exited key mapping configuration</string>
-    <string name="toast_back_key_menu_switch_2">Entered key mapping configuration</string>
-    <string name="game_menu_edit_mode">Key mapping editing mode</string>
-    <string name="game_menu_configure_settings">Key mapping configuration mode</string>
     
     <!-- External display -->
     <string name="title_use_external_display">Use External Display</string>
@@ -947,7 +936,6 @@
     <string name="layout_address_list_item_cd_30f7d">Connect</string>
     <string name="layout_config_item_text_c8ce4">Rename</string>
     <string name="layout_config_item_text_2f4aa">Delete</string>
-    <string name="layout_custom_dialog_text_c9831">Enable Crown Menu</string>
     <string name="layout_custom_dialog_text_6d521">Sleep</string>
     <string name="layout_custom_dialog_text_c3992">Exit</string>
     <string name="layout_custom_dialog_text_f090a">Special Keys Shortcut</string>
@@ -1000,11 +988,10 @@
     <string name="layout_dlg_peer_info_item_text_e960e">NAT Type:</string>
     <string name="layout_dlg_peer_info_item_text_9d9a3">Latency:</string>
     <string name="layout_dlg_peer_info_item_text_681b4">Traffic (Rx/Tx):</string>
-    <string name="layout_game_menu_super_empty_text_a7970">No super commands yet</string>
-    <string name="layout_game_menu_super_empty_text_fac9d">Add super commands using Sunshine Foundation edition~</string>
+
     <string name="layout_item_key_value_text_0952a">Section 1</string>
     <string name="layout_item_key_value_hint_dd44f">Section name, defaults to key name if empty</string>
-    <string name="layout_item_page_super_menu_text_ce0e8">Edit Mode</string>
+
     <string name="layout_keyboard_mini_text_3ae7b">Back to Keyboard</string>
     <string name="layout_number_seekbar_text_e12e7">Mouse Passthrough Sensitivity</string>
     <string name="layout_page_analog_stick_text_dedb8">Type: Analog Stick</string>
@@ -1025,7 +1012,6 @@
     <string name="layout_page_config_text_cd2c1">Game Vibration</string>
     <string name="layout_page_config_text_f4651">Button Vibration</string>
     <string name="layout_page_config_text_66ab5">Add</string>
-    <string name="layout_page_config_text_df603">Exit Crown Configuration</string>
     <string name="layout_page_config_text_global_style">Global Button Style</string>
     <string name="layout_page_config_text_global_border_color">Border Color</string>
     <string name="layout_page_config_text_global_text_color">Text Color</string>
@@ -1089,8 +1075,7 @@
     <string name="layout_page_simplify_performance_text_4b9c3">Reset</string>
     <string name="layout_page_simplify_performance_text_e83a2">Confirm</string>
     <string name="layout_page_simplify_performance_text_98e2e">Decoder:      ##Decoder## \nResolution:   ##Resolution## \nDrop Rate:    ##Drop Rate##\nHost Latency: ##Host Latency##\nNet Latency:  ##Net Latency##\nDecode Time:  ##Decode Time##\nBandwidth:    ##Bandwidth## \nFPS:          ##FPS## \nRender:       ##Render Latency## \nTime:         HH:MM:SS \n</string>
-    <string name="layout_page_super_menu_text_899a4">Configuration Settings</string>
-    <string name="layout_page_super_menu_text_e2f14">Exit Stream</string>
+
     <string name="layout_page_wheel_pad_text_57047">Type: Wheel Button</string>
     <string name="layout_page_wheel_pad_text_c814c">Popup Label</string>
     <string name="layout_page_wheel_pad_hint_84265">Leave empty for direct mode</string>
@@ -1182,7 +1167,6 @@
     <string name="game_menu_off">Off</string>
     <string name="toast_local_cursor_enabled">Local cursor rendering enabled</string>
     <string name="toast_local_cursor_disabled">Local cursor rendering disabled</string>
-    <string name="toast_crown_not_enabled">Crown feature not enabled</string>
     <string name="game_menu_toggle_touch">Toggle Touch</string>
     <string name="toast_touch_enabled">Touch enabled</string>
     <string name="toast_touch_disabled">Touch disabled</string>
@@ -1199,7 +1183,7 @@
     <string name="game_menu_enable_pan_zoom">Enable Pan/Zoom</string>
     <string name="toast_pan_zoom_disabled">Pan/Zoom disabled</string>
     <string name="toast_pan_zoom_enabled">Pan/Zoom enabled</string>
-    <string name="toast_super_command_error">Error sending super command: %s</string>
+
     <string name="toast_install_permission_denied">Install permission denied, download cancelled</string>
     <string name="toast_check_update_failed">Failed to check for updates, please try later</string>
     <string name="toast_already_latest_version">Already on latest version v%s</string>
@@ -1465,8 +1449,8 @@
     <string name="summary_export_key_mapping">Export key mapping scheme as .mlk file</string>
     <string name="title_import_key_mapping">Import Key Mapping Scheme</string>
     <string name="summary_import_key_mapping">Import key mapping scheme from .mlk file</string>
-    <string name="title_import_from_legacy_crown">Import from Legacy Crown Config</string>
-    <string name="summary_import_from_legacy_crown">Import key mapping scheme from legacy Crown .mdat file</string>
+    <string name="title_import_from_legacy_key_mapping">Import from Legacy Crown Config</string>
+    <string name="summary_import_from_legacy_key_mapping">Import key mapping scheme from legacy Crown .mdat file</string>
     <string name="toast_scheme_exported">Key mapping scheme exported (.mlk)</string>
     <string name="toast_export_failed">Export failed: %s</string>
     <string name="toast_file_empty">File content is empty</string>
@@ -1476,7 +1460,7 @@
     <string name="title_export_mlk_dialog">Export Key Mapping Scheme (.mlk)</string>
     <string name="btn_export">Export</string>
     <string name="title_import_mlk_dialog">Import Key Mapping Scheme</string>
-    <string name="title_import_legacy_crown_dialog">Import Legacy Crown Config</string>
+    <string name="title_import_legacy_key_mapping_dialog">Import Legacy Crown Config</string>
     <string name="hint_scheme_name">Scheme Name (1-10 chars)</string>
     <string name="label_overwrite_existing">Overwrite Existing Scheme</string>
     <string name="option_import_as_new">Import as new scheme (don\'t overwrite)</string>
@@ -1484,7 +1468,7 @@
     <string name="toast_scheme_imported">Scheme "%s" imported</string>
     <string name="toast_import_failed">Import failed: %s</string>
     <string name="toast_scheme_imported_from_legacy">Scheme "%s" imported from legacy config</string>
-    <string name="desc_legacy_crown_detected">Legacy Crown config file detected. The key mapping scheme will be imported.</string>
+    <string name="desc_legacy_key_mapping_detected">Legacy Crown config file detected. The key mapping scheme will be imported.</string>
     <string name="error_file_format">File format error</string>
     <string name="error_file_checksum">File checksum failed (corrupted)</string>
     <string name="error_version_incompatible">Version incompatible</string>
@@ -1628,4 +1612,8 @@
     <!-- Status and display labels -->
     <string name="label_online">Online</string>
     <string name="label_offline">Offline</string>
+    <!-- App list screen -->
+    <string name="title_device_app_list">App List</string>
+    <string name="search_apps_hint">Search apps…</string>
+
 </resources>

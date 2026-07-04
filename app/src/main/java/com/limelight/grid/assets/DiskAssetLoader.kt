@@ -12,8 +12,6 @@ import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.util.CacheHelper
 
 import java.io.File
-import java.io.IOException
-import java.io.InputStream
 import kotlin.math.max
 import kotlin.math.round
 import kotlin.math.sqrt
@@ -23,92 +21,6 @@ class DiskAssetLoader(context: Context) {
     private val isLowRamDevice: Boolean =
         (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).isLowRamDevice
     private val cacheDir: File = context.cacheDir
-
-    fun checkCacheExists(tuple: CachedAppAssetLoader.LoaderTuple): Boolean {
-        return CacheHelper.cacheFileExists(cacheDir, "boxart", tuple.computer.uuid!!, "${tuple.app.appId}.png")
-    }
-
-    fun loadBitmapFromCache(tuple: CachedAppAssetLoader.LoaderTuple, sampleSize: Int): ScaledBitmap? {
-        val file = getFile(tuple.computer.uuid!!, tuple.app.appId)
-
-        if (!file.exists()) {
-            return null
-        }
-
-        if (file.length() > MAX_ASSET_SIZE) {
-            LimeLog.warning("Removing cached tuple exceeding size threshold: $tuple")
-            file.delete()
-            return null
-        }
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            val decodeOnlyOptions = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
-            }
-            BitmapFactory.decodeFile(file.absolutePath, decodeOnlyOptions)
-            if (decodeOnlyOptions.outWidth <= 0 || decodeOnlyOptions.outHeight <= 0) {
-                return null
-            }
-
-            LimeLog.info("Tuple $tuple has cached art of size: ${decodeOnlyOptions.outWidth}x${decodeOnlyOptions.outHeight}")
-
-            val options = BitmapFactory.Options().apply {
-                inSampleSize = calculateInSampleSize(
-                    decodeOnlyOptions,
-                    decodeOnlyOptions.outWidth / sampleSize,
-                    decodeOnlyOptions.outHeight / sampleSize
-                )
-                if (isLowRamDevice) {
-                    inPreferredConfig = Bitmap.Config.RGB_565
-                    inDither = true
-                } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    inPreferredConfig = Bitmap.Config.HARDWARE
-                }
-            }
-
-            var bmp = BitmapFactory.decodeFile(file.absolutePath, options)
-            if (bmp != null) {
-                LimeLog.info("Tuple $tuple decoded from disk cache with sample size: ${options.inSampleSize}")
-
-                val compressedBmp = compressLargeBitmap(bmp)
-                if (compressedBmp !== bmp) {
-                    bmp.recycle()
-                    bmp = compressedBmp!!
-                }
-
-                return ScaledBitmap(decodeOnlyOptions.outWidth, decodeOnlyOptions.outHeight, bmp)
-            }
-        } else {
-            val scaledBitmap = ScaledBitmap()
-            try {
-                scaledBitmap.bitmap = ImageDecoder.decodeBitmap(
-                    ImageDecoder.createSource(file)
-                ) { imageDecoder, imageInfo, _ ->
-                    scaledBitmap.originalWidth = imageInfo.size.width
-                    scaledBitmap.originalHeight = imageInfo.size.height
-
-                    if (isLowRamDevice) {
-                        imageDecoder.setMemorySizePolicy(ImageDecoder.MEMORY_POLICY_LOW_RAM)
-                    }
-                }
-
-                if (scaledBitmap.bitmap != null) {
-                    val compressedBmp = compressLargeBitmap(scaledBitmap.bitmap)
-                    if (compressedBmp !== scaledBitmap.bitmap) {
-                        scaledBitmap.bitmap?.recycle()
-                        scaledBitmap.bitmap = compressedBmp
-                    }
-                }
-
-                return scaledBitmap
-            } catch (e: IOException) {
-                e.printStackTrace()
-                return null
-            }
-        }
-
-        return null
-    }
 
     /**
      * 从磁盘缓存加载Bitmap用于背景图显示。
@@ -204,25 +116,6 @@ class DiskAssetLoader(context: Context) {
     fun deleteAssetsForComputer(computerUuid: String) {
         val dir = CacheHelper.openPath(false, cacheDir, "boxart", computerUuid)
         dir.listFiles()?.forEach { it.delete() }
-    }
-
-    fun populateCacheWithStream(tuple: CachedAppAssetLoader.LoaderTuple, input: InputStream) {
-        var success = false
-        try {
-            CacheHelper.openCacheFileForOutput(
-                cacheDir, "boxart", tuple.computer.uuid!!, "${tuple.app.appId}.png"
-            ).use { out ->
-                CacheHelper.writeInputStreamToOutputStream(input, out, MAX_ASSET_SIZE)
-                success = true
-            }
-        } catch (e: IOException) {
-            e.printStackTrace()
-        } finally {
-            if (!success) {
-                LimeLog.warning("Unable to populate cache with tuple: $tuple")
-                CacheHelper.deleteCacheFile(cacheDir, "boxart", tuple.computer.uuid!!, "${tuple.app.appId}.png")
-            }
-        }
     }
 
     companion object {

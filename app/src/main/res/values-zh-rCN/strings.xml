@@ -508,9 +508,9 @@
     <string name="summary_screen_offset_y">画面垂直方向的偏移量。</string>
 
     <!-- Key Mapping feature area (from Crown) -->
-    <string name="category_crown_features">按键映射功能</string>
-    <string name="title_crown_super_features">启用按键映射</string>
-    <string name="summary_crown_super_features">串流中自定义按键和一些设置，并将这些保存到自定义可快速切换的配置中。</string>
+    <string name="category_key_mapping_features">按键映射功能</string>
+    <string name="title_key_mapping_features">启用按键映射</string>
+    <string name="summary_key_mapping_features">串流中自定义按键和一些设置，并将这些保存到自定义可快速切换的配置中。</string>
     <string name="title_export_super_config">导出配置</string>
     <string name="summary_export_super_config">导出自定义按钮的和串流内设置的配置文件。</string>
     <string name="title_import_super_config">导入配置</string>
@@ -518,23 +518,12 @@
     <string name="title_merge_super_config">合并配置</string>
     <string name="summary_merge_super_config">将新的配置的按键合并到现有配置中。</string>
     <string name="title_about_author">这是 V+ X 皇家版本</string>
-    <string name="summary_about_author">王冠的B站：西瓜hub，请关注TA。\ngithub： https://github.com/WACrown/moonlight-android</string>
+
 
     <!-- 按键映射切换（原王冠功能） -->
-    <string name="crown_toggle_button">按键映射</string>
-    <string name="crown_mode_normal">普通模式</string>
-    <string name="crown_mode_crown">按键映射模式</string>
-    <string name="crown_switch_to_normal">退出按键映射</string>
-    <string name="crown_switch_to_crown">启用按键映射</string>
-    <string name="game_menu_crown_function">按键映射</string>
     <string name="game_menu_toggle_elements_visibility">显示/隐藏虚拟按键</string>
-    <string name="game_menu_configure_crown_function">配置按键映射</string>
     <string name="toast_elements_visible">虚拟按键已显示</string>
     <string name="toast_elements_hidden">虚拟按键已隐藏</string>
-    <string name="toast_back_key_menu_switch_1">已退出按键映射配置</string>
-    <string name="toast_back_key_menu_switch_2">已进入按键映射配置</string>
-    <string name="game_menu_edit_mode">按键映射编辑模式</string>
-    <string name="game_menu_configure_settings">按键映射配置模式</string>
 
     <!-- External display -->
     <string name="title_use_external_display">使用外接显示器</string>
@@ -872,7 +861,6 @@
     <string name="layout_address_list_item_cd_30f7d">连接</string>
     <string name="layout_config_item_text_c8ce4">重命名</string>
     <string name="layout_config_item_text_2f4aa">删除</string>
-    <string name="layout_custom_dialog_text_c9831">启用按键映射菜单</string>
     <string name="layout_custom_dialog_text_6d521">睡眠</string>
     <string name="layout_custom_dialog_text_c3992">退出</string>
     <string name="layout_custom_dialog_text_f090a">特殊按键 Shortcuht</string>
@@ -925,11 +913,10 @@
     <string name="layout_dlg_peer_info_item_text_e960e">NAT 类型:</string>
     <string name="layout_dlg_peer_info_item_text_9d9a3">延迟:</string>
     <string name="layout_dlg_peer_info_item_text_681b4">流量 (收/发):</string>
-    <string name="layout_game_menu_super_empty_text_a7970">还没有炒鸡指令哦</string>
-    <string name="layout_game_menu_super_empty_text_fac9d">快去用 Sunshine 基地版 为应用添加超级指令吧~ (๑•̀ㅂ•́)و✧</string>
+
     <string name="layout_item_key_value_text_0952a">分区 1</string>
     <string name="layout_item_key_value_hint_dd44f">分区名称，为空时为键值名</string>
-    <string name="layout_item_page_super_menu_text_ce0e8">编辑模式</string>
+
     <string name="layout_keyboard_mini_text_3ae7b">返回键盘</string>
     <string name="layout_number_seekbar_text_e12e7">鼠标透传灵敏度</string>
     <string name="layout_page_analog_stick_text_dedb8">类型 : 手柄摇杆</string>
@@ -950,7 +937,6 @@
     <string name="layout_page_config_text_cd2c1">游戏震动</string>
     <string name="layout_page_config_text_f4651">按键震动</string>
     <string name="layout_page_config_text_66ab5">新增</string>
-    <string name="layout_page_config_text_df603">退出按键映射配置</string>
     <string name="layout_page_config_text_global_style">全局按键样式</string>
     <string name="layout_page_config_text_global_border_color">边框颜色</string>
     <string name="layout_page_config_text_global_text_color">文字颜色</string>
@@ -1014,8 +1000,7 @@
     <string name="layout_page_simplify_performance_text_4b9c3">重置</string>
     <string name="layout_page_simplify_performance_text_e83a2">确认</string>
     <string name="layout_page_simplify_performance_text_98e2e">解码器:      ##解码器## \n分辨率:      ##分辨率## \n丢帧率:      ##丢帧率##\n主机延时:  ##主机延时##\n网络延时:  ##网络延时##\n解码时间:  ##解码时间##\n带宽:         ##带宽## \n帧率:         ##帧率## \n渲染:         ##渲染延迟## \n时间:         HH:MM:SS \n</string>
-    <string name="layout_page_super_menu_text_899a4">配置设置</string>
-    <string name="layout_page_super_menu_text_e2f14">退出串流</string>
+
     <string name="layout_page_wheel_pad_text_57047">类型 : 轮盘按键</string>
     <string name="layout_page_wheel_pad_text_c814c">弹出标签</string>
     <string name="layout_page_wheel_pad_hint_84265">留空则为直接模式</string>
@@ -1125,7 +1110,6 @@
     <string name="game_menu_off">关闭</string>
     <string name="toast_local_cursor_enabled">本地光标渲染已开启</string>
     <string name="toast_local_cursor_disabled">本地光标渲染已关闭</string>
-    <string name="toast_crown_not_enabled">按键映射功能未启用</string>
     <string name="game_menu_toggle_touch">开启/关闭触控</string>
     <string name="toast_touch_enabled">触控已开启</string>
     <string name="toast_touch_disabled">触控已关闭</string>
@@ -1142,7 +1126,7 @@
     <string name="game_menu_enable_pan_zoom">开启平移/缩放</string>
     <string name="toast_pan_zoom_disabled">已关闭平移/缩放</string>
     <string name="toast_pan_zoom_enabled">已开启平移/缩放</string>
-    <string name="toast_super_command_error">发送超级命令时发生错误: %s</string>
+
     <string name="toast_install_permission_denied">未获得安装权限，下载已取消</string>
     <string name="toast_check_update_failed">检查更新失败，请稍后重试</string>
     <string name="toast_already_latest_version">已是最新版本 v%s</string>
@@ -1407,8 +1391,8 @@
     <string name="summary_export_key_mapping">将按键映射方案导出为 .mlk 文件</string>
     <string name="title_import_key_mapping">导入按键映射方案</string>
     <string name="summary_import_key_mapping">从 .mlk 文件导入按键映射方案</string>
-    <string name="title_import_from_legacy_crown">从旧王冠配置导入</string>
-    <string name="summary_import_from_legacy_crown">从旧版 Crown 导出的 .mdat 文件导入按键映射方案</string>
+    <string name="title_import_from_legacy_key_mapping">从旧王冠配置导入</string>
+    <string name="summary_import_from_legacy_key_mapping">从旧版 Crown 导出的 .mdat 文件导入按键映射方案</string>
     <string name="toast_scheme_exported">按键方案已导出 (.mlk)</string>
     <string name="toast_export_failed">导出失败: %s</string>
     <string name="toast_file_empty">文件内容为空</string>
@@ -1418,7 +1402,7 @@
     <string name="title_export_mlk_dialog">导出按键映射方案 (.mlk)</string>
     <string name="btn_export">导出</string>
     <string name="title_import_mlk_dialog">导入按键映射方案</string>
-    <string name="title_import_legacy_crown_dialog">导入旧王冠配置</string>
+    <string name="title_import_legacy_key_mapping_dialog">导入旧王冠配置</string>
     <string name="hint_scheme_name">方案名称（1-10 字符）</string>
     <string name="label_overwrite_existing">覆盖已有方案</string>
     <string name="option_import_as_new">不覆盖，作为新方案导入</string>
@@ -1426,7 +1410,7 @@
     <string name="toast_scheme_imported">方案「%s」已导入</string>
     <string name="toast_import_failed">导入失败: %s</string>
     <string name="toast_scheme_imported_from_legacy">方案「%s」已从旧配置导入</string>
-    <string name="desc_legacy_crown_detected">检测到旧版 Crown 配置文件，将导入其中的按键映射方案。</string>
+    <string name="desc_legacy_key_mapping_detected">检测到旧版 Crown 配置文件，将导入其中的按键映射方案。</string>
     <string name="error_file_format">文件格式错误</string>
     <string name="error_file_checksum">文件校验失败（已损坏）</string>
     <string name="error_version_incompatible">版本不兼容</string>

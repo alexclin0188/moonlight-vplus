@@ -15,7 +15,6 @@ import android.view.InputDevice
 import android.view.MotionEvent
 import android.widget.Toast
 
-import com.limelight.GameMenu
 import com.alexclin.moonlink.android.R
 import com.limelight.binding.input.driver.AbstractController
 import com.limelight.nvstream.input.ControllerPacket
@@ -86,10 +85,10 @@ open class GenericControllerContext(
         }
     }
 
-    override fun getGameMenuOptions(): List<GameMenu.MenuOption> {
-        val options = mutableListOf<GameMenu.MenuOption>()
+    override fun getGameMenuOptions(): List<GameInputDevice.MenuOption> {
+        val options = mutableListOf<GameInputDevice.MenuOption>()
         options.add(
-            GameMenu.MenuOption(
+            GameInputDevice.MenuOption(
                 handler.activityContext.getString(
                     if (mouseEmulationActive) R.string.game_menu_toggle_mouse_off
                     else R.string.game_menu_toggle_mouse_on

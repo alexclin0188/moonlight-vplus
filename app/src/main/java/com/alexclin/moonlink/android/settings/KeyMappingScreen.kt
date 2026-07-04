@@ -35,8 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import com.alexclin.moonlink.android.stream.ui.panels.SchemeInfo
 import com.alexclin.moonlink.android.stream.ui.panels.loadUserSchemes
 import com.alexclin.moonlink.android.stream.ui.ScreenScaleHelper
@@ -64,7 +64,7 @@ fun KeyMappingScreen() {
     ) { uri: Uri? ->
         if (uri == null) return@rememberLauncherForActivityResult
         try {
-            val db = SuperConfigDatabaseHelper(context)
+            val db = KeymappingDatabaseHelper(context)
             val scheme = schemes.find { it.configId == exportMlkTarget } ?: return@rememberLauncherForActivityResult
             val json = buildMlkJson(context, db, scheme)
             context.contentResolver.openOutputStream(uri)?.use {
@@ -90,7 +90,13 @@ fun KeyMappingScreen() {
                 return@rememberLauncherForActivityResult
             }
             val root = JSONObject(json)
-            if (root.optString("format") != "mlk") {
+            // 兼容性校验：优先检查 format 字段，如果没有则通过结构判断（兼容旧版导出的文件）
+            val format = root.optString("format")
+            if (format.isNotEmpty() && format != "mlk") {
+                ToastUtil.show(context, context.getString(R.string.toast_invalid_mlk), Toast.LENGTH_SHORT)
+                return@rememberLauncherForActivityResult
+            }
+            if (format.isEmpty() && (!root.has("config") || !root.has("elements"))) {
                 ToastUtil.show(context, context.getString(R.string.toast_invalid_mlk), Toast.LENGTH_SHORT)
                 return@rememberLauncherForActivityResult
             }
@@ -146,8 +152,8 @@ fun KeyMappingScreen() {
             }
             item {
                 ClickablePreference(
-                    title = stringResource(R.string.title_import_from_legacy_crown),
-                    summary = stringResource(R.string.summary_import_from_legacy_crown),
+                    title = stringResource(R.string.title_import_from_legacy_key_mapping),
+                    summary = stringResource(R.string.summary_import_from_legacy_key_mapping),
                     onClick = { mdatOpenLauncher.launch(arrayOf("application/json", "*/*")) },
                 )
             }
@@ -326,7 +332,7 @@ private fun ImportMlkDialog(
 
 // ── .mlk build & parse ──
 
-private fun buildMlkJson(context: android.content.Context, db: SuperConfigDatabaseHelper, scheme: SchemeInfo): String {
+private fun buildMlkJson(context: android.content.Context, db: KeymappingDatabaseHelper, scheme: SchemeInfo): String {
     val configJson = JSONObject()
     val configAttrs = listOf(
         "touch_enable" to "boolean",
@@ -387,7 +393,7 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
     val elementsArray = root.optJSONArray("elements") ?: JSONArray()
     val sourceWidth = root.optInt(ScreenScaleHelper.KEY_SOURCE_WIDTH, 0)
     val sourceHeight = root.optInt(ScreenScaleHelper.KEY_SOURCE_HEIGHT, 0)
-    val db = SuperConfigDatabaseHelper(context)
+    val db = KeymappingDatabaseHelper(context)
 
     if (overrideTargetId != 0L) {
         db.deleteConfig(overrideTargetId)
@@ -399,8 +405,8 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
     } catch (_: Exception) { Pair(0, 0) }
 
     val configValues = ContentValues().apply {
-        put(PageConfigController.COLUMN_LONG_CONFIG_ID, newConfigId)
-        put(PageConfigController.COLUMN_STRING_CONFIG_NAME, newName)
+        put(ConfigColumns.COLUMN_LONG_CONFIG_ID, newConfigId)
+        put(ConfigColumns.COLUMN_STRING_CONFIG_NAME, newName)
         for (key in configObj.keys()) {
             val v = configObj.opt(key)
             when (v) {
@@ -411,8 +417,8 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
                 is Double -> put(key, v.toFloat())
             }
         }
-        if (!containsKey(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE)) {
-            put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
+        if (!containsKey(ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE)) {
+            put(ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
         }
     }
     db.insertConfig(configValues)
@@ -450,7 +456,7 @@ private fun parseMdatSchemeName(json: String): String {
         val root = JSONObject(json)
         val settingsStr = root.optString("settings", "{}")
         val settingsObj = JSONObject(settingsStr)
-        settingsObj.optString(PageConfigController.COLUMN_STRING_CONFIG_NAME,
+        settingsObj.optString(ConfigColumns.COLUMN_STRING_CONFIG_NAME,
             settingsObj.optString("config_name", "Old Crown Scheme"))
     } catch (_: Exception) { "Old Crown Scheme" }
 }
@@ -468,10 +474,10 @@ private fun ImportMdatDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.title_import_legacy_crown_dialog)) },
+        title = { Text(stringResource(R.string.title_import_legacy_key_mapping_dialog)) },
         text = {
             Column {
-                Text(stringResource(R.string.desc_legacy_crown_detected), style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(R.string.desc_legacy_key_mapping_detected), style = MaterialTheme.typography.bodySmall)
                 Spacer(Modifier.height(12.dp))
 
                 OutlinedTextField(
@@ -538,11 +544,11 @@ private fun importMdatFromJson(
     val sourceHeight = root.optInt("sourceHeight", 0)
 
     val settingsObj = JSONObject(settingsStr)
-    settingsObj.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, newName)
-    settingsObj.remove(PageConfigController.COLUMN_LONG_CONFIG_ID)
+    settingsObj.put(ConfigColumns.COLUMN_STRING_CONFIG_NAME, newName)
+    settingsObj.remove(ConfigColumns.COLUMN_LONG_CONFIG_ID)
     val updatedSettingsStr = settingsObj.toString()
 
-    val db = SuperConfigDatabaseHelper(context)
+    val db = KeymappingDatabaseHelper(context)
     if (overrideTargetId != 0L) {
         db.deleteConfig(overrideTargetId)
     }
@@ -577,7 +583,7 @@ private fun importMdatFromJson(
     cleanupDeletedElementTypes(db, importedConfigId)
 }
 
-private fun cleanupDeletedElementTypes(db: SuperConfigDatabaseHelper, configId: Long) {
+private fun cleanupDeletedElementTypes(db: KeymappingDatabaseHelper, configId: Long) {
     val deletedTypes = setOf(4, 54)
     val elementIds = db.queryAllElementIds(configId) ?: return
     for (eid in elementIds) {

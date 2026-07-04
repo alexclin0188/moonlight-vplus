@@ -484,7 +484,7 @@ class StreamActivity : ComponentActivity() {
                                 value == "PKS" -> engine.toggleKeyboard()
                                 value == "PCK" -> engine.sendKeyboardShortcut(0, 0) // 主机键盘开关
                                 value == "ACK" -> { val imm = engine.activity.getSystemService(android.content.Context.INPUT_METHOD_SERVICE) as? android.view.inputmethod.InputMethodManager; imm?.toggleSoftInput(0, 0) }
-                                value == "OGM" -> engine.toggleVirtualController()
+                                value == "OGM" -> { /* toggleVirtualController: 待实现 */ }
                             }
                         }
                     }
@@ -1257,7 +1257,7 @@ class StreamActivity : ComponentActivity() {
         if (isInPictureInPictureMode) {
             // 进入 PiP：记录当前 Activity 和设备 UUID
             StreamEngine.currentPipActivity = this
-            StreamEngine.currentPipUuid = intent.getStringExtra(com.limelight.Game.EXTRA_PC_UUID)
+            StreamEngine.currentPipUuid = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_UUID)
         } else {
             // 退出 PiP（用户点击 PiP 窗口恢复或关闭 PiP）
             // 如果 Activity 未被 finish（即用户点击 PiP 窗口恢复），不清除引用
@@ -1370,8 +1370,8 @@ class StreamActivity : ComponentActivity() {
         } catch (_: Exception) {
         }
 
-        val pcName = intent.getStringExtra(com.limelight.Game.EXTRA_PC_NAME) ?: return
-        val appName = intent.getStringExtra(com.limelight.Game.EXTRA_APP_NAME) ?: return
+        val pcName = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_NAME) ?: return
+        val appName = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_NAME) ?: return
         StreamNotificationService.start(this, pcName, appName)
     }
 
@@ -1393,8 +1393,8 @@ class StreamActivity : ComponentActivity() {
         if (requestCode == KEEP_ALIVE_NOTIFICATION_ID) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // 权限已授予，重新尝试启动保活通知
-                val pcName = intent.getStringExtra(com.limelight.Game.EXTRA_PC_NAME) ?: return
-                val appName = intent.getStringExtra(com.limelight.Game.EXTRA_APP_NAME) ?: return
+                val pcName = intent.getStringExtra(StreamIntentKeys.EXTRA_PC_NAME) ?: return
+                val appName = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_NAME) ?: return
                 StreamNotificationService.start(this, pcName, appName)
             } else {
                 Toast.makeText(this, getString(R.string.toast_no_notification_permission), Toast.LENGTH_LONG).show()

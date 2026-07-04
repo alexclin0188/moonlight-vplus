@@ -1191,7 +1191,7 @@ private fun launchStreamFromOverview(
  *
  * Extras 键名与旧版 [com.limelight.Game] 保持一致。
  */
-private fun createStreamIntent(
+fun createStreamIntent(
     context: Context,
     computer: ComputerDetails,
     app: NvApp,

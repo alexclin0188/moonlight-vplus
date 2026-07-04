@@ -1,12 +1,9 @@
 package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.content.ContentValues
-import android.widget.Toast
-import com.alexclin.moonlink.android.util.ToastUtil
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,7 +11,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -23,7 +19,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -44,8 +39,8 @@ import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
-import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 
 /**
  * 按键映射方案配置页面（子面板内页面）。
@@ -62,46 +57,46 @@ fun KeyMappingConfigPanel(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val db = remember { SuperConfigDatabaseHelper(context) }
+    val db = remember { KeymappingDatabaseHelper(context) }
     val configId = engine.currentSchemeConfigId
 
     // ── 从数据库读取配置 ──
     var touchEnabled by remember { mutableStateOf(
         java.lang.Boolean.parseBoolean(
-            (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
+            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
         )
     ) }
     var gameVibrator by remember { mutableStateOf(
         java.lang.Boolean.parseBoolean(
-            (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
+            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_BOOLEAN_GAME_VIBRATOR, "false") as? String) ?: "false"
         )
     ) }
     var buttonVibrator by remember { mutableStateOf(
         java.lang.Boolean.parseBoolean(
-            (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
+            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_BOOLEAN_BUTTON_VIBRATOR, "false") as? String) ?: "false"
         )
     ) }
     var wheelSpeed by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, "mouse_wheel_speed", 20L) as? Long) ?: 20L).toInt()
+        (            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_MOUSE_WHEEL_SPEED, 20L) as? Long) ?: 20L).toInt()
     ) }
     var enhancedTouch by remember { mutableStateOf(
         java.lang.Boolean.parseBoolean(
-            (db.queryConfigAttribute(configId, PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
+            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_BOOLEAN_ENHANCED_TOUCH, "false") as? String) ?: "false"
         )
     ) }
     var globalOpacity by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
+        ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
     ) }
 
     // ── 全局颜色 ──
     var useGlobalColors by remember { mutableStateOf(
-        db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) != null
+        db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) != null
     ) }
     var globalBorderColor by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long) ?: 0xF0888888L).toInt()
+        ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long) ?: 0xF0888888L).toInt()
     ) }
     var globalTextColor by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long) ?: 0xFFFFFFFFL).toInt()
+        ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long) ?: 0xFFFFFFFFL).toInt()
     ) }
     var showGlobalBorderPicker by remember { mutableStateOf(false) }
     var showGlobalTextPicker by remember { mutableStateOf(false) }
@@ -114,19 +109,19 @@ fun KeyMappingConfigPanel(
     // ── 保存到 DB 并同步到控制器 ──
     fun saveToDb() {
         val cv = ContentValues()
-        cv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, touchEnabled.toString())
-        cv.put(PageConfigController.COLUMN_BOOLEAN_GAME_VIBRATOR, gameVibrator.toString())
-        cv.put(PageConfigController.COLUMN_BOOLEAN_BUTTON_VIBRATOR, buttonVibrator.toString())
-        cv.put("mouse_wheel_speed", wheelSpeed.toLong())
-        cv.put(PageConfigController.COLUMN_BOOLEAN_ENHANCED_TOUCH, enhancedTouch.toString())
-        cv.put(PageConfigController.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
+        cv.put(ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, touchEnabled.toString())
+        cv.put(ConfigColumns.COLUMN_BOOLEAN_GAME_VIBRATOR, gameVibrator.toString())
+        cv.put(ConfigColumns.COLUMN_BOOLEAN_BUTTON_VIBRATOR, buttonVibrator.toString())
+        cv.put(ConfigColumns.COLUMN_INT_MOUSE_WHEEL_SPEED, wheelSpeed.toLong())
+        cv.put(ConfigColumns.COLUMN_BOOLEAN_ENHANCED_TOUCH, enhancedTouch.toString())
+        cv.put(ConfigColumns.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
         // 全局颜色
         if (useGlobalColors) {
-            cv.put(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR, globalBorderColor.toLong())
-            cv.put(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR, globalTextColor.toLong())
+            cv.put(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, globalBorderColor.toLong())
+            cv.put(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, globalTextColor.toLong())
         } else {
-            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
-            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
+            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
         }
         db.updateConfig(configId, cv)
 
@@ -222,8 +217,8 @@ fun KeyMappingConfigPanel(
                         if (!it) {
                             // 关闭时清除 DB 中的全局颜色值
                             val cv = ContentValues()
-                            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
-                            cv.putNull(PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
+                            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
                             db.updateConfig(configId, cv)
                         } else {
                             saveToDb()

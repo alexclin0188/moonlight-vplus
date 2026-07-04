@@ -92,6 +92,14 @@
         android:theme="@style/AppTheme"
         tools:targetApi="vanillaIceCream">
 
+        <!-- Android 16 (API 36) 默认忽略大屏设备的方向/缩放限制，
+             此属性恢复我们通过 requestedOrientation 设置的锁定行为。
+             API < 36 上系统不识别此属性，自动忽略，兼容低版本。
+             注意：API 37 起该属性将被移除，届时需改用其他方案。 -->
+        <property
+            android:name="android.window.PROPERTY_COMPAT_ALLOW_RESTRICTED_RESIZABILITY"
+            android:value="true" />
+
         <provider
             android:name="com.alexclin.moonlink.android.home.BoxArtProvider"
             android:authorities="poster.${applicationId}"

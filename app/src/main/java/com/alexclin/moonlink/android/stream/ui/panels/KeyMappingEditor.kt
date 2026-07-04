@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -78,7 +77,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
-import com.alexclin.moonlink.android.stream.ui.panels.isSchemeNameDuplicate
 import com.alexclin.moonlink.android.stream.ui.editor.CanvasCallbacks
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
@@ -95,8 +93,8 @@ import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
 import com.alexclin.moonlink.android.stream.ui.editor.collectElementDisplayNames
-import com.alexclin.moonlink.android.stream.editor.config.PageConfigController
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import kotlin.math.roundToInt
 
 private const val MAX_SCREEN_PX = 5000
@@ -113,7 +111,7 @@ private fun doExit(
     context: android.content.Context,
     isNewScheme: Boolean,
     schemeName: String,
-    db: SuperConfigDatabaseHelper,
+    db: KeymappingDatabaseHelper,
     editorState: EditorState,
     prefs: android.content.SharedPreferences,
     engine: StreamEngine,
@@ -143,10 +141,10 @@ private fun doExit(
         val newId = System.currentTimeMillis()
         // 创建 config 记录
         val configCv = ContentValues()
-        configCv.put(PageConfigController.COLUMN_LONG_CONFIG_ID, newId)
-        configCv.put(PageConfigController.COLUMN_STRING_CONFIG_NAME, name)
-        configCv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
-        configCv.put(PageConfigController.COLUMN_BOOLEAN_TOUCH_MODE, "true")
+        configCv.put(ConfigColumns.COLUMN_LONG_CONFIG_ID, newId)
+        configCv.put(ConfigColumns.COLUMN_STRING_CONFIG_NAME, name)
+        configCv.put(ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, "true")
+        configCv.put(ConfigColumns.COLUMN_BOOLEAN_TOUCH_MODE, "true")
         db.insertConfig(configCv)
 
         // 迁移所有元素从 -1 到新 configId
@@ -183,7 +181,7 @@ fun KeyMappingEditor(
     val prefs = remember { androidx.preference.PreferenceManager.getDefaultSharedPreferences(context) }
     var currentConfigId by remember { mutableStateOf(prefs.getLong(StreamEngine.PREF_CURRENT_CONFIG_ID, 0L)) }
     val isNewScheme = currentConfigId == -1L
-    val db = remember { SuperConfigDatabaseHelper(context) }
+    val db = remember { KeymappingDatabaseHelper(context) }
     val editorState = remember(currentConfigId) { EditorState(db, currentConfigId) }
 
     // ── 状态 ──
@@ -246,7 +244,7 @@ fun KeyMappingEditor(
 
     // ── 保存方案名 ──
     fun saveSchemeName(name: String) {
-        val cv = ContentValues().apply { put(PageConfigController.COLUMN_STRING_CONFIG_NAME, name) }
+        val cv = ContentValues().apply { put(ConfigColumns.COLUMN_STRING_CONFIG_NAME, name) }
         db.updateConfig(currentConfigId, cv)
         schemeName = name
     }
@@ -583,8 +581,8 @@ fun KeyMappingEditor(
                     // 编辑了单个元素颜色 → 关闭该方案的全局颜色开关
                     try {
                         val cv = android.content.ContentValues()
-                        cv.putNull(com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_BORDER_COLOR)
-                        cv.putNull(com.alexclin.moonlink.android.stream.editor.config.PageConfigController.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                        cv.putNull(com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
+                        cv.putNull(com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
                         db.updateConfig(editorState.configId, cv)
                     } catch (_: Exception) { }
                     showColorEditor = false

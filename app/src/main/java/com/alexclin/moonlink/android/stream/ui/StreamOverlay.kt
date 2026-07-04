@@ -77,7 +77,7 @@ import com.limelight.binding.video.PerformanceInfo
 import android.content.Context
 import android.os.SystemClock
 import android.widget.FrameLayout
-import com.alexclin.moonlink.android.stream.editor.KeyboardUIController
+import com.alexclin.moonlink.android.stream.ui.keyboard.KeyboardUIController
 import androidx.activity.compose.BackHandler
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingSchemeSelector
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingEditor

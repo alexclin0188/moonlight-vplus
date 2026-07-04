@@ -4,7 +4,7 @@ import android.content.Context
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import com.alexclin.moonlink.android.stream.ui.editor.toEditorElement
-import com.alexclin.moonlink.android.stream.editor.sqlite.SuperConfigDatabaseHelper
+import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import com.limelight.preferences.PreferenceConfiguration
 
 /**
@@ -24,7 +24,7 @@ object DbElementLoader {
      * @return [EditorElement] 列表
      */
     fun loadElements(
-        db: SuperConfigDatabaseHelper,
+        db: KeymappingDatabaseHelper,
         configId: Long,
         context: Context,
     ): List<EditorElement> {

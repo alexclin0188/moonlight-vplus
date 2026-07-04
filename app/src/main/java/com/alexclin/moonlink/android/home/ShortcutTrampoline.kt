@@ -21,8 +21,7 @@ import com.alexclin.moonlink.android.util.ServerHelper
 import com.alexclin.moonlink.android.util.SpinnerDialog
 import com.alexclin.moonlink.android.util.UiHelper
 import com.alexclin.moonlink.android.util.AppCacheManager
-import com.limelight.AppView
-import com.limelight.Game
+import com.alexclin.moonlink.android.stream.StreamIntentKeys
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -272,11 +271,11 @@ class ShortcutTrampoline : Activity() {
         UiHelper.notifyNewRootView(this)
         val dbManager = ComputerDatabaseManager(this)
 
-        uuidString = intent.getStringExtra(AppView.UUID_EXTRA)
-        val nameString = intent.getStringExtra(AppView.NAME_EXTRA)
+        uuidString = intent.getStringExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_UUID)
+        val nameString = intent.getStringExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_NAME)
 
-        val appIdString = intent.getStringExtra(Game.EXTRA_APP_ID)
-        val appNameString = intent.getStringExtra(Game.EXTRA_APP_NAME)
+        val appIdString = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_ID)
+        val appNameString = intent.getStringExtra(StreamIntentKeys.EXTRA_APP_NAME)
 
         if (!validateInput(uuidString, appIdString, nameString)) {
             return
@@ -294,13 +293,13 @@ class ShortcutTrampoline : Activity() {
             }
 
             uuidString = foundComputer.uuid
-            setIntent(Intent(intent).putExtra(AppView.UUID_EXTRA, uuidString))
+            setIntent(Intent(intent).putExtra(StreamIntentKeys.EXTRA_SHORTCUT_PC_UUID, uuidString))
         }
 
         if (appIdString != null && appIdString.isNotEmpty()) {
-            app = NvApp(intent.getStringExtra(Game.EXTRA_APP_NAME) ?: "",
+            app = NvApp(intent.getStringExtra(StreamIntentKeys.EXTRA_APP_NAME) ?: "",
                     appIdString.toInt(),
-                    intent.getBooleanExtra(Game.EXTRA_APP_HDR, false))
+                    intent.getBooleanExtra(StreamIntentKeys.EXTRA_APP_HDR, false))
 
             val cachedApp = getLastNvAppFromPreferences((app?.appId ?: 0), uuidString!!)
             if (cachedApp?.cmdList != null) {
@@ -333,11 +332,11 @@ class ShortcutTrampoline : Activity() {
                             true)
                     return
                 }
-                setIntent(Intent(intent).putExtra(Game.EXTRA_APP_ID, appId))
+                setIntent(Intent(intent).putExtra(StreamIntentKeys.EXTRA_APP_ID, appId))
                 app = NvApp(
                         appNameString,
                         appId,
-                        intent.getBooleanExtra(Game.EXTRA_APP_HDR, false))
+                        intent.getBooleanExtra(StreamIntentKeys.EXTRA_APP_HDR, false))
 
                 val cachedApp = getLastNvAppFromPreferences(appId, uuidString!!)
                 if (cachedApp?.cmdList != null) {
