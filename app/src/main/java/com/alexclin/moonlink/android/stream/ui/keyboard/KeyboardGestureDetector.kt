@@ -4,6 +4,9 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 
+@Deprecated(
+    message = "Use ComposeKeyboardController with pointerInput instead",
+)
 class KeyboardGestureDetector(view: View, private val listener: GestureListener) {
 
     interface GestureListener {

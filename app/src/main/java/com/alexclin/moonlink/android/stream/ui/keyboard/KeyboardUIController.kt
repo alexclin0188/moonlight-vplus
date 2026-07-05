@@ -14,6 +14,13 @@ import android.widget.SeekBar.OnSeekBarChangeListener
 import android.widget.TextView
 import com.alexclin.moonlink.android.R
 
+@Deprecated(
+    message = "Use ComposeKeyboardController instead",
+    replaceWith = ReplaceWith(
+        "ComposeKeyboardController(bridge, onHide)",
+        "com.alexclin.moonlink.android.stream.ui.keyboard.ComposeKeyboardController"
+    )
+)
 class KeyboardUIController(
     private val parentContainer: FrameLayout,
     private val listener: OnKeyboardEventListener,

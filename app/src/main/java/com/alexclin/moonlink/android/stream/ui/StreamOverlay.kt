@@ -36,7 +36,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -68,7 +67,6 @@ import kotlin.math.roundToInt
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.PanelAnimations
 import com.alexclin.moonlink.android.stream.ui.keyboard.KeyboardSubPanel
-import com.alexclin.moonlink.android.stream.ui.keyboard.VirtualKeyboardBridge
 import com.alexclin.moonlink.android.util.MoonPhaseUtils
 import com.alexclin.moonlink.android.settings.PerfOverlayDisplayItemsPreference
 import com.limelight.preferences.PreferenceConfiguration
@@ -76,12 +74,9 @@ import com.alexclin.moonlink.android.util.UiHelper
 import com.limelight.binding.video.PerformanceInfo
 import android.content.Context
 import android.os.SystemClock
-import android.widget.FrameLayout
-import com.alexclin.moonlink.android.stream.ui.keyboard.KeyboardUIController
 import androidx.activity.compose.BackHandler
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingSchemeSelector
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingEditor
-import android.view.View
 
 /** 面板展开状态 */
 enum class PanelState {
@@ -124,9 +119,9 @@ fun StreamOverlay(
     var activeEntry by remember { mutableStateOf<String?>(null) }
     var keyboardInitialTab by remember { mutableIntStateOf(0) }
     var fabOffset by remember { mutableStateOf(Offset.Zero) }
-    var showFloatingKeyboard by remember { mutableStateOf(false) }
     var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
     var fullScreenPage by remember { mutableStateOf<FullScreenPage?>(null) }
+    var isVirtualKeyboardTab by remember { mutableStateOf(false) }
 
     // ── 全屏页面 BackHandler（仅方案选择器，编辑器已自行处理） ──
     if (fullScreenPage == FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR) {
@@ -167,11 +162,7 @@ fun StreamOverlay(
     }
 
     val onToggle = {
-        if (showFloatingKeyboard) {
-            // 虚拟键盘显示时点击悬浮按钮：隐藏键盘，展开窄面板
-            showFloatingKeyboard = false
-            panelState = PanelState.VERTICAL_BAR
-        } else if (panelState == PanelState.HIDDEN) {
+        if (panelState == PanelState.HIDDEN) {
             panelState = PanelState.VERTICAL_BAR
         } else {
             panelState = PanelState.HIDDEN
@@ -214,7 +205,7 @@ fun StreamOverlay(
     // ── 返回键多级处理（300ms防抖） ──
     var lastBackPressTime by rememberSaveable { mutableLongStateOf(0L) }
     val backPressDebounceMs = 300L
-    BackHandler(enabled = panelState != PanelState.HIDDEN && !showFloatingKeyboard) {
+    BackHandler(enabled = panelState != PanelState.HIDDEN) {
         val now = SystemClock.elapsedRealtime()
         if (now - lastBackPressTime < backPressDebounceMs) return@BackHandler
         lastBackPressTime = now
@@ -299,7 +290,7 @@ fun StreamOverlay(
         // ── 悬浮按钮（编辑器打开时隐藏） ──
         if (showFloatingUI) {
             AnimatedVisibility(
-                visible = panelState == PanelState.HIDDEN || showFloatingKeyboard,
+                visible = panelState == PanelState.HIDDEN,
                 enter = PanelAnimations.fabEnter,
                 exit = PanelAnimations.fabExit,
             ) {
@@ -312,71 +303,7 @@ fun StreamOverlay(
                     opacity = engine.fabOpacity,
                 )
             }
-        }            // ── 浮动虚拟键盘覆盖层 ──
-            // 规则：
-            // 1. 显示时强制隐藏子面板和窄面板（panelState → HIDDEN）
-            // 2. 键盘直接添加到 Activity 根视图（android.R.id.content）而非 Compose 内部，
-            //    因此按键区域外的触摸事件（未被键盘消费的）会自然透传到下层
-            //    StreamView（触控板/鼠标操作等），不受 Compose 指针系统拦截
-            // 3. 点击悬浮按钮 → 隐藏键盘并展开窄面板（由 onToggle 处理）
-            if (showFloatingKeyboard) {
-                // 强制关闭面板，确保子面板和窄面板不可见
-                // 只在键盘显示时执行，键盘隐藏时不覆盖 onToggle 设置的 panelState
-                LaunchedEffect(showFloatingKeyboard) {
-                    if (showFloatingKeyboard) {
-                        panelState = PanelState.HIDDEN
-                        activeEntry = null
-                    }
-                }
-
-                BackHandler {
-                    showFloatingKeyboard = false
-                }
-
-                val bridge = remember { VirtualKeyboardBridge(engine) }
-                val keyboardContainer = remember { mutableStateOf<FrameLayout?>(null) }
-
-                // ── 键盘生命周期：添加到 Activity 根视图，避免 Compose 指针拦截 ──
-                DisposableEffect(engine.activity) {
-                    val activity = engine.activity
-                    val rootContent = activity.findViewById<FrameLayout>(android.R.id.content)
-                    val container = FrameLayout(activity).apply {
-                        layoutParams = FrameLayout.LayoutParams(
-                            FrameLayout.LayoutParams.MATCH_PARENT,
-                            FrameLayout.LayoutParams.MATCH_PARENT,
-                        )
-                        // 不消费未处理的触摸，使背景触摸透传到下层 StreamView
-                        isClickable = false
-                        setOnTouchListener { _, _ -> false }
-                    }
-                    val kUI = KeyboardUIController(container, bridge, activity)
-                    kUI.show()
-                    rootContent.addView(container)
-                    keyboardContainer.value = container
-
-                    onDispose {
-                        kUI.hide()
-                        rootContent.removeView(container)
-                        keyboardContainer.value = null
-                    }
-                }
-
-                // ── 轮询检测键盘是否被用户手动隐藏（Hide 按钮） ──
-                LaunchedEffect(showFloatingKeyboard) {
-                    if (showFloatingKeyboard) {
-                        while (true) {
-                            delay(500)
-                            val container = keyboardContainer.value
-                            if (container != null && container.visibility != View.VISIBLE) {
-                                showFloatingKeyboard = false
-                                break
-                            }
-                        }
-                    }
-                }
-            }
-
-        // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向；编辑器打开时隐藏） ──
+        }            // ── 窄条面板（横屏→右侧竖向，竖屏→底部横向；编辑器打开时隐藏） ──
         if (showFloatingUI) {
             val isLandscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
             AnimatedVisibility(
@@ -512,12 +439,13 @@ fun StreamOverlay(
                 Surface(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    shadowElevation = 8.dp,
+                    color = if (isVirtualKeyboardTab) Color.Transparent else MaterialTheme.colorScheme.surface,
+                    shadowElevation = if (isVirtualKeyboardTab) 0.dp else 8.dp,
                 ) {
                     KeyboardSubPanel(
                         engine = engine,
                         initialTab = keyboardInitialTab,
+                        onTabChanged = { isVirtualKeyboardTab = it == 2 },
                         onClose = {
                             panelState = PanelState.VERTICAL_BAR
                             activeEntry = null
@@ -525,9 +453,6 @@ fun StreamOverlay(
                         onCloseToHidden = {
                             panelState = PanelState.HIDDEN
                             activeEntry = null
-                        },
-                        onShowFloatingKeyboard = {
-                            showFloatingKeyboard = true
                         },
                     )
                 }

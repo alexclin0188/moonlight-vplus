@@ -2,26 +2,33 @@ package com.alexclin.moonlink.android.stream.ui.keyboard
 
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.limelight.binding.input.KeyboardTranslator
-import com.alexclin.moonlink.android.stream.ui.keyboard.KeyboardUIController
 
 /**
- * 将 [KeyboardUIController] 的按键事件桥接到 [StreamEngine]。
+ * 键盘按键事件监听接口（与 [KeyboardUIController.OnKeyboardEventListener] 同义）。
+ */
+interface OnKeyboardEventListener {
+    fun sendKeyEvent(down: Boolean, keyCode: Short)
+    fun rumbleSingleVibrator(lowFreq: Short, highFreq: Short, duration: Int)
+}
+
+/**
+ * 将虚拟键盘的按键事件桥接到 [StreamEngine]。
  *
  * ## 键码转换
  *
- * [KeyboardUIController] 通过 View tag 传递 **Android KeyEvent 键码**（如 k45 = KEYCODE_Q），
+ * 虚拟键盘传递 **Android KeyEvent 键码**（如 KEYCODE_Q = 45），
  * 本适配器使用 [KeyboardTranslator] 将 Android 键码转换为 **Windows VK 码**，
  * 再传给 [StreamEngine.sendKeyboardInputWithModifier]，与旧版 Game → KeyboardInputHandler 路径一致。
  *
  * ## 修饰键跟踪
  *
- * [KeyboardUIController] 的修饰键状态机（NEUTRAL → SINGLE → LOCKED）独立运行，
+ * 修饰键状态机（NEUTRAL → SINGLE → LOCKED）由键盘 UI 独立运行，
  * 本适配器通过 [modifierBitFor] 跟踪当前活跃的修饰键 bitmask，
  * 在每次 [sendKeyEvent] 调用时传入正确的 modifier 参数。
  */
 class VirtualKeyboardBridge(
     private val engine: StreamEngine,
-) : KeyboardUIController.OnKeyboardEventListener {
+) : OnKeyboardEventListener {
 
     /** Android 键码 → Windows VK 码翻译器 */
     private val translator = KeyboardTranslator()

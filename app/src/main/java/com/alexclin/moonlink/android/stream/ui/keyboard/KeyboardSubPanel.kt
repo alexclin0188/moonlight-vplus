@@ -76,7 +76,7 @@ import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
  * │                              │
  * │  输入法 → 系统键盘             │  ← 内容区（高度 = 系统键盘高度）
  * │  快捷键 → 6×2 网格            │
- * │  虚拟键盘 → QWERTY            │
+ * │  虚拟键盘 → Compose 虚拟键盘   │
  * │  主机键盘 → TabBar 消失 + 键盘 │
  * │                              │
  * └──────────────────────────────┘
@@ -85,7 +85,7 @@ import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
  * @param engine 串流引擎
  * @param onClose 关闭面板回调（回到竖条状态）
  * @param onCloseToHidden 关闭面板回调（回到悬浮按钮状态，用于主机键盘模式）
- * @param onShowFloatingKeyboard 显示浮动虚拟键盘回调（关闭面板后显示浮动键盘覆盖层）
+ * @param onTabChanged 标签切换回调（用于父组件适配背景，如虚拟键盘标签时变透明）
  */
 @Composable
 fun KeyboardSubPanel(
@@ -93,7 +93,7 @@ fun KeyboardSubPanel(
     initialTab: Int = 0,
     onClose: () -> Unit = {},
     onCloseToHidden: () -> Unit = onClose,
-    onShowFloatingKeyboard: () -> Unit = {},
+    onTabChanged: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
     val density = LocalDensity.current
@@ -101,6 +101,11 @@ fun KeyboardSubPanel(
 
     // ── Tab 状态 ──
     var selectedTab by remember { mutableIntStateOf(initialTab) }
+
+    // ── 同步 tab 变化给父组件 ──
+    LaunchedEffect(selectedTab) {
+        onTabChanged(selectedTab)
+    }
 
     // ── 缓存键盘高度（px） ──
     var cachedKeyboardHeightPx by remember { mutableIntStateOf(0) }
@@ -149,12 +154,16 @@ fun KeyboardSubPanel(
     var showAddDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
-    // ── 主布局：TabBar（顶部） + 内容区（高度 = 系统键盘高度） ──
+    // ── 虚拟键盘 Bridge（标签 2 使用） ──
+    val keyboardBridge = remember { VirtualKeyboardBridge(engine) }
+
+    // ── 主布局：TabBar（顶部，虚拟键盘标签下隐藏） + 内容区（高度 = 系统键盘高度） ──
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-            // ── TabBar（顶部固定） ──
-            KeyboardTabBar(
+            // ── TabBar（顶部固定，虚拟键盘标签下隐藏） ──
+            if (selectedTab != 2) {
+                KeyboardTabBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
                     // 从输入法标签切到任何其它标签时，都先隐藏系统输入法键盘
@@ -169,14 +178,13 @@ fun KeyboardSubPanel(
                     } else if (tab == 2) {
                         // 虚拟键盘：先更新 selectedTab 防止键盘高度监听器误触发 onClose
                         selectedTab = tab
-                        onCloseToHidden()
-                        onShowFloatingKeyboard()
                     } else {
                         selectedTab = tab
                     }
                 },
                 onClose = onClose,
-            )
+                )
+            }
 
             // ── 内容区（高度 = 系统键盘高度） ──
             Box(
@@ -200,6 +208,10 @@ fun KeyboardSubPanel(
                             isEditMode = false
                         },
                         onHideKeyboard = { hideKeyboard() },
+                    )
+                    2 -> ComposeKeyboardController(
+                        bridge = keyboardBridge,
+                        onHide = { selectedTab = 1 },
                     )
 
                 }
