@@ -211,7 +211,7 @@ fun KeyboardSubPanel(
                     )
                     2 -> ComposeKeyboardController(
                         bridge = keyboardBridge,
-                        onHide = { selectedTab = 1 },
+                        onHide = onClose,
                     )
 
                 }

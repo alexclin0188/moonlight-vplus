@@ -291,8 +291,6 @@ fun ComposeKeyboardController(
                     onPopupHide = { popupVisible = false },
                     onPageChange = { activePage = it },
                     onHide = {
-                        savePosition()
-                        saveHeight()
                         onHide()
                     },
                     onToggleResize = { showResizeHandle = !showResizeHandle },
@@ -474,19 +472,9 @@ private fun FullKeyboardContent(
                     .padding(2.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                SidebarAction("Hide") { onHide() }
+                SidebarAction("✕") { onHide() }
 
-                // Weight spacer pushes opacity controls to the bottom (matching old XML behavior)
                 Spacer(Modifier.height(5.dp))
-                Text(
-                    "Opacity\n${(opacityProgress + 20f).roundToInt()}%",
-                    color = Color(0x88FFFFFF),
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 5.dp),
-                )
-
-                // Custom vertical opacity slider: track + draggable thumb.
                 // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
                 VerticalOpacitySlider(
                     value = opacityProgress,
@@ -494,10 +482,17 @@ private fun FullKeyboardContent(
                     modifier = Modifier
                         .width(44.dp)
                         .weight(1f)
-                        .padding(bottom = 10.dp),
+                        .padding(bottom = 5.dp),
                 )
-
+                Text(
+                    "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
+                    color = Color(0x88FFFFFF),
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 2.dp),
+                )
             }
+
         }
     }
 }
@@ -518,12 +513,16 @@ private fun VerticalOpacitySlider(
     val fraction = value / sliderRange.endInclusive
     val thumbSize = 16.dp
     val trackWidth = 4.dp
+    val density = LocalDensity.current
 
     val currentValue by rememberUpdatedState(value)
     val currentOnValueChange by rememberUpdatedState(onValueChange)
 
+    var sliderHeightPx by remember { mutableFloatStateOf(0f) }
+
     Box(
         modifier = modifier
+            .onGloballyPositioned { sliderHeightPx = it.size.height.toFloat() }
             .pointerInput(Unit) {
                 detectVerticalDragGestures(
                     onDragStart = { offset ->
@@ -558,9 +557,11 @@ private fun VerticalOpacitySlider(
         )
         // Thumb: bottom = min (slider 0), top = max (slider 80).
         // Active track grows upward from bottom, thumb position mirrors this.
+        // Use actual slider height (not hardcoded 140.dp) so thumb tracks finger 1:1.
+        val travelDistance = sliderHeightPx - with(density) { thumbSize.toPx() }
         Box(
             modifier = Modifier
-                .offset { IntOffset(0, ((1f - fraction) * (140.dp - thumbSize).toPx()).roundToInt()) }
+                .offset { IntOffset(0, ((1f - fraction) * travelDistance).roundToInt()) }
                 .size(thumbSize)
                 .background(thumbColor, CircleShape),
         )
@@ -590,19 +591,45 @@ private fun SidebarTab(label: String, active: Boolean, onClick: () -> Unit) {
 
 @Composable
 private fun SidebarAction(label: String, active: Boolean = false, onClick: () -> Unit) {
+    var isPressed by remember { mutableStateOf(false) }
+
+    val bgColor = when {
+        isPressed -> Color.White.copy(alpha = 0.30f)
+        active -> Color.White.copy(alpha = 0.25f)
+        else -> Color.White.copy(alpha = 0.12f)
+    }
+
     Box(
         modifier = Modifier
             .width(42.dp)
             .height(36.dp)
             .clip(RoundedCornerShape(4.dp))
-            .background(if (active) Color.White.copy(alpha = 0.25f) else Color.Transparent)
-            .clickable(onClick = onClick),
+            .background(bgColor)
+            .pointerInput(Unit) {
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent()
+                        when (event.type) {
+                            PointerEventType.Press -> isPressed = true
+                            PointerEventType.Release -> {
+                                if (isPressed) {
+                                    isPressed = false
+                                    onClick()
+                                }
+                            }
+                            PointerEventType.Exit -> isPressed = false
+                            else -> {}
+                        }
+                    }
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
-            color = if (active) Color.White else Color(0x88FFFFFF),
+            color = if (active) Color.White else Color.White,
             fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
         )
     }
 }
@@ -913,63 +940,32 @@ private fun NumpadKeyboardContent(
     onPopupHide: () -> Unit,
     modifierColor: (Int) -> Color,
 ) {
-    Row(
+    Column(
         modifier = Modifier.fillMaxSize().padding(2.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        // Left block: 3×4 number grid
-        Column(
-            modifier = Modifier.padding(end = 8.dp),
-        ) {
-            KeyboardLayouts.NUMPAD_LEFT_GRID.forEach { rowKeys ->
-                Row {
-                    rowKeys.forEach { keyDef ->
-                        KeyboardKeyButton(
-                            keyDef = keyDef,
-                            modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
-                            onKeyAction = onKeyAction,
-                            onKeyRelease = onKeyRelease,
-                            onPopupShow = onPopupShow,
-                            onPopupHide = onPopupHide,
-                            modifierColor = modifierColor,
-                            fixedWidth = 60.dp,
-                            fixedHeight = 60.dp,
-                        )
-                    }
+        // 3-row, 4-column number grid
+        KeyboardLayouts.NUMPAD_LEFT_GRID.forEach { rowKeys ->
+            Row {
+                rowKeys.forEach { keyDef ->
+                    KeyboardKeyButton(
+                        keyDef = keyDef,
+                        modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
+                        onKeyAction = onKeyAction,
+                        onKeyRelease = onKeyRelease,
+                        onPopupShow = onPopupShow,
+                        onPopupHide = onPopupHide,
+                        modifierColor = modifierColor,
+                        fixedWidth = 60.dp,
+                        fixedHeight = 60.dp,
+                    )
                 }
             }
         }
-
-        // Right block: Num/+ | 0/. | Enter
-        Column {
-            // Row 1: Num + +
-            Row {
-                KeyboardKeyButton(
-                    keyDef = KeyboardKeyDef("Num", KeyboardLayouts.KEY_NUM_LOCK, KeyType.MODIFIER),
-                    modifierState = modifierStates[KeyboardLayouts.KEY_NUM_LOCK] ?: MOD_NEUTRAL,
-                    onKeyAction = onKeyAction,
-                    onKeyRelease = onKeyRelease,
-                    onPopupShow = onPopupShow,
-                    onPopupHide = onPopupHide,
-                    modifierColor = modifierColor,
-                    fixedWidth = 60.dp,
-                    fixedHeight = 60.dp,
-                )
-                KeyboardKeyButton(
-                    keyDef = KeyboardKeyDef("+", KeyboardLayouts.KEY_NUMPAD_ADD, KeyType.MODIFIER),
-                    modifierState = modifierStates[KeyboardLayouts.KEY_NUMPAD_ADD] ?: MOD_NEUTRAL,
-                    onKeyAction = onKeyAction,
-                    onKeyRelease = onKeyRelease,
-                    onPopupShow = onPopupShow,
-                    onPopupHide = onPopupHide,
-                    modifierColor = modifierColor,
-                    fixedWidth = 60.dp,
-                    fixedHeight = 60.dp,
-                )
-            }
-            // Row 2: 0 + .
-            Row {
+        // Bottom row: 0 (2 columns wide), ., +
+        Row(modifier = Modifier.width(240.dp)) {
+            Box(modifier = Modifier.weight(2f).height(60.dp)) {
                 KeyboardKeyButton(
                     keyDef = KeyboardKeyDef("0", KeyboardLayouts.KEY_NUMPAD_0),
                     modifierState = MOD_NEUTRAL,
@@ -978,9 +974,10 @@ private fun NumpadKeyboardContent(
                     onPopupShow = onPopupShow,
                     onPopupHide = onPopupHide,
                     modifierColor = modifierColor,
-                    fixedWidth = 60.dp,
                     fixedHeight = 60.dp,
                 )
+            }
+            Box(modifier = Modifier.weight(1f).height(60.dp)) {
                 KeyboardKeyButton(
                     keyDef = KeyboardKeyDef(".", KeyboardLayouts.KEY_NUMPAD_DOT),
                     modifierState = MOD_NEUTRAL,
@@ -989,22 +986,21 @@ private fun NumpadKeyboardContent(
                     onPopupShow = onPopupShow,
                     onPopupHide = onPopupHide,
                     modifierColor = modifierColor,
-                    fixedWidth = 60.dp,
                     fixedHeight = 60.dp,
                 )
             }
-            // Row 3: Enter (spanning)
-            KeyboardKeyButton(
-                keyDef = KeyboardKeyDef("Enter", KeyboardLayouts.KEY_ENTER, KeyType.MODIFIER),
-                modifierState = modifierStates[KeyboardLayouts.KEY_ENTER] ?: MOD_NEUTRAL,
-                onKeyAction = onKeyAction,
-                onKeyRelease = onKeyRelease,
-                onPopupShow = onPopupShow,
-                onPopupHide = onPopupHide,
-                modifierColor = modifierColor,
-                fixedWidth = 120.dp,
-                fixedHeight = 60.dp,
-            )
+            Box(modifier = Modifier.weight(1f).height(60.dp)) {
+                KeyboardKeyButton(
+                    keyDef = KeyboardKeyDef("+", KeyboardLayouts.KEY_NUMPAD_ADD, KeyType.MODIFIER),
+                    modifierState = modifierStates[KeyboardLayouts.KEY_NUMPAD_ADD] ?: MOD_NEUTRAL,
+                    onKeyAction = onKeyAction,
+                    onKeyRelease = onKeyRelease,
+                    onPopupShow = onPopupShow,
+                    onPopupHide = onPopupHide,
+                    modifierColor = modifierColor,
+                    fixedHeight = 60.dp,
+                )
+            }
         }
     }
 }
