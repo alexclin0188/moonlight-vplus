@@ -374,10 +374,10 @@ object KeyboardLayouts {
                 ),
                 horizontalPaddingDp = 10f,
             ),
-            // Row 3: Shift + ZXCVBNM + Backspace
+            // Row 3: Caps + ZXCVBNM + Backspace
             KeyboardRowDef(
                 keys = listOf(
-                    KeyboardKeyDef("⇧", KEY_LSHIFT, type = KeyType.MODIFIER, weight = KeyWeight.W15),
+                    KeyboardKeyDef("Caps", KEY_CAPS, type = KeyType.MODIFIER, weight = KeyWeight.W15),
                     KeyboardKeyDef("Z", KEY_Z),
                     KeyboardKeyDef("X", KEY_X),
                     KeyboardKeyDef("C", KEY_C),

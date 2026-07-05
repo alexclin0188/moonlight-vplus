@@ -1317,6 +1317,12 @@ private fun KeyboardKeyButton(
             }
         }
 
+    val resolvedFontSize = fontSize ?: when {
+        keyDef.keyCode == KeyboardLayouts.KEY_ENTER && keyDef.label.length <= 2 -> 20.sp
+        keyDef.type == KeyType.MODIFIER -> 12.sp
+        else -> 14.sp
+    }
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -1328,7 +1334,8 @@ private fun KeyboardKeyButton(
             } else {
                 Color.White
             },
-            fontSize = fontSize ?: if (keyDef.type == KeyType.MODIFIER) 12.sp else 14.sp,
+            fontSize = resolvedFontSize,
+            lineHeight = resolvedFontSize,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             textAlign = TextAlign.Center,
