@@ -262,8 +262,8 @@ fun StreamOverlay(
             PerformanceOverlay(engine = engine, modifier = Modifier.align(perfAlign))
         }
 
-        // ── 面板外点击关闭层 ──
-        if (panelState != PanelState.HIDDEN) {
+        // ── 面板外点击关闭层（键盘面板除外，触摸穿透到游戏画面） ──
+        if (panelState != PanelState.HIDDEN && panelState != PanelState.KEYBOARD_PANEL) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()

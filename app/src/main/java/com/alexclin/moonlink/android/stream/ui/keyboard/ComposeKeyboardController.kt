@@ -108,8 +108,8 @@ fun ComposeKeyboardController(
     val physicallyHeldModifiers = remember { mutableSetOf<Int>() }
 
     // ── 外观状态 ──
-    // 每次进入虚拟键盘默认 80% 不透明度，不持久化
-    var opacityProgress by remember { mutableFloatStateOf(0.8f) }
+    // 每次进入虚拟键盘默认 80% 不透明度（slider 值 60 → 不透明度 = 60/100+0.2 = 0.8），不持久化
+    var opacityProgress by remember { mutableFloatStateOf(60f) }
     var keyboardHeightPx by remember { mutableIntStateOf(-1) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -243,7 +243,7 @@ fun ComposeKeyboardController(
         Box(
             modifier = Modifier
                 .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-                .alpha(opacityProgress)
+                .alpha(opacityProgress / 100f + 0.2f)
                 .padding(if (isMiniMode) 20.dp else 0.dp),
         ) {
             if (isMiniMode) {
@@ -479,7 +479,7 @@ private fun FullKeyboardContent(
                 // Weight spacer pushes opacity controls to the bottom (matching old XML behavior)
                 Spacer(Modifier.height(5.dp))
                 Text(
-                    "Opacity\n${(opacityProgress * 100).roundToInt()}%",
+                    "Opacity\n${(opacityProgress + 20f).roundToInt()}%",
                     color = Color(0x88FFFFFF),
                     fontSize = 10.sp,
                     textAlign = TextAlign.Center,
@@ -508,12 +508,14 @@ private fun VerticalOpacitySlider(
     onValueChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val valueRange = 0.2f..1.0f
+    // Slider value range: 0..80
+    // Actual opacity = sliderValue / 100f + 0.2f  (range: 0.2..1.0)
+    val sliderRange = 0f..80f
     val inactiveTrackColor = Color.White.copy(alpha = 0.2f)
     val activeTrackColor = Color.White.copy(alpha = 0.7f)
     val thumbColor = Color.White
 
-    val fraction = (value - valueRange.start) / (valueRange.endInclusive - valueRange.start)
+    val fraction = value / sliderRange.endInclusive
     val thumbSize = 16.dp
     val trackWidth = 4.dp
 
@@ -526,14 +528,13 @@ private fun VerticalOpacitySlider(
                 detectVerticalDragGestures(
                     onDragStart = { offset ->
                         val frac = 1f - (offset.y / size.height).coerceIn(0f, 1f)
-                        val newValue = valueRange.start + frac * (valueRange.endInclusive - valueRange.start)
-                        currentOnValueChange(newValue.coerceIn(valueRange))
+                        val newValue = frac * sliderRange.endInclusive
+                        currentOnValueChange(newValue.coerceIn(sliderRange))
                     },
                     onVerticalDrag = { _, dragAmount ->
-                        val range = valueRange.endInclusive - valueRange.start
                         // bottom=min, top=max: drag DOWN (positive) → decrease, drag UP (negative) → increase
-                        val delta = -dragAmount / size.height * range
-                        currentOnValueChange((currentValue + delta).coerceIn(valueRange))
+                        val delta = -dragAmount / size.height * sliderRange.endInclusive
+                        currentOnValueChange((currentValue + delta).coerceIn(sliderRange))
                     },
                 )
             },
@@ -555,7 +556,7 @@ private fun VerticalOpacitySlider(
                 .align(Alignment.BottomCenter)
                 .background(activeTrackColor, RoundedCornerShape(2.dp)),
         )
-        // Thumb: bottom = min opacity (10%), top = max (100%).
+        // Thumb: bottom = min (slider 0), top = max (slider 80).
         // Active track grows upward from bottom, thumb position mirrors this.
         Box(
             modifier = Modifier
