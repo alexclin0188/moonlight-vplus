@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -83,6 +85,7 @@ private const val HOLD_THRESHOLD_MS = 200L
 fun ComposeKeyboardController(
     bridge: VirtualKeyboardBridge,
     onHide: () -> Unit,
+    maxHeightDp: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("keyboard_settings", Context.MODE_PRIVATE) }
@@ -235,7 +238,14 @@ fun ComposeKeyboardController(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
+            .then(
+                // Mini mode: full-screen height for dragging
+                // Main/Num mode: constrained to IME keyboard height (maxHeightDp)
+                if (isMiniMode) Modifier.fillMaxHeight()
+                else if (maxHeightDp != androidx.compose.ui.unit.Dp.Unspecified) Modifier.height(maxHeightDp)
+                else Modifier.fillMaxHeight()
+            )
             .background(Color.Transparent),
         contentAlignment = Alignment.BottomEnd,
     ) {
@@ -381,11 +391,15 @@ private fun FullKeyboardContent(
                     onHeightMeasured(coords.size.height)
                 }
             }
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xDD1C1C1E)),
+            .then(
+                if (activePage == 1) Modifier
+                else Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xDD1C1C1E))
+            ),
     ) {
-        // Resize handle
-        if (showResizeHandle) {
+        // Resize handle (hidden on Num page since content wraps)
+        if (showResizeHandle && activePage != 1) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -412,38 +426,112 @@ private fun FullKeyboardContent(
             }
         }
 
-        // Main content: Left sidebar + Pages + Right sidebar
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(),
-        ) {
-            // Left sidebar — tabs: Main, Num, Mini (Nav removed, keys merged into Main)
-            Column(
-                modifier = Modifier
-                    .width(46.dp)
-                    .fillMaxHeight()
-                    .padding(2.dp),
+        // Main content: layout depends on active page
+        // Num page: bottom-centered, wrap-content with sidebars matching numpad height
+        // Other pages: fill all available space
+        if (activePage == 1) {
+            // Num page: push content to bottom with weight spacer so
+            // empty space above doesn't consume touch events
+            Spacer(Modifier.weight(1f))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
             ) {
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    SidebarTab("Main", activePage == 0) { onPageChange(0) }
-                }
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    SidebarTab("Num", activePage == 1) { onPageChange(1) }
-                }
-                Box(Modifier.weight(1f).fillMaxWidth()) {
-                    SidebarTab("Mini", activePage == 2) { onEnterMini() }
+                Row(modifier = Modifier
+                    .height(IntrinsicSize.Min)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xDD1C1C1E)),
+                ) {
+                    // Left sidebar — tabs: Main, Num, Mini
+                    Column(
+                        modifier = Modifier
+                            .width(46.dp)
+                            .fillMaxHeight()
+                            .padding(2.dp),
+                    ) {
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            SidebarTab("Main", false) { onPageChange(0) }
+                        }
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            SidebarTab("Num", true) { onPageChange(1) }
+                        }
+                        Box(Modifier.weight(1f).fillMaxWidth()) {
+                            SidebarTab("Mini", false) { onEnterMini() }
+                        }
+                    }
+
+                    // Numpad content — auto-sized, determines row height via intrinsic
+                    NumpadKeyboardContent(
+                        modifierStates = modifierStates,
+                        onKeyAction = onKeyAction,
+                        onKeyRelease = onKeyRelease,
+                        onPopupShow = onPopupShow,
+                        onPopupHide = onPopupHide,
+                        modifierColor = modifierColor,
+                    )
+
+                    // Right sidebar — matches numpad height
+                    Column(
+                        modifier = Modifier
+                            .width(46.dp)
+                            .fillMaxHeight()
+                            .padding(2.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        SidebarAction("✕") { onHide() }
+
+                        Spacer(Modifier.height(5.dp))
+                        // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
+                        VerticalOpacitySlider(
+                            value = opacityProgress,
+                            onValueChange = onOpacityChange,
+                            modifier = Modifier
+                                .width(44.dp)
+                                .weight(1f)
+                                .padding(bottom = 5.dp),
+                        )
+                        Text(
+                            "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
+                            color = Color(0x88FFFFFF),
+                            fontSize = 10.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(bottom = 2.dp),
+                        )
+                    }
                 }
             }
-
-            // Page container — weight(1f) fills remaining space between sidebars
-            Box(
+        } else {
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .padding(horizontal = 2.dp),
+                    .fillMaxWidth()
+                    .fillMaxHeight(),
             ) {
-                when (activePage) {
+                // Left sidebar — tabs: Main, Num, Mini (Nav removed, keys merged into Main)
+                Column(
+                    modifier = Modifier
+                        .width(46.dp)
+                        .fillMaxHeight()
+                        .padding(2.dp),
+                ) {
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        SidebarTab("Main", activePage == 0) { onPageChange(0) }
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        SidebarTab("Num", activePage == 1) { onPageChange(1) }
+                    }
+                    Box(Modifier.weight(1f).fillMaxWidth()) {
+                        SidebarTab("Mini", activePage == 2) { onEnterMini() }
+                    }
+                }
+
+                // Page container — weight(1f) fills remaining space between sidebars
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .padding(horizontal = 2.dp),
+                ) {
+                    when (activePage) {
                     0 -> KeyboardPageContent(
                         page = KeyboardLayouts.MAIN,
                         modifierStates = modifierStates,
@@ -453,46 +541,39 @@ private fun FullKeyboardContent(
                         onPopupHide = onPopupHide,
                         modifierColor = modifierColor,
                     )
-                    1 -> NumpadKeyboardContent(
-                        modifierStates = modifierStates,
-                        onKeyAction = onKeyAction,
-                        onKeyRelease = onKeyRelease,
-                        onPopupShow = onPopupShow,
-                        onPopupHide = onPopupHide,
-                        modifierColor = modifierColor,
+                    }
+                }
+
+                // Right sidebar
+                Column(
+                    modifier = Modifier
+                        .width(46.dp)
+                        .fillMaxHeight()
+                        .padding(2.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    SidebarAction("✕") { onHide() }
+
+                    Spacer(Modifier.height(5.dp))
+                    // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
+                    VerticalOpacitySlider(
+                        value = opacityProgress,
+                        onValueChange = onOpacityChange,
+                        modifier = Modifier
+                            .width(44.dp)
+                            .weight(1f)
+                            .padding(bottom = 5.dp),
+                    )
+                    Text(
+                        "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
+                        color = Color(0x88FFFFFF),
+                        fontSize = 10.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 2.dp),
                     )
                 }
+
             }
-
-            // Right sidebar
-            Column(
-                modifier = Modifier
-                    .width(46.dp)
-                    .fillMaxHeight()
-                    .padding(2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                SidebarAction("✕") { onHide() }
-
-                Spacer(Modifier.height(5.dp))
-                // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
-                VerticalOpacitySlider(
-                    value = opacityProgress,
-                    onValueChange = onOpacityChange,
-                    modifier = Modifier
-                        .width(44.dp)
-                        .weight(1f)
-                        .padding(bottom = 5.dp),
-                )
-                Text(
-                    "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
-                    color = Color(0x88FFFFFF),
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(bottom = 2.dp),
-                )
-            }
-
         }
     }
 }
@@ -656,6 +737,7 @@ private fun MiniKeyboardContent(
     Column(
         modifier = Modifier
             .width(360.dp)
+            .aspectRatio(2f)
             .clip(RoundedCornerShape(10.dp))
             .background(Color(0xDD1C1C1E))
             .padding(4.dp),
@@ -941,9 +1023,8 @@ private fun NumpadKeyboardContent(
     modifierColor: (Int) -> Color,
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(2.dp),
+        modifier = Modifier.padding(2.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
     ) {
         // 3-row, 4-column number grid
         KeyboardLayouts.NUMPAD_LEFT_GRID.forEach { rowKeys ->

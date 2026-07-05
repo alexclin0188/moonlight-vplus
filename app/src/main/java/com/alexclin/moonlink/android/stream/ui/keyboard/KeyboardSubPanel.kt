@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -186,11 +187,17 @@ fun KeyboardSubPanel(
                 )
             }
 
-            // ── 内容区（高度 = 系统键盘高度） ──
+            // ── 内容区 ──
+            // 虚拟键盘标签：填满全屏以支持 Mini 键盘全屏拖动，底部对齐 Main/Num
+            // 其他标签：使用系统键盘高度
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(effectiveHeightDp)
+                    .then(
+                        if (selectedTab == 2) Modifier.fillMaxHeight()
+                        else Modifier.height(effectiveHeightDp)
+                    ),
+                contentAlignment = Alignment.BottomCenter,
             ) {
                 when (selectedTab) {
                     0 -> ImeTabContent(engine = engine)
@@ -212,6 +219,7 @@ fun KeyboardSubPanel(
                     2 -> ComposeKeyboardController(
                         bridge = keyboardBridge,
                         onHide = onClose,
+                        maxHeightDp = effectiveHeightDp,
                     )
 
                 }
