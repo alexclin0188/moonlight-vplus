@@ -32,7 +32,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,6 +55,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -436,11 +436,20 @@ fun StreamOverlay(
                 exit = keyboardExit,
                 modifier = Modifier.align(Alignment.BottomCenter),
             ) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                    color = if (isVirtualKeyboardTab) Color.Transparent else MaterialTheme.colorScheme.surface,
-                    shadowElevation = if (isVirtualKeyboardTab) 0.dp else 8.dp,
+                // 始终使用 Box 以确保 KeyboardSubPanel 在虚拟键盘标签和非虚拟键盘标签
+                // 之间切换时不会丢失 remember 状态（Surface → Box 迁移会重置状态）。
+                // 虚拟键盘标签下不添加任何修饰符以允许 Num/Mini 空白区域触摸穿透。
+                // 其他标签添加 shadow + background 复现 Surface 外观。
+                val panelShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (!isVirtualKeyboardTab) Modifier
+                                .shadow(8.dp, panelShape)
+                                .background(MaterialTheme.colorScheme.surface, panelShape)
+                            else Modifier
+                        ),
                 ) {
                     KeyboardSubPanel(
                         engine = engine,

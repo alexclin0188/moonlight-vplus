@@ -167,20 +167,14 @@ fun KeyboardSubPanel(
                 KeyboardTabBar(
                 selectedTab = selectedTab,
                 onTabSelected = { tab ->
-                    // 从输入法标签切到任何其它标签时，都先隐藏系统输入法键盘
+                    // 先更新 selectedTab 防止键盘高度监听器在 hideKeyboard 过程中误触发 onClose
+                    selectedTab = tab
                     if (tab != 0) {
                         hideKeyboard()
                     }
                     if (tab == 3) {
-                        // 主机键盘：先更新 selectedTab 防止键盘高度监听器误触发 onClose
-                        selectedTab = tab
                         engine.sendToggleHostKeyboard()
                         onCloseToHidden()
-                    } else if (tab == 2) {
-                        // 虚拟键盘：先更新 selectedTab 防止键盘高度监听器误触发 onClose
-                        selectedTab = tab
-                    } else {
-                        selectedTab = tab
                     }
                 },
                 onClose = onClose,
