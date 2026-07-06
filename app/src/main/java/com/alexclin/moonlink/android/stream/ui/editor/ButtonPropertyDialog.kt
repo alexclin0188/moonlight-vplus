@@ -78,10 +78,12 @@ fun ButtonPropertyDialog(
     var value by remember(element.elementId) { mutableStateOf(element.value) }
     var mode by remember(element.elementId) { mutableStateOf(element.mode.toString()) }
     var sense by remember(element.elementId) { mutableStateOf(element.sense.toString()) }
+    var longPressEffect by remember(element.elementId) { mutableStateOf(element.longPressEffect) }
     var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
     var showKeyPicker by remember { mutableStateOf(false) }
 
     val isMovable = element.type == ElementType.DIGITAL_MOVABLE_BUTTON
+    val isSwitch = element.type == ElementType.DIGITAL_SWITCH_BUTTON
 
     fun buildUpdated(): EditorElement {
         return element.copy(
@@ -89,6 +91,7 @@ fun ButtonPropertyDialog(
             value = value,
             mode = mode.toIntOrNull() ?: element.mode,
             sense = sense.toIntOrNull()?.coerceIn(0, 500) ?: element.sense,
+            longPressEffect = longPressEffect,
             extraAttributesJson = extraAttributesJson,
         )
     }
@@ -244,6 +247,38 @@ fun ButtonPropertyDialog(
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
+                        }
+                    }
+
+                    // ── 开关按键专用：长按效果 ──
+                    if (isSwitch) {
+                        Spacer(Modifier.height(8.dp))
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant,
+                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .padding(vertical = 6.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("长按效果",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface)
+                                Text("开启后，按下按键即相当于长按，\n持续向主机发送此按键键值",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                            Spacer(Modifier.width(16.dp))
+                            Switch(
+                                checked = longPressEffect,
+                                onCheckedChange = { longPressEffect = it },
+                            )
                         }
                     }
 

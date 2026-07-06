@@ -414,7 +414,7 @@ class StreamActivity : ComponentActivity() {
                     }
 
                     /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
-                    fun sendKeyboardKey(value: String, isPressed: Boolean) {
+                    fun sendKeyboardKey(value: String, isPressed: Boolean, enableRepeat: Boolean = true) {
                         // 调试日志：记录键值命令 ↓按下 / ↑释放
                         LimeLog.info("KEY: ${value}${if (isPressed) "↓" else "↑"}")
                         val doSend: (Short, Byte) -> Unit = { code, action ->
@@ -429,7 +429,7 @@ class StreamActivity : ComponentActivity() {
                                     keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
                                     val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
                                     doSend(gfeKeyCode, action)
-                                    if (isPressed) {
+                                    if (isPressed && enableRepeat) {
                                     val r = object : java.lang.Runnable {
                                         override fun run() {
                                             doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
@@ -449,7 +449,7 @@ class StreamActivity : ComponentActivity() {
                                 keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
                                 val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
                                 doSend(shortCode, action)
-                                if (isPressed) {
+                                if (isPressed && enableRepeat) {
                                     val r = object : java.lang.Runnable {
                                         override fun run() {
                                             doSend(shortCode, KeyboardPacket.KEY_DOWN)
@@ -466,7 +466,8 @@ class StreamActivity : ComponentActivity() {
                             // 数值越小滚动越快：configWheelSpeed 1→最快, 119→最慢
                             scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
                             scrollRepeatRunnable.value = null
-                            if (isPressed) {
+                            // 仅非长按效果时不重复（滚轮类只有 isPressed=true 时发送，不涉及重复停止逻辑）
+                            if (isPressed && enableRepeat) {
                                 val upAmount = ((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5).toByte()
                                 engine.mouseVScroll(upAmount)
                                 val r = object : java.lang.Runnable {
@@ -481,7 +482,7 @@ class StreamActivity : ComponentActivity() {
                         } else if (value == "SD") {
                             scrollRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
                             scrollRepeatRunnable.value = null
-                            if (isPressed) {
+                            if (isPressed && enableRepeat) {
                                 val downAmount = (-((120 - engine.configWheelSpeed) / 24 + 1).coerceIn(1, 5)).toByte()
                                 engine.mouseVScroll(downAmount)
                                 val r = object : java.lang.Runnable {
@@ -571,6 +572,8 @@ class StreamActivity : ComponentActivity() {
                             when (el.type) {
                                 ElementType.DIGITAL_COMMON_BUTTON,
                                 ElementType.DIGITAL_SWITCH_BUTTON -> {
+                                    // 开关按键未开启长按效果时，不启动重复
+                                    val enableRepeat = el.type != ElementType.DIGITAL_SWITCH_BUTTON || el.longPressEffect
                                     if (isPressed) {
                                         if (elementVibrationFired.put(el.elementId, true) == null) {
                                             triggerVibration()
@@ -581,14 +584,14 @@ class StreamActivity : ComponentActivity() {
                                     when {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
-                                        value.startsWith("k") -> sendKeyboardKey(value, isPressed)
+                                        value.startsWith("k") -> sendKeyboardKey(value, isPressed, enableRepeat)
                                         value.startsWith("g") -> {
                                             val flag = parseValueToFlag(value)
                                             if (flag != 0) {
                                                 btnState.value = if (isPressed) btnState.value or flag
                                                     else btnState.value and flag.inv()
                                                 gamepadRepeatRunnable.value?.let(repeatHandler::removeCallbacks)
-                                                if (isPressed) {
+                                                if (isPressed && enableRepeat) {
                                                     val r = java.lang.Runnable { sendFullState() }
                                                     gamepadRepeatRunnable.value = r
                                                     repeatHandler.postDelayed(r, 50)
@@ -602,7 +605,7 @@ class StreamActivity : ComponentActivity() {
                                                 if (isPressed) engine.conn?.sendMouseButtonDown(btnId.toByte())
                                                 else engine.conn?.sendMouseButtonUp(btnId.toByte())
                                                 mouseRepeatMap.remove(btnId)?.let(repeatHandler::removeCallbacks)
-                                                if (isPressed) {
+                                                if (isPressed && enableRepeat) {
                                                     val r = java.lang.Runnable {
                                                         engine.conn?.sendMouseButtonDown(btnId.toByte())
                                                     }

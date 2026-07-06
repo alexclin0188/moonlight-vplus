@@ -85,6 +85,9 @@ data class EditorElement(
     // ── 圆形模式 ──
     val isCircle: Boolean = false,    // 是否圆形按钮（UI 编辑辅助，持久化在 extraAttributesJson 中）
 
+    // ── 开关按键：长按效果 ──
+    val longPressEffect: Boolean = false, // 开关按键长按效果（持久化在 extraAttributesJson 中）
+
     // ── 通用标志 ──
     val flag1: Int = 0,              // element_flag1: 通用标志
 
@@ -385,14 +388,15 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
         flag1 = this.optInt(ElementColumns.COLUMN_INT_ELEMENT_FLAG1),
         extraAttributesJson = this.optString(ElementColumns.COLUMN_STRING_EXTRA_ATTRIBUTES, "{}"),
     ).let { el ->
-        // 从 extraAttributesJson 反序列化 isCircle
-        val isCircle = try {
-            val json = org.json.JSONObject(el.extraAttributesJson)
-            json.optBoolean("isCircle", false)
+        // 从 extraAttributesJson 反序列化 isCircle 和 longPressEffect
+        val extras = try {
+            org.json.JSONObject(el.extraAttributesJson)
         } catch (_: Exception) {
-            false
+            null
         }
-        el.copy(isCircle = isCircle)
+        val isCircle = extras?.optBoolean("isCircle", false) ?: false
+        val longPressEffect = extras?.optBoolean("longPressEffect", false) ?: false
+        el.copy(isCircle = isCircle, longPressEffect = longPressEffect)
     }
 }
 
@@ -404,10 +408,11 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
  * - INTEGER 列通过 [ContentValues.put(key, Long)] 写入
  * - TEXT 列通过 [ContentValues.put(key, String)] 写入
  */    internal fun EditorElement.toContentValues(): ContentValues {
-        // 序列化 isCircle 到 extraAttributesJson
+        // 序列化 isCircle 和 longPressEffect 到 extraAttributesJson
         val mergedJson = try {
             val json = org.json.JSONObject(extraAttributesJson)
             json.put("isCircle", isCircle)
+            json.put("longPressEffect", longPressEffect)
             json.toString()
         } catch (_: Exception) {
             extraAttributesJson

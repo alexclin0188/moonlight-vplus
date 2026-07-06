@@ -455,8 +455,8 @@ private enum class TouchMode(val label: String) {
 private fun TouchModeSection(engine: StreamEngine) {
     val context = LocalContext.current
 
-    // 从 prefConfig 读取当前模式
-    val currentMode = remember(engine.prefConfig) {
+    // 从 prefConfig 读取当前模式（touchModeState 作为 Compose 可观察 key 驱动重组）
+    val currentMode = remember(engine.touchModeState) {
         when {
             engine.prefConfig.touchscreenTrackpad -> TouchMode.TRACKPAD
             engine.prefConfig.enableEnhancedTouch -> TouchMode.ENHANCED
@@ -464,6 +464,10 @@ private fun TouchModeSection(engine: StreamEngine) {
         }
     }
     var selectedMode by remember { mutableStateOf(currentMode) }
+    // 当 currentMode 因外部切换变化时同步更新 selectedMode
+    LaunchedEffect(currentMode) {
+        selectedMode = currentMode
+    }
 
     Column(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {

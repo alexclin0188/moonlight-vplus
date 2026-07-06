@@ -151,7 +151,7 @@ class HostSettingsManager(private val context: Context) {
             enhancedTouchOnWhichSide = sp.getBoolean(KEY_ENHANCED_TOUCH_ON_RIGHT, true),
             enhanceTouchZoneDivider = int(KEY_ENHANCE_TOUCH_ZONE_DIVIDER, 50),
             pointerVelocityFactor = int(KEY_POINTER_VELOCITY_FACTOR, 100),
-            touchscreenTrackpad = sp.getBoolean(KEY_TOUCHSCREEN_TRACKPAD, true),
+            touchscreenTrackpad = sp.getBoolean(KEY_TOUCHSCREEN_TRACKPAD, false),
             touchpadSensitivity = int(KEY_TOUCHPAD_SENSITIVITY, 100),
             enableNativeMousePointer = bool(KEY_ENABLE_NATIVE_MOUSE_POINTER),
             enableDoubleClickDrag = bool(KEY_ENABLE_DOUBLE_CLICK_DRAG),

@@ -749,6 +749,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.enableNativeMousePointer = (mode == 3)
         prefConfig.touchscreenTrackpad = (mode == 2)
 
+        // 同步 Compose 可观察状态，触发 UI 重组
+        touchModeState = mode
+
         // 同步 NativeTouchContext 确保与最新 prefConfig 一致
         syncNativeTouchContext()
 
@@ -1034,6 +1037,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 触控灵敏度 */
     var configTouchSense: Int by mutableStateOf(100)
+
+    /** 当前触控模式（Compose 可观察），与 prefConfig 同步。0=ENHANCED, 1=CLASSIC, 2=TRACKPAD, 3=NATIVE_MOUSE */
+    var touchModeState: Int by mutableIntStateOf(0)
 
     /** 本地光标显示状态（触控板模式下由 enableLocalCursorRendering 控制） */
     var showLocalCursor: Boolean by mutableStateOf(false)
@@ -1342,6 +1348,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.writePreferences(activity)
         syncNativeTouchContext()
         showLocalCursor = prefConfig.enableLocalCursorRendering && prefConfig.touchscreenTrackpad
+        // 同步 Compose 可观察状态，触发 UI 重组
+        touchModeState = when {
+            ts -> 2
+            ee -> 0
+            else -> if (nm) 3 else 1
+        }
         touchHandler?.let { handler ->
             handler.setTouchMode(ts)
             handler.setEnhancedTouch(ee)

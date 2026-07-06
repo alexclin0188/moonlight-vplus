@@ -15,7 +15,7 @@ data class HostSettings(
     // 触控模式 (TOUCH_MODE)
     // ═══════════════════════════════════════════
     /** 增强式多点触控 */
-    val enableEnhancedTouch: Boolean = false,
+    val enableEnhancedTouch: Boolean = true,
     /** 增强触控区在右侧 */
     val enhancedTouchOnWhichSide: Boolean = true,
     /** 增强触控区分界线（百分比） */
@@ -23,7 +23,7 @@ data class HostSettings(
     /** 指针速度因子 */
     val pointerVelocityFactor: Int = 100,
     /** 触控板模式 */
-    val touchscreenTrackpad: Boolean = true,
+    val touchscreenTrackpad: Boolean = false,
     /** 触控板灵敏度 1-200 */
     val touchpadSensitivity: Int = 100,
     /** 本地鼠标指针模式 */
