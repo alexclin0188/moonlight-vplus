@@ -201,6 +201,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** OpenGL 渲染器类型 */
     private var glRenderer: String = "opengl"
 
+    /** 上一次收到的画面分辨率，用于检测是否发生实际变化（首次不提示） */
+    private var lastFrameWidth: Int = 0
+    private var lastFrameHeight: Int = 0
+
     private val handler = Handler(Looper.getMainLooper())
 
     companion object {
@@ -855,6 +859,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         attemptedConnection = false
         connected = false
         isChangingResolution = false
+        // 重置分辨率跟踪，确保新流首次收到画面时不触发变化提示
+        lastFrameWidth = 0
+        lastFrameHeight = 0
 
         StreamLogger.log(activity, "RECONNECT", "重连准备完成")
         LimeLog.info("StreamEngine: 重连准备完成")
@@ -1925,10 +1932,24 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 更新实际串流分辨率，触发 Compose 重组 → SurfaceView 重新计算宽高比
         actualStreamWidth = width
         actualStreamHeight = height
-        handler.post {
-            val orientation = if (width > height) "横屏" else "竖屏"
-            LimeLog.info("StreamEngine: 方向 $orientation")
-            ToastUtil.show(activity, "主机分辨率已变更为 ${width}x${height}", Toast.LENGTH_SHORT)
+
+        // 首次收到画面：记录分辨率但不提示，后续变化才提示用户
+        if (lastFrameWidth == 0 && lastFrameHeight == 0) {
+            lastFrameWidth = width
+            lastFrameHeight = height
+            LimeLog.info("StreamEngine: 首次画面分辨率 ${width}x${height}，跳过提示")
+            return
+        }
+
+        // 分辨率与上次不同时提示变化
+        if (width != lastFrameWidth || height != lastFrameHeight) {
+            lastFrameWidth = width
+            lastFrameHeight = height
+            handler.post {
+                val orientation = if (width > height) "横屏" else "竖屏"
+                LimeLog.info("StreamEngine: 分辨率已变更为 ${width}x${height}，方向 $orientation")
+                ToastUtil.show(activity, "主机分辨率已变更为 ${width}x${height}", Toast.LENGTH_SHORT)
+            }
         }
     }
 

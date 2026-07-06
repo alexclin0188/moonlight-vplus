@@ -11,7 +11,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.unit.dp
 import org.json.JSONObject
 import kotlin.math.cos
 import kotlin.math.min
@@ -100,62 +99,22 @@ fun DrawScope.drawDigitalButton(
         element.text
     }
 
-    if (displayText.isNotBlank() && !displayText.equals(valueLabel, ignoreCase = true)) {
-        // 自定义按键名不为空且与键值名不同 → 两行显示：第一行按键名，第二行键值名（较小）
-        val line1Size = fontSizePx * 0.7f
-        val line2Size = fontSizePx * 0.5f
-        val spacing = minOf(line2Size * 0.3f, with(drawContext.density) { 1.dp.toPx() })
+    // 判断实际要显示的文本：优先使用自定义按键名，否则使用键值标签
+    val displayLabel = if (displayText.isNotBlank()) displayText else valueLabel
 
+    if (displayLabel.isNotBlank()) {
         drawIntoCanvas { canvas ->
             canvas.nativeCanvas.apply {
-                val paint1 = android.graphics.Paint().apply {
+                val mPaint = android.graphics.Paint().apply {
                     color = textArgb
-                    textSize = line1Size
+                    textSize = fontSizePx
                     textAlign = android.graphics.Paint.Align.CENTER
                     isAntiAlias = true
                     isFakeBoldText = true
                 }
-                val paint2 = android.graphics.Paint().apply {
-                    color = textArgb
-                    textSize = line2Size
-                    textAlign = android.graphics.Paint.Align.CENTER
-                    isAntiAlias = true
-                    isFakeBoldText = true
-                }
-                val fm1 = paint1.fontMetrics
-                val fm2 = paint2.fontMetrics
-                val h1 = fm1.bottom - fm1.top
-                val h2 = fm2.bottom - fm2.top
-                val totalHeight = h1 + spacing + h2
-                val blockTop = element.centralY.toFloat() - totalHeight / 2f
-
-                // Line 1: 自定义按键名
-                val line1CenterY = blockTop + h1 / 2f
-                val baseline1 = line1CenterY - (fm1.top + fm1.bottom) / 2f
-                drawText(displayText, element.centralX.toFloat(), baseline1, paint1)
-
-                // Line 2: 键值名（较小）
-                val line2CenterY = blockTop + h1 + spacing + h2 / 2f
-                val baseline2 = line2CenterY - (fm2.top + fm2.bottom) / 2f
-                drawText(valueLabel, element.centralX.toFloat(), baseline2, paint2)
-            }
-        }
-    } else {
-        // 没有自定义按键名（或与键值名相同）→ 单行显示键值名
-        if (valueLabel.isNotBlank()) {
-            drawIntoCanvas { canvas ->
-                canvas.nativeCanvas.apply {
-                    val mPaint = android.graphics.Paint().apply {
-                        color = textArgb
-                        textSize = fontSizePx
-                        textAlign = android.graphics.Paint.Align.CENTER
-                        isAntiAlias = true
-                        isFakeBoldText = true
-                    }
-                    val metrics = mPaint.fontMetrics
-                    val baseline = element.centralY - (metrics.top + metrics.bottom) / 2f
-                    drawText(valueLabel, element.centralX.toFloat(), baseline, mPaint)
-                }
+                val metrics = mPaint.fontMetrics
+                val baseline = element.centralY - (metrics.top + metrics.bottom) / 2f
+                drawText(displayLabel, element.centralX.toFloat(), baseline, mPaint)
             }
         }
     }
