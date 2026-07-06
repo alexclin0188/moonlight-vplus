@@ -34,7 +34,7 @@ class AppSettingsManager(private val context: Context) {
             val settingsJson = settingsToJson(settings)
             preferences.edit()
                     .putString(key, settingsJson.toString())
-                    .commit()
+                    .apply()
         } catch (e: JSONException) {
             e.printStackTrace()
         }

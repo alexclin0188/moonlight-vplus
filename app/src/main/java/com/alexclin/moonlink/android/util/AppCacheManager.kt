@@ -3,6 +3,7 @@ package com.alexclin.moonlink.android.util
 import android.content.Context
 import com.limelight.utils.AppCacheKeys
 import com.limelight.nvstream.http.NvApp
+import java.util.Locale
 
 /**
  * 应用缓存管理器
@@ -121,7 +122,7 @@ class AppCacheManager(context: Context) {
             val allPrefs = preferences.all
             val totalKeys = allPrefs.size
             val appCacheKeys = allPrefs.keys.count { AppCacheKeys.isAppCacheKey(it) }
-            String.format("总键数: %d, 应用缓存键数: %d", totalKeys, appCacheKeys)
+            String.format(Locale.ROOT, "总键数: %d, 应用缓存键数: %d", totalKeys, appCacheKeys)
         } catch (e: Exception) {
             e.printStackTrace()
             "获取统计信息失败"

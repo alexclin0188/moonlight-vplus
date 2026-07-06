@@ -15,6 +15,8 @@ import android.os.BatteryManager
 import android.os.Build
 import android.os.LocaleList
 import android.view.View
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import com.alexclin.moonlink.android.util.LimeLog
@@ -145,6 +147,14 @@ object UiHelper {
                     horizontalPaddingPixels, verticalPaddingPixels,
                     horizontalPaddingPixels, verticalPaddingPixels
                 )
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // API 30+ 使用 WindowInsetsController 实现沉浸式，不需要 FLAG_TRANSLUCENT_NAVIGATION
+            @Suppress("DEPRECATION")
+            activity.window.setDecorFitsSystemWindows(false)
+            activity.window.insetsController?.let {
+                it.hide(WindowInsets.Type.systemBars())
+                it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
         } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             activity.findViewById<View>(android.R.id.content).setOnApplyWindowInsetsListener { _, windowInsets ->

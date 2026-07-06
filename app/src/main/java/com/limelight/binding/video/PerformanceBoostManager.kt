@@ -1,5 +1,6 @@
 package com.limelight.binding.video
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Build
 import android.os.PerformanceHintManager
@@ -29,6 +30,7 @@ internal class PerformanceBoostManager(private val context: Context) {
      * Creates a performance hint session for the calling thread (plus any additional threads).
      * Must be called from a thread that should receive performance hints (e.g., renderer thread).
      */
+    @SuppressLint("WrongConstant")
     fun createHintSession(targetFps: Int, vararg additionalTids: Int) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
 

@@ -307,7 +307,4 @@
     <string name="summary_float_ball_swipe_right_action">向右滑動懸浮球時執行的動作</string>
 
     <!-- 懸浮球動作選項 -->
-    <string name="float_ball_action_none">無動作</string>
-    <string name="float_ball_action_open_keyboard">顯示虛擬鍵盤</string>
-    <string name="float_ball_action_open_menu">顯示遊戲選單</string>
 </resources>

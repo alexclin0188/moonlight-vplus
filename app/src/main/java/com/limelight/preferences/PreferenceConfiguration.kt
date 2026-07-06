@@ -312,12 +312,8 @@ class PreferenceConfiguration {
                 .putInt(OUTPUT_BUFFER_QUEUE_LIMIT_PREF_STRING, outputBufferQueueLimit)
                 .putInt(HOST_SCALE_PREF_STRING, resolutionScale)
 
-            if (synchronous) {
-                editor.commit()
-            } else {
-                editor.apply()
-                true
-            }
+            editor.apply()
+            true
         } catch (e: Exception) {
             e.printStackTrace()
             false
@@ -742,13 +738,9 @@ class PreferenceConfiguration {
             val width: Int
             val height: Int
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                width = display.mode.physicalWidth
-                height = display.mode.physicalHeight
-            } else {
-                width = display.width
-                height = display.height
-            }
+            width = display.mode.physicalWidth
+            height = display.mode.physicalHeight
+
 
             return isSquarishScreen(width, height)
         }
@@ -865,11 +857,10 @@ class PreferenceConfiguration {
                 }
 
                 // API 21 uses LEANBACK instead of TELEVISION
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1) {
-                    if (manager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
-                        return false
-                    }
+                if (manager.hasSystemFeature(PackageManager.FEATURE_LEANBACK)) {
+                    return false
                 }
+
             }
 
             // Use small mode on anything smaller than a 7" tablet
@@ -990,11 +981,8 @@ class PreferenceConfiguration {
                 // 获取设备原生分辨率
                 val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay
                 val size = Point()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                    display.getRealSize(size) // 需要API 17+
-                } else {
-                    display.getSize(size) // 兼容旧版本
-                }
+                display.getRealSize(size)
+
                 config.width = size.x
                 config.height = size.y
             } else {

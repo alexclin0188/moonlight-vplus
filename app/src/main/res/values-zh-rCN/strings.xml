@@ -121,13 +121,11 @@
     <string name="applist_quit_confirmation">您确定要退出当前游戏？所有未保存的数据将丢失。</string>
     <string name="applist_details_id">App ID：</string>
     <!-- In Game menu -->
-    <string name="game_menu_toggle_keyboard"> 屏幕键盘 </string>
     <string name="game_menu_toggle_performance_overlay"> 性能监控图层 </string>
     <string name="perf_overlay_hidden">关闭</string>
     <string name="perf_overlay_floating">悬浮</string>
     <string name="perf_overlay_locked">固定</string>
     <string name="game_menu_toggle_virtual_controller"> 虚拟手柄 </string>
-    <string name="game_menu_toggle_host_keyboard"> 主机键盘 </string>
     <string name="game_menu_toggle_mouse_on"> 手柄模拟鼠标-打开 </string>
     <string name="game_menu_toggle_mouse_off"> 手柄模拟鼠标-关闭 </string>
     <string name="game_menu_disconnect"> 断开连接 </string>
@@ -229,9 +227,6 @@
     <string name="title_checkbox_sync_touch_event_with_display">触控事件与显示刷新同步</string>
     <string name="summary_checkbox_sync_touch_event_with_display">打开后触控事件上报率与显示刷新率同步，比如显示为60Hz，那么触控与之同步。不一定有用，习惯哪个用哪个。MoonLink原版相当于禁用该项。</string>
 
-    <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">多点触控模式下打开本地键盘切换</string>
-    <string name="title_seekbar_keyboard_toggle_fingers_native_touch">轻敲手指数量</string>
-    <string name="summary_seekbar_keyboard_toggle_fingers_native_touch">轻敲切换本地键盘的最少手指数量。\n仅在多点触控模式生效，触摸板模式3指即可切换本地键盘(不受此配置影响)。</string>
 
     <string name="title_checkbox_multi_controller"> 自动检测手柄 </string>
     <string name="summary_checkbox_multi_controller"> 禁用此项所有手柄将视为一个手柄。 </string>
@@ -304,10 +299,6 @@
     <string name="summary_float_ball_swipe_right_action">向右滑动悬浮球时执行的动作。</string>
 
     <!-- 悬浮球动作选项 -->
-    <string name="float_ball_action_none">无动作</string>
-    <string name="float_ball_action_open_keyboard">显示虚拟键盘</string>
-    <string name="float_ball_action_open_menu">显示游戏菜单</string>
-
     <string name="category_ui_settings">界面设置</string>
     <string name="category_display_behavior">画面设置</string>
     <string name="title_language_list"> 语言 </string>
@@ -941,18 +932,6 @@
     <string name="layout_page_config_text_global_border_color">边框颜色</string>
     <string name="layout_page_config_text_global_text_color">文字颜色</string>
     <string name="apptext_pg_config_global_opacity">全局透明度</string>
-    <string name="layout_page_device_text_5f411">返回</string>
-    <string name="layout_page_device_text_d81bb">无</string>
-    <string name="layout_page_device_text_01e77">触控模式</string>
-    <string name="layout_page_device_text_03cbf">经典鼠标</string>
-    <string name="layout_page_device_text_dd502">触控板</string>
-    <string name="layout_page_device_text_d4ab3">多点触控</string>
-    <string name="layout_page_device_text_1a70f">触控开关</string>
-    <string name="layout_page_device_text_1e243">电脑键盘</string>
-    <string name="layout_page_device_text_42968">安卓键盘</string>
-    <string name="layout_page_device_text_34842">切换配置</string>
-    <string name="layout_page_device_text_6c15c">平移/缩放</string>
-    <string name="layout_page_device_text_104a1">打开GAME MENU</string>
     <string name="layout_page_digital_combine_button_text_3bb27">类型 : 组合键</string>
     <string name="layout_page_digital_combine_button_text_bab9f">显示文本</string>
     <string name="layout_page_digital_combine_button_text_499ef">一二三四五</string>
@@ -1064,12 +1043,10 @@
     <string name="page_hint_confirm_delete">输入确认</string>
 
     <!-- 缺失的翻译补全 -->
-    <string name="dialog_virtual_keyboard_hint">点击按键来创建组合键</string>
     <string name="error_interrupted">操作已中断</string>
     <string name="float_ball_action_lock_screen">锁屏</string>
     <string name="float_ball_action_screenshot">截图</string>
     <string name="float_ball_action_toggle_visibility">切换悬浮球显隐</string>
-    <string name="game_menu_toggle_all_keyboard">切换电脑键盘</string>
     <string name="menu">菜单</string>
     <string name="settings_search_hint">搜索设置项…</string>
     <string name="settings_search_close">关闭搜索</string>

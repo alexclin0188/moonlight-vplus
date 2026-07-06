@@ -177,14 +177,11 @@
     <string name="applist_details_id">App ID:</string>
 
     <!-- In Game menu -->
-    <string name="game_menu_toggle_keyboard">Toggle On-screen Keyboard</string>
     <string name="game_menu_toggle_performance_overlay">Toggle Performance Overlay</string>
     <string name="perf_overlay_hidden">CLOSE</string>
     <string name="perf_overlay_floating">SUSPENSION</string>
     <string name="perf_overlay_locked">Fixed</string>
     <string name="game_menu_toggle_virtual_controller">Toggle Virtual Controller</string>
-    <string name="game_menu_toggle_host_keyboard">Toggle Host Keyboard</string>
-    <string name="game_menu_toggle_all_keyboard">Toggle PC Keyboard</string>
     <string name="game_menu_toggle_mouse_on">Enable Controller Mouse Emulation</string>
     <string name="game_menu_toggle_mouse_off">Disable Controller Mouse Emulation</string>
     <string name="game_menu_disconnect">Disconnect</string>
@@ -323,12 +320,6 @@
     <string name="summary_seekbar_long_press_flat_region">Works for the whole screen. Increase for larger long-press flat region, within which the app sends initial contact coordinates to server.</string>
     <string name="suffix_seekbar_flat_region_pixels">pixels</string>
 
-    <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">Enable keyboard toggle in multi-point touch mode </string>
-    <string name="summary_checkbox_enable_keyboard_toggle_in_native_touch">\t</string>
-    <string name="title_seekbar_keyboard_toggle_fingers_native_touch">Fingers to tap</string>
-    <string name="summary_seekbar_keyboard_toggle_fingers_native_touch">Least number of fingers to tap to toggle local on-screen keyboard in multi-point touch mode. \nIn trackpad mode, you always only need to tap 3 or more fingers to toggle local keyboard.</string>
-    <string name="suffix_seekbar_keyboard_toggle_fingers_native_touch"> </string>
-
     <string name="title_checkbox_absolute_mouse_mode">Remote desktop mouse mode</string>
     <string name="summary_checkbox_absolute_mouse_mode">This can make mouse acceleration behave more naturally for remote desktop usage, but it is incompatible with many games.</string>
     <string name="title_checkbox_enable_esc_menu">Allow custom key to open return menu</string>
@@ -399,9 +390,6 @@
     <string name="summary_float_ball_swipe_right_action">Action performed when swiping float ball rightward</string>
 
     <!-- Float Ball Action Options -->
-    <string name="float_ball_action_none">No Action</string>
-    <string name="float_ball_action_open_keyboard">Show Virtual Keyboard</string>
-    <string name="float_ball_action_open_menu">Show Game Menu</string>
     <string name="float_ball_action_toggle_visibility">Toggle Float Ball Visibility</string>
     <string name="float_ball_action_screenshot">Take Screenshot</string>
     <string name="float_ball_action_lock_screen">Lock Screen</string>
@@ -710,7 +698,6 @@
     <string name="dialog_button_save">SAVE</string>
     <string name="dialog_button_cancel">CANCEL</string>
     <string name="dialog_button_clear">CLEAR</string>
-    <string name="dialog_virtual_keyboard_hint">Click on the keys to create a combination</string>
 
     <!-- 删除自定义按键对话框 -->
     <string name="dialog_title_select_keys_to_delete">Select the button to delete</string>
@@ -1016,18 +1003,6 @@
     <string name="layout_page_config_text_global_border_color">Border Color</string>
     <string name="layout_page_config_text_global_text_color">Text Color</string>
     <string name="apptext_pg_config_global_opacity">Global Opacity</string>
-    <string name="layout_page_device_text_5f411">Back</string>
-    <string name="layout_page_device_text_d81bb">None</string>
-    <string name="layout_page_device_text_01e77">Touch Mode</string>
-    <string name="layout_page_device_text_03cbf">Classic Mouse</string>
-    <string name="layout_page_device_text_dd502">Touchpad</string>
-    <string name="layout_page_device_text_d4ab3">Multi-Touch</string>
-    <string name="layout_page_device_text_1a70f">Touch Toggle</string>
-    <string name="layout_page_device_text_1e243">PC Keyboard</string>
-    <string name="layout_page_device_text_42968">Android Keyboard</string>
-    <string name="layout_page_device_text_34842">Switch Config</string>
-    <string name="layout_page_device_text_6c15c">Pan/Zoom</string>
-    <string name="layout_page_device_text_104a1">Open GAME MENU</string>
     <string name="layout_page_digital_combine_button_text_3bb27">Type: Combo Key</string>
     <string name="layout_page_digital_combine_button_text_bab9f">Display Text</string>
     <string name="layout_page_digital_combine_button_text_499ef">12345</string>

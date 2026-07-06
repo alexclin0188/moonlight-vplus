@@ -255,7 +255,7 @@ fun DeviceListScreen(
     if (computers.isNotEmpty()) {
         val isLandscape = configuration.screenWidthDp >= configuration.screenHeightDp
 
-            if (isLandscape) {
+        if (isLandscape) {
                 // ── 横屏：左右固定分栏 ─────────────────
                 // 两列各占一半宽度（weight(1f)），无论另一侧是否有内容
                 Row(

@@ -319,7 +319,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
             val standardResolutions = listOf("640x360", "854x480", "1280x720", "1920x1080", "2560x1440", "3840x2160")
             val nativeRes = remember {
                 val size = Point()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager; val bounds = wm.currentWindowMetrics.bounds; size.set(bounds.width(), bounds.height()) } else { @Suppress("DEPRECATION") val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay; if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) display.getRealSize(size) else display.getSize(size) }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager; val bounds = wm.currentWindowMetrics.bounds; size.set(bounds.width(), bounds.height()) } else { @Suppress("DEPRECATION") val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay; display.getRealSize(size) }
                 val w = maxOf(size.x, size.y); val h = minOf(size.x, size.y); "${w}x${h}"
             }
             val nativePrefix = stringResource(R.string.resolution_prefix_native)
@@ -360,7 +360,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
             Text(stringResource(R.string.desc_virtual_display), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 6.dp))
             val nativeRes2 = remember {
                 val size = Point()
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager; val bounds = wm.currentWindowMetrics.bounds; size.set(bounds.width(), bounds.height()) } else { @Suppress("DEPRECATION") val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay; if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) display.getRealSize(size) else display.getSize(size) }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) { val wm = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager; val bounds = wm.currentWindowMetrics.bounds; size.set(bounds.width(), bounds.height()) } else { @Suppress("DEPRECATION") val display = (context.getSystemService(Context.WINDOW_SERVICE) as WindowManager).defaultDisplay; display.getRealSize(size) }
                 maxOf(size.x, size.y) to minOf(size.x, size.y)
             }
             val nativeResStr = "${nativeRes2.first}x${nativeRes2.second}"

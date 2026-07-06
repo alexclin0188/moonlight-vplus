@@ -3,6 +3,7 @@ package com.limelight.utils
 
 import android.content.Context
 import android.hardware.display.DisplayManager
+import android.annotation.SuppressLint
 import android.os.Build
 import android.provider.Settings
 
@@ -147,6 +148,7 @@ object HdrCapabilityHelper {
 
     // ── Private helpers ─────────────────────────────────────────────
 
+    @SuppressLint("NewApi")
     private fun computeBrightnessInfo(
         display: android.view.Display,
         hdrCaps: android.view.Display.HdrCapabilities

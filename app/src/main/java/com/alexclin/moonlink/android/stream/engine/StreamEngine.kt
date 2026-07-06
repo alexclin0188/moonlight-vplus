@@ -577,11 +577,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 } else {
                     @Suppress("DEPRECATION")
                     val display = activity.windowManager.defaultDisplay
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        display.getRealSize(size)
-                    } else {
-                        display.getSize(size)
-                    }
+                    display.getRealSize(size)
+
                 }
                 effectiveWidth = maxOf(size.x, size.y)
                 effectiveHeight = minOf(size.x, size.y)
@@ -1092,7 +1089,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         for (id in InputDevice.getDeviceIds()) {
             val device = InputDevice.getDevice(id) ?: continue
             // 仅识别外部设备（USB/蓝牙等外接，排除内置）
-            if (!device.isExternal) continue
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !device.isExternal) continue
             val name = device.name ?: "未知设备"
             val descriptor = try { device.descriptor } catch (_: Exception) { null }
             // 使用 descriptor 去重：同一物理设备可能被识别为多个逻辑设备

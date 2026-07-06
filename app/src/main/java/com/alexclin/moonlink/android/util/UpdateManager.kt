@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import androidx.core.content.edit
 import androidx.core.net.toUri
@@ -608,12 +609,12 @@ object UpdateManager {
                                     val progress = (bytesDownloaded * 100 / bytesTotal).toInt()
                                     progressBar.isIndeterminate = false
                                     progressBar.progress = progress
-                                    val downloadedMB = String.format("%.1f", bytesDownloaded / 1048576.0)
-                                    val totalMB = String.format("%.1f", bytesTotal / 1048576.0)
+                                    val downloadedMB = String.format(Locale.ROOT, "%.1f", bytesDownloaded / 1048576.0)
+                                    val totalMB = String.format(Locale.ROOT, "%.1f", bytesTotal / 1048576.0)
                                     progressText.text = "$downloadedMB MB / $totalMB MB ($progress%)"
                                 } else {
                                     progressBar.isIndeterminate = true
-                                    val downloadedMB = String.format("%.1f", bytesDownloaded / 1048576.0)
+                                    val downloadedMB = String.format(Locale.ROOT, "%.1f", bytesDownloaded / 1048576.0)
                                     progressText.text = activity.getString(R.string.update_progress_downloaded, downloadedMB)
                                 }
                                 handler.postDelayed(this, PROGRESS_POLL_INTERVAL_MS)

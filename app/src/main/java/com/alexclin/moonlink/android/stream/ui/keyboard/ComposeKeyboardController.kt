@@ -47,6 +47,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -72,7 +73,7 @@ private const val HOLD_THRESHOLD_MS = 200L
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
- * Compose 版本的浮动虚拟键盘控制器，替代 [KeyboardUIController]。
+ * Compose 版本的浮动虚拟键盘控制器。
  *
  * 当作为嵌入式内容渲染在 [KeyboardSubPanel] 中时，
  * 父容器已通过 [KeyboardSubPanel] 的 IME 高度监听提供正确高度，
@@ -375,9 +376,10 @@ private fun FullKeyboardContent(
     onHeightMeasured: (Int) -> Unit,
 ) {
     val density = LocalDensity.current
-    val resources = LocalContext.current.resources
-    val resizeMinH = resources.displayMetrics.heightPixels / 5
-    val resizeMaxH = resources.displayMetrics.heightPixels * 4 / 5
+    @Suppress("LocalContextGetResourceValueCall")
+    val screenHeightPx = LocalContext.current.resources.displayMetrics.heightPixels
+    val resizeMinH = screenHeightPx / 5
+    val resizeMaxH = screenHeightPx * 4 / 5
 
     Column(
         modifier = Modifier
@@ -395,7 +397,7 @@ private fun FullKeyboardContent(
                 if (activePage == 1) Modifier
                 else Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xDD1C1C1E))
+                    .background(Color(0xFF1C1C1E))
             ),
     ) {
         // Resize handle (hidden on Num page since content wraps)
@@ -440,7 +442,7 @@ private fun FullKeyboardContent(
                 Row(modifier = Modifier
                     .height(IntrinsicSize.Min)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xDD1C1C1E)),
+                    .background(Color(0xFF1C1C1E)),
                 ) {
                     // Left sidebar — tabs: Main, Num, Mini
                     Column(
@@ -739,7 +741,7 @@ private fun MiniKeyboardContent(
             .width(360.dp)
             .aspectRatio(2f)
             .clip(RoundedCornerShape(10.dp))
-            .background(Color(0xDD1C1C1E))
+            .background(Color(0xFF1C1C1E))
             .padding(4.dp),
     ) {
         // Drag handle + modifier keys row
@@ -928,7 +930,7 @@ private fun MiniPCPanel(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = LocalContext.current.getString(com.alexclin.moonlink.android.R.string.layout_keyboard_mini_text_3ae7b),
+                        text = stringResource(com.alexclin.moonlink.android.R.string.layout_keyboard_mini_text_3ae7b),
                         color = Color.White,
                         fontSize = 12.sp
                     )

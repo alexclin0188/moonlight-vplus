@@ -6,21 +6,15 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonDeserializationContext;
-import com.google.gson.JsonDeserializer;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializationContext;
-import com.google.gson.JsonSerializer;
 import com.alexclin.moonlink.android.util.MathUtils;
 
 import android.util.DisplayMetrics;
 import android.view.WindowManager;
-import java.lang.reflect.Type;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import java.util.Iterator;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,117 +22,6 @@ import java.util.Map;
 
 public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
     private final Context context;
-
-    private static class ExportFile {
-        private int version;
-        private String settings;
-        private String elements;
-        private final String md5;
-        // 导出时的源设备屏幕像素尺寸，用于导入时坐标缩放
-        private final int sourceWidth;
-        private final int sourceHeight;
-
-        public ExportFile(int version, String settings, String elements, int sourceWidth, int sourceHeight) {
-            this.version = version;
-            this.settings = settings;
-            this.elements = elements;
-            this.sourceWidth = sourceWidth;
-            this.sourceHeight = sourceHeight;
-            this.md5 = MathUtils.computeMD5(version + settings + elements);
-        }
-
-        public int getVersion() {
-            return version;
-        }
-
-        public void setVersion(int version) {
-            this.version = version;
-        }
-
-        public String getSettings() {
-            return settings;
-        }
-
-        public void setSettings(String settings) {
-            this.settings = settings;
-        }
-
-        public String getElements() {
-            return elements;
-        }
-
-        public void setElements(String elements) {
-            this.elements = elements;
-        }
-
-        public String getMd5() {
-            return md5;
-        }
-
-        public int getSourceWidth() {
-            return sourceWidth;
-        }
-
-        public int getSourceHeight() {
-            return sourceHeight;
-        }
-
-    }
-
-    public static class ContentValuesSerializer implements JsonSerializer<ContentValues>, JsonDeserializer<ContentValues> {
-
-        @Override
-        public JsonElement serialize(ContentValues src, Type typeOfSrc, JsonSerializationContext context) {
-            JsonObject jsonObject = new JsonObject();
-            for (Map.Entry<String, Object> entry : src.valueSet()) {
-                Object value = entry.getValue();
-                if (value instanceof Integer) {
-                    jsonObject.addProperty(entry.getKey(), (Integer) value);
-                } else if (value instanceof Long) {
-                    jsonObject.addProperty(entry.getKey(), (Long) value);
-                } else if (value instanceof Double) {
-                    jsonObject.addProperty(entry.getKey(), (Double) value);
-                } else if (value instanceof String) {
-                    jsonObject.addProperty(entry.getKey(), (String) value);
-                } else if (value instanceof byte[]) {
-                    // Serialize Blob as Base64 encoded string
-                    String base64Blob = context.serialize(value).getAsString();
-                    jsonObject.addProperty(entry.getKey(), base64Blob);
-                }
-                // Handle other types as needed
-            }
-            return jsonObject;
-        }
-
-        @Override
-        public ContentValues deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
-            ContentValues contentValues = new ContentValues();
-            JsonObject jsonObject = json.getAsJsonObject();
-            for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
-                JsonElement jsonElement = entry.getValue();
-                if (jsonElement.isJsonPrimitive()) {
-                    JsonPrimitive jsonPrimitive = jsonElement.getAsJsonPrimitive();
-                    if (jsonPrimitive.isNumber()) {
-                        // Determine if it's a Long or Double based on the value
-                        if (jsonPrimitive.getAsString().contains(".")) {
-                            contentValues.put(entry.getKey(), jsonPrimitive.getAsDouble());
-                        } else {
-                            contentValues.put(entry.getKey(), jsonPrimitive.getAsLong());
-                        }
-                    } else if (jsonPrimitive.isString()) {
-                        contentValues.put(entry.getKey(), jsonPrimitive.getAsString());
-                    }
-                } else if (jsonElement.isJsonArray()) {
-                    // Deserialize Blob from Base64 encoded string
-                    byte[] blob = context.deserialize(jsonElement, byte[].class);
-                    contentValues.put(entry.getKey(), blob);
-                }
-                // Handle other types as needed
-            }
-            return contentValues;
-        }
-    }
-
 
     private static final String DATABASE_NAME = "keymapping.db";
     private static final int DATABASE_VERSION = 1;
@@ -469,8 +352,43 @@ public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
     }
 
     /**
+     * 将 JSONObject 转换为 ContentValues。
+     * 处理 String、Integer、Long、Double、Boolean 类型。
+     */
+    private static ContentValues jsonObjectToContentValues(JSONObject obj) throws JSONException {
+        ContentValues values = new ContentValues();
+        for (Iterator<String> it = obj.keys(); it.hasNext(); ) {
+            String key = it.next();
+            Object value = obj.get(key);
+            if (value instanceof String) {
+                values.put(key, (String) value);
+            } else if (value instanceof Integer) {
+                values.put(key, (Integer) value);
+            } else if (value instanceof Long) {
+                values.put(key, (Long) value);
+            } else if (value instanceof Double) {
+                values.put(key, (Double) value);
+            } else if (value instanceof Boolean) {
+                values.put(key, value.toString());
+            }
+        }
+        return values;
+    }
+
+    /**
+     * 将 JSONArray 转换为 ContentValues 数组。
+     */
+    private static ContentValues[] jsonArrayToContentValuesArray(JSONArray arr) throws JSONException {
+        ContentValues[] result = new ContentValues[arr.length()];
+        for (int i = 0; i < arr.length(); i++) {
+            result[i] = jsonObjectToContentValues(arr.getJSONObject(i));
+        }
+        return result;
+    }
+
+    /**
      * 对元素列表应用屏幕坐标缩放。
-     * 读取 ExportFile 中存储的源屏幕尺寸，与当前设备屏幕尺寸计算缩放比例后应用到各元素。
+     * 读取导入文件中存储的源屏幕尺寸，与当前设备屏幕尺寸计算缩放比例后应用到各元素。
      */
     private void scaleElementsFromExport(int sourceWidth, int sourceHeight, ContentValues[] elements) {
         if (sourceWidth <= 0 || sourceHeight <= 0 || elements == null || elements.length == 0) return;
@@ -530,37 +448,46 @@ public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
      * @return 0表示成功，负数表示不同的错误代码。
      */
     public int importConfig(String configString) {
-        GsonBuilder gsonBuilder = new GsonBuilder();
-        gsonBuilder.registerTypeAdapter(ContentValues.class, new ContentValuesSerializer());
-        Gson gson = gsonBuilder.create();
-        ExportFile exportFile;
-
+        int version;
+        String settingsStr;
+        String elementsStr;
+        String md5;
+        int sourceWidth;
+        int sourceHeight;
         try {
-            exportFile = gson.fromJson(configString, ExportFile.class);
-        } catch (Exception e) {
+            JSONObject root = new JSONObject(configString);
+            version = root.getInt("version");
+            settingsStr = root.getString("settings");
+            elementsStr = root.getString("elements");
+            md5 = root.getString("md5");
+            sourceWidth = root.optInt("sourceWidth", 0);
+            sourceHeight = root.optInt("sourceHeight", 0);
+        } catch (JSONException e) {
             return -1; // -1: 文件格式错误
         }
 
         // MD5校验 (原始数据校验)
-        if (!exportFile.getMd5().equals(MathUtils.computeMD5(exportFile.getVersion() + exportFile.getSettings() + exportFile.getElements()))) {
+        if (!md5.equals(MathUtils.computeMD5(version + settingsStr + elementsStr))) {
             return -2; // -2: 文件被篡改或损坏
         }
 
         // 仅接受当前版本（DATABASE_VERSION=1）的配置文件
-        if (exportFile.getVersion() != DATABASE_VERSION) {
+        if (version != DATABASE_VERSION) {
             return -3; // -3: 版本不匹配
         }
 
-        // 从 exportFile 获取数据
-        String settingString = exportFile.getSettings();
-        String elementsString = exportFile.getElements();
-
-        ContentValues settingValues = gson.fromJson(settingString, ContentValues.class);
-        ContentValues[] elements = gson.fromJson(elementsString, ContentValues[].class);
+        ContentValues settingValues;
+        ContentValues[] elements;
+        try {
+            settingValues = jsonObjectToContentValues(new JSONObject(settingsStr));
+            elements = jsonArrayToContentValuesArray(new JSONArray(elementsStr));
+        } catch (JSONException e) {
+            return -1; // -1: 文件格式错误
+        }
         normalizeGlobalStyleSettings(settingValues);
 
         // ── 屏幕参数缩放：根据源屏幕与当前设备屏幕的比例换算元素坐标 ──
-        scaleElementsFromExport(exportFile.getSourceWidth(), exportFile.getSourceHeight(), elements);
+        scaleElementsFromExport(sourceWidth, sourceHeight, elements);
 
         // --- 预处理，建立从旧ID到内存中ContentValues对象的映射 ---
         Map<Long, ContentValues> oldIdToObjectMap = new HashMap<>();

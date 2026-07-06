@@ -117,11 +117,13 @@ class SunshineWebUiActivity : Activity() {
             ) {
                 if (handler != null && handler.useHttpAuthUsernamePassword()) {
                     // WebView.httpAuthUsernamePassword() 已在较新 API 中移除，改用 WebViewDatabase
-                    val wvDb = android.webkit.WebViewDatabase.getInstance(this@SunshineWebUiActivity)
-                    val credentials = wvDb?.getHttpAuthUsernamePassword(host, realm)
-                    if (credentials != null && credentials.size == 2) {
-                        handler.proceed(credentials[0], credentials[1])
-                        return
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        val wvDb = android.webkit.WebViewDatabase.getInstance(this@SunshineWebUiActivity)
+                        val credentials = wvDb?.getHttpAuthUsernamePassword(host, realm)
+                        if (credentials != null && credentials.size == 2) {
+                            handler.proceed(credentials[0], credentials[1])
+                            return
+                        }
                     }
                 }
                 showHttpAuthDialog(handler, host, realm)
@@ -188,6 +190,8 @@ class SunshineWebUiActivity : Activity() {
                 hide(WindowInsets.Type.systemBars())
                 systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
+            @Suppress("DEPRECATION")
+            window.setDecorFitsSystemWindows(false)
         } else {
             @Suppress("DEPRECATION")
             window.decorView.systemUiVisibility = (
@@ -197,11 +201,11 @@ class SunshineWebUiActivity : Activity() {
                 or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
             )
+            window.setFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+            )
         }
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {

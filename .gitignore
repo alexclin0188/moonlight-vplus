@@ -78,3 +78,4 @@ package-lock.json
 .atomcode/local/
 
 plan/
+/lint_output.txt

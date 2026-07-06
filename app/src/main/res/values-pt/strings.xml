@@ -270,11 +270,8 @@
     <string name="applist_menu_start_with_last_settings">Iniciar com últimas configurações</string>
     
     <!-- Game menu -->
-    <string name="game_menu_toggle_keyboard">Alternar teclado na tela</string>
     <string name="game_menu_toggle_performance_overlay">Alternar overlay de desempenho</string>
     <string name="game_menu_toggle_virtual_controller">Alternar controlador virtual</string>
-    <string name="game_menu_toggle_host_keyboard">Alternar teclado do host</string>
-    <string name="game_menu_toggle_all_keyboard">Alternar teclado do PC</string>
     <string name="game_menu_toggle_mouse_on">Ativar emulação de rato pelo controlador</string>
     <string name="game_menu_toggle_mouse_off">Desativar emulação de rato pelo controlador</string>
     <string name="game_menu_disconnect">Desconectar</string>
@@ -351,11 +348,6 @@
     <string name="title_seekbar_long_press_flat_region">Região plana para eliminação de tremor de pressão longa</string>
     <string name="summary_seekbar_long_press_flat_region">Funciona para toda a tela. Aumente para maior região plana de pressão longa.</string>
     <string name="suffix_seekbar_flat_region_pixels">pixels</string>
-    <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">Ativar alternância de teclado no modo de toque multiponto</string>
-    <string name="summary_checkbox_enable_keyboard_toggle_in_native_touch">\t</string>
-    <string name="title_seekbar_keyboard_toggle_fingers_native_touch">Dedos para tocar</string>
-    <string name="summary_seekbar_keyboard_toggle_fingers_native_touch">Número mínimo de dedos para tocar para alternar o teclado na tela local no modo de toque multiponto.</string>
-    <string name="suffix_seekbar_keyboard_toggle_fingers_native_touch"> </string>
     <string name="title_checkbox_enable_esc_menu">Permitir tecla personalizada para abrir menu de retorno</string>
     <string name="summary_checkbox_enable_esc_menu">Quando ativado, pressionar duas vezes a tecla selecionada abre o menu de retorno do stream</string>
     <string name="title_list_esc_menu_key">Tecla de ativação do menu de retorno</string>
@@ -551,7 +543,6 @@
     <string name="dialog_button_save">SALVAR</string>
     <string name="dialog_button_cancel">CANCELAR</string>
     <string name="dialog_button_clear">LIMPAR</string>
-    <string name="dialog_virtual_keyboard_hint">Clique nas teclas para criar uma combinação</string>
     <string name="dialog_title_select_keys_to_delete">Selecione o botão para excluir</string>
     <string name="dialog_button_delete">EXCLUIR</string>
     <string name="toast_name_and_codes_cannot_be_empty">Nome e código da tecla não podem estar vazios</string>

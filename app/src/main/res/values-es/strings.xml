@@ -322,7 +322,6 @@
     <string name="dialog_title_fixed_x_velocity">Establecer velocidad X (horizontal) fija en píxeles. Establecer 0 para deshabilitar velocidad x fija.</string>
     <string name="dialog_title_pointer_velocity_factor">Establecer factor de velocidad del puntero para la zona de toque mejorada. Establecer 100% para deshabilitar</string>
     <string name="dialog_title_select_keys_to_delete">Seleccionar el botón a eliminar</string>
-    <string name="dialog_virtual_keyboard_hint">Haz clic en las teclas para crear una combinación</string>
     <string name="fps_144">144 FPS</string>
     <string name="fps_165">165 FPS</string>
     <string name="game_menu_add_custom_key">Agregar botón personalizado</string>
@@ -352,10 +351,7 @@
     <string name="game_menu_send_keys_win_d">Enviar WIN + D (Cambiar a Escritorio)</string>
     <string name="game_menu_send_keys_win_g">Enviar WIN + G (Abrir Barra de Juegos Xbox)</string>
     <string name="game_menu_switch_touch_mode">Cambiar modo de toque</string>
-    <string name="game_menu_toggle_all_keyboard">Alternar Teclado de PC</string>
     <string name="game_menu_toggle_elements_visibility">Mostrar/Ocultar Teclas Virtuales</string>
-    <string name="game_menu_toggle_host_keyboard">Alternar Teclado del Host</string>
-    <string name="game_menu_toggle_keyboard">Alternar Teclado en Pantalla</string>
     <string name="game_menu_toggle_mouse_off">Deshabilitar Emulación de Ratón del Controlador</string>
     <string name="game_menu_toggle_mouse_on">Habilitar Emulación de Ratón del Controlador</string>
     <string name="game_menu_toggle_performance_overlay">Alternar Superposición de Rendimiento</string>
@@ -407,7 +403,6 @@
     <string name="suffix_fixed_x_velocity">píxeles</string>
     <string name="suffix_pointer_velocity_factor">%</string>
     <string name="suffix_seekbar_flat_region_pixels">píxeles</string>
-    <string name="suffix_seekbar_keyboard_toggle_fingers_native_touch"> </string>
     <string name="suffix_seekbar_mic_bitrate_kbps">kbps</string>
 
     <string name="summary_about_mode">Ver información de la aplicación y detalles del proyecto</string>
@@ -415,7 +410,6 @@
     <string name="summary_check_for_updates">Verificar si hay una nueva versión disponible</string>
     <string name="summary_checkbox_enable_enhanced_touch">	</string>
     <string name="summary_checkbox_enable_esc_menu">Cuando está habilitado, presionar doble ESC abre el menú de retorno de transmisión, una sola presión de ESC se pasa al host</string>
-    <string name="summary_checkbox_enable_keyboard_toggle_in_native_touch">	</string>
     <string name="summary_checkbox_enable_mic">Redirigir el micrófono del dispositivo al computador host para chat de voz y comunicación, requiere versión Sunshine-Foundation 20250720 o superior en el host.</string>
     <string name="summary_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada a la izquierda (predeterminado: en el lado derecho de la pantalla)</string>
     <string name="summary_checkbox_reverse_resolution">Intercambiar valores de ancho y alto para requisitos especiales de visualización</string>
@@ -438,7 +432,6 @@
     <string name="summary_screen_offset_y">Desplazamiento vertical de la pantalla</string>
     <string name="summary_screen_position">Elegir la posición de la pantalla cuando se usa resolución no pantalla completa</string>
     <string name="summary_seekbar_long_press_flat_region">Funciona para toda la pantalla. Incrementar para región plana de presión larga más grande, dentro de la cual la aplicación envía coordenadas de contacto inicial al servidor.</string>
-    <string name="summary_seekbar_keyboard_toggle_fingers_native_touch">Número mínimo de dedos para tocar para alternar teclado local en pantalla en modo de toque multi-punto. \nEn modo panel táctil, siempre solo necesitas tocar 3 o más dedos para alternar teclado local.</string>
     <string name="summary_seekbar_mic_bitrate">Ajustar la calidad de audio de redirección del micrófono. Tasas de bits más altas proporcionan mejor calidad de audio pero usan más ancho de banda.</string>
     <string name="summary_seekbar_scale">La resolución solicitada al host es equivalente a la resolución base del cliente * factor de escala. Esto cambiará la precisión del material de renderizado del juego en el lado del host (transmisión de super-resolución). Reducir esta proporción también puede usarse para reducir la presión de GPU en el lado del host. ⚠Nota: Verificar si el host soporta la resolución escalada antes de aplicar esta opción.</string>
     <string name="summary_show_guide_button">Mostrar el botón de guía en pantalla</string>
@@ -465,7 +458,6 @@
     <string name="title_background_image_api">API de Imagen de Fondo</string>
     <string name="title_checkbox_enable_enhanced_touch">Habilitar toque mejorado</string>
     <string name="title_checkbox_enable_esc_menu">Permitir tecla ESC para abrir menú de retorno</string>
-    <string name="title_checkbox_enable_keyboard_toggle_in_native_touch">Habilitar alternar teclado en modo de toque multi-punto </string>
     <string name="title_checkbox_enable_mic">Habilitar redirección del micrófono</string>
     <string name="title_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada</string>
     <string name="title_checkbox_reverse_resolution">Resolución Inversa</string>
@@ -488,7 +480,6 @@
     <string name="title_screen_offset_x">Desplazamiento Horizontal</string>
     <string name="title_screen_offset_y">Desplazamiento Vertical</string>
     <string name="title_screen_position">Posición de Pantalla</string>
-    <string name="title_seekbar_keyboard_toggle_fingers_native_touch">Dedos para tocar</string>
     <string name="title_seekbar_long_press_flat_region">Región plana para eliminación de temblor de presión larga en modo de toque multi-punto</string>
     <string name="title_seekbar_mic_bitrate">Tasa de bits del micrófono</string>
     <string name="title_seekbar_scale">Escala de Resolución del Host</string>

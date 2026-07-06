@@ -23,6 +23,7 @@ import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.util.Locale
 import java.util.regex.Pattern
 
 class Iperf3Tester(
@@ -97,12 +98,12 @@ class Iperf3Tester(
     private fun setupUiListeners() {
         durationSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar, progress: Int, fromUser: Boolean) {
-                durationValueTextView.text = String.format("%ds", maxOf(1, progress))
+                durationValueTextView.text = String.format(Locale.ROOT, "%ds", maxOf(1, progress))
             }
             override fun onStartTrackingTouch(seekBar: SeekBar) {}
             override fun onStopTrackingTouch(seekBar: SeekBar) {}
         })
-        durationValueTextView.text = String.format("%ds", durationSeekBar.progress)
+        durationValueTextView.text = String.format(Locale.ROOT, "%ds", durationSeekBar.progress)
 
         udpCheckBox.setOnCheckedChangeListener { _, isChecked ->
             udpBandwidthLayout.visibility = if (isChecked) View.VISIBLE else View.GONE

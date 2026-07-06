@@ -8,10 +8,11 @@ class GlPreferences private constructor(private val prefs: SharedPreferences) {
     var savedFingerprint: String = ""
 
     fun writePreferences(): Boolean {
-        return prefs.edit()
+        prefs.edit()
             .putString(GL_RENDERER_PREF_STRING, glRenderer)
             .putString(FINGERPRINT_PREF_STRING, savedFingerprint)
-            .commit()
+            .apply()
+        return true
     }
 
     companion object {

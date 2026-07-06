@@ -11,9 +11,12 @@ import android.os.PowerManager
 import android.os.SystemClock
 import android.view.View
 import com.limelight.ui.StreamView
+import android.view.WindowInsets
+import android.view.WindowInsetsController
 import android.view.WindowManager
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import androidx.activity.addCallback
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
@@ -100,20 +103,37 @@ class StreamActivity : ComponentActivity() {
             } catch (_: NoSuchMethodError) {
                 // 部分定制 ROM（如华为/小米早期版本）声称 >= R 但实际无此方法
             }
+            window.insetsController?.let {
+                it.hide(WindowInsets.Type.systemBars())
+                it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            }
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
+            @Suppress("DEPRECATION")
+            window.decorView.systemUiVisibility = (
+                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            )
         }
-        @Suppress("DEPRECATION")
-        window.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN)
         // 设置窗口背景为黑色，非视频区域（letterbox/pillarbox）显示纯黑
         window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(android.graphics.Color.BLACK))
-        @Suppress("DEPRECATION")
-        window.decorView.systemUiVisibility = (
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        )
+
+        // Use OnBackPressedDispatcher instead of deprecated onBackPressed()
+        onBackPressedDispatcher.addCallback(this) {
+            val now = SystemClock.elapsedRealtime()
+            if (now - lastBackPressTime < backPressDebounceMs) return@addCallback
+            lastBackPressTime = now
+            if (engine.connected && engine.prefConfig.enablePip) {
+                enterPip()
+            } else {
+                engine.disconnectAndQuit()
+            }
+        }
 
         // API 26+ 用 adjustResize（系统自动 resize），API 25- 用 adjustNothing
         //（避免 adjustResize + 沉浸式全屏在低版本上的兼容问题）
@@ -1216,6 +1236,7 @@ class StreamActivity : ComponentActivity() {
     }
 
     /** 进入 PiP 模式 */
+    @SuppressLint("NewApi")
     private fun enterPip() {
         if (suppressPipRefCount > 0 || isFinishing || isDestroyed) return
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return
@@ -1404,32 +1425,25 @@ class StreamActivity : ComponentActivity() {
 
     override fun onWindowFocusChanged(hasFocus: Boolean) {
         super.onWindowFocusChanged(hasFocus)
-        @Suppress("DEPRECATION")
         if (hasFocus) {
-            window.decorView.systemUiVisibility = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.insetsController?.let {
+                    it.hide(WindowInsets.Type.systemBars())
+                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                window.decorView.systemUiVisibility = (
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    or View.SYSTEM_UI_FLAG_FULLSCREEN
+                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                )
+            }
         }
         engine.onWindowFocusChanged(hasFocus)
-    }
-
-    @Suppress("DEPRECATION")
-    override fun onBackPressed() {
-        // 防抖
-        val now = SystemClock.elapsedRealtime()
-        if (now - lastBackPressTime < backPressDebounceMs) return
-        lastBackPressTime = now
-        // 如果 PiP 已开启且串流已连接 → 进入画中画而非断开串流
-        if (engine.connected && engine.prefConfig.enablePip) {
-            enterPip()
-        } else {
-            engine.disconnectAndQuit()
-        }
     }
 
     companion object {

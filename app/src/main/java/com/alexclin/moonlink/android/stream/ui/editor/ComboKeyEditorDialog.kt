@@ -73,6 +73,7 @@ fun ComboKeyEditorDialog(
     var newRightValue by remember { mutableStateOf(initialElement?.rightValue ?: "") }
     var showKeyPickerForSlot by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val backdropInteractionSource = remember { MutableInteractionSource() }
 
     Box(
         modifier = Modifier
@@ -80,7 +81,7 @@ fun ComboKeyEditorDialog(
             .background(Color(0x88000000))
             .clickable(
                 indication = null,
-                interactionSource = MutableInteractionSource()
+                interactionSource = backdropInteractionSource
             ) { },
         contentAlignment = Alignment.Center,
     ) {

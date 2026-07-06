@@ -25,6 +25,7 @@ import android.widget.SeekBar
 import android.widget.TextView
 
 import com.alexclin.moonlink.android.R
+import java.util.Locale
 import kotlin.math.max
 import kotlin.math.min
 
@@ -316,9 +317,9 @@ class ColorPickerDialog(
 
     private fun updateHexInput(color: Int) {
         val hex = if (showAlphaSlider) {
-            String.format("#%08x", color)
+            String.format(Locale.ROOT, "#%08x", color)
         } else {
-            String.format("#%06x", 0xFFFFFF and color)
+            String.format(Locale.ROOT, "#%06x", 0xFFFFFF and color)
         }
         hexInput.setText(hex)
     }

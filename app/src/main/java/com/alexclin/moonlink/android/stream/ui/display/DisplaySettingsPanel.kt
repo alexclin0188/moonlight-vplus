@@ -728,11 +728,8 @@ private fun DisplaySection(engine: StreamEngine) {
                     @Suppress("DEPRECATION")
                     val display = (context.getSystemService(Context.WINDOW_SERVICE)
                             as android.view.WindowManager).defaultDisplay
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
-                        display.getRealSize(size)
-                    } else {
-                        display.getSize(size)
-                    }
+                    display.getRealSize(size)
+
                 }
                 val w = maxOf(size.x, size.y)
                 val h = minOf(size.x, size.y)

@@ -39,6 +39,7 @@ android {
     buildFeatures {
         buildConfig = true
         compose = true
+        resValues = true
     }
 
     compileOptions {
@@ -164,7 +165,6 @@ dependencies {
     implementation libs.appcompat
     implementation libs.core.splashscreen
     implementation libs.preference
-    implementation libs.keyboard.header
     implementation libs.constraintlayout
     implementation libs.gson
     implementation libs.glide
@@ -179,7 +179,6 @@ dependencies {
 
     // Firebase Analytics + Crashlytics
     // BOM 版本说明: https://firebase.google.com/support/release-notes/android
-    // 注意: Firebase 33.0.0+ 需要 minSdk 23，我们使用 32.8.1 保持 API 22 兼容
     // 没有 google-services.json 时 Crashlytics 仍能编译进 APK 但不会上报 (init 静默失败)
     implementation platform(libs.firebase.bom)
     implementation libs.firebase.analytics

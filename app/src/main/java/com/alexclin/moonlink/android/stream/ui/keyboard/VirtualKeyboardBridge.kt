@@ -4,7 +4,7 @@ import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.limelight.binding.input.KeyboardTranslator
 
 /**
- * 键盘按键事件监听接口（与 [KeyboardUIController.OnKeyboardEventListener] 同义）。
+ * 键盘按键事件监听接口。
  */
 interface OnKeyboardEventListener {
     fun sendKeyEvent(down: Boolean, keyCode: Short)

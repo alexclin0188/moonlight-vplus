@@ -351,12 +351,8 @@ class AndroidAudioRenderer(
 
         try {
             val vol = if (muted) 0.0f else mTargetVolume
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                currentTrack.setVolume(vol)
-            } else {
-                @Suppress("DEPRECATION")
-                currentTrack.setStereoVolume(vol, vol)
-            }
+            currentTrack.setVolume(vol)
+
         } catch (e: Exception) {
             LimeLog.warning("Failed to set volume: " + e.message)
         }

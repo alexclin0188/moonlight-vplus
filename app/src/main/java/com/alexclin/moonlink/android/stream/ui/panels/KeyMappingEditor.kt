@@ -68,6 +68,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.activity.compose.LocalActivity
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -331,7 +332,7 @@ fun KeyMappingEditor(
     // ── 键盘弹出时仅属性面板上移，画布不动 ──
     // 临时将窗口 softInputMode 设为 adjustNothing，防止系统自动调整画布大小；
     // 由 imePadding 仅为属性面板所在的覆盖层添加内边距。
-    val activity = LocalContext.current as? Activity
+    val activity = LocalActivity.current
     DisposableEffect(Unit) {
         val originalMode = activity?.window?.attributes?.softInputMode
         activity?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_NOTHING)
