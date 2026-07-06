@@ -40,6 +40,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -167,6 +168,8 @@ internal fun SatValPicker(
     modifier: Modifier = Modifier,
 ) {
     var isDragging by remember { mutableStateOf(false) }
+    // 使用 rememberUpdatedState 确保 pointerInput 内部始终调用最新的回调
+    val currentOnSatValChanged by rememberUpdatedState(onSatValChanged)
     Canvas(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
@@ -174,7 +177,7 @@ internal fun SatValPicker(
                 detectTapGestures { offset ->
                     val s = (offset.x / size.width).coerceIn(0f, 1f)
                     val v = (1f - offset.y / size.height).coerceIn(0f, 1f)
-                    onSatValChanged(s, v)
+                    currentOnSatValChanged(s, v)
                 }
             }
             .pointerInput(Unit) {
@@ -184,7 +187,7 @@ internal fun SatValPicker(
                         isDragging = true
                         val s = (change.position.x / size.width).coerceIn(0f, 1f)
                         val v = (1f - change.position.y / size.height).coerceIn(0f, 1f)
-                        onSatValChanged(s, v)
+                        currentOnSatValChanged(s, v)
                     },
                     onDragEnd = { isDragging = false },
                     onDragCancel = { isDragging = false },
@@ -234,13 +237,14 @@ internal fun HueBar(
     onHueChanged: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val currentOnHueChanged by rememberUpdatedState(onHueChanged)
     Canvas(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
             .pointerInput(Unit) {
                 detectTapGestures { offset ->
                     val h = (offset.y / size.height * 360f).coerceIn(0f, 359.9f)
-                    onHueChanged(h)
+                    currentOnHueChanged(h)
                 }
             }
             .pointerInput(Unit) {
@@ -248,7 +252,7 @@ internal fun HueBar(
                     onDrag = { change, _ ->
                         change.consume()
                         val h = (change.position.y / size.height * 360f).coerceIn(0f, 359.9f)
-                        onHueChanged(h)
+                        currentOnHueChanged(h)
                     },
                 )
             },
@@ -325,11 +329,12 @@ fun ColorPickerDialog(
     /** 解析选中颜色的当前 ARGB */
     fun currentColor(): Int = android.graphics.Color.HSVToColor(alpha, floatArrayOf(hue, sat, value))
 
-    /** 同步当前 picker 状态到 hexMap */
+    /** 同步当前 picker 状态到 hexMap（使用 selectedIndex 快照读取，确保闭包中拿到最新索引） */
     fun syncSelectedColorToHexMap() {
         val argb = currentColor()
         val hex = colorToHex(argb)
-        hexMap[selectedKey] = hex
+        val key = items.getOrNull(selectedIndex)?.key ?: return
+        hexMap[key] = hex
     }
 
     /** 构建返回结果列表 */

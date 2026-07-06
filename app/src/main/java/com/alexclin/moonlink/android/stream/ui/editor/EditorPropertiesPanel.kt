@@ -321,7 +321,7 @@ fun EditorPropertiesPanel(
                 TextButton(onClick = { onOpenColorEditor(snapshot()) },
                     modifier = Modifier.weight(1.5f).wrapContentHeight(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                    Text("颜色自定义", style = MaterialTheme.typography.labelSmall,
+                    Text("颜色设置", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary)
                 }
                 // Lbl4: 不透明度（右对齐）

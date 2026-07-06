@@ -560,7 +560,7 @@ fun KeyMappingEditor(
         if (showColorEditor && pendingColorEditorElement != null) {
             val el = pendingColorEditorElement!!
             ColorPickerDialog(
-                title = "颜色自定义",
+                title = "颜色设置",
                 items = listOf(
                     ColorPickerItem("正常色", "normal", el.normalColor),
                     ColorPickerItem("按下色", "pressed", el.pressedColor),
