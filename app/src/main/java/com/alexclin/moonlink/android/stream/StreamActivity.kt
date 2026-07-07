@@ -390,6 +390,8 @@ class StreamActivity : ComponentActivity() {
                     // 按键重复 Handler（参考原 Crown 50ms+75ms 双调度）
                     val repeatHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
                     val keyboardRepeatMap = remember { HashMap<Short, java.lang.Runnable>() }
+                    // 开关按键长按重复（elementId → Runnable），独立于 sendKeyboardKey 的 keyboardRepeatMap
+                    val longPressRepeatMap = remember { HashMap<Long, java.lang.Runnable>() }
                     // 鼠标按键重复（btnId → Runnable），手柄状态重复（单一共享）
                     val mouseRepeatMap = remember { HashMap<Int, java.lang.Runnable>() }
                     val gamepadRepeatRunnable = remember { mutableStateOf<java.lang.Runnable?>(null) }
@@ -425,40 +427,47 @@ class StreamActivity : ComponentActivity() {
                             if (crownIdx != null) {
                                 val gfeKeyCode = keyboardTranslator.translate(crownIdx, -1)
                                 if (gfeKeyCode.toInt() != 0) {
-                                    // 取消旧重复
+                                if (isPressed) {
                                     keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
-                                    val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
-                                    doSend(gfeKeyCode, action)
-                                    if (isPressed && enableRepeat) {
-                                    val r = object : java.lang.Runnable {
-                                        override fun run() {
-                                            doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
-                                            repeatHandler.postDelayed(this, 50)
+                                    doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
+                                    if (enableRepeat) {
+                                        val r = object : java.lang.Runnable {
+                                            override fun run() {
+                                                doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
+                                                repeatHandler.postDelayed(this, 50)
+                                            }
                                         }
+                                        keyboardRepeatMap[gfeKeyCode] = r
+                                        repeatHandler.postDelayed(r, 50)
+                                        repeatHandler.postDelayed(r, 75)
                                     }
-                                    keyboardRepeatMap[gfeKeyCode] = r
-                                    repeatHandler.postDelayed(r, 50)
-                                    repeatHandler.postDelayed(r, 75)
-                                    }
+                                } else {
+                                    keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
+                                    doSend(gfeKeyCode, KeyboardPacket.KEY_UP)
+                                }
                                 }
                             }
                         } else if (value.startsWith("k0x")) {
                             val hexCode = value.substring(3).toIntOrNull(16)
                             if (hexCode != null && hexCode != 0) {
                                 val shortCode = hexCode.toShort()
-                                keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
-                                val action = if (isPressed) KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
-                                doSend(shortCode, action)
-                                if (isPressed && enableRepeat) {
-                                    val r = object : java.lang.Runnable {
-                                        override fun run() {
-                                            doSend(shortCode, KeyboardPacket.KEY_DOWN)
-                                            repeatHandler.postDelayed(this, 50)
+                                if (isPressed) {
+                                    keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
+                                    doSend(shortCode, KeyboardPacket.KEY_DOWN)
+                                    if (enableRepeat) {
+                                        val r = object : java.lang.Runnable {
+                                            override fun run() {
+                                                doSend(shortCode, KeyboardPacket.KEY_DOWN)
+                                                repeatHandler.postDelayed(this, 50)
+                                            }
                                         }
+                                        keyboardRepeatMap[shortCode] = r
+                                        repeatHandler.postDelayed(r, 50)
+                                        repeatHandler.postDelayed(r, 75)
                                     }
-                                    keyboardRepeatMap[shortCode] = r
-                                    repeatHandler.postDelayed(r, 50)
-                                    repeatHandler.postDelayed(r, 75)
+                                } else {
+                                    keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
+                                    doSend(shortCode, KeyboardPacket.KEY_UP)
                                 }
                             }
                         } else if (value == "SU") {
@@ -584,7 +593,28 @@ class StreamActivity : ComponentActivity() {
                                     when {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
-                                        value.startsWith("k") -> sendKeyboardKey(value, isPressed, enableRepeat)
+                                        value.startsWith("k") -> {
+                                            // 开关按键长按效果：独立于 sendKeyboardKey 管理重复，避免泄漏到普通按键
+                                            if (el.type == ElementType.DIGITAL_SWITCH_BUTTON && el.longPressEffect) {
+                                                if (isPressed) {
+                                                    longPressRepeatMap.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
+                                                    sendKeyboardKey(value, true, false)
+                                                    val r = object : java.lang.Runnable {
+                                                        override fun run() {
+                                                            sendKeyboardKey(value, true, false)
+                                                            repeatHandler.postDelayed(this, el.longPressRepeatMs.toLong())
+                                                        }
+                                                    }
+                                                    longPressRepeatMap[el.elementId] = r
+                                                    repeatHandler.postDelayed(r, el.longPressRepeatMs.toLong())
+                                                } else {
+                                                    longPressRepeatMap.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
+                                                    sendKeyboardKey(value, false)
+                                                }
+                                            } else {
+                                                sendKeyboardKey(value, isPressed, enableRepeat)
+                                            }
+                                        }
                                         value.startsWith("g") -> {
                                             val flag = parseValueToFlag(value)
                                             if (flag != 0) {

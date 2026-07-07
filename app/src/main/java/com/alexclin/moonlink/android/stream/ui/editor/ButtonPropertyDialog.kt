@@ -81,6 +81,7 @@ fun ButtonPropertyDialog(
     var mode by remember(element.elementId) { mutableStateOf(element.mode.toString()) }
     var sense by remember(element.elementId) { mutableStateOf(element.sense.toString()) }
     var longPressEffect by remember(element.elementId) { mutableStateOf(element.longPressEffect) }
+    var longPressRepeatMs by remember(element.elementId) { mutableStateOf(element.longPressRepeatMs) }
     var extraAttributesJson by remember(element.elementId) { mutableStateOf(element.extraAttributesJson) }
     var showKeyPicker by remember { mutableStateOf(false) }
 
@@ -94,6 +95,7 @@ fun ButtonPropertyDialog(
             mode = mode.toIntOrNull() ?: element.mode,
             sense = sense.toIntOrNull()?.coerceIn(0, 500) ?: element.sense,
             longPressEffect = longPressEffect,
+            longPressRepeatMs = longPressRepeatMs.coerceIn(20, 500),
             extraAttributesJson = extraAttributesJson,
         )
     }
@@ -251,7 +253,7 @@ fun ButtonPropertyDialog(
                         }
                     }
 
-                    // ── 开关按键专用：长按效果 ──
+                    // ── 开关按键专用：长按效果 + 重复间隔（同行双栏） ──
                     if (isSwitch) {
                         Spacer(Modifier.height(8.dp))
                         HorizontalDivider(
@@ -261,25 +263,47 @@ fun ButtonPropertyDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(56.dp)
                                 .padding(vertical = 6.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(stringResource(R.string.editor_label_long_press),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface)
-                                Text(stringResource(R.string.editor_label_long_press_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            // ── 左半：长按效果开关 ──
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(stringResource(R.string.editor_label_long_press),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface)
+                                    Text(stringResource(R.string.editor_label_long_press_desc),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                Switch(
+                                    checked = longPressEffect,
+                                    onCheckedChange = { longPressEffect = it },
+                                )
                             }
-                            Spacer(Modifier.width(16.dp))
-                            Switch(
-                                checked = longPressEffect,
-                                onCheckedChange = { longPressEffect = it },
-                            )
+                            Spacer(Modifier.width(8.dp))
+                            // ── 右半：重复间隔（仅长按效果开启时显示） ──
+                            if (longPressEffect) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        context.getString(R.string.editor_long_press_repeat_format, longPressRepeatMs),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    Slider(
+                                        value = longPressRepeatMs.toFloat(),
+                                        onValueChange = { longPressRepeatMs = it.roundToInt().coerceIn(20, 500) },
+                                        valueRange = 20f..500f,
+                                        modifier = Modifier.fillMaxWidth().height(16.dp),
+                                    )
+                                }
+                            } else {
+                                Spacer(Modifier.weight(1f))
+                            }
                         }
                     }
 

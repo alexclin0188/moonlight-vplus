@@ -87,6 +87,7 @@ data class EditorElement(
 
     // ── 开关按键：长按效果 ──
     val longPressEffect: Boolean = false, // 开关按键长按效果（持久化在 extraAttributesJson 中）
+    val longPressRepeatMs: Int = 50, // 开关按键长按重复间隔 ms（持久化在 extraAttributesJson 中）
 
     // ── 通用标志 ──
     val flag1: Int = 0,              // element_flag1: 通用标志
@@ -396,7 +397,8 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
         }
         val isCircle = extras?.optBoolean("isCircle", false) ?: false
         val longPressEffect = extras?.optBoolean("longPressEffect", false) ?: false
-        el.copy(isCircle = isCircle, longPressEffect = longPressEffect)
+        val longPressRepeatMs = (extras?.optInt("longPressRepeatMs", 50) ?: 50).coerceIn(20, 500)
+        el.copy(isCircle = isCircle, longPressEffect = longPressEffect, longPressRepeatMs = longPressRepeatMs)
     }
 }
 
@@ -408,11 +410,12 @@ fun Map<String, Any?>.toEditorElement(): EditorElement {
  * - INTEGER 列通过 [ContentValues.put(key, Long)] 写入
  * - TEXT 列通过 [ContentValues.put(key, String)] 写入
  */    internal fun EditorElement.toContentValues(): ContentValues {
-        // 序列化 isCircle 和 longPressEffect 到 extraAttributesJson
+        // 序列化 isCircle、longPressEffect 和 longPressRepeatMs 到 extraAttributesJson
         val mergedJson = try {
             val json = org.json.JSONObject(extraAttributesJson)
             json.put("isCircle", isCircle)
             json.put("longPressEffect", longPressEffect)
+            json.put("longPressRepeatMs", longPressRepeatMs)
             json.toString()
         } catch (_: Exception) {
             extraAttributesJson
