@@ -111,6 +111,7 @@
     <string name="abr_mode_low_latency">Low latency</string>
     <string name="title_checkbox_stretch_video">Stretch video to full-screen</string>
     <string name="resolution_prefix_native">Native</string>
+    <string name="resolution_prefix_native_with_res">Native (%1$s)</string>
 
 
     <string name="category_gamepad_settings">Gamepad Settings</string>
@@ -246,6 +247,9 @@
     <string name="title_checkbox_rotable_screen">Follow Screen Rotation</string>
     
     
+    <!-- Placeholder for unavailable values -->
+    <string name="value_placeholder">—</string>
+
     <!-- Tip strings -->
     <string name="tip_esc_exit">💡 Tip: Use the "Exit" button to quickly and completely exit the stream, restoring your screen to its pre-stream state~</string>
     <string name="tip_double_tap_mouse">💡 Tip: Long press the top blank area on the host list page to download the current wallpaper~</string>
@@ -423,9 +427,9 @@
     <string name="box_art_thumbnail">Desktop Thumbnail</string>
     <string name="combo_editor_default_title">Combo Keys</string>
     <string name="custom_key_error_name_empty">Key name cannot be empty</string>
-    <string name="custom_key_error_format">Invalid format, key code must start with 0x</string>
-    <string name="custom_key_error_invalid_hex">Invalid hexadecimal key code</string>
-    <string name="custom_key_error_save_failed">Save failed</string>
+    <string name="custom_key_error_format">Invalid format: \"%1$s\" (key code must start with 0x)</string>
+    <string name="custom_key_error_invalid_hex">Invalid hexadecimal key code: %1$s</string>
+    <string name="custom_key_error_save_failed">Save failed: %1$s</string>
     <string name="scheme_default_name">Default Scheme</string>
     <string name="bitrate_traffic_estimate_int">~ %d MB</string>
     <string name="bitrate_traffic_estimate_float">~ %.1f MB</string>
@@ -773,7 +777,7 @@
     <string name="subpanel_auto_trackpad_toast">Auto-switched to trackpad mode</string>
     <string name="subpanel_bg_opacity_format">BG opacity: %1$d%%</string>
     <string name="subpanel_config">Config</string>
-    <string name="subpanel_current_scheme">Current scheme</string>
+    <string name="subpanel_current_scheme">Current scheme: %1$s</string>
     <string name="subpanel_double_click_drag">Double-tap drag</string>
     <string name="subpanel_edit_scheme">Edit scheme</string>
     <string name="subpanel_enable_key_mapping">Enable key mapping</string>
@@ -834,10 +838,10 @@
     <string name="config_unified_color_picker">Unified color picker</string>
     <string name="config_unified_colors">Unified colors</string>
     <string name="customkey_dialog_title">Custom Key Mapping</string>
-    <string name="customkey_error_code_format">Invalid code format</string>
-    <string name="customkey_error_code_invalid">Invalid key code</string>
+    <string name="customkey_error_code_format">Invalid code format: %1$s</string>
+    <string name="customkey_error_code_invalid">Invalid key code: %1$s</string>
     <string name="customkey_error_codes_empty">Key codes cannot be empty</string>
-    <string name="customkey_error_name_duplicate">Name already exists</string>
+    <string name="customkey_error_name_duplicate">Name \"%1$s\" already exists</string>
     <string name="customkey_error_name_empty">Name cannot be empty</string>
     <string name="customkey_hint_codes">Enter key codes (comma separated)</string>
     <string name="customkey_hint_name">Enter combo name</string>
@@ -851,7 +855,7 @@
     <string name="display_bitrate_8m">HD
 8M</string>
     <string name="display_bitrate_adapting">Bitrate adapting…</string>
-    <string name="display_bitrate_failed">Bitrate acquiring failed</string>
+    <string name="display_bitrate_failed">Bitrate acquiring failed: %1$s</string>
     <string name="display_bitrate_label">Bitrate: %1$d Mbps (%2$d kbps)</string>
     <string name="display_buffer_1frame">1 Frame</string>
     <string name="display_buffer_5frame">5 Frames</string>
@@ -873,7 +877,7 @@
     <string name="display_videoformat_h264" translatable="false">H264</string>
     <string name="display_videoformat_hevc" translatable="false">HEVC</string>
     <string name="editor_btn_color_settings">Color</string>
-    <string name="editor_btn_type_settings">Type</string>
+    <string name="editor_btn_type_settings">%1$s</string>
     <string name="editor_cancel">Cancel</string>
     <string name="editor_chip_button_mode">Button Mode</string>
     <string name="editor_chip_joystick_mode">Joystick Mode</string>
@@ -883,7 +887,7 @@
     <string name="editor_confirm_clear">Clear</string>
     <string name="editor_content_desc_confirm_name">Confirm name</string>
     <string name="editor_content_desc_copy_clipboard">Copy to clipboard</string>
-    <string name="editor_content_desc_delete">Delete</string>
+    <string name="editor_content_desc_delete">Delete %1$s</string>
     <string name="editor_content_desc_duplicate">Duplicate</string>
     <string name="editor_content_desc_edit_name">Edit name</string>
     <string name="editor_content_desc_layer_down">Layer down</string>
@@ -891,7 +895,7 @@
     <string name="editor_content_desc_properties">Properties</string>
     <string name="editor_content_desc_select_key">Select key</string>
     <string name="editor_delete_title">Delete Key Element</string>
-    <string name="editor_element_list_title">Elements</string>
+    <string name="editor_element_list_title">Elements (%1$d)</string>
     <string name="editor_empty_hint">Tap "+" to add a key element</string>
     <string name="editor_grid_cols_format">%1$d columns</string>
     <string name="editor_grid_slider_off">Off</string>
@@ -926,28 +930,28 @@
     <string name="editor_title_color_settings">Color Settings</string>
     <string name="editor_title_combo_property">Combo Property</string>
     <string name="editor_title_new_combo">New Combo</string>
-    <string name="editor_title_new_element">New Key Element</string>
+    <string name="editor_title_new_element">New %1$s</string>
     <string name="editor_toast_cleared_all">All keys cleared</string>
     <string name="editor_toast_color_updated">Color updated</string>
-    <string name="editor_toast_combo_created">Combo created</string>
+    <string name="editor_toast_combo_created">Combo \"%1$s\" created</string>
     <string name="editor_toast_combo_updated">Combo updated</string>
-    <string name="editor_toast_copied_clipboard">Copied to clipboard</string>
-    <string name="editor_toast_create_failed">Failed to create</string>
-    <string name="editor_toast_created">Created</string>
-    <string name="editor_toast_duplicate_direction">Duplicate direction detected</string>
-    <string name="editor_toast_duplicate_name">This name already exists</string>
-    <string name="editor_toast_duplicate_scheme">A scheme with this name already exists</string>
-    <string name="editor_toast_duplicated">Duplicated</string>
-    <string name="editor_toast_pasted">Pasted</string>
+    <string name="editor_toast_copied_clipboard">\"%1$s\" copied to clipboard</string>
+    <string name="editor_toast_create_failed">Failed to create: %1$s</string>
+    <string name="editor_toast_created">%1$s created</string>
+    <string name="editor_toast_duplicate_direction">Duplicate direction: %1$s</string>
+    <string name="editor_toast_duplicate_name">\"%1$s\" already exists</string>
+    <string name="editor_toast_duplicate_scheme">A scheme named \"%1$s\" already exists</string>
+    <string name="editor_toast_duplicated">\"%1$s\" duplicated</string>
+    <string name="editor_toast_pasted">\"%1$s\" pasted</string>
     <string name="editor_toast_property_updated">Property updated</string>
     <string name="editor_toast_saved">Saved</string>
-    <string name="editor_toast_scheme_created">Scheme created</string>
+    <string name="editor_toast_scheme_created">Scheme \"%1$s\" created</string>
     <string name="editor_toast_scheme_name_empty">Scheme name cannot be empty</string>
     <string name="editor_toast_select_all_directions">All directions selected</string>
     <string name="editor_toast_select_click_key">Select a click key first</string>
     <string name="editor_toast_select_key_first">Select a key first</string>
     <string name="editor_toast_select_middle_value">Select a middle value</string>
-    <string name="editor_toolbar_grid_cols">Grid Cols</string>
+    <string name="editor_toolbar_grid_cols">Grid: %1$d cols</string>
     <string name="editor_toolbar_grid_off">Grid Off</string>
     <string name="editor_toolbar_key_list">Key List</string>
     <string name="editor_toolbar_keys">Keys</string>
@@ -1042,9 +1046,8 @@
     <string name="perf_title_overlay_orientation">Overlay orientation</string>
     <string name="perf_title_overlay_position">Overlay position</string>
     <string name="perf_title_post_stream_toast">Post-stream summary</string>
-    <string name="scheme_builtin_name">Built-in</string>
-    <string name="scheme_delete_confirm">Delete this scheme?</string>
-    <string name="scheme_delete_failed">Failed to delete scheme</string>
+    <string name="scheme_delete_confirm">Delete scheme \"%1$s\"?</string>
+    <string name="scheme_delete_failed">Failed to delete scheme: %1$s</string>
     <string name="scheme_delete_title">Delete Scheme</string>
     <string name="scheme_deleted">Scheme deleted</string>
     <string name="scheme_new">New</string>
@@ -1054,7 +1057,7 @@
     <string name="vpn_placeholder_title">VPN</string>
     <string name="widget_bind_title">Bind Widget</string>
     <string name="widget_clear_bind">Clear Bind</string>
-    <string name="widget_confirm_unbind">Unbind this computer from the widget?</string>
+    <string name="widget_confirm_unbind">Unbind %1$s from the widget?</string>
     <string name="widget_empty_desc">Long press home screen to add widget →</string>
     <string name="widget_empty_title">No Widget</string>
     <string name="widget_hint">Long press to edit</string>

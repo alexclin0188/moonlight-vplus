@@ -21,6 +21,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.drawAnalogStick
 import com.alexclin.moonlink.android.stream.ui.editor.drawDigitalButton
 import com.alexclin.moonlink.android.stream.ui.editor.drawDigitalPad
 import com.alexclin.moonlink.android.stream.ui.editor.drawUnknownElement
+import kotlin.math.min
 
 /**
  * 按键映射覆盖层 — Compose Canvas 渲染 + 触摸处理 + 输入发送。
@@ -173,7 +174,16 @@ fun KeyMappingOverlay(
                             // ── 跨按钮手指滑动联动（旧 Crown 行为） ──
                             val currentEl = elements.find { it.elementId == elId }
                             if (currentEl != null) {
-                                val stillInside = hitTest(currentEl, pos, touchMargin)
+                                val stillInside = if (currentEl.type == ElementType.DIGITAL_PAD ||
+                                currentEl.type == ElementType.ANALOG_STICK ||
+                                currentEl.type == ElementType.DIGITAL_STICK ||
+                                currentEl.type == ElementType.INVISIBLE_ANALOG_STICK ||
+                                currentEl.type == ElementType.INVISIBLE_DIGITAL_STICK
+                            ) {
+                                isWithinDragRange(currentEl, pos)
+                            } else {
+                                hitTest(currentEl, pos, touchMargin)
+                            }
 
                                 if (!stillInside) {
                                     // 手指离开当前元素 → 释放它
@@ -240,6 +250,21 @@ fun KeyMappingOverlay(
             }
         }
     }
+}
+
+/**
+ * 判断触摸点是否在方向键/摇杆的放大拖动范围内（1.8倍元素半径的圆形区域）。
+ * 仅在 MOVE 事件中用于判断是否断开触摸，不改变初始按下命中范围。
+ */
+private fun isWithinDragRange(el: EditorElement, position: Offset): Boolean {
+    val effectiveRadius = when (el.type) {
+        ElementType.DIGITAL_PAD -> min(el.width, el.height) / 2f
+        else -> el.radius.coerceAtLeast(min(el.width, el.height) / 2).toFloat()
+    }
+    val maxDragDist = effectiveRadius * 1.8f
+    val dx = position.x - el.centralX
+    val dy = position.y - el.centralY
+    return (dx * dx + dy * dy) <= (maxDragDist * maxDragDist)
 }
 
 /** 按 layer 降序 → 同 layer 按列表倒序检测（后绘制的优先），返回命中的元素，无命中返回 null */

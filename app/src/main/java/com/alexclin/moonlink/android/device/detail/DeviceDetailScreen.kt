@@ -86,8 +86,8 @@ fun DeviceDetailScreen(
 @Composable
 private fun DetailContentCards(computer: ComputerDetails) {
     DetailCard {
-        DetailRow(stringResource(R.string.label_device_name), computer.name ?: "—")
-        DetailRow(stringResource(R.string.label_uuid), computer.uuid ?: "—")
+        DetailRow(stringResource(R.string.label_device_name), computer.name ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_uuid), computer.uuid ?: stringResource(R.string.value_placeholder))
 
         val stateText = when (computer.state) {
             ComputerDetails.State.ONLINE  -> stringResource(R.string.pcview_menu_header_online)
@@ -99,7 +99,7 @@ private fun DetailContentCards(computer: ComputerDetails) {
         val pairText = when (computer.pairState) {
             PairingManager.PairState.PAIRED   -> stringResource(R.string.label_paired)
             PairingManager.PairState.NOT_PAIRED -> stringResource(R.string.label_not_paired)
-            else -> "—"
+            else -> stringResource(R.string.value_placeholder)
         }
         DetailRow(stringResource(R.string.label_pair_state), pairText)
 
@@ -110,19 +110,19 @@ private fun DetailContentCards(computer: ComputerDetails) {
 
     DetailCard {
         SectionTitle(stringResource(R.string.section_network_info))
-        DetailRow(stringResource(R.string.label_active_address), computer.activeAddress?.toString() ?: "—")
-        DetailRow(stringResource(R.string.label_local_address), computer.localAddress?.toString() ?: "—")
-        DetailRow(stringResource(R.string.label_remote_address), computer.remoteAddress?.toString() ?: "—")
-        DetailRow(stringResource(R.string.label_manual_address), computer.manualAddress?.toString() ?: "—")
-        DetailRow(stringResource(R.string.label_ipv6_address), computer.ipv6Address?.toString() ?: "—")
-        DetailRow(stringResource(R.string.label_https_port), if (computer.httpsPort > 0) computer.httpsPort.toString() else "—")
-        DetailRow(stringResource(R.string.label_mac_address), computer.macAddress ?: "—")
+        DetailRow(stringResource(R.string.label_active_address), computer.activeAddress?.toString() ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_local_address), computer.localAddress?.toString() ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_remote_address), computer.remoteAddress?.toString() ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_manual_address), computer.manualAddress?.toString() ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_ipv6_address), computer.ipv6Address?.toString() ?: stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_https_port), if (computer.httpsPort > 0) computer.httpsPort.toString() else stringResource(R.string.value_placeholder))
+        DetailRow(stringResource(R.string.label_mac_address), computer.macAddress ?: stringResource(R.string.value_placeholder))
         DetailRow(stringResource(R.string.label_ipv6_status), if (computer.ipv6Disabled) stringResource(R.string.label_disabled) else stringResource(R.string.label_enabled))
     }
 
     DetailCard {
         SectionTitle(stringResource(R.string.section_sunshine_info))
-        DetailRow(stringResource(R.string.label_sunshine_version), computer.getSunshineVersionDisplay().ifBlank { "—" })
+        DetailRow(stringResource(R.string.label_sunshine_version), computer.getSunshineVersionDisplay().ifBlank { stringResource(R.string.value_placeholder) })
         DetailRow(stringResource(R.string.label_nvidia_server), if (computer.nvidiaServer) stringResource(R.string.yes) else stringResource(R.string.no))
         DetailRow(stringResource(R.string.label_multi_address), if (computer.hasMultipleAddresses()) stringResource(R.string.yes) else stringResource(R.string.no))
         DetailRow(stringResource(R.string.label_desktop_quick_start), if (computer.supportsDesktopSpecialApp) stringResource(R.string.yes) else stringResource(R.string.no))

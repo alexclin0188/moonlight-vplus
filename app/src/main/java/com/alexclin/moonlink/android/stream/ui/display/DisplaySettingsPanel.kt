@@ -748,7 +748,7 @@ private fun DisplaySection(engine: StreamEngine) {
 
         val allResolutions = remember {
             val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
-                listOf(context.getString(R.string.resolution_prefix_native, nativeRes))
+                listOf(context.getString(R.string.resolution_prefix_native_with_res, nativeRes))
             } else emptyList()
             STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { context.getString(R.string.display_resolution_custom, it) }
         }

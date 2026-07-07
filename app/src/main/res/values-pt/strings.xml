@@ -96,10 +96,7 @@
     <string name="game_menu_toggle_mouse_off">Desativar emulação de rato pelo controlador</string>
     
     <!-- Resolution settings -->
-    <string name="fps_144">144 FPS</string>
-    <string name="fps_165">165 FPS</string>
-    
-    <!-- Audio settings -->
+<!-- Audio settings -->
     
     <!-- Gamepad settings -->
     <string name="category_gamepad_settings">Configurações de gamepad</string>
@@ -212,15 +209,7 @@
     
     <!-- Accessibility service -->
     <string name="accessibility_service_label">Serviço de teclado MoonLink</string>
-    <string name="accessibility_service_description">
-        Para fornecer uma experiência completa de jogo de PC com seu teclado externo, este serviço precisa capturar todas as teclas do teclado.
-        \n\n
-        Uma vez ativado, você poderá usar todos os atalhos do sistema como teclas Win/Command, Alt+Tab, etc., assim como no seu computador.
-        \n\n
-        Fique tranquilo, este serviço é usado apenas para enviar operações de tecla diretamente ao seu computador, e não registraremos nem enviaremos nenhum do seu conteúdo de entrada.
-    </string>
-
-    <!-- Performance Overlay Info -->
+<!-- Performance Overlay Info -->
     
     <!-- App last settings -->
     <string name="app_last_settings_none">Sem últimas configurações</string>

@@ -184,7 +184,7 @@ fun KeyMappingSchemeSelector(
                 }
             } else {
                 // 内置方案（代码固定生成，不存 DB）
-                val builtInName = stringResource(R.string.scheme_builtin_name)
+                val builtInName = stringResource(R.string.label_builtin_virtual_gamepad)
                 val builtIn = SchemeInfo(configId = 0L, name = builtInName, isDefault = true)
                 val showBuiltIn = searchQuery.isBlank()
                     || builtInName.contains(searchQuery, ignoreCase = true)

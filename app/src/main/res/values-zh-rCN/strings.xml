@@ -133,6 +133,7 @@
     <string name="pcview_menu_header_offline">离线</string>
     <string name="pcview_menu_header_online">在线</string>
     <string name="resolution_prefix_native">本地</string>
+    <string name="resolution_prefix_native_with_res">本地（%1$s）</string>
     <string name="nettest_text_blocked">您设备当前的网络连接拦截了MoonLink。连接到该网络时可能无法通过互联网串流。</string>
     <!-- Array strings -->
     <string name="audioconf_stereo">立体声</string>
@@ -252,13 +253,7 @@
 
     <!-- Accessibility service -->
     <string name="accessibility_service_label">MoonLink 键盘服务</string>
-    <string name="accessibility_service_description">
-        为了让您的外接键盘在串流游戏中获得完整的PC体验，此服务需要捕获所有键盘按键。\n\n
-        开启后，您将可以在游戏中无缝使用 Win/Command 键、Alt+Tab 等所有系统快捷键，就像在电脑前一样。\n\n
-        请放心，此服务仅用于将按键操作实时发送到您的电脑，我们不会记录或上传您的任何输入内容。
-    </string>
-
-    <!-- Performance Overlay Info Dialogs -->
+<!-- Performance Overlay Info Dialogs -->
     <!-- Performance Overlay Info Dialogs - 1% Low FPS -->
     <!-- Performance Overlay Info Dialogs - Battery Information -->
 
@@ -780,7 +775,7 @@
     <string name="custom_key_error_format">键码 "%1$s" 格式错误，须以 0x 开头</string>
     <string name="custom_key_error_invalid_hex">键码 "%1$s" 不是有效的十六进制数</string>
     <string name="custom_key_error_name_empty">名称不能为空</string>
-    <string name="custom_key_error_save_failed">保存失败: %1$s</string>
+    <string name="custom_key_error_save_failed">保存失败：%1$s</string>
     <string name="fab_menu">菜单</string>
     <string name="quick_action_mic_unavailable">麦克风功能不可用，需要PC端安装对应虚拟驱动</string>
     <string name="quick_action_pause_stream">暂停串流</string>
@@ -790,4 +785,319 @@
     <string name="settings_placeholder_desc">设置分类页面将在此处实现</string>
     <string name="settings_title">设置</string>
     <string name="stream_control_only_hint">当前为仅控制模式\n如需退出，请在主机串流设置的画面开关中关闭</string>
+
+    <!-- Placeholder for unavailable values -->
+    <string name="value_placeholder">—</string>
+
+    <!-- App list screen -->
+    <string name="title_device_app_list">应用列表</string>
+    <string name="search_apps_hint">搜索应用…</string>
+
+    <!-- Host settings (DeviceDetailScreen) -->
+    <string name="host_auto_optimize">自动优化游戏设置</string>
+    <string name="host_lock_screen">断开后锁定屏幕</string>
+    <string name="host_play_audio">在电脑上播放音频</string>
+    <string name="host_sync_clipboard_image">同步剪贴板图片</string>
+    <string name="host_sync_clipboard_text">同步剪贴板文本</string>
+
+    <!-- More/Float panel -->
+    <string name="more_auto_hide_2s">2秒后自动隐藏</string>
+    <string name="more_enable_perf_overlay">显示性能图层</string>
+    <string name="more_hide_when_keymapping">按键映射时隐藏</string>
+    <string name="more_no_auto_hide">不自动隐藏</string>
+    <string name="more_perf_hint">性能统计覆盖层</string>
+    <string name="more_show_pause_stream">显示暂停串流按钮</string>
+
+    <!-- SubPanel (stream overlay) -->
+    <string name="subpanel_activate_key">激活按键</string>
+    <string name="subpanel_auto_trackpad_toast">已自动切换到触控板模式</string>
+    <string name="subpanel_bg_opacity_format">背景不透明度: %1$d%%</string>
+    <string name="subpanel_config">按键映射方案配置</string>
+    <string name="subpanel_current_scheme">当前方案：%1$s</string>
+    <string name="subpanel_double_click_drag">双击拖动</string>
+    <string name="subpanel_edit_scheme">编辑按键映射方案</string>
+    <string name="subpanel_enable_key_mapping">启用按键映射</string>
+    <string name="subpanel_fab_opacity_format">悬浮按钮不透明度: %1$d%%</string>
+    <string name="subpanel_gyro_always">始终开启</string>
+    <string name="subpanel_gyro_invert_x">反转 X</string>
+    <string name="subpanel_gyro_invert_y">反转 Y</string>
+    <string name="subpanel_gyro_mouse">体感鼠标</string>
+    <string name="subpanel_gyro_right_stick">体感右摇杆</string>
+    <string name="subpanel_gyro_switch">体感开关</string>
+    <string name="subpanel_local_cursor">本地光标</string>
+    <string name="subpanel_local_mouse">本地鼠标</string>
+    <string name="subpanel_no_gamepad">未检测到手柄</string>
+    <string name="subpanel_no_keyboard">未检测到键盘</string>
+    <string name="subpanel_no_mouse">未检测到鼠标</string>
+    <string name="subpanel_pan_zoom">平移/缩放</string>
+    <string name="subpanel_panel_auto_hide_label">自动隐藏</string>
+    <string name="subpanel_peripherals_label">外设</string>
+    <string name="subpanel_sensitivity_format">灵敏度: %1$d</string>
+    <string name="subpanel_switch_scheme">切换按键映射方案</string>
+    <string name="subpanel_title_gyro">体感</string>
+    <string name="subpanel_title_host">主机</string>
+    <string name="subpanel_title_more">更多</string>
+    <string name="subpanel_toggle_remote_mouse">切换远程鼠标</string>
+    <string name="subpanel_touch_mode">触控模式</string>
+
+    <!-- Quick Actions -->
+    <string name="qa_editor_drag_hint">拖动可重新排列快捷按钮</string>
+    <string name="qa_editor_title">编辑快捷按钮</string>
+
+    <!-- Touch mode toasts -->
+    <string name="toast_touch_mode_enhanced_switched">已切换增强式多点触控</string>
+    <string name="toast_touch_mode_mouse_switched">已切换鼠标模式</string>
+    <string name="toast_touch_mode_trackpad_switched">已切换触控板模式</string>
+
+    <!-- Peripherals -->
+    <string name="peripherals_keyboard_settings">键盘设置</string>
+    <string name="peripherals_mouse_settings">鼠标设置</string>
+
+    <!-- Auto-generated resources -->
+    <string name="bar_desktop">桌面</string>
+    <string name="bar_keyboard">键盘</string>
+    <string name="bar_operations">操作</string>
+    <string name="bar_window">窗口</string>
+    <string name="cache_stats_failed">缓存统计不可用</string>
+    <string name="cache_stats_format">缓存: %1$s / %2$s</string>
+    <string name="config_button_vibration">按键振动</string>
+    <string name="config_enhanced_touch">增强触控</string>
+    <string name="config_game_vibration">游戏振动</string>
+    <string name="config_global_opacity">全局不透明度</string>
+    <string name="config_mouse_wheel_speed">鼠标滚轮速度</string>
+    <string name="config_speed_fast">快</string>
+    <string name="config_speed_medium">中</string>
+    <string name="config_speed_slow">慢</string>
+    <string name="config_title">配置</string>
+    <string name="config_touch_switch">触控开关</string>
+    <string name="config_unified_color_picker">统一颜色选择器</string>
+    <string name="config_unified_colors">统一颜色</string>
+    <string name="customkey_dialog_title">自定义按键映射</string>
+    <string name="customkey_error_code_format">无效的键码格式：%1$s</string>
+    <string name="customkey_error_code_invalid">无效的键码：%1$s</string>
+    <string name="customkey_error_codes_empty">键码不能为空</string>
+    <string name="customkey_error_name_duplicate">名称「%1$s」已存在</string>
+    <string name="customkey_error_name_empty">名称不能为空</string>
+    <string name="customkey_hint_codes">输入键码（逗号分隔）</string>
+    <string name="customkey_hint_name">输入组合键名称</string>
+    <string name="customkey_label_codes">键码</string>
+    <string name="customkey_label_name">名称</string>
+    <string name="dialog_button_confirm">确认</string>
+    <string name="display_bitrate_20m">原画\n20M</string>
+    <string name="display_bitrate_2m">清晰\n2M</string>
+    <string name="display_bitrate_8m">高清\n8M</string>
+    <string name="display_bitrate_adapting">码率自适应中…</string>
+    <string name="display_bitrate_failed">码率获取失败</string>
+    <string name="display_bitrate_label">码率: %1$d Mbps (%2$d kbps)</string>
+    <string name="display_buffer_1frame">1 帧</string>
+    <string name="display_buffer_5frame">5 帧</string>
+    <string name="display_current_monitor">当前显示器</string>
+    <string name="display_dpi_scale">DPI: %1$d%%</string>
+    <string name="display_dpi_scale_failed">DPI 缩放获取失败</string>
+    <string name="display_mtk_desc">强制 MTK 解码器高频运行以减少延迟，可能在其他设备上引发问题。</string>
+    <string name="display_other_monitors">其他显示器</string>
+    <string name="display_pip_toast">已启用画中画模式</string>
+    <string name="display_primary_tag">主屏</string>
+    <string name="display_resolution_custom">%1$s (自定义)</string>
+    <string name="display_section_monitor">显示器</string>
+    <string name="display_section_video">视频</string>
+    <string name="display_switch">切换</string>
+    <string name="display_switch_resolution">切换分辨率</string>
+    <string name="display_video_format_title">视频编码</string>
+    <string name="editor_btn_color_settings">颜色</string>
+    <string name="editor_btn_type_settings">%1$s</string>
+    <string name="editor_cancel">取消</string>
+    <string name="editor_chip_button_mode">按键模式</string>
+    <string name="editor_chip_joystick_mode">摇杆模式</string>
+    <string name="editor_clear_all_confirm">确定要清除所有按键吗？</string>
+    <string name="editor_clear_all_title">清除所有按键</string>
+    <string name="editor_color_customize">自定义</string>
+    <string name="editor_confirm_clear">清除</string>
+    <string name="editor_content_desc_confirm_name">确认名称</string>
+    <string name="editor_content_desc_copy_clipboard">复制到剪贴板</string>
+    <string name="editor_content_desc_delete">删除%1$s</string>
+    <string name="editor_content_desc_duplicate">复制</string>
+    <string name="editor_content_desc_edit_name">编辑名称</string>
+    <string name="editor_content_desc_layer_down">向下层</string>
+    <string name="editor_content_desc_layer_up">向上层</string>
+    <string name="editor_content_desc_properties">属性</string>
+    <string name="editor_content_desc_select_key">选择按键</string>
+    <string name="editor_delete_title">删除按键元素</string>
+    <string name="editor_element_list_title">元素（%1$d）</string>
+    <string name="editor_empty_hint">点击 "+" 添加按键元素</string>
+    <string name="editor_grid_cols_format">%1$d 列</string>
+    <string name="editor_grid_slider_off">关闭</string>
+    <string name="editor_label_border_thickness">边框粗细</string>
+    <string name="editor_label_button_text">文本</string>
+    <string name="editor_label_button_value">值</string>
+    <string name="editor_label_circle">圆形</string>
+    <string name="editor_label_click">点击</string>
+    <string name="editor_label_corner_radius">圆角半径</string>
+    <string name="editor_label_height">高度</string>
+    <string name="editor_label_key_value">键值</string>
+    <string name="editor_label_layer">图层</string>
+    <string name="editor_label_long_press">长按</string>
+    <string name="editor_label_long_press_desc">长按触发</string>
+    <string name="editor_label_middle_value">中间值</string>
+    <string name="editor_label_mode">模式</string>
+    <string name="editor_label_opacity">不透明度</string>
+    <string name="editor_label_swipe_down">下滑</string>
+    <string name="editor_label_swipe_left">左滑</string>
+    <string name="editor_label_swipe_right">右滑</string>
+    <string name="editor_label_swipe_up">上滑</string>
+    <string name="editor_label_text_size">字体大小</string>
+    <string name="editor_label_trackpad_mode">触控板</string>
+    <string name="editor_label_width">宽度</string>
+    <string name="editor_loading">加载中…</string>
+    <string name="editor_save">保存</string>
+    <string name="editor_scheme_default_name">默认</string>
+    <string name="editor_scheme_prefix">方案</string>
+    <string name="editor_sensitivity_format">%1$s%%</string>
+    <string name="editor_title_color_settings">颜色设置</string>
+    <string name="editor_title_combo_property">组合键属性</string>
+    <string name="editor_title_new_combo">新建组合键</string>
+    <string name="editor_title_new_element">新建%1$s</string>
+    <string name="editor_toast_cleared_all">已清除所有按键</string>
+    <string name="editor_toast_color_updated">颜色已更新</string>
+    <string name="editor_toast_combo_created">组合键「%1$s」已创建</string>
+    <string name="editor_toast_combo_updated">组合键已更新</string>
+    <string name="editor_toast_copied_clipboard">已将「%1$s」复制到剪贴板</string>
+    <string name="editor_toast_create_failed">创建失败：%1$s</string>
+    <string name="editor_toast_created">已创建%1$s</string>
+    <string name="editor_toast_duplicate_direction">检测到重复方向：%1$s</string>
+    <string name="editor_toast_duplicate_name">「%1$s」已存在</string>
+    <string name="editor_toast_duplicate_scheme">已存在同名方案「%1$s」</string>
+    <string name="editor_toast_duplicated">已复制「%1$s」</string>
+    <string name="editor_toast_pasted">已粘贴「%1$s」</string>
+    <string name="editor_toast_property_updated">属性已更新</string>
+    <string name="editor_toast_saved">已保存</string>
+    <string name="editor_toast_scheme_created">方案「%1$s」已创建</string>
+    <string name="editor_toast_scheme_name_empty">方案名称不能为空</string>
+    <string name="editor_toast_select_all_directions">已选择所有方向</string>
+    <string name="editor_toast_select_click_key">请先选择一个点击按键</string>
+    <string name="editor_toast_select_key_first">请先选择一个按键</string>
+    <string name="editor_toast_select_middle_value">请选择一个中间值</string>
+    <string name="editor_toolbar_grid_cols">网格：%1$d 列</string>
+    <string name="editor_toolbar_grid_off">关闭网格</string>
+    <string name="editor_toolbar_key_list">按键列表</string>
+    <string name="editor_toolbar_keys">按键</string>
+    <string name="editor_toolbar_paste">粘贴</string>
+    <string name="engine_abr_off">智能码率已关闭</string>
+    <string name="engine_abr_on">智能码率已开启</string>
+    <string name="engine_audio_off">音频已关闭</string>
+    <string name="engine_audio_on">音频已开启</string>
+    <string name="engine_conn_failed_msg">连接失败 (阶段: %1$d, 错误: %2$d)</string>
+    <string name="engine_conn_failed_title">连接失败</string>
+    <string name="engine_conn_failed_vdd">您的显卡驱动可能已崩溃，请尝试重启电脑。</string>
+    <string name="engine_device_connected">%1$s 已连接</string>
+    <string name="engine_device_disconnected">%1$s 已断开</string>
+    <string name="engine_device_name_unknown">未知</string>
+    <string name="engine_disconnected_format">已断开: %1$s</string>
+    <string name="engine_disconnected_title">已断开连接</string>
+    <string name="engine_frame_conversion_failed">帧转换失败</string>
+    <string name="engine_gyro_off">体感已关闭</string>
+    <string name="engine_gyro_on">体感已开启</string>
+    <string name="engine_init_failed">初始化失败: %1$s</string>
+    <string name="engine_latency_decode">解码: %1$dms</string>
+    <string name="engine_latency_end_to_end">延迟: %1$dms</string>
+    <string name="engine_metered_network">警告：当前使用的是按流量计费的网络！</string>
+    <string name="engine_mic_off">麦克风已关闭</string>
+    <string name="engine_mic_on">麦克风已开启</string>
+    <string name="engine_missing_host">缺少主机</string>
+    <string name="engine_no_h264_decoder">没有可用的 H.264 解码器</string>
+    <string name="engine_no_video_frame">未收到视频帧</string>
+    <string name="engine_no_video_traffic">没有视频流量</string>
+    <string name="engine_orientation_landscape">横屏</string>
+    <string name="engine_orientation_portrait">竖屏</string>
+    <string name="engine_perf_draggable">拖动可移动</string>
+    <string name="engine_perf_hidden">性能图层已隐藏</string>
+    <string name="engine_perf_locked">性能图层已锁定</string>
+    <string name="engine_pip_off">画中画已关闭</string>
+    <string name="engine_pip_on">画中画已开启</string>
+    <string name="engine_port_check_failed">端口检查失败，请检查网络和防火墙设置：</string>
+    <string name="engine_resolution_changed">分辨率已切换为 %1$d x %2$d</string>
+    <string name="engine_unexpected_termination">串流意外结束</string>
+    <string name="engine_unknown_device">未知设备</string>
+    <string name="engine_unnamed">未命名</string>
+    <string name="input_hint_global_keyboard">全局键盘 →</string>
+    <string name="input_option_back_key">返回键</string>
+    <string name="input_option_other_keys">其他按键</string>
+    <string name="input_title_absolute_mouse">绝对鼠标模式</string>
+    <string name="input_title_double_tap">双击退出</string>
+    <string name="input_title_esc_menu">ESC 打开菜单</string>
+    <string name="input_title_esc_menu_key">ESC 菜单键</string>
+    <string name="input_title_fix_middle">修复鼠标中键</string>
+    <string name="input_title_fix_wheel">修复鼠标滚轮</string>
+    <string name="input_title_keyboard_toggle">键盘开关</string>
+    <string name="input_title_mouse_nav">鼠标导航</string>
+    <string name="input_title_special_keys">特殊按键</string>
+    <string name="input_title_sync_touch">同步触控模式</string>
+    <string name="input_title_tap_fingers">点击手指数</string>
+    <string name="keyboard_done_mode">完成</string>
+    <string name="keyboard_edit_mode">编辑</string>
+    <string name="keyboard_ime_hint">选择输入法</string>
+    <string name="keyboard_reset">重置</string>
+    <string name="keyboard_tab_host">主机键盘</string>
+    <string name="keyboard_tab_ime">输入法</string>
+    <string name="keyboard_tab_shortcuts">快捷键</string>
+    <string name="keyboard_tab_virtual">虚拟键盘</string>
+    <string name="kme_dir_down">下</string>
+    <string name="kme_dir_left">左</string>
+    <string name="kme_dir_right">右</string>
+    <string name="kme_dir_up">上</string>
+    <string name="kme_shared_tap_to_select">点击选择</string>
+    <string name="kv_category_gamepad">手柄</string>
+    <string name="kv_category_mouse">鼠标</string>
+    <string name="kv_category_special">特殊</string>
+    <string name="kv_title_select_key">选择按键</string>
+    <string name="perf_option_bottom">底部</string>
+    <string name="perf_option_bottom_left">左下</string>
+    <string name="perf_option_bottom_right">右下</string>
+    <string name="perf_option_horizontal">水平</string>
+    <string name="perf_option_top">顶部</string>
+    <string name="perf_option_top_left">左上</string>
+    <string name="perf_option_top_right">右上</string>
+    <string name="perf_option_vertical">垂直</string>
+    <string name="perf_summary_disable_warnings">不显示警告消息</string>
+    <string name="perf_summary_display_items">图层中要显示的项目</string>
+    <string name="perf_summary_enable_analytics">收集并显示串流分析</string>
+    <string name="perf_summary_enable_overlay">串流时显示性能图层</string>
+    <string name="perf_summary_post_stream_toast">断开后显示串流摘要</string>
+    <string name="perf_title_bg_opacity">背景不透明度</string>
+    <string name="perf_title_disable_warnings">禁用警告</string>
+    <string name="perf_title_display_items">显示项目</string>
+    <string name="perf_title_enable_analytics">启用分析</string>
+    <string name="perf_title_enable_overlay">启用图层</string>
+    <string name="perf_title_overlay_orientation">图层方向</string>
+    <string name="perf_title_overlay_position">图层位置</string>
+    <string name="perf_title_post_stream_toast">串流后摘要</string>
+    <string name="scheme_delete_confirm">确定删除方案「%1$s」吗？</string>
+    <string name="scheme_delete_failed">删除方案失败：%1$s</string>
+    <string name="scheme_delete_title">删除方案</string>
+    <string name="scheme_deleted">方案已删除</string>
+    <string name="scheme_new">新建</string>
+    <string name="scheme_search_hint">搜索方案…</string>
+    <string name="scheme_title">按键映射方案</string>
+    <string name="vpn_placeholder_desc">此版本暂不提供 VPN 功能</string>
+    <string name="vpn_placeholder_title">VPN</string>
+    <string name="widget_bind_title">绑定小部件</string>
+    <string name="widget_clear_bind">清除绑定</string>
+    <string name="widget_confirm_unbind">确定要从小部件中解绑 %1$s 吗？</string>
+    <string name="widget_empty_desc">长按主屏添加小部件 →</string>
+    <string name="widget_empty_title">无小部件</string>
+    <string name="widget_hint">长按编辑</string>
+    <string name="widget_no_computers">未找到电脑</string>
+    <string name="widget_tap_to_change">点击更改</string>
+    <string name="widget_unbound">未绑定</string>
+
+    <!-- Delete Custom Key Dialog -->
+    <string name="customkey_title_delete">删除自定义按键</string>
+    <string name="customkey_empty">无自定义按键</string>
+    <string name="customkey_select_hint">选择要删除的按键：</string>
+    <string name="customkey_error_no_selection">请选择要删除的按键</string>
+    <string name="customkey_error_delete_failed">删除失败，请重试</string>
+    <string name="customkey_keycode_format">键码: %1$s</string>
+
+    <!-- Preference Components -->
+    <string name="pref_item_selected_format">%1$s（已选 %2$d 项）</string>
 </resources>

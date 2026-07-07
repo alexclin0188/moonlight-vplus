@@ -1356,7 +1356,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 当前方案的名称，从数据库查询。内置方案固定返回"内置虚拟手柄方案"。 */
     val currentSchemeName: String
         get() {
-            if (currentSchemeConfigId == 0L) return activity.getString(R.string.editor_scheme_default_name)
+            if (currentSchemeConfigId == 0L) return activity.getString(R.string.label_builtin_virtual_gamepad)
             try {
                 val db = KeymappingDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
