@@ -97,93 +97,6 @@
         <item name="iconSpaceReserved">false</item>
     </style>
 
-    <style name="PreferenceThemeWithShadow" parent="SettingsThemeCompat">
-        <item name="android:textViewStyle">@style/PreferenceTextWithShadow</item>
-        <item name="android:titleTextAppearance">@style/PreferenceTitleWithShadow</item>
-        <item name="android:subtitleTextAppearance">@style/PreferenceSummaryWithShadow</item>
-        <!-- Preference 的 summary 在 AOSP 默认布局里通常使用 ?android:attr/textAppearanceSmall -->
-        <item name="android:textAppearanceSmall">@style/PreferenceSummaryWithShadow</item>
-        <!-- 某些系统的 Preference 列表项 summary 会走 list item 的 secondary textAppearance -->
-        <item name="android:textAppearanceListItemSecondary">@style/PreferenceSummaryWithShadow</item>
-        <item name="android:textAppearanceListItemSmall">@style/PreferenceSummaryWithShadow</item>
-        <item name="android:colorAccent">@color/theme_pink_secondary</item>
-        <item name="android:textColorPrimary">@color/theme_pink_secondary</item>
-        <item name="android:listDivider">@color/theme_pink_secondary</item>
-    </style>
-
-    <style name="PreferenceTextWithShadow">
-        <item name="android:textColor">@android:color/white</item>
-        <item name="android:shadowColor">#88000000</item>
-        <item name="android:shadowDx">1</item>
-        <item name="android:shadowDy">1</item>
-        <item name="android:shadowRadius">3</item>
-        <item name="android:letterSpacing">0.03</item>
-    </style>
-
-    <style name="PreferenceTitleWithShadow" parent="PreferenceTextWithShadow">
-        <item name="android:textSize">18sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@android:color/white</item>
-    </style>
-
-    <style name="PreferenceSummaryWithShadow">
-        <item name="android:textSize">11sp</item>
-        <item name="android:textColor">?android:attr/textColorSecondary</item>
-        <!-- 使用系统默认的次要文字颜色 -->
-    </style>
-
-    <style name="PreferenceCategoryWithShadow" parent="PreferenceTextWithShadow">
-        <item name="android:textSize">20sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/theme_pink_secondary</item> 
-        <item name="android:shadowColor">#AA000000</item> <!-- 更强的阴影 -->
-        <item name="android:shadowRadius">5</item> <!-- 更大的阴影半径 -->
-    </style>
-
-    <!-- GameMenu 对话框样式 -->
-    <style name="GameMenuDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
-        <item name="android:windowBackground">@drawable/game_menu_dialog_bg</item>
-        <item name="android:windowMinWidthMajor">80%</item>
-        <item name="android:windowMinWidthMinor">95%</item>
-        <item name="android:windowIsFloating">true</item>
-        <item name="android:windowAnimationStyle">@style/GameMenuDialogAnimation</item>
-        <item name="android:windowSoftInputMode">adjustResize</item>
-    </style>
-
-    <!-- GameMenu 按钮样式 -->
-    <style name="GameMenuButtonStyle" parent="android:Widget.Button">
-        <item name="android:background">@drawable/game_menu_button_bg</item>
-        <item name="android:textColor">@color/game_menu_text_primary</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:paddingLeft">6dp</item>
-        <item name="android:paddingRight">6dp</item>
-        <item name="android:minHeight">36dp</item>
-        <item name="android:gravity">center</item>
-        <item name="android:stateListAnimator">@null</item>
-        <item name="android:elevation">0dp</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
-        <item name="android:drawablePadding">4dp</item>
-        <item name="android:foreground">?android:attr/selectableItemBackground</item>
-    </style>
-
-    <!-- GameMenu 列表项样式 -->
-    <style name="GameMenuListItemStyle" parent="android:Widget.ListView">
-        <item name="android:background">@drawable/game_menu_list_item_bg</item>
-        <item name="android:textColor">@color/game_menu_text_primary</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:padding">16dp</item>
-        <item name="android:minHeight">56dp</item>
-        <item name="android:gravity">center_vertical</item>
-    </style>
-
-    <!-- GameMenu 对话框动画 -->
-    <style name="GameMenuDialogAnimation">
-        <item name="android:windowEnterAnimation">@anim/game_menu_dialog_enter</item>
-        <item name="android:windowExitAnimation">@anim/game_menu_dialog_exit</item>
-    </style>
-
     <!-- 通用弹窗样式 -->
     <style name="AppDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
         <item name="android:windowBackground">@drawable/app_dialog_bg_cute</item>
@@ -215,24 +128,6 @@
         <item name="android:gravity">center</item>
         <item name="android:paddingTop">16dp</item>
         <item name="android:paddingBottom">8dp</item>
-    </style>
-
-    <!-- 通用按钮样式 -->
-    <style name="AppDialogButtonStyle" parent="android:Widget.Button">
-        <item name="android:background">@drawable/game_menu_button_bg</item>
-        <item name="android:textColor">@color/app_dialog_title_color</item>
-        <item name="android:textSize">14sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:paddingLeft">12dp</item>
-        <item name="android:paddingRight">12dp</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-        <item name="android:minHeight">40dp</item>
-        <item name="android:gravity">center</item>
-        <item name="android:stateListAnimator">@null</item>
-        <item name="android:elevation">0dp</item>
-        <item name="android:clickable">true</item>
-        <item name="android:focusable">true</item>
     </style>
 
     <!-- 进度对话框样式 -->
@@ -281,62 +176,6 @@
         <item name="android:textStyle">bold</item>
     </style>
 
-    <!-- 专门用于 easyter 对话框的标题样式 -->
-    <style name="DialogRowLayout">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:orientation">horizontal</item>
-        <item name="android:paddingTop">4dp</item>
-        <item name="android:paddingBottom">4dp</item>
-    </style>
 
-    <style name="DialogRowLabel" parent="Widget.AppCompat.TextView">
-        <item name="android:layout_width">100dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="DialogRowValue" parent="Widget.AppCompat.TextView">
-        <item name="android:layout_width">0dp</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_weight">1</item>
-        <item name="android:textIsSelectable">true</item>
-    </style>
-
-
-    <style name="ConfigLabel" parent="Widget.AppCompat.TextView">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">12dp</item>
-        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
-        <item name="android:textStyle">bold</item>
-    </style>
-
-    <style name="ConfigEditText" parent="Widget.AppCompat.EditText">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-    </style>
-
-    <style name="ConfigEditText.MultiLine">
-        <item name="android:minLines">2</item>
-        <item name="android:gravity">top</item>
-        <item name="android:inputType">textMultiLine</item>
-    </style>
-
-    <style name="ConfigSubLabel" parent="Widget.AppCompat.TextView">
-        <item name="android:layout_width">wrap_content</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">16dp</item>
-        <item name="android:layout_marginBottom">4dp</item>
-        <item name="android:textAppearance">?android:attr/textAppearanceSmall</item>
-        <item name="android:textColor">?android:attr/textColorSecondary</item>
-    </style>
-
-    <style name="ConfigSwitch">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:paddingTop">8dp</item>
-        <item name="android:paddingBottom">8dp</item>
-    </style>
 
 </resources>

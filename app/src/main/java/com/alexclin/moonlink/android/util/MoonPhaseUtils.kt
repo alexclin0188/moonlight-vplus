@@ -17,14 +17,14 @@ object MoonPhaseUtils {
     )
 
     enum class MoonPhaseType(val displayName: String, private val minPhase: Double, private val maxPhase: Double) {
-        NEW_MOON("新月", 0.0, 0.0625),
-        WAXING_CRESCENT("娥眉月", 0.0625, 0.1875),
-        FIRST_QUARTER("上弦月", 0.1875, 0.3125),
-        WAXING_GIBBOUS("盈凸月", 0.3125, 0.4375),
-        FULL_MOON("满月", 0.4375, 0.5625),
-        WANING_GIBBOUS("亏凸月", 0.5625, 0.6875),
-        LAST_QUARTER("下弦月", 0.6875, 0.8125),
-        WANING_CRESCENT("残月", 0.8125, 0.9375);
+        NEW_MOON("New Moon", 0.0, 0.0625),
+        WAXING_CRESCENT("Waxing Crescent", 0.0625, 0.1875),
+        FIRST_QUARTER("First Quarter", 0.1875, 0.3125),
+        WAXING_GIBBOUS("Waxing Gibbous", 0.3125, 0.4375),
+        FULL_MOON("Full Moon", 0.4375, 0.5625),
+        WANING_GIBBOUS("Waning Gibbous", 0.5625, 0.6875),
+        LAST_QUARTER("Last Quarter", 0.6875, 0.8125),
+        WANING_CRESCENT("Waning Crescent", 0.8125, 0.9375);
 
         fun isInRange(phase: Double): Boolean = phase in minPhase..<maxPhase
     }
@@ -63,25 +63,25 @@ object MoonPhaseUtils {
     }
 
     fun getMoonPhasePoeticTitle(phase: Double): String = when (getMoonPhaseType(phase)) {
-        MoonPhaseType.NEW_MOON -> "🌑 新月如钩 · 万象更新"
-        MoonPhaseType.WAXING_CRESCENT -> "🌒 娥眉初现 · 希望萌芽"
-        MoonPhaseType.FIRST_QUARTER -> "🌓 上弦月明 · 平衡之道"
-        MoonPhaseType.WAXING_GIBBOUS -> "🌔 盈凸月满 · 收获在望"
-        MoonPhaseType.FULL_MOON -> "🌕 满月当空 · 圆满时刻"
-        MoonPhaseType.WANING_GIBBOUS -> "🌖 亏凸月暗 · 感恩释放"
-        MoonPhaseType.LAST_QUARTER -> "🌗 下弦月残 · 反思内省"
-        MoonPhaseType.WANING_CRESCENT -> "🌘 残月如钩 · 循环往复"
+        MoonPhaseType.NEW_MOON -> "🌑 New Moon · New Beginnings"
+        MoonPhaseType.WAXING_CRESCENT -> "🌒 Crescent Appears · Hope Grows"
+        MoonPhaseType.FIRST_QUARTER -> "🌓 First Quarter · Balance"
+        MoonPhaseType.WAXING_GIBBOUS -> "🌔 Waxing Gibbous · Harvest Beckons"
+        MoonPhaseType.FULL_MOON -> "🌕 Full Moon · Culmination"
+        MoonPhaseType.WANING_GIBBOUS -> "🌖 Waning Gibbous · Gratitude"
+        MoonPhaseType.LAST_QUARTER -> "🌗 Last Quarter · Reflection"
+        MoonPhaseType.WANING_CRESCENT -> "🌘 Waning Crescent · Renewal"
     }
 
     fun getMoonPhaseDescription(phase: Double): String = when (getMoonPhaseType(phase)) {
-        MoonPhaseType.NEW_MOON -> "月亮与太阳同方向，不可见。\n象征新的开始和重生。"
-        MoonPhaseType.WAXING_CRESCENT -> "月亮的右侧开始发光。\n象征成长和希望的萌芽。"
-        MoonPhaseType.FIRST_QUARTER -> "月亮的一半被照亮。\n象征平衡和决策的时刻。"
-        MoonPhaseType.WAXING_GIBBOUS -> "月亮大部分被照亮。\n象征接近圆满和收获。"
-        MoonPhaseType.FULL_MOON -> "月亮完全被照亮。\n象征圆满、成就和庆祝。"
-        MoonPhaseType.WANING_GIBBOUS -> "月亮开始变暗。\n象征释放和感恩。"
-        MoonPhaseType.LAST_QUARTER -> "月亮的一半变暗。\n象征反思和内省。"
-        MoonPhaseType.WANING_CRESCENT -> "月亮几乎不可见。\n象征结束和准备新的循环。"
+        MoonPhaseType.NEW_MOON -> "The moon is aligned with the sun, invisible.\nSymbolizes new beginnings and rebirth."
+        MoonPhaseType.WAXING_CRESCENT -> "The right side of the moon begins to glow.\nSymbolizes growth and budding hope."
+        MoonPhaseType.FIRST_QUARTER -> "Half of the moon is illuminated.\nSymbolizes balance and decision-making."
+        MoonPhaseType.WAXING_GIBBOUS -> "Most of the moon is illuminated.\nSymbolizes approaching fullness and harvest."
+        MoonPhaseType.FULL_MOON -> "The moon is fully illuminated.\nSymbolizes completion, achievement and celebration."
+        MoonPhaseType.WANING_GIBBOUS -> "The moon begins to darken.\nSymbolizes release and gratitude."
+        MoonPhaseType.LAST_QUARTER -> "Half of the moon is dark.\nSymbolizes reflection and introspection."
+        MoonPhaseType.WANING_CRESCENT -> "The moon is nearly invisible.\nSymbolizes endings and preparing for a new cycle."
     }
 
     fun getMoonPhaseInfo(phase: Double): MoonPhaseInfo = MoonPhaseInfo(

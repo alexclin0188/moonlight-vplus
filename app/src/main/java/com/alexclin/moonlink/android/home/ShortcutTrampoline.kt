@@ -167,7 +167,7 @@ class ShortcutTrampoline : Activity() {
         } else if (details.state == ComputerDetails.State.OFFLINE) {
             Dialog.displayDialog(this@ShortcutTrampoline,
                     resources.getString(R.string.conn_error_title),
-                    resources.getString(R.string.error_pc_offline),
+                    resources.getString(R.string.pair_pc_offline),
                     true)
         } else if (details.pairState != PairingManager.PairState.PAIRED) {
             Dialog.displayDialog(this@ShortcutTrampoline,

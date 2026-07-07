@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.util.ToastUtil
 import android.widget.Toast
 import kotlin.math.roundToInt
@@ -123,7 +125,7 @@ fun StickPropertyDialog(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismiss) {
-                        Text("取消", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.width(4.dp))
                     TextButton(onClick = {
@@ -131,13 +133,13 @@ fun StickPropertyDialog(
                         if (isCreateMode) {
                             if (isPad || isDigitalStick) {
                                 if (upValue.isBlank() || downValue.isBlank() || leftValue.isBlank() || rightValue.isBlank()) {
-                                    ToastUtil.show(context, "请先选择所有方向键值", Toast.LENGTH_SHORT)
+                                    ToastUtil.show(context, context.getString(R.string.editor_toast_select_all_directions), Toast.LENGTH_SHORT)
                                     return@TextButton
                                 }
                             }
                             if (element.type in listOf(ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK)) {
                                 if (middleValue.isBlank()) {
-                                    ToastUtil.show(context, "请先选择中值", Toast.LENGTH_SHORT)
+                                    ToastUtil.show(context, context.getString(R.string.editor_toast_select_middle_value), Toast.LENGTH_SHORT)
                                     return@TextButton
                                 }
                             }
@@ -145,13 +147,13 @@ fun StickPropertyDialog(
                         // 方向值内部互斥校验（十字键/数字摇杆：↑↓←→ 不可重复）
                         if (isPad || isDigitalStick) {
                             val dupMsg = findDuplicateKeyValues(mapOf(
-                                "↑上滑" to upValue,
-                                "↓下滑" to downValue,
-                                "←左滑" to leftValue,
-                                "→右滑" to rightValue,
+                                "↑ Sw Up" to upValue,
+                                "↓ Sw Dn" to downValue,
+                                "← Sw Lt" to leftValue,
+                                "→ Sw Rt" to rightValue,
                             ))
                             if (dupMsg != null) {
-                                ToastUtil.show(context, "方向值重复：$dupMsg", Toast.LENGTH_SHORT)
+                                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
                                 return@TextButton
                             }
                         }
@@ -159,7 +161,7 @@ fun StickPropertyDialog(
                     }) {
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("保存", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -180,7 +182,7 @@ fun StickPropertyDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             KeySlotItem(
-                                label = "中值",
+                                label = stringResource(R.string.editor_label_middle_value),
                                 value = middleValue,
                                 onClick = { directionPickerTarget = "middle" },
                                 icon = Icons.Default.Keyboard,
@@ -191,7 +193,7 @@ fun StickPropertyDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
-                                Text("灵敏度: ${sense.toIntOrNull() ?: 30}",
+                                Text(context.getString(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 30),
                                     style = MaterialTheme.typography.labelSmall,
                                     fontSize = 10.sp)
                                 Slider(

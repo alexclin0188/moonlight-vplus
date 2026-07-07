@@ -22,6 +22,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.alexclin.moonlink.android.util.PlatformBinding
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.ComputerDetails
@@ -106,14 +108,14 @@ fun DeviceBoxArt(
         if (bitmap != null && !bitmap!!.isRecycled) {
             Image(
                 bitmap = bitmap!!.asImageBitmap(),
-                contentDescription = "桌面缩略图",
+                contentDescription = stringResource(R.string.box_art_thumbnail),
                 modifier = Modifier.fillMaxSize(),
                 contentScale = ContentScale.Crop,
             )
         } else {
             Icon(
                 imageVector = Icons.Default.DesktopWindows,
-                contentDescription = "桌面",
+                contentDescription = stringResource(R.string.bar_desktop),
                 modifier = Modifier.fillMaxSize(0.4f),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(
                     alpha = if (isOnline) 0.6f else 0.3f

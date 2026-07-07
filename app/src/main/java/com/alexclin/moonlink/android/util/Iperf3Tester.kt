@@ -15,9 +15,8 @@ import android.widget.RadioGroup
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
-import android.widget.Toast
-
 import com.alexclin.moonlink.android.R
+import android.widget.Toast
 
 import java.io.BufferedReader
 import java.io.File
@@ -124,7 +123,7 @@ class Iperf3Tester(
                 val iperfPath = getIperfPath()
                 val command = buildCommand(iperfPath)
 
-                appendOutput("正在执行: ${TextUtils.join(" ", command)}\n\n")
+                appendOutput("Running: ${TextUtils.join(" ", command)}\n\n")
 
                 val pb = ProcessBuilder(command)
                 pb.redirectErrorStream(true)
@@ -139,15 +138,15 @@ class Iperf3Tester(
                 }
 
                 val exitCode = iperfProcess!!.waitFor()
-                appendOutput("\n--- 测试完成 (退出码: $exitCode) ---\n")
+                appendOutput("\n--- Test complete (exit code: $exitCode) ---\n")
                 parseAndDisplaySummary()
 
             } catch (e: IOException) {
                 e.printStackTrace()
-                appendOutput("\n错误: ${e.message}\n请确保 iPerf3 服务器已在PC上运行，并且防火墙已正确配置。\n")
+                appendOutput("\nError: ${e.message}\nPlease ensure iPerf3 server is running and firewall is configured correctly.\n")
             } catch (e: InterruptedException) {
                 Thread.currentThread().interrupt()
-                appendOutput("\n--- 测试已中断 ---\n")
+                appendOutput("\n--- Test interrupted ---\n")
             } finally {
                 iperfProcess = null
                 setUiState(true, startButton, stopButton)
@@ -158,12 +157,12 @@ class Iperf3Tester(
     private fun validateInputs(): Boolean {
         val serverIp = serverInput.text.toString().trim()
         if (serverIp.isEmpty() || serverIp.matches(Regex(".*[;&|`<>\\$\\(\\)].*"))) {
-            Toast.makeText(context, "无效的服务器地址", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.iperf_invalid_server_address), Toast.LENGTH_SHORT).show()
             return false
         }
         val portStr = portEditText.text.toString().trim()
         if (!portStr.matches(Regex("\\d+")) || portStr.toInt() > 65535) {
-            Toast.makeText(context, "无效的端口号 (1-65535)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.iperf_invalid_port), Toast.LENGTH_SHORT).show()
             return false
         }
         return true
@@ -174,7 +173,7 @@ class Iperf3Tester(
         val nativeLibraryDir = context.applicationInfo.nativeLibraryDir
         val iperfPath = "$nativeLibraryDir/libiperf3.so"
         if (!File(iperfPath).exists()) {
-            throw IOException("iPerf3 二进制文件未在原生库目录中找到。请确保 'libiperf3.so' 位于 'jniLibs/arm64-v8a' 文件夹中。")
+            throw IOException("iPerf3 binary not found in native library directory. Ensure 'libiperf3.so' is in the 'jniLibs/arm64-v8a' folder.")
         }
         return iperfPath
     }
@@ -199,7 +198,7 @@ class Iperf3Tester(
                 command.add("-b")
                 command.add(bandwidth)
             } else {
-                appendOutput("警告: UDP 测试需要指定带宽, 使用默认值 1M。\n")
+                appendOutput("Warning: UDP test requires bandwidth, using default 1M.\n")
                 command.add("-b")
                 command.add("1M")
             }
@@ -231,14 +230,14 @@ class Iperf3Tester(
 
             if (filteredArgs.isNotEmpty()) command.addAll(filteredArgs)
             if (ignoredArgs.isNotEmpty()) {
-                appendOutput("提示: 为避免冲突或安全风险，已自动忽略以下参数: ${TextUtils.join(" ", ignoredArgs)}\n")
+                appendOutput("Note: To avoid conflicts, the following args were ignored: ${TextUtils.join(" ", ignoredArgs)}\n")
             }
         }
         return command
     }
 
     private fun parseAndDisplaySummary() {
-        val direction = if (downloadRadioButton.isChecked) "下载" else "上传"
+        val direction = if (downloadRadioButton.isChecked) "Download" else "Upload"
 
         val tcpPattern = Pattern.compile(
                 "\\[\\s*\\d+\\s*\\]\\s+[\\d.-]+\\s+sec\\s+.*\\s+([\\d.]+)\\s+(Mbits/sec|Gbits/sec|Kbits/sec|bits/sec)"
@@ -265,11 +264,11 @@ class Iperf3Tester(
                 if (udpMatcher.find()) {
                     summaryResult = String.format(
                             "\n========================================\n" +
-                                    "             测试结果总结\n" +
+                                    "           Result Summary\n" +
                                     "----------------------------------------\n" +
-                                    " 平均%s带宽: %s %s\n" +
-                                    "           抖动: %s ms\n" +
-                                    "           丢包: %s / %s (%s%%)\n" +
+                                    " Avg %s bandwidth: %s %s\n" +
+                                    "         Jitter: %s ms\n" +
+                                    "         Loss: %s / %s (%s%%)\n" +
                                     "========================================\n",
                             direction, udpMatcher.group(1), udpMatcher.group(2),
                             udpMatcher.group(3), udpMatcher.group(5), udpMatcher.group(6), udpMatcher.group(7)
@@ -281,9 +280,9 @@ class Iperf3Tester(
                 if (tcpMatcher.find()) {
                     summaryResult = String.format(
                             "\n========================================\n" +
-                                    "             测试结果总结\n" +
+                                    "           Result Summary\n" +
                                     "----------------------------------------\n" +
-                                    " 平均%s带宽: %s %s\n" +
+                                    " Avg %s bandwidth: %s %s\n" +
                                     "========================================\n",
                             direction, tcpMatcher.group(1), tcpMatcher.group(2)
                     )
@@ -295,30 +294,13 @@ class Iperf3Tester(
         if (summaryResult.isNotEmpty()) {
             appendOutput(summaryResult)
         } else {
-            appendOutput("\n未能自动解析最终结果，请查看以上详细日志。\n")
+            appendOutput("\nCould not automatically parse final results. See full log above.\n")
         }
     }
 
     private fun translateIperfOutput(originalLine: String): String {
-        return when {
-            originalLine.contains("Connecting to host") ->
-                originalLine.replace("Connecting to host", "正在连接到主机")
-            originalLine.contains("local") && originalLine.contains("port") ->
-                originalLine.replace("local", "本地").replace("port", "端口")
-            originalLine.contains("Interval") ->
-                originalLine.replace("Interval", "时间段").replace("Transfer", "传输量")
-                        .replace("Bitrate", "比特率").replace("Bandwidth", "带宽")
-                        .replace("Retr", "重传").replace("Jitter", "抖动")
-                        .replace("Lost/Total", "丢包/总计").replace("Datagrams", "数据报")
-            originalLine.contains("sender") -> originalLine.replace("sender", "发送方")
-            originalLine.contains("receiver") -> originalLine.replace("receiver", "接收方")
-            originalLine.contains("iperf Done.") -> "iPerf3 测试完毕。"
-            originalLine.contains("unable to connect to server") ->
-                "错误：无法连接到服务器。请检查IP地址和端口是否正确，以及服务器是否正在运行。"
-            originalLine.contains("interrupt - the client has terminated") ->
-                "中断 - 客户端已终止。"
-            else -> originalLine
-        }
+        // iPerf3 output is already in English; return as-is
+        return originalLine
     }
 
     private fun killProcess() {

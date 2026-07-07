@@ -4,12 +4,13 @@ import android.content.Context
 import com.limelight.utils.AppCacheKeys
 import com.limelight.nvstream.http.NvApp
 import java.util.Locale
+import com.alexclin.moonlink.android.R
 
 /**
  * 应用缓存管理器
  * 提供统一的应用信息缓存管理功能
  */
-class AppCacheManager(context: Context) {
+class AppCacheManager(private val context: Context) {
 
     private val preferences = context.getSharedPreferences(PREFERENCE_NAME, Context.MODE_PRIVATE)
 
@@ -122,10 +123,10 @@ class AppCacheManager(context: Context) {
             val allPrefs = preferences.all
             val totalKeys = allPrefs.size
             val appCacheKeys = allPrefs.keys.count { AppCacheKeys.isAppCacheKey(it) }
-            String.format(Locale.ROOT, "总键数: %d, 应用缓存键数: %d", totalKeys, appCacheKeys)
+            String.format(Locale.ROOT, context.getString(R.string.cache_stats_format), totalKeys, appCacheKeys)
         } catch (e: Exception) {
             e.printStackTrace()
-            "获取统计信息失败"
+            context.getString(R.string.cache_stats_failed)
         }
     }
 

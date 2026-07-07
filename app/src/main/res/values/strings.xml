@@ -1,53 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="author_web">https://space.bilibili.com/393593468</string>
 
     <!-- Shortcut strings -->
-    <string name="scut_deleted_pc">PC deleted</string>
     <string name="scut_not_paired">PC not paired</string>
     <string name="scut_pc_not_found">PC not found</string>
     <string name="scut_invalid_uuid">Provided PC is not valid</string>
     <string name="scut_invalid_app_id">Provided App is not valid</string>
 
-    <!-- Help strings -->
-    <string name="help_loading_title">Help Viewer</string>
-    <string name="help_loading_msg">Loading help page…</string>
-
     <!-- PC view menu entries -->
     <string name="pcview_menu_header_online">Online</string>
     <string name="pcview_menu_header_offline">Offline</string>
-    <string name="pcview_menu_header_unknown">Refreshing</string>
     <string name="pcview_menu_app_list">View All Apps</string>
 
     <!-- Widget strings -->
     <string name="widget_name">Game List</string>
-    <string name="widget_configure_title">Select Computer</string>
     <string name="widget_no_apps">No apps found</string>
     <string name="widget_tap_to_refresh">Tap to refresh</string>
     <string name="widget_configure_prompt">Choose a computer to display games from:</string>
 
     <string name="pcview_menu_pair_pc">Pair with PC</string>
-    <string name="pcview_menu_unpair_pc">Unpair</string>
     <string name="pcview_menu_send_wol">Send Wake-On-LAN request</string>
     <string name="pcview_menu_delete_pc">Delete PC</string>
     <string name="pcview_menu_test_network">Test Network Connection</string>
     <string name="pcview_menu_details">View Details</string>
     <string name="pcview_menu_secondary_screen">Secondary Screen Stream (Foundation Sunshine Compatible)</string>
-    <string name="pcview_menu_eol">NVIDIA GameStream End-of-Service</string>
     <string name="pcview_menu_sleep_success">Host sleep success</string>
     <string name="pcview_menu_sleep_fail">Host sleep failed</string>
     <string name="pcview_menu_disable_ipv6">Disable IPv6</string>
-    <string name="pcview_menu_enable_ipv6">Enable IPv6</string>
     <string name="pcview_menu_open_webui">Open Web Management (Sunshine)</string>
     <string name="pcview_open_webui_unavailable">No reachable address available for Web management</string>
-    <string name="pcview_open_webui_no_browser">No browser available to open Web management</string>
-    <string name="sunshine_webui_ssl_warning_title">Untrusted Certificate</string>
-    <string name="sunshine_webui_ssl_warning_msg">The host\'s certificate does not match the one MoonLink has on file. The page may have been tampered with. Continue anyway?\n\nURL: %1$s</string>
-    <string name="sunshine_webui_ssl_proceed">Continue</string>
     <string name="sunshine_webui_auth_title">Sign in to %1$s (%2$s)</string>
-    <string name="sunshine_webui_auth_user_hint">Username</string>
-    <string name="sunshine_webui_auth_pass_hint">Password</string>
-    <string name="about_dialog_official_site">🌐 Official Website</string>
     <string name="pcview_ipv6_disabled">IPv6 disabled for this PC</string>
     <string name="pcview_ipv6_enabled">IPv6 enabled for this PC</string>
 
@@ -61,35 +43,15 @@
     <string name="nettest_text_blocked">Your device\'s current network connection is blocking MoonLink. Streaming over the Internet may not work while connected to this network.</string>
 
     <!-- Pair messages -->
-    <string name="pairing">Pairing…</string>
     <string name="pair_pc_offline">Computer is offline</string>
     <string name="pair_pc_ingame">Computer is currently in a game. You must close the game before pairing.</string>
     <string name="pair_pairing_title">Pairing</string>
     <string name="pair_pairing_msg">Please enter the following PIN on the target PC:</string>
-    <string name="pair_pairing_help">If your host PC is running Sunshine, navigate to the Sunshine web UI to enter the PIN.</string>
     <string name="pair_incorrect_pin">Incorrect PIN</string>
     <string name="pair_fail">Pairing failed</string>
     <string name="pair_already_in_progress">Pairing already in progress</string>
 
-    <!-- WOL messages -->
-    <string name="wol_pc_online">Computer is online</string>
-    <string name="wol_no_mac">Unable to wake PC because there is no stored MAC address</string>
-    <string name="wol_waking_pc">Waking PC…</string>
-    <string name="wol_waking_msg">It may take a few seconds for your PC to wake up.
-	    If it doesn\'t, make sure it\'s configured properly for Wake-On-LAN.
-    </string>
-    <string name="wol_fail">Failed to send Wake-On-LAN packets</string>
-
-    <!-- Unpair messages -->
-    <string name="unpairing">Unpairing…</string>
-    <string name="unpair_success">Unpaired successfully</string>
-    <string name="unpair_fail">Failed to unpair</string>
-    <string name="unpair_error">Device was not paired</string>
-
     <!-- Errors -->
-    <string name="error_pc_offline">Computer is offline</string>
-    <string name="no_app_found_for_streaming">No app found for streaming</string>
-    <string name="error_manager_not_running">The ComputerManager service is not running. Please wait a few seconds or restart the app.</string>
     <string name="error_unknown_host">Failed to resolve host</string>
     <string name="error_404">GFE returned an HTTP 404 error. Make sure your PC is running a supported GPU.
 	    Using remote desktop software can also cause this error. Try rebooting your machine or reinstalling GFE.
@@ -100,28 +62,10 @@
     <string name="title_decoding_reset">Video Settings Reset</string>
     <string name="message_decoding_reset">Your device\'s video decoder continues to crash at your selected streaming settings. Your streaming settings have been reset to default.</string>
     <string name="error_usb_prohibited">USB access is prohibited by your device administrator. Check your Knox or MDM settings.</string>
-    <string name="unable_to_pin_shortcut">Your current launcher does not allow for creating pinned shortcuts.</string>
-    <string name="video_decoder_init_failed">Video decoder failed to initialize. Your device may not support the selected resolution or frame rate.</string>
-    <string name="no_video_received_error">No video received from host.</string>
-    <string name="no_frame_received_error">Your network connection isn\'t performing well. Reduce your video bitrate setting or try a faster connection.</string>
-    <string name="early_termination_error">Something went wrong on your host PC when starting the stream.\n\nMake sure you don\'t have any DRM-protected content open on your host PC. You can also try restarting your host PC.</string>
-    <string name="frame_conversion_error">The host PC reported a fatal video encoding error.\n\nTry disabling HDR mode, changing the streaming resolution, or changing your host PC\'s display resolution.</string>
-    <string name="check_ports_msg">Check your firewall and port forwarding rules for port(s):</string>
 
     <!-- Start application messages -->
     <string name="conn_establishing_title">Establishing Connection</string>
-    <string name="conn_establishing_msg">Starting connection</string>
-    <string name="conn_metered">Warning: Your active network connection is metered!</string>
-    <string name="conn_client_latency">Average frame decoding latency:</string>
-    <string name="conn_client_latency_hw">hardware decoder latency:</string>
-    <string name="conn_hardware_latency">Average hardware decoding latency:</string>
-    <string name="conn_starting">Starting</string>
     <string name="conn_error_title">Connection Error</string>
-    <string name="conn_error_msg">Failed to start</string>
-    <string name="conn_terminated_title">Connection Terminated</string>
-    <string name="conn_terminated_msg">The connection was terminated.</string>
-    <string name="error_code_prefix">Error code:</string>
-    <string name="notification_icon">Notification icon</string>
 
     <!-- Copy strings -->
     <string name="copy_content">Copy Content</string>
@@ -130,91 +74,30 @@
 
     <!-- General strings -->
     <string name="ip_hint">IP address of host PC</string>
-    <string name="searching_pc">Searching for host PCs on your local network…\n\n
-        Ensure Sunshine is running on your host PC or GameStream is enabled in the GeForce Experience SHIELD settings.</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
-    <string name="lost_connection">Lost connection to PC</string>
-    <string name="title_details">Details</string>
     <string name="supplement_address">Set Remote Address</string>
-    <string name="supplement_address_title">Remote Address</string>
-    <string name="supplement_address_done">Remote address updated</string>
     <string name="help">Help</string>
     <string name="delete_pc_msg">Are you sure you want to delete this PC?</string>
-    <string name="slow_connection_msg">Slow connection to PC\nReduce your bitrate</string>
-    <string name="poor_connection_msg">Poor connection to PC</string>
-    <string name="perf_overlay_streamdetails">Video stream: %1$s %2$.2f FPS</string>
-    <string name="perf_overlay_decoder">Decoder: %1$s</string>
-    <string name="perf_overlay_incomingfps">Incoming frame rate from network: %1$.2f FPS</string>
-    <string name="perf_overlay_renderingfps">Rendering frame rate: %1$.2f FPS</string>
-    <string name="perf_overlay_hostprocessinglatency">Host processing latency min/max/average: %1$.1f/%2$.1f/%3$.1f ms</string>
-    <string name="perf_overlay_netdrops">Frames dropped by your network connection: %1$.2f%%</string>
-    <string name="perf_overlay_netlatency">Average network latency: %1$d ms (variance: %2$d ms)</string>
-    <string name="perf_overlay_dectime">Average decoding time: %1$.2f ms</string>
 
     <!-- AppList activity -->
     <string name="applist_connect_msg">Connecting to PC…</string>
-    <string name="applist_menu_start_with_vdd"> Start With Virtual Display </string>
-    <string name="applist_menu_start_with_last_settings">Start with Last Settings</string>
-    <string name="applist_menu_resume">Resume Session</string>
-    <string name="applist_menu_quit">Quit Session</string>
-    <string name="applist_menu_quit_and_start">Quit Current Game and Start</string>
-    <string name="applist_menu_cancel">Cancel</string>
-    <string name="applist_menu_details">View Details</string>
-    <string name="applist_menu_scut">Create Shortcut</string>
-    <string name="applist_menu_tv_channel">Add to Channel</string>
-    <string name="applist_menu_hide_app">Hide App</string>
-    <string name="applist_refresh_title">App List</string>
-    <string name="applist_refresh_msg">Refreshing apps…</string>
-    <string name="applist_refresh_error_title">Error</string>
-    <string name="applist_refresh_error_msg">Failed to get app list</string>
-    <string name="quick_start_load_app_list_first">No cached apps yet. Opening the app list to load them first.</string>
     <string name="error_desktop_special_app_unsupported">This host does not support Desktop quick start. Open the app list once to load cached apps, or update Foundation Sunshine.</string>
     <string name="applist_quit_app">Quitting</string>
     <string name="applist_quit_success">Successfully quit</string>
     <string name="applist_quit_fail">Failed to quit</string>
     <string name="applist_quit_confirmation">Are you sure you want to quit the running app? All unsaved data will be lost.</string>
-    <string name="applist_details_id">App ID:</string>
 
     <!-- In Game menu -->
-    <string name="game_menu_toggle_performance_overlay">Toggle Performance Overlay</string>
-    <string name="perf_overlay_hidden">CLOSE</string>
-    <string name="perf_overlay_floating">SUSPENSION</string>
-    <string name="perf_overlay_locked">Fixed</string>
-    <string name="game_menu_toggle_virtual_controller">Toggle Virtual Controller</string>
     <string name="game_menu_toggle_mouse_on">Enable Controller Mouse Emulation</string>
     <string name="game_menu_toggle_mouse_off">Disable Controller Mouse Emulation</string>
-    <string name="game_menu_disconnect">Disconnect</string>
-    <string name="game_menu_disconnect_and_quit">Disconnect and Quit</string>
-    <string name="game_menu_cancel">Cancel</string>
-    <string name="game_menu_send_keys">Send special Key(s)</string>
-    <string name="game_menu_send_keys_esc">Send ESC (Menu)</string>
-    <string name="game_menu_send_keys_f11">Send F11 (Toggle Full Screen)</string>
-    <string name="game_menu_send_keys_ctrl_v">Send CTRL + V (Paste Clipboard)</string>
-    <string name="game_menu_send_keys_win">Send WIN (Toggle Windows Start Menu)</string>
-    <string name="game_menu_send_keys_win_d">Send WIN + D (Switch to Desktop)</string>
-    <string name="game_menu_send_keys_win_g">Send WIN + G (Open Xbox Game Bar)</string>
-    <string name="game_menu_send_keys_shift_tab">Send SHIFT + TAB (Open Steam Overlay)</string>
-    <string name="game_menu_send_keys_alt_home">Send ALT + HOME (Toggle RTSS)</string>
-    <string name="game_menu_adjust_bitrate">Adjust Bitrate</string>
-    <string name="game_menu_bitrate_custom">Custom Bitrate</string>
-    <string name="game_menu_bitrate_current">Current: %d Mbps</string>
-    <string name="game_menu_bitrate_adjustment_success">Bitrate adjusted successfully to %d Mbps</string>
-    <string name="game_menu_bitrate_adjustment_failed">Failed to adjust bitrate</string>
-    <string name="game_menu_ok">OK</string>
-    <string name="game_menu_bitrate_range">Bitrate Range:</string>
-    <string name="game_menu_bitrate_range_value">0.5 - 200 Mbps</string>
-    <string name="game_menu_bitrate_tip">Drag the slider to adjust bitrate in real-time. Higher values mean better quality but require better network.</string>
 
     <!-- Add computer manually activity -->
     <string name="title_add_pc">Add Remote Host</string>
-    <string name="title_add_pc_choose">Add Computer</string>
     <string name="addpc_manual">Enter IP Address</string>
     <string name="addpc_qr_scan">Scan QR Code</string>
     <string name="qr_scan_prompt">Scan the QR code from Sunshine Web UI</string>
     <string name="qr_invalid_code">Unrecognized QR code</string>
-    <string name="qr_pairing">QR pairing…</string>
-    <string name="qr_pair_success">Paired successfully!</string>
     <string name="msg_add_pc">Connecting to the PC…</string>
     <string name="addpc_fail">Unable to connect to the specified computer. Make sure the required ports are allowed through the firewall.</string>
     <string name="addpc_success">Successfully added computer</string>
@@ -223,286 +106,72 @@
     <string name="addpc_wrong_sitelocal">That address doesn\'t look right. You must use your router\'s public IP address for streaming over the Internet.</string>
 
     <!-- Preferences -->
-    <string name="category_basic_settings">Basic Settings</string>
-    <string name="category_advanced_features">Performance &amp; smoothness</string>
-    <string name="title_resolution_list">Video resolution</string>
-    <string name="summary_resolution_list">Increase to improve image clarity. Decrease for better performance on lower end devices and slower networks.</string>
-    <string name="title_native_res_dialog">Native Resolution Warning</string>
-    <string name="text_native_res_dialog">Native resolution and/or FPS may not be supported by the streaming server. You will probably need to configure a matching custom display mode for the host PC manually.\n\nIf you choose to create a custom resolution in NVIDIA Control Panel to match your screen settings, please ensure you have read and understood NVIDIA\'s warning regarding possible monitor damage, PC instability, and other potential problems.\n\nWe are not responsible for any problems resulting from creating a custom resolution on your PC.\n\nIt may be that your monitor does not support a necessary display configurationItem. If so, you may try to set up a virtual monitor. Finally, if your device or host PC does not support streaming at a specific resolution or refresh rate, you\'re out of luck unfortunately.</string>
-    <string name="title_fps_list">Video frame rate</string>
-    <string name="summary_fps_list">Increase for a smoother video stream. Decrease for better performance on lower end devices.</string>
-    <string name="title_seekbar_bitrate">Video bitrate</string>
-    <string name="summary_seekbar_bitrate">Increase for better image quality. Decrease to improve performance on slower connections.</string>
-    <string name="suffix_seekbar_bitrate_mbps">Mbps</string>
-    <string name="title_adaptive_bitrate">Adaptive bitrate</string>
-    <string name="summary_adaptive_bitrate">Auto-adjust bitrate based on packet loss and latency. Falls back to a local controller when the host doesn\'t support server-side ABR.</string>
-    <string name="title_abr_mode">ABR mode</string>
-    <string name="summary_abr_mode">Quality prefers higher bitrate; Low-latency drops faster on packet loss.</string>
     <string name="abr_mode_quality">Quality</string>
     <string name="abr_mode_balanced">Balanced</string>
     <string name="abr_mode_low_latency">Low latency</string>
-    <string name="title_seekbar_scale">Host Resolution Scale</string>
-    <string name="summary_seekbar_scale">The resolution requested to the host is equivalent to the client\'s base resolution * scale factor. This will change the game rendering material precision on the host side (super-resolution streaming). Reducing this ratio can also be used to reduce GPU pressure on the host side. ⚠Note: Check if the host supports the scaled resolution before applying this option.</string>
     <string name="title_checkbox_stretch_video">Stretch video to full-screen</string>
     <string name="resolution_prefix_native">Native</string>
-    <string name="resolution_prefix_native_fullscreen">Native Full-Screen</string>
-    <string name="resolution_prefix_native_landscape">(Landscape)</string>
-    <string name="resolution_prefix_native_portrait">(Portrait)</string>
-    <string name="fps_suffix_fps">FPS</string>
-    <string name="title_native_fps_dialog">Native FPS Warning</string>
-    <string name="title_custom_resolutions">Custom resolutions</string>
-    <string name="summary_custom_resolutions">Create your own custom resolutions</string>
-    <string name="custom_resolution_input_title">Enter Custom Resolution</string>
-    <string name="width_label">Width:</string>
-    <string name="height_label">Height:</string>
-    <string name="width_hint">e.g. 1920</string>
-    <string name="height_hint">e.g. 1080</string>
-    <string name="add_resolution">Add Resolution</string>
-    <string name="invalid_resolution_format">Invalid resolution format, please use width x height format</string>
-    <string name="resolution_already_exists">This resolution already exists</string>
-    <string name="resolution_added_successfully">Resolution added successfully</string>
 
-    <string name="category_audio_settings">Audio Settings</string>
-    <string name="title_audio_config_list">Surround sound configurationItem</string>
-    <string name="summary_audio_config_list">Enable 5.1, 7.1, or 7.1.4 surround sound for home-theater systems. 7.1.4 requires Android 12+</string>
-    <string name="title_checkbox_enable_audiofx">Enable system equalizer support</string>
-    <string name="summary_checkbox_enable_audiofx">Allow audio effects to work during streaming, may increase audio latency</string>
-    <string name="title_checkbox_enable_spatializer">Enable spatial audio (Android 13+)</string>
-    <string name="summary_checkbox_enable_spatializer">Enable immersive 3D audio experience using Android Spatializer. Requires Android 13+ and compatible audio output device. Best experience with 5.1 or 7.1 surround sound configuration</string>
-    <string name="title_checkbox_control_only">Control-only mode</string>
-    <string name="summary_checkbox_control_only">Only establish control stream connection without video and audio streams. Useful for remote input control only. Requires Sunshine server with control-only mode support.</string>
-    <string name="title_checkbox_enable_mic">Enable microphone redirection</string>
-    <string name="summary_checkbox_enable_mic">Redirect device microphone to the host computer for voice chat and communication, requires Sunshine-Foundation version 20250720 or higher on the host.</string>
-    <string name="title_seekbar_mic_bitrate">Microphone bitrate</string>
-    <string name="summary_seekbar_mic_bitrate">Adjust the audio quality of microphone redirection. Higher bitrates provide better audio quality but use more bandwidth.</string>
-    <string name="suffix_seekbar_mic_bitrate_kbps">kbps</string>
-    <string name="title_list_mic_icon_color">Microphone icon color</string>
-    <string name="summary_list_mic_icon_color">Choose the color scheme for the microphone button icon</string>
-    <string name="title_checkbox_reduce_refresh_rate">Allow refresh rate reduction</string>
-    <string name="summary_checkbox_reduce_refresh_rate">Lower display refresh rates can save power at the expense of some additional video latency</string>
 
     <string name="category_gamepad_settings">Gamepad Settings</string>
     <string name="title_checkbox_multi_controller">Automatic gamepad presence detection</string>
-    <string name="summary_checkbox_multi_controller">Unchecking this option forces a gamepad to always be present</string>
     <string name="title_checkbox_vibrate_fallback">Emulate rumble support with vibration</string>
-    <string name="summary_checkbox_vibrate_fallback">Vibrates your device to emulate rumble if your gamepad does not support it</string>
     <string name="title_seekbar_vibrate_fallback_strength">Adjust emulated rumble intensity</string>
-    <string name="summary_seekbar_vibrate_fallback_strength">Amplify or reduce the vibration intensity on your device</string>
-    <string name="suffix_seekbar_vibrate_fallback_strength">%</string>
     <string name="title_seekbar_deadzone">Adjust analog stick deadzone</string>
-    <string name="summary_seekbar_deadzone">Note: Some games can enforce a larger deadzone than what MoonLink is configured to use.</string>
-    <string name="suffix_seekbar_deadzone">%</string>
     <string name="title_checkbox_xb1_driver">Xbox 360/One USB gamepad driver</string>
-    <string name="summary_checkbox_xb1_driver">Enables a built-in USB driver for devices without native Xbox controller support</string>
     <string name="title_checkbox_usb_bind_all">Override native Xbox gamepad support</string>
-    <string name="summary_checkbox_usb_bind_all">Use MoonLink\'s USB driver for all supported gamepads, even if native Xbox controller support is present</string>
     <string name="title_checkbox_mouse_emulation">Mouse emulation via gamepad</string>
-    <string name="summary_checkbox_mouse_emulation">Long pressing the Start button will switch the gamepad into mouse mode</string>
     <string name="title_checkbox_enable_start_key_menu">Long-press Start key actions</string>
-    <string name="summary_checkbox_enable_start_key_menu">When enabled: long-press Start opens the in-game menu (system gamepad), or toggles mouse emulation (USB-takeover gamepad). Disable to free Start for normal long-press use in games.</string>
     <string name="title_checkbox_flip_face_buttons">Flip face buttons</string>
-    <string name="summary_checkbox_flip_face_buttons">Switches the face buttons A/B and X/Y for gamepads and the on-screen controls</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Always control mouse with touchpad</string>
-    <string name="summary_checkbox_gamepad_touchpad_as_mouse">Forces gamepad touchpad input to control the host mouse, even when emulating a gamepad with a touchpad.</string>
     <string name="title_checkbox_gamepad_motion_sensors">Allow use of gamepad motion sensors</string>
-    <string name="summary_checkbox_gamepad_motion_sensors">Enables supported hosts to request motion sensor data when emulating a gamepad with motion sensors. Disabling may slightly reduce power and network usage if motion sensors are not being used in game.</string>
     <string name="title_checkbox_gamepad_motion_fallback">Emulate gamepad motion sensor support</string>
-    <string name="summary_checkbox_gamepad_motion_fallback">Uses your device\'s built-in motion sensors if gamepad sensors are not supported by your connected gamepad or your Android version.\nNote: Enabling this option may cause your gamepad to appear as a PlayStation controller on the host.</string>
 
     <string name="category_input_settings">Input Settings</string>
-    <string name="title_checkbox_touchscreen_trackpad">Use the touchscreen as a trackpad</string>
-    <string name="summary_checkbox_touchscreen_trackpad">If enabled, the touchscreen acts like a trackpad. If disabled, multi-point touch will be enabled.</string>
 
     <string name="title_checkbox_sync_touch_event_with_display">Synchronize touch event with display refresh </string>
-    <string name="summary_checkbox_sync_touch_event_with_display">If enabled, touch event will be synchronized with display refresh rate, like 60Hz.</string>
 
-    <string name="title_seekbar_long_press_flat_region">Flat region for long press jitter elimination in multi-point touch mode</string>
-    <string name="summary_seekbar_long_press_flat_region">Works for the whole screen. Increase for larger long-press flat region, within which the app sends initial contact coordinates to server.</string>
-    <string name="suffix_seekbar_flat_region_pixels">pixels</string>
 
-    <string name="title_checkbox_absolute_mouse_mode">Remote desktop mouse mode</string>
-    <string name="summary_checkbox_absolute_mouse_mode">This can make mouse acceleration behave more naturally for remote desktop usage, but it is incompatible with many games.</string>
-    <string name="title_checkbox_enable_esc_menu">Allow custom key to open return menu</string>
-    <string name="summary_checkbox_enable_esc_menu">When enabled, pressing Ctrl+Shift+Alt+selected key opens the stream return menu</string>
-    <string name="title_list_esc_menu_key">Return menu activation key</string>
-    <string name="summary_list_esc_menu_key">Choose which key combined with Ctrl+Shift+Alt will open the return menu</string>
-    <string name="title_checkbox_mouse_nav_buttons">Enable back and forward mouse buttons</string>
-    <string name="summary_checkbox_mouse_nav_buttons">Enabling this option may break right clicking on some buggy devices</string>
 
-    <string name="category_enhanced_touch_settings">Enhanced Multi-Point Touch</string>
-    <string name="title_checkbox_enable_enhanced_touch">Enable enhanced touch</string>
-    <string name="summary_checkbox_enable_enhanced_touch">\t</string>
-    <string name="title_checkbox_enhanced_touch_on_which_side">Reverse enhanced touch zone</string>
-    <string name="summary_checkbox_enhanced_touch_on_which_side">Reverse enhanced touch zone to the left (default: on the right side of screen)</string>
-    <string name="title_enhanced_touch_zone_divider">Enhanced touch zone divider</string>
-    <string name="summary_enhanced_touch_zone_divider" formatted="false">Defines where to divide native-touch and enhanced-touch zones, less than 50% means divide from a point on the left, more than 50% means right</string>
-    <string name="dialog_title_enhanced_touch_zone_divider" formatted="false">Less than 50% means divide from a point on the left, more than 50% means right</string>
-    <string name="suffix_enhanced_touch_zone_divider">%</string>
-    <string name="title_pointer_velocity_factor">Pointer velocity factor</string>
-    <string name="summary_pointer_velocity_factor" formatted="false">Set pointer velocity factor for enhanced touch zone. Set 100% to disable</string>
-    <string name="dialog_title_pointer_velocity_factor">Set pointer velocity factor for enhanced touch zone. Set 100% to disable</string>
-    <string name="suffix_pointer_velocity_factor">%</string>
-    <string name="title_fixed_x_velocity">Set fixed X (horizontal) velocity</string>
-    <string name="summary_fixed_x_velocity">Set fixed X (horizontal) velocity. Set 0 to disable fixed x velocity mode. Larger than 0 means disable horizontal velocity factor to use fixed velocity instead.</string>
-    <string name="dialog_title_fixed_x_velocity">Set fixed X (horizontal) velocity in pixels. Set 0 to disable fixed x velocity.</string>
-    <string name="suffix_fixed_x_velocity">pixels</string>
 
-    <string name="category_on_screen_controls_settings">On-screen Controls Settings</string>
-    <string name="title_checkbox_show_onscreen_controls">Show on-screen controls</string>
-    <string name="summary_checkbox_show_onscreen_controls">Show virtual controller overlay on touchscreen</string>
-    <string name="title_checkbox_vibrate_osc">Enable vibration</string>
-    <string name="summary_checkbox_vibrate_osc">Vibrates your device to emulate rumble for the on-screen controls</string>
-    <string name="title_only_l3r3">Only show L3 and R3</string>
-    <string name="summary_only_l3r3">Hide all virtual buttons except L3 and R3</string>
-    <string name="title_show_guide_button">Show Guide Button</string>
-    <string name="summary_show_guide_button">Show the guide button on screen</string>
-    <string name="title_reset_osc">Clear saved on-screen controls layout</string>
-    <string name="summary_reset_osc">Resets all on-screen controls to their default size and position</string>
-    <string name="dialog_title_reset_osc">Reset Layout</string>
-    <string name="dialog_text_reset_osc">Are you sure you want to delete your saved on-screen controls layout?</string>
-    <string name="toast_reset_osc_success">On-screen controls reset to default</string>
-    <string name="title_osc_opacity">Change opacity of on-screen controls</string>
-    <string name="summary_osc_opacity">Make the on-screen controls more/less transparent</string>
-    <string name="dialog_title_osc_opacity">Change opacity</string>
-    <string name="suffix_osc_opacity">%</string>
 
-    <string name="category_float_ball_settings">Float Ball Settings</string>
-    <string name="title_checkbox_enable_float_ball">Enable Float Ball</string>
-    <string name="summary_checkbox_enable_float_ball">Show an interactive floating ball for quick actions</string>
-    <string name="title_seekbar_float_ball_auto_hide_delay">Auto-hide Delay</string>
-    <string name="summary_seekbar_float_ball_auto_hide_delay">Time before the float ball automatically hides to the screen edge</string>
-    <string name="suffix_seekbar_float_ball_auto_hide_delay_ms">ms</string>
-
-    <!-- Float Ball Gesture Actions -->
-    <string name="title_float_ball_single_click_action">Single Click Action</string>
-    <string name="summary_float_ball_single_click_action">Action performed when float ball is tapped once</string>
-    <string name="title_float_ball_double_click_action">Double Click Action</string>
-    <string name="summary_float_ball_double_click_action">Action performed when float ball is double-tapped</string>
-    <string name="title_float_ball_long_click_action">Long Press Action</string>
-    <string name="summary_float_ball_long_click_action">Action performed when float ball is long-pressed</string>
-    <string name="title_float_ball_swipe_up_action">Swipe Up Action</string>
-    <string name="summary_float_ball_swipe_up_action">Action performed when swiping float ball upward</string>
-    <string name="title_float_ball_swipe_down_action">Swipe Down Action</string>
-    <string name="summary_float_ball_swipe_down_action">Action performed when swiping float ball downward</string>
-    <string name="title_float_ball_swipe_left_action">Swipe Left Action</string>
-    <string name="summary_float_ball_swipe_left_action">Action performed when swiping float ball leftward</string>
-    <string name="title_float_ball_swipe_right_action">Swipe Right Action</string>
-    <string name="summary_float_ball_swipe_right_action">Action performed when swiping float ball rightward</string>
 
     <!-- Float Ball Action Options -->
-    <string name="float_ball_action_toggle_visibility">Toggle Float Ball Visibility</string>
-    <string name="float_ball_action_screenshot">Take Screenshot</string>
-    <string name="float_ball_action_lock_screen">Lock Screen</string>
 
     <string name="category_ui_settings">UI Settings</string>
-    <string name="category_display_behavior">Display</string>
-    <string name="title_checkbox_enable_pip">Enable Picture-in-Picture observer mode</string>
-    <string name="summary_checkbox_enable_pip">Allows the stream to be viewed (but not controlled) while multitasking</string>
-    <string name="title_checkbox_enable_background_audio">Background Audio Mode</string>
-    <string name="summary_checkbox_enable_background_audio">Hide the entire window and play audio in background, allowing you to use other apps while listening</string>
-    <string name="title_language_list">Language</string>
-    <string name="summary_language_list">Language to use for MoonLink</string>
-    <string name="title_checkbox_small_icon_mode">Use small box art</string>
-    <string name="summary_checkbox_small_icon_mode">Smaller box art in the app grid allows more apps to be visible on screen</string>
     <string name="title_checkbox_resume_stream">Resume stream automatically</string>
     <string name="summary_checkbox_resume_stream">Automatically resume the stream when returning to MoonLink from the background</string>
 
     <string name="category_host_settings">Host Settings</string>
-    <string name="title_checkbox_enable_sops">Optimize game settings</string>
-    <string name="summary_checkbox_enable_sops">Allow GFE to modify game settings for optimal streaming</string>
-    <string name="title_checkbox_host_audio">Play audio on PC</string>
-    <string name="summary_checkbox_host_audio">Play audio from the computer and this device</string>
-    <string name="title_checkbox_clipboard_sync_text">Sync clipboard text with PC</string>
-    <string name="summary_checkbox_clipboard_sync_text">Forward text copied on this device to the PC and vice versa. Warning: anything you copy (including passwords and 2FA codes) will leave this device.</string>
-    <string name="title_checkbox_clipboard_sync_image">Sync clipboard images with PC</string>
-    <string name="summary_checkbox_clipboard_sync_image">Forward images copied on this device to the PC. Large screenshots may use significant bandwidth.</string>
-    <string name="title_screen_combination_mode">Screen combination mode (Sunshine Foundation)</string>
-    <string name="summary_screen_combination_mode">Control how Sunshine manages your monitors when starting a stream, this configuration will override the host configuration.</string>
     <string name="screen_mode_host_default">Use Sunshine host configuration (default)</string>
     <string name="screen_mode_no_operation">Do not change monitor configuration</string>
     <string name="screen_mode_ensure_active">Ensure streaming display is active</string>
     <string name="screen_mode_ensure_primary">Ensure streaming display is primary</string>
     <string name="screen_mode_ensure_only_display">Use streaming display only (turn off other displays)</string>
 
-    <string name="vdd_screen_mode_host_default">Use Sunshine host configuration (default)</string>
     <string name="vdd_screen_mode_no_operation">Keep current layout</string>
     <string name="vdd_screen_mode_vdd_as_primary">VDD primary + Physical extended</string>
     <string name="vdd_screen_mode_vdd_as_secondary">Physical primary + VDD extended</string>
     <string name="vdd_screen_mode_display_off">VDD only (disable physical displays)</string>
-    <string name="screen_combination_mode_label">Mode: %1$s</string>
 
-    <string name="category_advanced_settings">Advanced Settings</string>
-    <string name="title_unlock_fps">Unlock all possible frame rates</string>
-    <string name="summary_unlock_fps">Streaming at 90 or 120 FPS may reduce latency on high-end devices but can cause lag or instability on devices that can\'t support it</string>
-    <string name="title_checkbox_disable_warnings">Disable warning messages</string>
-    <string name="summary_checkbox_disable_warnings">Disable on-screen connection warning messages while streaming</string>
-    <string name="title_disable_frame_drop">Never drop frames</string>
-    <string name="summary_disable_frame_drop">May reduce micro-stuttering on some devices, but can increase latency</string>
-    <string name="title_video_format">Change codec settings</string>
-    <string name="summary_video_format">Newer codecs can lower video bandwidth requirements if your device supports them. Codec selections may be ignored if not supported by the host software or GPU.</string>
-    <string name="title_enable_hdr">Enable HDR (Experimental)</string>
-    <string name="summary_enable_hdr">Stream HDR when the game and PC GPU support it. HDR requires a GPU with HEVC Main 10 encoding support.</string>
-    <string name="title_enable_hdr_high_brightness">Enable HDR High Brightness</string>
-    <string name="summary_enable_hdr_high_brightness">Force maximum screen brightness when HDR streaming is enabled</string>
-    <string name="title_hdr_mode">HDR Mode</string>
-    <string name="summary_hdr_mode">Select HDR transfer function: HDR10 (PQ) for most displays, HLG for broadcast-style content</string>
-    <string name="hdr_mode_hdr10">HDR10 (PQ)</string>
+    <string name="hdr_mode_hdr10" translatable="false">HDR10 (PQ)</string>
     <string name="hdr_mode_hlg">HLG (Hybrid Log-Gamma)</string>
-    <string name="title_full_range">Force full range video (Experimental)</string>
-    <string name="summary_full_range">This will cause loss of detail in light and dark areas if your device doesn\'t properly display full range video content.</string>
-    <string name="title_enable_perf_overlay">Show performance stats while streaming</string>
-    <string name="summary_enable_perf_overlay">Display real-time stream performance information while streaming</string>
-    <string name="title_perf_overlay_orientation">Performance Overlay Orientation</string>
-    <string name="summary_perf_overlay_orientation">Choose the display orientation for performance statistics</string>
-    <string name="title_perf_overlay_position">Performance Overlay Position</string>
-    <string name="summary_perf_overlay_position">Choose top/bottom for horizontal orientation, or four corner positions for vertical orientation</string>
-    <string name="title_reset_perf_overlay_position">Reset Performance Overlay Position</string>
-    <string name="summary_reset_perf_overlay_position">Reset performance overlay to preset position</string>
-    <string name="title_perf_overlay_display_items">Performance Overlay Display Items</string>
-    <string name="summary_perf_overlay_display_items">Select information items to display in the performance overlay</string>
-    <string name="title_perf_overlay_bg_opacity">Performance Overlay Background Opacity</string>
-    <string name="summary_perf_overlay_bg_opacity">Adjust the background opacity of the performance overlay</string>
-    <string name="title_enable_post_stream_toast">Show latency message after streaming</string>
-    <string name="summary_enable_post_stream_toast">Display a latency information message after the stream ends</string>
-    <string name="title_checkbox_lock_screen_after_disconnect">Lock screen when disconnecting and exiting the stream</string>
-    <string name="summary_checkbox_lock_screen_after_disconnect">Automatically lock the device screen after disconnecting and exiting the stream (you need to manually turn on the on-screen keyboard, which is the host keyboard in the menu)</string>
-    <string name="title_checkbox_swap_quit_and_disconnect">Toggle “Quit” Button Function</string>
-    <string name="summary_checkbox_swap_quit_and_disconnect">When enabled, the “Quit” button will disconnect without closing the app</string>
     <string name="mic_stats_continuity">Audio continuity: %1$.1f%% (Captured:%2$d Encoded:%3$d Sent:%4$d Dropped:%5$d)</string>
 
-    <string name="category_help">Help</string>
-    <string name="title_checkbox_enable_audio_passthrough">Enable audio passthrough</string>
-    <string name="summary_checkbox_enable_audio_passthrough">Forward PCM/AC3/E-AC3 audio bit-perfect to the AVR when supported. Disable to always decode locally.</string>
-    <string name="title_list_audio_codec">Passthrough codec</string>
-    <string name="summary_list_audio_codec">Codec sent to the host. Auto uses PCM for stereo and AC3 for surround. Unsupported 7.1+ output is downgraded step-by-step.</string>
-    <string name="audio_codec_auto">Auto</string>
     <string name="audio_codec_opus">Opus (no passthrough)</string>
-    <string name="audio_codec_ac3">AC3</string>
-    <string name="audio_codec_eac3">E-AC3</string>
-    <string name="audio_codec_pcm">PCM (S16 LE)</string>
-    <string name="title_list_audio_passthrough_buffer">Passthrough buffer size</string>
-    <string name="summary_list_audio_passthrough_buffer">Larger buffers tolerate jitter at the cost of latency. Normal (~160 ms) suits most setups.</string>
+    <string name="audio_codec_ac3" translatable="false">AC3</string>
+    <string name="audio_codec_eac3" translatable="false">E-AC3</string>
+    <string name="audio_codec_pcm" translatable="false">PCM (S16 LE)</string>
     <string name="audio_passthrough_buffer_low">Low (~96 ms)</string>
     <string name="audio_passthrough_buffer_normal">Normal (~160 ms)</string>
     <string name="audio_passthrough_buffer_high">High (~320 ms)</string>
     <string name="category_connection_settings">Connection Settings</string>
-    <string name="title_setup_guide">Setup guide</string>
-    <string name="summary_setup_guide">View instructions on how to set up your gaming PC for streaming</string>
-    <string name="title_troubleshooting">Troubleshooting guide</string>
-    <string name="summary_troubleshooting">View tips for diagnosing and fixing common streaming issues</string>
     <string name="title_privacy_policy">Privacy policy</string>
-    <string name="summary_privacy_policy">View MoonLink\'s privacy policy</string>
-    <string name="title_about_mode">About</string>
-    <string name="summary_about_mode">View app information and project details</string>
     
     <!-- About dialog strings -->
     <string name="about_dialog_description">MoonLink is an enhanced client built for Foundation Sunshine, delivering the ultimate game streaming experience.</string>
     <string name="about_dialog_project_info">Based on MoonLink-Android open source project, crafted by the Foundation community</string>
     <string name="about_dialog_thanks">Thank you for choosing MoonLink! If you find it useful, please give us a star on GitHub ⭐</string>
-    <string name="about_dialog_github">GitHub</string>
-    <string name="about_dialog_star">Star Project</string>
-    <string name="about_dialog_qq">Join QQ Group</string>
-    <string name="about_dialog_close">Close</string>
     <string name="check_for_updates">Check for updates</string>
     <string name="summary_check_for_updates">Check if there is a new version available</string>
 
@@ -510,19 +179,19 @@
     <string name="toast_controller_type_changed">Gamepad type may be changed due to motion sensor emulation</string>
 
     <!-- Array strings -->
-    <string name="resolution_360p">360p</string>
-    <string name="resolution_480p">480p</string>
-    <string name="resolution_720p">720p</string>
-    <string name="resolution_1080p">1080p</string>
-    <string name="resolution_1440p">1440p</string>
-    <string name="resolution_4k">4K</string>
+    <string name="resolution_360p" translatable="false">360p</string>
+    <string name="resolution_480p" translatable="false">480p</string>
+    <string name="resolution_720p" translatable="false">720p</string>
+    <string name="resolution_1080p" translatable="false">1080p</string>
+    <string name="resolution_1440p" translatable="false">1440p</string>
+    <string name="resolution_4k" translatable="false">4K</string>
 
-    <string name="fps_30">30 FPS</string>
-    <string name="fps_60">60 FPS</string>
-    <string name="fps_90">90 FPS</string>
-    <string name="fps_120">120 FPS</string>
-    <string name="fps_144">144 FPS</string>
-    <string name="fps_165">165 FPS</string>
+    <string name="fps_30" translatable="false">30 FPS</string>
+    <string name="fps_60" translatable="false">60 FPS</string>
+    <string name="fps_90" translatable="false">90 FPS</string>
+    <string name="fps_120" translatable="false">120 FPS</string>
+    <string name="fps_144" translatable="false">144 FPS</string>
+    <string name="fps_165" translatable="false">165 FPS</string>
 
     <string name="audioconf_stereo">Stereo</string>
     <string name="audioconf_51surround">5.1 Surround Sound</string>
@@ -534,118 +203,49 @@
     <string name="videoformat_hevcalways">Prefer HEVC</string>
     <string name="videoformat_h264always">Prefer H.264</string>
 
-    <string name="title_frame_pacing">Video frame pacing</string>
-    <string name="summary_frame_pacing">Specify how to balance video latency and smoothness</string>
     <string name="pacing_latency">Prefer lowest latency</string>
-    <string name="pacing_balanced">Balanced</string>
     <string name="pacing_balanced_alt">Balanced with FPS limit</string>
     <string name="pacing_smoothness">Prefer smoothest video (may significantly increase latency)</string>
     <string name="pacing_experimental_low_latency">Experimental: Ultra-low latency (advanced)</string>
     <string name="pacing_precise_sync">Precise Sync</string>
 
     <string name="title_analog_scrolling">Use an analog stick to scroll</string>
-    <string name="summary_analog_scrolling">Select an analog stick to scroll when in mouse emulation mode</string>
     <string name="analogscroll_none">None (both sticks move the mouse)</string>
     <string name="analogscroll_right">Right analog stick</string>
     <string name="analogscroll_left">Left analog stick</string>
 
-    <string name="mic_button">Microphone</string>
     <string name="mic_enabled">Microphone enabled</string>
     <string name="mic_disabled">Microphone disabled</string>
     <string name="mic_permission_required">Microphone permission required</string>
     
-    <!-- Screen position settings -->
-    <string name="category_screen_position_settings">Video Settings</string>
-    <string name="title_screen_position">Screen Position</string>
-    <string name="summary_screen_position">Choose the position of the screen when using non-fullscreen resolution</string>
-    <string name="title_screen_offset_x">Horizontal Offset</string>
-    <string name="summary_screen_offset_x">Horizontal offset of the screen</string>
-    <string name="title_screen_offset_y">Vertical Offset</string>
-    <string name="summary_screen_offset_y">Vertical offset of the screen</string>
-    
     <!-- Key Mapping feature area (renamed from Crown) -->
     <string name="category_key_mapping_features">Key Mapping Features</string>
     <string name="title_key_mapping_features">Key Mapping</string>
-    <string name="summary_key_mapping_features">Custom buttons and settings during streaming, saved to custom configurations for quick switching</string>
-    <string name="title_export_super_config">Export Configuration</string>
-    <string name="summary_export_super_config">Export custom button and streaming settings configuration file</string>
-    <string name="title_import_super_config">Import Configuration</string>
-    <string name="summary_import_super_config">Import custom button and streaming settings configuration file</string>
-    <string name="title_merge_super_config">Merge Configuration</string>
-    <string name="summary_merge_super_config">Merge new configuration buttons into existing configuration</string>
-    <string name="title_about_author">This is V+ X Royal Edition</string>
 
     
-    <!-- Key Mapping toggle (renamed from Crown) -->
-    <string name="game_menu_toggle_elements_visibility">Show/Hide Virtual Keys</string>
-    <string name="toast_elements_visible">Virtual button displayed</string>
-    <string name="toast_elements_hidden">Virtual button hidden</string>
-    
-    <!-- External display -->
-    <string name="title_use_external_display">Use External Display</string>
-    <string name="summary_use_external_display">If an external display is connected, display the stream on the external display</string>
-    
     <!-- Background image API -->
-    <string name="title_background_image_api">Background Image API</string>
-    <string name="summary_background_image_api">Enter a custom background image API, or a single image URL. Leave empty to view random images</string>
     <string name="dialog_title_background_image_api">Background Image API</string>
-    <string name="dialog_message_background_image_api">Please enter the complete image API</string>
 
     <!-- Background source (issue #263) -->
     <string name="title_background_source">Background source</string>
-    <string name="summary_background_source">Choose where random backgrounds come from</string>
     <string name="background_source_auto">Smart default (recommended)</string>
     <string name="background_source_picsum">Photography (Lorem Picsum)</string>
     <string name="background_source_pipw">Animé (Pipw)</string>
     <string name="background_source_api">Custom API URL</string>
     <string name="background_source_local">Local image</string>
     <string name="background_source_none">No background</string>
-    <string name="background_source_dialog_title">Pick a background style</string>
-    <string name="background_source_dialog_message">Choose the style of random wallpapers shown on the home screen. You can change this anytime in Settings.</string>
-    <string name="background_source_dialog_later">Decide later</string>
 
-    <!-- Crash report prompt -->
-    <string name="crash_report_dialog_title">MoonLink closed unexpectedly last time</string>
-    <string name="crash_report_dialog_message">Send the diagnostic log to the developer to help fix it?\n\n%1$s</string>
-    <string name="crash_report_share">Share log</string>
-    <string name="crash_report_copy">Copy</string>
-    <string name="crash_report_photo">Photo summary</string>
-    <string name="crash_report_copied">Crash log copied to clipboard</string>
-    <string name="crash_report_dismiss">Ignore</string>
-    <string name="crash_report_subject">MoonLink crash report</string>
-    <string name="crash_report_photo_title">Photo-friendly crash summary</string>
-    <string name="crash_report_photo_hint">Take a photo of this screen and send it to the developer.</string>
-    <string name="crash_report_photo_id">Report ID</string>
-    <string name="crash_report_photo_time">Time</string>
-    <string name="crash_report_photo_version">Version</string>
-    <string name="crash_report_photo_device">Device</string>
-    <string name="crash_report_photo_android">Android</string>
-    <string name="crash_report_photo_thread">Thread</string>
-    <string name="crash_report_photo_error">Error</string>
-    <string name="crash_report_photo_frames">Top frames</string>
-    <string name="crash_report_unknown">Unknown</string>
-    
     <!-- Local image picker -->
     <string name="title_local_image_picker">Select Local Image</string>
     <string name="summary_local_image_picker">Choose an image from your gallery as the background</string>
     
     <!-- Reset background image -->
     <string name="title_reset_background_image">Reset Background Image</string>
-    <string name="summary_reset_background_image">Restore default background image (API random image)</string>
     
     <!-- Reverse resolution -->
-    <string name="title_checkbox_reverse_resolution">Reverse Resolution</string>
-    <string name="summary_checkbox_reverse_resolution">Swap width and height values for special display requirements</string>
     <string name="title_checkbox_rotable_screen">Follow Screen Rotation</string>
-    <string name="summary_checkbox_rotable_screen">When enabled, display orientation will be adjusted when device rotates</string>
     
-    <!-- MoonLink PC download -->
-    <string name="title_moonlight_X_pc_download">MoonLink PC Download</string>
     
-    <!-- Analytics settings -->
-    <string name="title_enable_analytics">Enable Analytics</string>
-    <string name="summary_enable_analytics">Help improve the app by sharing anonymous usage statistics</string>
-
     <!-- Tip strings -->
     <string name="tip_esc_exit">💡 Tip: Use the "Exit" button to quickly and completely exit the stream, restoring your screen to its pre-stream state~</string>
     <string name="tip_double_tap_mouse">💡 Tip: Long press the top blank area on the host list page to download the current wallpaper~</string>
@@ -666,68 +266,23 @@
     <string name="tip_cards_show">💡 Tip: You can edit the displayed function cards in the game menu. Unnecessary cards can be hidden~</string>
 
     <!-- 触控模式切换菜单 -->
-    <string name="game_menu_switch_touch_mode">Switch touch mode</string>
     <string name="game_menu_touch_mode_enhanced">Enhanced Multi Touch</string>
     <string name="game_menu_touch_mode_classic">Classic Mouse Mode</string>
     <string name="game_menu_touch_mode_trackpad">Touchpad mode</string>
-    <string name="game_menu_local_cursor_rendering">Local cursor rendering</string>
-    <string name="game_menu_touch_mode_native_mouse">Native mouse pointer</string>
-    <string name="toast_touch_mode_enhanced_on">Enhanced multi touch enabled</string>
-    <string name="toast_touch_mode_classic_on">Classic mouse mode enabled</string>
-    <string name="toast_touch_mode_trackpad_on">Trackpad mode enabled</string>
-    <string name="toast_touch_mode_native_mouse_on">Native mouse pointer enabled</string>
 
     <!-- 本地鼠标模式预设 -->
-    <string name="title_list_native_mouse_mode_preset">Mouse Mode Preset</string>
-    <string name="summary_list_native_mouse_mode_preset">Select a preset mouse/touch mode configuration</string>
-    <string name="native_mouse_mode_preset_enhanced">Enhanced Multi Touch</string>
-    <string name="native_mouse_mode_preset_classic">Classic Mouse Mode</string>
     <string name="native_mouse_mode_preset_trackpad">Touchpad Mode</string>
     <string name="native_mouse_mode_preset_native">Native Mouse Pointer</string>
-    <string name="toast_preset_applied">Preset applied: %s</string>
-
-    <!-- 自定义特殊按键 -->
-    <!-- 菜单项 -->
-    <string name="game_menu_add_custom_key">Add custom button</string>
-    <string name="game_menu_delete_custom_key">Delete custom button</string>
 
     <!-- 添加自定义按键对话框 -->
-    <string name="dialog_title_add_custom_key">Add custom buttons</string>
-    <string name="dialog_hint_key_name">Key name (e.g. Ctrl+Shift+Esc)</string>
-    <string name="dialog_hint_key_codes">Key codes (e.g. 0x11, 0x10, 0x1B)</string>
-    <string name="dialog_button_save">SAVE</string>
     <string name="dialog_button_cancel">CANCEL</string>
-    <string name="dialog_button_clear">CLEAR</string>
 
     <!-- 删除自定义按键对话框 -->
-    <string name="dialog_title_select_keys_to_delete">Select the button to delete</string>
     <string name="dialog_button_delete">DELETE</string>
-
-    <!-- Toast 提示信息 -->
-    <string name="toast_name_and_codes_cannot_be_empty">Name and key code cannot be empty</string>
-    <string name="toast_key_code_format_error">Format error, key code must start with "0x"</string>
-    <string name="toast_custom_key_saved">Custom button \'%s\' has been saved</string>
-    <string name="toast_save_failed">Save failed, please check the format</string>
-    <string name="toast_no_custom_keys_to_delete">There are no custom keys that can be deleted</string>
-    <string name="toast_selected_keys_deleted">The selected button has been deleted</string>
-    <string name="toast_delete_failed">Deletion failed</string>
-    <string name="toast_load_key_list_failed">Failed to load button list</string>
-    <string name="toast_load_custom_keys_corrupted">Failed to load custom button</string>
-
-    <!-- gyro related strings -->
-    <string name="gyro_activation_method">Act Key</string>
-    <string name="gyro_invert_x_axis">X Rev</string>
-    <string name="gyro_invert_y_axis">Y Rev</string>
-    <string name="gyro_sensitivity">Sensitivity</string>
-    <string name="gyro_sensitivity_format">Sensitivity %.1fx</string>
-    <string name="gyro_activation_always">Always On</string>
-    <string name="gyro_mouse_mode_label">Mouse Mode</string>
-    <string name="gyro_controller_access_failed">Failed to access controller</string>
-    <string name="gyro_no_controller_detected">No controller detected, gyro disabled</string>
 
     <!-- Accessibility service -->
     <string name="accessibility_service_label">MoonLink Keyboard Service</string>
-    <string name="accessibility_service_description">
+    <string name="accessibility_service_description" translatable="false">
         To provide a complete PC gaming experience with your external keyboard, this service needs to capture all keyboard keys.
         \n\n
         Once enabled, you will be able to use all system shortcuts like Win/Command keys, Alt+Tab, etc., just like on your computer.
@@ -735,45 +290,8 @@
         Rest assured, this service is only used to send key operations directly to your computer, and we will not record or upload any of your input content.
     </string>
 
-    <!-- Performance Overlay Info Dialogs -->
-    <string name="perf_moon_phase_info">Today\'s Moon Phase\n\n%1$s %2$s\nMoon Phase Cycle: %3$.1f%%\nCycle Day: Day %4$d\nDate: %5$s\n\n%6$s</string>
-    
-    <string name="perf_decoder_title">🎬 Decoder Information</string>
-    <string name="perf_decoder_info">The decoder is responsible for decoding video streams into displayable images.\n\nCommon Decoders:\n• H.264 (AVC) - Best compatibility\n• H.265 (HEVC) - Higher compression\n• AV1 - Latest standard, most efficient\n\nHDR Support:\n• High Dynamic Range video\n• Richer color representation\n• Requires hardware support</string>
-    
-    <string name="perf_fps_title">📊 Frame Rate Information</string>
-    <string name="perf_fps_info">Rx FPS: Received Frame Rate\n• Number of video frames received from host\n• Should be stable under ideal conditions\n\nRd FPS: Rendered Frame Rate\n• Number of frames actually rendered to screen\n• May be reduced due to device performance\n\nPerformance Indicators:\n• Close values indicate good performance\n• Low render FPS may affect smoothness</string>
-    
-    <string name="perf_packet_loss_title">📶 Packet Loss Information</string>
-    <string name="perf_packet_loss_info" formatted="false">Packet loss represents the percentage of data packets lost during network transmission.\n\nNormal Range:\n• 0-0.5%: Excellent network quality\n• 0.5-2%: Good network quality\n• 2-5%: Fair network quality\n• &gt;5%: Poor network quality\n\nInfluencing Factors:\n• Network stability\n• Router performance\n• Wireless signal strength</string>
-    
-    <string name="perf_network_latency_title">🌐 Network Latency Information</string>
-    <string name="perf_network_latency_info">Network latency represents the round-trip time for data packets from host to device.\n\nLatency Range:\n• &lt;20ms: Excellent\n• 20-50ms: Good\n• 50-100ms: Acceptable\n• &gt;100ms: Poor\n\nBandwidth:\n• Represents network transmission speed\n• Affects maximum video quality\n\n± Value:\n• Represents latency fluctuation range\n• Smaller values indicate more stability</string>
-    
-    <string name="perf_decode_latency_title">⏱️ Decode Latency Information</string>
-    <string name="perf_decode_latency_info">Decode latency represents the time required to decode video frames.\n\nLatency Range:\n• &lt;5ms: Excellent decoder performance\n• 5-10ms: Good decoder performance\n• 10-20ms: Fair decoder performance\n• &gt;20ms: Poor decoder performance\n\nInfluencing Factors:\n• Hardware decoder performance\n• Video encoding complexity\n• Device CPU/GPU load\n• When decode latency is less than 10ms, it is recommended to pay attention to other performance of the device (e.g. frame rate, resolution, image quality, etc.)</string>
-    
-    <string name="perf_host_latency_title">🖥️ Host Latency Information</string>
-    <string name="perf_host_latency_info">Host latency represents the time for the game host to process frames.\n\nLatency Range:\n• &lt;5ms: Strong host performance\n• 5-10ms: Good host performance\n• 10-20ms: Fair host performance\n• &gt;20ms: Weak host performance\n\nInfluencing Factors:\n• Host hardware performance\n• Game load\n• Background program usage\n\nVer.X:\n• Indicates version information\n• Displayed when no host latency data available</string>
-
-    <!-- Performance Overlay Info Dialogs - 1% Low FPS -->
-    <string name="perf_one_percent_low_title">📉 1% Low Frame Rate</string>
-    <string name="perf_one_percent_low_info">1%Low FPS measures frame rate smoothness using the 99th percentile frame interval.\n\nHow it works:\n• Records intervals between rendered frames\n• Sorts to find the slowest 1%% of frame times\n• Converts to FPS: 1000 / P99 interval\n\nInterpretation:\n• Close to rendered FPS: Very smooth\n• 70-90%% of rendered FPS: Minor stuttering\n• Below 70%%: Noticeable stuttering\n\nUse this to detect micro-stuttering that average FPS cannot reveal.</string>
-
-
-    <!-- Performance Overlay Info Dialogs - Battery Information -->
-    <string name="perf_battery_info_title">🔋 Battery Information</string>
-    <string name="perf_battery_status_sufficient">Battery level is sufficient</string>
-    <string name="perf_battery_status_low">Battery level is low, charging recommended</string>
-    <string name="perf_battery_status_critical">Battery level is critically low, please charge soon</string>
-    <string name="perf_battery_info_content">Current Battery: %1$d%%\nStatus: %2$s\n\nTip: Low battery may affect gaming experience, recommend connecting charger</string>
-
     <!-- App Last Settings strings -->
-    <string name="app_last_settings_title">Last Settings</string>
     <string name="app_last_settings_none">No last settings</string>
-    <string name="app_last_settings_use_checkbox">Use last settings</string>
-    <string name="app_last_settings_apply_success">Applied last settings</string>
-    <string name="app_last_settings_start_with_last">Started with last settings</string>
 
     <!-- Setting detail strings -->
     <string name="setting_resolution">Resolution: %1$dx%2$d</string>
@@ -784,7 +302,6 @@
     <string name="setting_hdr_enabled">HDR: Enabled</string>
     <string name="setting_mic_enabled">Microphone: %1$dkbps</string>
     <string name="setting_native_mouse_enabled">Native Mouse: Enabled</string>
-    <string name="setting_gyro_sensitivity">Gyroscope: %1$.1fx</string>
     <string name="setting_bitrate_card_enabled">Bitrate Card: Enabled</string>
     <string name="setting_gyro_card_enabled">Gyro Card: Enabled</string>
     <string name="setting_QuickKey_card_enabled">Special key card: Activate</string>
@@ -797,102 +314,20 @@
     <string name="time_unknown">Unknown time</string>
 
     <!-- PcView hardcoded strings -->
-    <string name="storage_permission_required">Storage permission required to save images, please grant permission in settings</string>
-    <string name="downloading_image_please_wait">Re-downloading image, please wait...</string>
-    <string name="image_download_failed_retry">Image download failed, please retry</string>
-    <string name="image_download_failed_with_error">Image download failed: %1$s</string>
-    <string name="image_not_loaded_please_retry">Image not loaded, please try again later</string>
-    <string name="image_invalid">Invalid image</string>
-    <string name="image_saved_successfully">Image successfully saved to system directory (Picture/setu)</string>
-    <string name="image_save_failed_with_error">Image save failed: %1$s</string>
-    <string name="config_save_failed">Configuration save failed</string>
-    <string name="scene_config_applied">Applied scene %1$d configuration: %2$dx%3$d@%4$dFPS %5$.2fMbps %6$s HDR %7$s</string>
-    <string name="scene_not_configured">Scene %1$d not configured</string>
-    <string name="config_apply_failed">Configuration apply failed</string>
-    <string name="save_to_scene">Save to Scene %1$d</string>
-    <string name="overwrite_current_config">Overwrite current configuration?</string>
-    <string name="scene_saved_successfully">Scene %1$d saved successfully</string>
     <string name="unable_to_get_pc_address">Unable to get PC address: %1$s</string>
     <string name="send_sleep_command">Send Sleep Command</string>
-    <string name="network_bandwidth_test">Network Bandwidth Test (iPerf3)</string>
-    <string name="no_online_computer_with_running_game">No online computer with running game found</string>
-    <string name="restoring_session">Restoring session: %1$s</string>
-    <string name="please_wait_seconds">Please wait %1$ds</string>
-    <string name="daily_limit_reached">Daily limit reached (5/5). Try again tomorrow!</string>
-    <string name="refreshing_with_remaining">Refreshing... (%1$d left today)</string>
-    <string name="background_refreshed_with_remaining">Background refreshed! (%1$d left today)</string>
-    <string name="refresh_failed_please_retry">Refresh failed, please retry</string>
-    <string name="refresh_failed_with_error">Refresh failed: %1$s</string>
-    <string name="refresh_failed_network">Network unavailable, can’t fetch background right now</string>
 
-    <string name="game_menu_toggle_remote_mouse">Show/Hide Remote Mouse</string>
-    <string name="toast_remote_mouse_toast">Remote mouse displayed/hidden</string>
     <string name="notification_channel_name">Streaming backend service</string>
     <string name="notification_channel_desc">Keep the connection active when MoonLink is running in the background</string>
 
-    <!-- Output Buffer Queue Limit -->
-    <string name="title_seekbar_output_buffer_queue_limit">Output Buffer Queue Limit</string>
-    <string name="summary_seekbar_output_buffer_queue_limit">Controls the maximum number of decoded frames that can be queued before rendering. Lower values reduce latency but may cause frame drops. Higher values improve smoothness but increase latency. ⚠️ Setting to 1 may cause crashes on some devices. Default: 2</string>
-    <string name="suffix_seekbar_output_buffer_queue_limit">frames</string>
-    <string name="title_force_mtk_max_operating_rate">Force MTK max operating rate (Experimental)</string>
-    <string name="summary_force_mtk_max_operating_rate">Enables the MediaTek decoder override `KEY_OPERATING_RATE = Short.MAX_VALUE`. This can improve latency on some newer Dimensity / MTK SoCs, but may cause major regressions on others. For example, issue #299 reports Hisense U7Q (`c2.mtk.hevc.decoder`) building up 3-5 seconds of display latency with this enabled. Off by default. Only affects MTK decoders.</string>
-    <string name="unpaired_devices_shown">Unpaired devices shown</string>
-    <string name="unpaired_devices_hidden">Unpaired devices hidden</string>
-    <string name="new_unpaired_device_shown">New unpaired device detected, showing unpaired devices</string>
-    <string name="host_resolution_changed">Host resolution changed to %1$dx%2$d</string>
-
     <!-- Drawer Menu -->
-    <string name="menu">Menu</string>
-    <string name="settings_search_hint">Search settings…</string>
-    <string name="settings_search_close">Close search</string>
-    <string name="settings_search_no_results">No matching settings</string>
-    <string name="title_settings">Settings</string>
-    <string name="game_menu_change_resolution">Change resolution</string>
     <string name="notification_content_streaming">Streaming in progress: %1$s (%2$s)</string>
-
-    <!-- Audio Vibration Settings -->
-    <string name="title_checkbox_audio_vibration">Enable audio-driven vibration</string>
-    <string name="summary_checkbox_audio_vibration">Vibrate device based on in-game bass and audio events</string>
-    <string name="title_seekbar_audio_vibration_strength">Vibration strength</string>
-    <string name="summary_seekbar_audio_vibration_strength">Adjust the intensity of audio-driven vibration</string>
-    <string name="suffix_seekbar_audio_vibration_strength">%</string>
-    <string name="title_list_audio_vibration_mode">Vibration routing</string>
-    <string name="summary_list_audio_vibration_mode">Choose how vibration is delivered</string>
-    <string name="title_list_audio_vibration_scene">Scene mode</string>
-    <string name="summary_list_audio_vibration_scene">Optimize vibration pattern for content type</string>
-
-    <!-- Capability diagnostic -->
-    <string name="title_capability_diagnostic">Codec &amp; Display Capability Detection</string>
-    <string name="summary_capability_diagnostic">Detect device HDR support, decoder capabilities, and other information</string>
 
     <!-- Double-click drag -->
     <string name="title_enable_double_click_drag">Enable touchpad double-tap drag</string>
-    <string name="summary_enable_double_click_drag">Double-tap and hold to drag selection</string>
-
-    <!-- Double-tap time threshold -->
-    <string name="title_seekbar_double_tap_time_threshold">Double-tap time threshold</string>
-    <string name="summary_seekbar_double_tap_time_threshold">Adjust the double-tap recognition interval</string>
-    <string name="dialog_seekbar_double_tap_time_threshold">Adjust the time interval for double-tap recognition. Larger values make double-tap easier to trigger.</string>
 
     <!-- Local cursor rendering -->
     <string name="title_local_cursor_rendering">Show local cursor</string>
-    <string name="summary_local_cursor_rendering">Display a local cursor that can be controlled via touchpad mode</string>
-
-    <!-- Special key mapping -->
-    <string name="title_special_key_map">Special key mapping</string>
-    <string name="summary_special_key_map">Maps Home to Esc, Esc+number/symbol to F1-F12, Esc+Q to stream menu, Android screenshot to Windows screenshot, Android prev/play-pause/next to F5/F10/F11.</string>
-
-    <!-- Fix mouse middle button -->
-    <string name="title_fix_mouse_middle">Fix mouse middle button</string>
-    <string name="summary_fix_mouse_middle">On some devices the mouse middle button may be recognized as the back key. Enable this to try to fix the issue.</string>
-
-    <!-- Fix mouse scroll wheel -->
-    <string name="title_fix_mouse_wheel">Fix local mouse scroll wheel</string>
-    <string name="summary_fix_mouse_wheel">On some devices the local mouse scroll wheel may produce touch scroll events. Enable this to try to fix the issue.</string>
-
-    <!-- Half-height OSC portrait -->
-    <string name="title_half_height_osc_portrait">Half-height portrait mode</string>
-    <string name="summary_half_height_osc_portrait">Controls will be displayed in the lower half of the screen in portrait mode</string>
 
     <!-- Keep connection alive -->
     <string name="title_extreme_resume">Keep connection alive</string>
@@ -906,60 +341,8 @@
     <string name="title_enable_stun">Obtain public IP</string>
     <string name="summary_enable_stun">Attempt to obtain the host\'s public IP via STUN servers for connecting outside the local network. This may slow down scanning for users without a public IP.</string>
 
-    <!-- AppView Top Panel -->
-    <string name="appview_display_selection_title">Display Selection</string>
-
-
     <!-- Layout hardcoded Chinese strings (auto-extracted) -->
-    <string name="layout_capability_diagnostic_text_a5e80">Capability Detection</string>
-    <string name="layout_capability_diagnostic_text_41b60">HDR · Decoder · Display</string>
-    <string name="layout_capability_diagnostic_text_79d3a">Copy</string>
-    <string name="layout_pc_view_cd_1daed">Scene 1</string>
-    <string name="layout_pc_view_cd_f2a94">Scene 2</string>
-    <string name="layout_pc_view_cd_0a468">Scene 3</string>
-    <string name="layout_pc_view_cd_94f3b">Scene 4</string>
-    <string name="layout_pc_view_cd_4b18b">Scene 5</string>
-    <string name="layout_address_list_item_text_12b27">Local Network</string>
-    <string name="layout_address_list_item_cd_30f7d">Connect</string>
-    <string name="layout_config_item_text_c8ce4">Rename</string>
-    <string name="layout_config_item_text_2f4aa">Delete</string>
-    <string name="layout_custom_dialog_text_6d521">Sleep</string>
-    <string name="layout_custom_dialog_text_c3992">Exit</string>
-    <string name="layout_custom_dialog_text_f090a">Special Keys Shortcut</string>
-    <string name="layout_custom_dialog_text_cf458">Bitrate Adjustment</string>
-    <string name="layout_custom_dialog_cd_99c74">Tooltip</string>
-    <string name="layout_custom_dialog_text_6b362">Current: 10 Mbps</string>
-    <string name="layout_custom_dialog_text_90bba">Gyro Assistant · Gyro Control</string>
     <string name="layout_details_dialog_text_4bcc9">Details</string>
-    <string name="layout_dlg_easytier_panel_text_7ae64">Network Status</string>
-    <string name="layout_dlg_easytier_panel_text_5117b">Edit Configuration</string>
-    <string name="layout_dlg_easytier_panel_cd_4f8d4">Refresh Status</string>
-    <string name="layout_dlg_easytier_panel_text_7095b">Network Name</string>
-    <string name="layout_dlg_easytier_panel_hint_99c30">e.g. easytier</string>
-    <string name="layout_dlg_easytier_panel_text_89d10">Network Secret</string>
-    <string name="layout_dlg_easytier_panel_text_4af73">Local Virtual IPv4 Address (mask default /24)</string>
-    <string name="layout_dlg_easytier_panel_hint_8913a">e.g. 10.0.0.6</string>
-    <string name="layout_dlg_easytier_panel_text_ed11e">Listeners (one per line)</string>
-    <string name="layout_dlg_easytier_panel_hint_388a0">e.g. udp://0.0.0.0:11010</string>
-    <string name="layout_dlg_easytier_panel_text_89168">Peers (one per line)</string>
-    <string name="layout_dlg_easytier_panel_hint_eabff">e.g. tcp://1.2.3.4:11010</string>
-    <string name="layout_dlg_easytier_panel_text_537e0">Advanced Feature Flags</string>
-    <string name="layout_dlg_easytier_panel_text_e7e21">Core Network Behavior</string>
-    <string name="layout_dlg_easytier_panel_text_4ad29">Use Smoltcp</string>
-    <string name="layout_dlg_easytier_panel_text_6785a">Latency Priority</string>
-    <string name="layout_dlg_easytier_panel_text_faebe">Disable P2P (Force Relay)</string>
-    <string name="layout_dlg_easytier_panel_text_fd3ab">Private Mode</string>
-    <string name="layout_dlg_easytier_panel_text_c2266">Disable IPv6</string>
-    <string name="layout_dlg_easytier_panel_text_416db">Proxy &amp; Protocol</string>
-    <string name="layout_dlg_easytier_panel_text_93070">Enable KCP Proxy</string>
-    <string name="layout_dlg_easytier_panel_text_6ea99">Disable KCP Input</string>
-    <string name="layout_dlg_easytier_panel_text_6618e">Enable QUIC Proxy</string>
-    <string name="layout_dlg_easytier_panel_text_02eb9">Disable QUIC Input</string>
-    <string name="layout_dlg_easytier_panel_text_4b503">Use System Proxy Forwarding</string>
-    <string name="layout_dlg_easytier_panel_text_9c403">Security &amp; Connection</string>
-    <string name="layout_dlg_easytier_panel_text_e7fa3">Disable Encryption</string>
-    <string name="layout_dlg_easytier_panel_text_c5d9c">Disable UDP Hole Punching</string>
-    <string name="layout_dlg_easytier_panel_text_8ccac">Disable Symmetric NAT Hole Punching</string>
     <string name="layout_dlg_iperf3_test_text_b6031">Server IP/Hostname</string>
     <string name="layout_dlg_iperf3_test_text_2f727">Test Parameters</string>
     <string name="layout_dlg_iperf3_test_text_3226b">Direction:</string>
@@ -971,193 +354,16 @@
     <string name="layout_dlg_iperf3_test_hint_2c7ff">e.g. 100M, 1G</string>
     <string name="layout_dlg_iperf3_test_text_f2f61">Additional iPerf3 Parameters (Optional)</string>
     <string name="layout_dlg_iperf3_test_hint_9a865">e.g. -f M</string>
-    <string name="layout_dlg_peer_info_item_text_f5873">Virtual IP:</string>
-    <string name="layout_dlg_peer_info_item_text_e960e">NAT Type:</string>
-    <string name="layout_dlg_peer_info_item_text_9d9a3">Latency:</string>
-    <string name="layout_dlg_peer_info_item_text_681b4">Traffic (Rx/Tx):</string>
 
-    <string name="layout_item_key_value_text_0952a">Section 1</string>
-    <string name="layout_item_key_value_hint_dd44f">Section name, defaults to key name if empty</string>
 
     <string name="layout_keyboard_mini_text_3ae7b">Back to Keyboard</string>
-    <string name="layout_number_seekbar_text_e12e7">Mouse Passthrough Sensitivity</string>
-    <string name="layout_page_analog_stick_text_dedb8">Type: Analog Stick</string>
-    <string name="layout_page_analog_stick_text_34170">Stick</string>
-    <string name="layout_page_analog_stick_text_4e6d6">Left Stick</string>
-    <string name="layout_page_analog_stick_text_faf56">Right Stick</string>
-    <string name="layout_page_analog_stick_text_fb050">Stick Center Button</string>
-    <string name="layout_page_analog_stick_text_53e58">Relative Movement Mode</string>
-    <string name="layout_page_analog_stick_text_9b4ba">Border Color</string>
-    <string name="layout_page_analog_stick_text_3142e">Border Pressed Color</string>
-    <string name="layout_page_analog_stick_text_4573a">Background Color</string>
-    <string name="layout_page_analog_stick_text_69066">Font Color</string>
-    <string name="layout_page_analog_stick_text_4b292">Font Pressed Color</string>
-    <string name="layout_page_config_text_9eba2">Current Configuration</string>
-    <string name="layout_page_config_text_83a23">Enable Touch</string>
-    <string name="layout_page_config_text_f4b7c">Touchpad Mode</string>
-    <string name="layout_page_config_text_8ea81">Multi-Touch Mode</string>
-    <string name="layout_page_config_text_cd2c1">Game Vibration</string>
-    <string name="layout_page_config_text_f4651">Button Vibration</string>
-    <string name="layout_page_config_text_66ab5">Add</string>
-    <string name="layout_page_config_text_global_style">Global Button Style</string>
-    <string name="layout_page_config_text_global_border_color">Border Color</string>
-    <string name="layout_page_config_text_global_text_color">Text Color</string>
-    <string name="apptext_pg_config_global_opacity">Global Opacity</string>
-    <string name="layout_page_digital_combine_button_text_3bb27">Type: Combo Key</string>
-    <string name="layout_page_digital_combine_button_text_bab9f">Display Text</string>
-    <string name="layout_page_digital_combine_button_text_499ef">12345</string>
-    <string name="layout_page_digital_combine_button_text_0c4af">Key 1</string>
-    <string name="layout_page_digital_combine_button_text_ec25a">Key 2</string>
-    <string name="layout_page_digital_combine_button_text_001d1">Key 3</string>
-    <string name="layout_page_digital_combine_button_text_2c072">Key 4</string>
-    <string name="layout_page_digital_combine_button_text_a388b">Key 5</string>
-    <string name="layout_page_digital_common_button_text_02c2a">Type: Normal Button</string>
-    <string name="layout_page_digital_common_button_text_577e6">Key Value</string>
-    <string name="layout_page_digital_movable_button_text_e279e">Type: Movable Button</string>
-    <string name="layout_page_digital_movable_button_text_3d9c9">Send touch events from screen center\notherwise send mouse move events</string>
-    <string name="layout_page_digital_pad_text_3c1b5">Type: D-Pad</string>
-    <string name="layout_page_digital_stick_text_23611">Type: Digital Stick</string>
-    <string name="layout_page_digital_stick_text_6c35d">Stick Key Value</string>
-    <string name="layout_page_digital_switch_button_text_a96b6">Type: Toggle Button</string>
-    <string name="layout_page_edit_text_b8a5e">Exit Edit Mode</string>
-    <string name="layout_page_edit_text_e8341">Long press to move button</string>
-    <string name="layout_page_edit_text_2c372">Add Normal Button</string>
-    <string name="layout_page_edit_text_c0c18">Add Toggle Button</string>
-    <string name="layout_page_edit_text_5817f">Add Movable Button</string>
-    <string name="layout_page_edit_text_061fc">Add D-Pad</string>
-    <string name="layout_page_edit_text_e0cc1">Add Analog Stick</string>
-    <string name="layout_page_edit_text_6d757">Add Digital Stick</string>
-    <string name="layout_page_edit_text_9851e">Add Hidden Analog Stick</string>
-    <string name="layout_page_edit_text_b4881">Add Hidden Digital Stick</string>
-    <string name="layout_page_edit_text_e19e5">Add Simplified Info</string>
-    <string name="layout_page_edit_text_ed364">Add Combo Key</string>
-    <string name="layout_page_edit_text_1483c">Add Wheel Button</string>
-    <string name="layout_page_edit_text_bd823">Add Group Button</string>
-    <string name="layout_page_group_button_text_6db87">Type: Group Button</string>
-    <string name="layout_page_group_button_text_b19b4">Hide Button (for wheel use)</string>
-    <string name="layout_page_group_button_text_f57fc">Hold to move button</string>
-    <string name="layout_page_group_button_text_7bc0a">Independent (child buttons unaffected by parent visibility)</string>
-    <string name="layout_page_group_button_text_1eb1a">Show Child Buttons</string>
-    <string name="layout_page_group_button_text_42edc">Follow Position Properties</string>
-    <string name="layout_page_group_button_text_63921">Follow Other Properties</string>
-    <string name="layout_page_group_button_text_fd8c4">Select Child Button</string>
-    <string name="layout_page_group_button_text_e1a27">To delete, enter: DELETE\nNote: this will delete all child buttons</string>
-    <string name="layout_page_invisible_analog_stick_text_5e3cb">Type: Hidden Analog Stick</string>
-    <string name="layout_page_invisible_digital_stick_text_e60ec">Type: Hidden Digital Stick</string>
-    <string name="layout_page_simplify_performance_text_58923">Type: Stream Info</string>
-    <string name="layout_page_simplify_performance_text_7ec90">Text Color</string>
-    <string name="layout_page_simplify_performance_text_1673c">Display Text (supports line breaks)</string>
-    <string name="layout_page_simplify_performance_text_4b9c3">Reset</string>
-    <string name="layout_page_simplify_performance_text_e83a2">Confirm</string>
-    <string name="layout_page_simplify_performance_text_98e2e">Decoder:      ##Decoder## \nResolution:   ##Resolution## \nDrop Rate:    ##Drop Rate##\nHost Latency: ##Host Latency##\nNet Latency:  ##Net Latency##\nDecode Time:  ##Decode Time##\nBandwidth:    ##Bandwidth## \nFPS:          ##FPS## \nRender:       ##Render Latency## \nTime:         HH:MM:SS \n</string>
-
-    <string name="layout_page_wheel_pad_text_57047">Type: Wheel Button</string>
-    <string name="layout_page_wheel_pad_text_c814c">Popup Label</string>
-    <string name="layout_page_wheel_pad_hint_84265">Leave empty for direct mode</string>
-    <string name="layout_page_wheel_pad_text_43868">Show wheel at screen center</string>
-    <string name="layout_page_wheel_pad_text_91286">Preview group buttons on hover</string>
-    <string name="layout_page_wheel_pad_text_cfb46">Key values (clockwise from top)</string>
-    <string name="layout_page_wheel_pad_text_97f5a">Pressed Color</string>
-    <string name="layout_page_wheel_pad_text_3ed82">Section Text Color</string>
-    <string name="layout_page_wheel_pad_text_58796">Center Text Color</string>
-    <string name="layout_page_window_text_625fb">Cancel</string>
 
 
-    <!-- Clean page section headers (auto-extracted from _clean layouts) -->
-    <string name="page_section_basic_info">🕹️ Basic Info</string>
-    <string name="page_section_basic_settings">⚙️ Basic Settings</string>
-    <string name="page_section_position_size">📐 Position &amp; Size</string>
-    <string name="page_section_outer_ring_style">🎨 Outer Ring Style</string>
-    <string name="page_section_appearance">🎨 Appearance</string>
-    <string name="page_section_color_config">🎨 Color Config</string>
-    <string name="page_section_style_settings">🎨 Style Settings</string>
-    <string name="page_section_border_color">🎨 Border Color</string>
-    <string name="page_section_appearance_settings">🎨 Appearance Settings</string>
-    <string name="page_section_stick_style">🕹️ Stick Style</string>
-    <string name="page_section_operations">🔧 Operations</string>
-    <string name="page_section_child_management">🔧 Child Management</string>
-    <string name="page_section_dpad_config">🎮 D-Pad Config</string>
-    <string name="page_section_dpad_settings">🎮 D-Pad Settings</string>
-    <string name="page_section_stick_config">🕹️ Stick Config</string>
-    <string name="page_section_group_settings">📦 Group Settings</string>
-    <string name="page_section_child_settings">👥 Child Settings</string>
-    <string name="page_section_delete_operation">⚠️ Delete Operation</string>
-    <string name="page_section_text_settings">✏️ Text Settings</string>
-    <string name="page_section_text_config">✏️ Text Config</string>
-    <string name="page_section_wheel_basic">🎡 Basic Settings</string>
-    <string name="page_section_wheel_config">🎯 Wheel Config</string>
-    <string name="page_section_key_values">🔑 Key Values</string>
-    <string name="page_label_combo_keys">Combo Keys</string>
-    <string name="page_label_coord_x">X Coord</string>
-    <string name="page_label_coord_y">Y Coord</string>
-    <string name="page_hint_confirm_delete">Type to confirm</string>
 
-    <!-- app:text Chinese strings (auto-extracted) -->
-    <string name="apptext_pg_analog_stick_4b26d">Stick Deadzone %</string>
-    <string name="apptext_pg_analog_stick_b7e19">Stick Radius</string>
-    <string name="apptext_pg_analog_stick_ae177">Border Thickness</string>
-    <string name="apptext_pg_analog_stick_6896d">Z-Order</string>
-    <string name="apptext_pg_analog_stick_5f15e">Font Size</string>
-    <string name="apptext_pg_config_835d4">Touchpad Sensitivity</string>
-    <string name="apptext_pg_config_3f729">Virtual Mouse Scroll Speed</string>
-    <string name="apptext_pg_digital_combine_button_ea5a1">Width</string>
-    <string name="apptext_pg_digital_combine_button_4296d">Height</string>
-    <string name="apptext_pg_digital_combine_button_3ebb3">Border Radius</string>
-    <string name="apptext_pg_digital_movable_button_e12e7">Mouse Passthrough Sensitivity</string>
-    <string name="apptext_pg_edit_458a8">Grid Width</string>
-    <string name="apptext_pg_simplify_performance_0103e">Corner Radius</string>
-    <string name="apptext_pg_wheel_pad_163a1">Section Count</string>
-    <string name="apptext_pg_wheel_pad_4b2d6">Size (Diameter)</string>
-    <string name="apptext_pg_wheel_pad_881da">Center Radius (%)</string>
-    <string name="apptext_pg_wheel_pad_a0e87">Section Text Size (%)</string>
-    <string name="apptext_pg_wheel_pad_6c613">Trigger Text Size (%)</string>
-    <string name="apptext_pg_wheel_pad_ea2ce">Center Preview Text Size (%)</string>
 
     <!-- Extracted hardcoded strings -->
     <string name="toast_no_notification_permission">No notification permission, background streaming may be interrupted</string>
-    <string name="toast_press_again_to_open_menu">Press %s again to open stream menu</string>
-    <string name="toast_audio_muted">Stream audio muted</string>
-    <string name="toast_audio_unmuted">Stream audio unmuted</string>
-    <string name="toast_mic_button_hidden">Microphone button hidden</string>
-    <string name="toast_mic_button_shown">Microphone button shown</string>
-    <string name="toast_virtual_controller_hidden">Virtual controller hidden</string>
-    <string name="toast_virtual_controller_shown">Virtual controller shown</string>
-    <string name="toast_virtual_controller_not_enabled">Virtual controller not enabled</string>
     <string name="toast_enable_notification_for_bg">Please enable notification permission in settings to keep streaming in background</string>
-    <string name="perf_decoder">Decoder</string>
-    <string name="perf_resolution">Resolution</string>
-    <string name="perf_fps">FPS</string>
-    <string name="perf_frame_loss">Frame Loss</string>
-    <string name="perf_network_rtt">Network RTT</string>
-    <string name="perf_host_latency">Host Latency</string>
-    <string name="perf_decode_time">Decode Time</string>
-    <string name="perf_bandwidth">Bandwidth</string>
-    <string name="perf_render_latency">Render Latency</string>
-    <string name="toast_disconnect_error">Error disconnecting: %s</string>
-    <string name="game_menu_disable_double_click_drag">Disable double-click drag</string>
-    <string name="game_menu_enable_double_click_drag">Enable double-click drag</string>
-    <string name="toast_double_click_drag_enabled">Double-click drag enabled</string>
-    <string name="toast_double_click_drag_disabled">Double-click drag disabled</string>
-    <string name="game_menu_on">On</string>
-    <string name="game_menu_off">Off</string>
-    <string name="toast_local_cursor_enabled">Local cursor rendering enabled</string>
-    <string name="toast_local_cursor_disabled">Local cursor rendering disabled</string>
-    <string name="game_menu_toggle_touch">Toggle Touch</string>
-    <string name="toast_touch_enabled">Touch enabled</string>
-    <string name="toast_touch_disabled">Touch disabled</string>
-    <string name="toast_cannot_access_controller">Cannot access controller</string>
-    <string name="toast_vibration_test_sent">Local vibration test sent</string>
-    <string name="toast_vibration_test_failed">Vibration test failed: %s</string>
-    <string name="toast_adjusting_bitrate">Adjusting bitrate…</string>
-    <string name="game_menu_tab_bitrate">Bitrate</string>
-    <string name="game_menu_tab_gyro">Gyro</string>
-    <string name="game_menu_tab_shortcuts">Shortcuts</string>
-    <string name="game_menu_card_config_title">Visible Cards</string>
-    <string name="toast_enable_mic_redirect">Please enable microphone redirection in settings</string>
-    <string name="game_menu_disable_pan_zoom">Disable Pan/Zoom</string>
-    <string name="game_menu_enable_pan_zoom">Enable Pan/Zoom</string>
-    <string name="toast_pan_zoom_disabled">Pan/Zoom disabled</string>
-    <string name="toast_pan_zoom_enabled">Pan/Zoom enabled</string>
 
     <string name="toast_install_permission_denied">Install permission denied, download cancelled</string>
     <string name="toast_check_update_failed">Failed to check for updates, please try later</string>
@@ -1192,23 +398,11 @@
     <string name="toast_download_failed_try_browser">Download failed, please try later or use browser</string>
     <string name="toast_cannot_get_download_file">Cannot access download file, please install manually from downloads</string>
     <string name="toast_install_launch_failed">Failed to launch installer, please install manually from downloads</string>
-    <string name="toast_external_display_disconnected">External display disconnected, switching to main screen</string>
-    <string name="toast_switched_to_external_display">Streaming switched to external display. If landscape is not shown correctly, try rotating on host.</string>
 
     <!-- Quick button labels -->
-    <string name="quick_btn_audio">Audio</string>
-    <string name="quick_btn_mic">Mic</string>
-    <string name="quick_btn_sleep">Sleep</string>
-    <string name="quick_btn_quit">Quit</string>
     <string name="quick_btn_keyboard">KB</string>
     <string name="quick_btn_controller">Pad</string>
     <string name="quick_btn_perf">Perf</string>
-    <string name="game_menu_customize_quick_buttons">Customize Quick Buttons</string>
-    <string name="quick_btn_max_reached">Maximum 6 quick buttons allowed</string>
-
-    <!-- Quick button editor -->
-    <string name="quick_button_editor_title">Quick Buttons</string>
-    <string name="quick_button_reset_default">Reset</string>
 
     <!-- Layout accessibility & download -->
     <string name="download_preparing">Preparing download…</string>
@@ -1217,7 +411,24 @@
 
 
 
-    <!-- ── Compose UI internationalization strings ── -->
+    <!-- Compose UI hardcoded strings (extracted from Kotlin files) -->
+    <string name="stream_control_only_hint">Current control-only mode\nTo exit, turn off the video toggle in the host streaming settings</string>
+    <string name="quick_action_mic_unavailable">Microphone unavailable, requires virtual driver on PC</string>
+    <string name="quick_action_terminate">Terminate Stream</string>
+    <string name="quick_action_pause_stream">Pause Stream</string>
+    <string name="fab_menu">Menu</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_placeholder_desc">Settings categories will be implemented here</string>
+    <string name="restart_hint_text">Restart required to load new key layout</string>
+    <string name="box_art_thumbnail">Desktop Thumbnail</string>
+    <string name="combo_editor_default_title">Combo Keys</string>
+    <string name="custom_key_error_name_empty">Key name cannot be empty</string>
+    <string name="custom_key_error_format">Invalid format, key code must start with 0x</string>
+    <string name="custom_key_error_invalid_hex">Invalid hexadecimal key code</string>
+    <string name="custom_key_error_save_failed">Save failed</string>
+    <string name="scheme_default_name">Default Scheme</string>
+    <string name="bitrate_traffic_estimate_int">~ %d MB</string>
+    <string name="bitrate_traffic_estimate_float">~ %.1f MB</string>
 
     <!-- Main tab labels -->
     <string name="tab_my_devices">My Devices</string>
@@ -1227,14 +438,8 @@
     <string name="title_device_overview">Device Overview</string>
     <string name="title_device_detail">Device Details</string>
     <string name="title_stream_settings">Stream Settings</string>
-    <string name="title_touch_mode">Touch Mode</string>
     <string name="title_display_settings">Display Settings</string>
-    <string name="title_display_switches">Display Switches</string>
     <string name="title_sound_settings">Sound Settings</string>
-    <string name="title_gyro">Gyro</string>
-    <string name="title_other_settings">Other Settings</string>
-    <string name="title_desktop_widget">Desktop Widget</string>
-    <string name="title_performance_analytics">Performance &amp; Analytics</string>
 
     <!-- Language and theme -->
     <string name="title_language">Language</string>
@@ -1250,7 +455,6 @@
     <string name="cd_edit_remote">Edit remote address</string>
     <string name="cd_add_device">Add device</string>
     <string name="cd_windows">Windows</string>
-    <string name="cd_more">More</string>
     <string name="cd_running">Running</string>
 
     <!-- Background image settings -->
@@ -1264,17 +468,12 @@
     <string name="toast_image_select_cancelled">Image selection cancelled</string>
     <string name="toast_restored_default_background">Restored to default theme background</string>
 
-    <!-- Generic buttons -->
-    <string name="btn_save">Save</string>
-
     <!-- Device list -->
     <string name="section_paired_devices">Paired Devices</string>
     <string name="section_unpaired_devices">Unpaired Devices</string>
     <string name="device_unknown">Unknown Device</string>
     <string name="no_devices_found">No devices found</string>
-    <string name="btn_manual_add">Manual Add</string>
     <string name="menu_resume_stream">Resume Stream</string>
-    <string name="menu_quit_app">Quit App</string>
 
     <!-- Device list toasts -->
     <string name="toast_device_deleted">Device deleted: %s</string>
@@ -1286,12 +485,8 @@
 
     <!-- Desktop streaming settings categories (for title helpers) -->
     <string name="category_touch_mode">Touch Mode</string>
-    <string name="category_display_settings">Display Settings</string>
     <string name="category_display_switches">Display Switches</string>
-    <string name="category_sound_settings">Sound Settings</string>
-    <string name="category_gyro">Gyro</string>
     <string name="category_other_settings">Other Settings</string>
-    <string name="category_key_mapping_management">Key Mapping</string>
     <string name="category_desktop_widget">Desktop Widget</string>
     <string name="category_performance_analytics">Performance &amp; Analytics</string>
 
@@ -1303,7 +498,6 @@
     <string name="option_trackpad_mode">Trackpad Mode</string>
     <string name="option_mouse_mode">Mouse Mode</string>
     <string name="section_trackpad_settings">Trackpad Settings</string>
-    <string name="section_mouse_settings">Mouse Settings</string>
     <string name="label_local_mouse_pointer">Local Mouse Pointer</string>
     <string name="section_enhanced_touch_settings">Enhanced Touch Settings</string>
     <string name="label_enhanced_touch_on_right">Enhanced Touch Zone on Right</string>
@@ -1313,22 +507,18 @@
     <string name="label_long_press_jitter">Long Press Jitter Removal</string>
     <string name="label_key_mapping_enabled">Enable Key Mapping</string>
     <string name="label_current_scheme">Current Scheme</string>
-    <string name="label_loading">Loading…</string>
     <string name="label_builtin_virtual_gamepad">Built-in Virtual Gamepad Scheme</string>
-    <string name="label_unknown">Unknown</string>
     <string name="label_switch_scheme">Switch Scheme</string>
     <string name="title_select_key_mapping_scheme">Select Key Mapping Scheme</string>
     <string name="btn_close">Close</string>
     <string name="section_general_touch_settings">General Touch Settings</string>
     <string name="label_keyboard_toggle_fingers">Keyboard Toggle Fingers</string>
     <string name="label_fingers_count">%d (0=disabled)</string>
-    <string name="section_video">Video</string>
     <string name="label_bitrate_settings">Bitrate Settings</string>
     <string name="label_bitrate">Bitrate</string>
     <string name="option_auto">Auto</string>
     <string name="option_custom">Custom</string>
     <string name="label_abr_mode">Adaptive Bitrate Mode</string>
-    <string name="label_video_codec">Video Codec</string>
     <string name="label_video_framerate">Video Framerate</string>
     <string name="label_unlock_framerate">Unlock Framerate</string>
     <string name="label_frame_pacing">Frame Pacing</string>
@@ -1342,10 +532,8 @@
     <string name="error_width_must_be_even">Width must be even</string>
     <string name="error_height_must_be_even">Height must be even</string>
     <string name="btn_add">Add</string>
-    <string name="btn_cancel">Cancel</string>
     <string name="label_output_buffer">Output Buffer</string>
     <string name="label_output_buffer_frames">%d frames</string>
-    <string name="section_virtual_display">Virtual Display</string>
     <string name="desc_virtual_display">Virtual display replaces physical display during secondary screen streaming</string>
     <string name="label_virtual_display_resolution">Virtual Display Resolution</string>
     <string name="label_virtual_display_framerate">Virtual Display Framerate</string>
@@ -1396,9 +584,7 @@
     <string name="label_gyro_switch">Gyro Switch</string>
     <string name="label_activation_key">Activation Key</string>
     <string name="option_always">Always</string>
-    <string name="label_mode">Mode</string>
     <string name="option_right_stick">Right Stick</string>
-    <string name="option_mouse">Mouse</string>
     <string name="label_sensitivity_format">Sensitivity: %.1fx</string>
     <string name="section_axis_invert">Axis Invert</string>
     <string name="label_x_axis_invert">X Axis Invert</string>
@@ -1410,7 +596,7 @@
     <string name="section_performance_display">Performance &amp; Display</string>
     <string name="label_enable_perf_overlay">Enable Performance Overlay</string>
     <string name="label_bg_opacity">Background Opacity</string>
-    <string name="label_bg_opacity_percent">%d%%</string>
+    <string name="label_bg_opacity_percent" translatable="false">%d%%</string>
     <string name="label_lock_perf_overlay">Lock Performance Overlay</string>
     <string name="desc_perf_overlay_settings">For detailed performance overlay settings go to Home → Settings → Performance &amp; Analytics</string>
     <string name="label_show_latency_after_stream">Show Latency Info After Streaming</string>
@@ -1434,7 +620,6 @@
     <string name="toast_invalid_legacy_config">This is not a valid legacy Crown config file</string>
     <string name="title_export_mlk_dialog">Export Key Mapping Scheme (.mlk)</string>
     <string name="btn_export">Export</string>
-    <string name="title_import_mlk_dialog">Import Key Mapping Scheme</string>
     <string name="title_import_legacy_key_mapping_dialog">Import Legacy Crown Config</string>
     <string name="hint_scheme_name">Scheme Name (1-10 chars)</string>
     <string name="label_overwrite_existing">Overwrite Existing Scheme</string>
@@ -1453,29 +638,14 @@
     <!-- Device Overview Screen -->
     <string name="title_device_not_found">Device Not Found</string>
     <string name="btn_back">Back</string>
-    <string name="title_quick_launch">Quick Launch</string>
-    <string name="desc_no_apps_available">No apps available. Make sure the device is online and paired.</string>
-    <string name="label_quick_actions">Quick Actions</string>
-    <string name="label_device_details">Device Details</string>
-    <string name="label_stream_settings">Stream Settings</string>
     <string name="action_shutdown">Shutdown</string>
     <string name="toast_shutdown_sent">Shutdown command sent</string>
     <string name="toast_shutdown_failed">Shutdown failed</string>
-    <string name="toast_shutdown_error">Shutdown error: %s</string>
     <string name="action_sleep">Sleep</string>
-    <string name="action_secondary_screen">Secondary Screen Stream (Foundation)</string>
-    <string name="action_open_web_ui">Open Web Management (Sunshine)</string>
-    <string name="action_send_wol">Send Wake-On-LAN Request</string>
-    <string name="action_delete_pc">Delete PC</string>
     <string name="action_quit_app">Quit App</string>
-    <string name="action_iperf3_test">Network Bandwidth Test (iPerf3)</string>
     <string name="toast_device_address_unavailable">Device address unavailable. Make sure the device is online.</string>
     <string name="toast_cannot_get_address">Unable to get device address</string>
-    <string name="action_disable_ipv6">Disable IPv6</string>
-    <string name="action_test_network">Test Network Connection</string>
     <string name="action_gamestream_eol">NVIDIA GameStream End-of-Service</string>
-    <string name="badge_online">Online</string>
-    <string name="badge_offline">Offline</string>
     <string name="label_enter_desktop">Enter Desktop &gt;</string>
     <string name="label_virtual_display">Virtual Display</string>
     <string name="label_display">Display</string>
@@ -1487,7 +657,7 @@
 
     <!-- Device Detail Screen -->
     <string name="label_device_name">Device Name</string>
-    <string name="label_uuid">UUID</string>
+    <string name="label_uuid" translatable="false">UUID</string>
     <string name="label_status">Status</string>
     <string name="label_pair_state">Pair State</string>
     <string name="label_running_app_id">Running App ID</string>
@@ -1501,20 +671,17 @@
     <string name="label_ipv6_address">IPv6 Address</string>
     <string name="label_https_port">HTTPS Port</string>
     <string name="label_mac_address">MAC Address</string>
-    <string name="label_ipv6_status">IPv6</string>
+    <string name="label_ipv6_status" translatable="false">IPv6</string>
     <string name="label_disabled">Disabled</string>
     <string name="label_enabled">Enabled</string>
     <string name="section_sunshine_info">Sunshine Info</string>
     <string name="label_sunshine_version">Sunshine Version</string>
     <string name="label_nvidia_server">NVIDIA Server</string>
-    <string name="label_yes">Yes</string>
-    <string name="label_no">No</string>
     <string name="label_multi_address">Multi-Address Support</string>
     <string name="label_desktop_quick_start">Desktop Quick Start Support</string>
     <string name="title_edit_remote_address">Edit Remote Address</string>
     <string name="hint_host_port">host:port</string>
     <string name="placeholder_ip">192.168.1.100:47989</string>
-    <string name="btn_confirm">Confirm</string>
     <string name="toast_remote_address_updated">Remote address updated</string>
     <string name="toast_details_copied">Details copied to clipboard</string>
 
@@ -1542,7 +709,6 @@
     <string name="label_network_secret">Network Secret</string>
     <string name="label_local_ipv4">Local Virtual IPv4 Address</string>
     <string name="label_listeners">Listeners</string>
-    <string name="label_peers_config">Peers</string>
     <string name="hint_network_name">e.g. easytier</string>
     <string name="hint_local_ipv4">e.g. 10.0.0.6</string>
     <string name="hint_listeners">One per line, e.g. udp://0.0.0.0:11010</string>
@@ -1555,7 +721,6 @@
     <string name="flag_latency_first">Latency First</string>
     <string name="flag_disable_p2p">Disable P2P (Force Relay)</string>
     <string name="flag_private_mode">Private Mode</string>
-    <string name="flag_disable_ipv6">Disable IPv6</string>
     <string name="flag_enable_kcp_proxy">Enable KCP Proxy</string>
     <string name="flag_disable_kcp_input">Disable KCP Input</string>
     <string name="flag_enable_quic_proxy">Enable QUIC Proxy</string>
@@ -1568,10 +733,8 @@
 
 
     <!-- Device Overview Screen (Compose UI) -->
-    <string name="toast_device_not_found_overview">Device not found</string>
     <string name="label_quick_launch">Quick Launch</string>
     <string name="label_no_apps_available">No apps available. Please make sure the device is online and paired.</string>
-    <string name="label_running">Running</string>
     <string name="title_quick_actions">Quick Actions</string>
     <string name="toast_shutdown_exception">Shutdown error</string>
     <string name="action_secondary_stream">Stream as Secondary Display (for Base Station)</string>
@@ -1584,11 +747,364 @@
     <string name="toast_no_app_to_launch">No apps to launch. Please open the app list first.</string>
 
 
-    <!-- Status and display labels -->
-    <string name="label_online">Online</string>
-    <string name="label_offline">Offline</string>
     <!-- App list screen -->
     <string name="title_device_app_list">App List</string>
     <string name="search_apps_hint">Search apps…</string>
 
+
+
+    <!-- Host settings (DeviceDetailScreen) -->
+    <string name="host_auto_optimize">Auto-optimize game settings</string>
+    <string name="host_lock_screen">Lock screen after disconnect</string>
+    <string name="host_play_audio">Play audio on PC</string>
+    <string name="host_sync_clipboard_image">Sync clipboard images</string>
+    <string name="host_sync_clipboard_text">Sync clipboard text</string>
+
+    <!-- More/Float panel -->
+    <string name="more_auto_hide_2s">Auto-hide after 2s</string>
+    <string name="more_enable_perf_overlay">Show performance overlay</string>
+    <string name="more_hide_when_keymapping">Hide when key mapping active</string>
+    <string name="more_no_auto_hide">Never auto-hide</string>
+    <string name="more_perf_hint">Performance statistics overlay</string>
+    <string name="more_show_pause_stream">Show pause stream button</string>
+
+    <!-- SubPanel (stream overlay) -->
+    <string name="subpanel_activate_key">Activation key</string>
+    <string name="subpanel_auto_trackpad_toast">Auto-switched to trackpad mode</string>
+    <string name="subpanel_bg_opacity_format">BG opacity: %1$d%%</string>
+    <string name="subpanel_config">Config</string>
+    <string name="subpanel_current_scheme">Current scheme</string>
+    <string name="subpanel_double_click_drag">Double-tap drag</string>
+    <string name="subpanel_edit_scheme">Edit scheme</string>
+    <string name="subpanel_enable_key_mapping">Enable key mapping</string>
+    <string name="subpanel_fab_opacity_format">FAB opacity: %1$d%%</string>
+    <string name="subpanel_gyro_always">Always on</string>
+    <string name="subpanel_gyro_invert_x">Invert X</string>
+    <string name="subpanel_gyro_invert_y">Invert Y</string>
+    <string name="subpanel_gyro_mouse">Gyro mouse</string>
+    <string name="subpanel_gyro_right_stick">Gyro right stick</string>
+    <string name="subpanel_gyro_switch">Gyro switch</string>
+    <string name="subpanel_local_cursor">Local cursor</string>
+    <string name="subpanel_local_mouse">Local mouse</string>
+    <string name="subpanel_no_gamepad">No gamepad detected</string>
+    <string name="subpanel_no_keyboard">No keyboard detected</string>
+    <string name="subpanel_no_mouse">No mouse detected</string>
+    <string name="subpanel_pan_zoom">Pan/Zoom</string>
+    <string name="subpanel_panel_auto_hide_label">Auto-hide</string>
+    <string name="subpanel_peripherals_label">Peripherals</string>
+    <string name="subpanel_sensitivity_format">Sense: %1$d</string>
+    <string name="subpanel_switch_scheme">Switch scheme</string>
+    <string name="subpanel_title_gyro">Gyro</string>
+    <string name="subpanel_title_host">Host</string>
+    <string name="subpanel_title_more">More</string>
+    <string name="subpanel_toggle_remote_mouse">Toggle remote mouse</string>
+    <string name="subpanel_touch_mode">Touch mode</string>
+
+    <!-- Quick Actions -->
+    <string name="qa_editor_drag_hint">Drag to rearrange quick buttons</string>
+    <string name="qa_editor_title">Edit Quick Buttons</string>
+
+    <!-- Touch mode toasts -->
+    <string name="toast_touch_mode_enhanced_switched">Enhanced multi-touch switched</string>
+    <string name="toast_touch_mode_mouse_switched">Mouse mode switched</string>
+    <string name="toast_touch_mode_trackpad_switched">Trackpad mode switched</string>
+
+    <!-- Peripherals -->
+    <string name="peripherals_keyboard_settings">Keyboard Settings</string>
+    <string name="peripherals_mouse_settings">Mouse Settings</string>
+
+
+    <!-- === AUTO-GENERATED RESOURCES === -->
+    <string name="bar_desktop">Desktop</string>
+    <string name="bar_keyboard">Keyboard</string>
+    <string name="bar_operations">Operations</string>
+    <string name="bar_window">Window</string>
+    <string name="cache_stats_failed">Cache stats unavailable</string>
+    <string name="cache_stats_format">Cache: %1$s / %2$s</string>
+    <string name="config_button_vibration">Button vibration</string>
+    <string name="config_enhanced_touch">Enhanced touch</string>
+    <string name="config_game_vibration">Game vibration</string>
+    <string name="config_global_opacity">Global opacity</string>
+    <string name="config_mouse_wheel_speed">Mouse wheel speed</string>
+    <string name="config_speed_fast">Fast</string>
+    <string name="config_speed_medium">Medium</string>
+    <string name="config_speed_slow">Slow</string>
+    <string name="config_title">Configuration</string>
+    <string name="config_touch_switch">Touch switch</string>
+    <string name="config_unified_color_picker">Unified color picker</string>
+    <string name="config_unified_colors">Unified colors</string>
+    <string name="customkey_dialog_title">Custom Key Mapping</string>
+    <string name="customkey_error_code_format">Invalid code format</string>
+    <string name="customkey_error_code_invalid">Invalid key code</string>
+    <string name="customkey_error_codes_empty">Key codes cannot be empty</string>
+    <string name="customkey_error_name_duplicate">Name already exists</string>
+    <string name="customkey_error_name_empty">Name cannot be empty</string>
+    <string name="customkey_hint_codes">Enter key codes (comma separated)</string>
+    <string name="customkey_hint_name">Enter combo name</string>
+    <string name="customkey_label_codes">Key Codes</string>
+    <string name="customkey_label_name">Name</string>
+    <string name="dialog_button_confirm">Confirm</string>
+    <string name="display_bitrate_20m">Original
+20M</string>
+    <string name="display_bitrate_2m">Clear
+2M</string>
+    <string name="display_bitrate_8m">HD
+8M</string>
+    <string name="display_bitrate_adapting">Bitrate adapting…</string>
+    <string name="display_bitrate_failed">Bitrate acquiring failed</string>
+    <string name="display_bitrate_label">Bitrate: %1$d Mbps (%2$d kbps)</string>
+    <string name="display_buffer_1frame">1 Frame</string>
+    <string name="display_buffer_5frame">5 Frames</string>
+    <string name="display_current_monitor">Current Monitor</string>
+    <string name="display_dpi_scale">DPI: %1$d%%</string>
+    <string name="display_dpi_scale_failed">DPI scale acquiring failed</string>
+    <string name="display_hdr" translatable="false">HDR</string>
+    <string name="display_mtk_desc">Forces MTK decoder to run at high frequency to reduce latency. May cause issues on other devices.</string>
+    <string name="display_other_monitors">Other Monitors</string>
+    <string name="display_pip_toast">PiP mode enabled</string>
+    <string name="display_primary_tag">Primary</string>
+    <string name="display_resolution_custom">%1$s (Custom)</string>
+    <string name="display_section_monitor">Monitor</string>
+    <string name="display_section_video">Video</string>
+    <string name="display_switch">Switch</string>
+    <string name="display_switch_resolution">Switch Resolution</string>
+    <string name="display_video_format_title">Video Codec</string>
+    <string name="display_videoformat_av1" translatable="false">AV1</string>
+    <string name="display_videoformat_h264" translatable="false">H264</string>
+    <string name="display_videoformat_hevc" translatable="false">HEVC</string>
+    <string name="editor_btn_color_settings">Color</string>
+    <string name="editor_btn_type_settings">Type</string>
+    <string name="editor_cancel">Cancel</string>
+    <string name="editor_chip_button_mode">Button Mode</string>
+    <string name="editor_chip_joystick_mode">Joystick Mode</string>
+    <string name="editor_clear_all_confirm">Are you sure you want to clear all keys?</string>
+    <string name="editor_clear_all_title">Clear All Keys</string>
+    <string name="editor_color_customize">Customize</string>
+    <string name="editor_confirm_clear">Clear</string>
+    <string name="editor_content_desc_confirm_name">Confirm name</string>
+    <string name="editor_content_desc_copy_clipboard">Copy to clipboard</string>
+    <string name="editor_content_desc_delete">Delete</string>
+    <string name="editor_content_desc_duplicate">Duplicate</string>
+    <string name="editor_content_desc_edit_name">Edit name</string>
+    <string name="editor_content_desc_layer_down">Layer down</string>
+    <string name="editor_content_desc_layer_up">Layer up</string>
+    <string name="editor_content_desc_properties">Properties</string>
+    <string name="editor_content_desc_select_key">Select key</string>
+    <string name="editor_delete_title">Delete Key Element</string>
+    <string name="editor_element_list_title">Elements</string>
+    <string name="editor_empty_hint">Tap "+" to add a key element</string>
+    <string name="editor_grid_cols_format">%1$d columns</string>
+    <string name="editor_grid_slider_off">Off</string>
+    <string name="editor_label_border_thickness">Border thickness</string>
+    <string name="editor_label_button_text">Text</string>
+    <string name="editor_label_button_value">Value</string>
+    <string name="editor_label_circle">Circle</string>
+    <string name="editor_label_click">Click</string>
+    <string name="editor_label_corner_radius">Corner radius</string>
+    <string name="editor_label_height">Height</string>
+    <string name="editor_label_key_value">Key Value</string>
+    <string name="editor_label_layer">Layer</string>
+    <string name="editor_label_long_press">Long Press</string>
+    <string name="editor_label_long_press_desc">Trigger on long press</string>
+    <string name="editor_label_middle_value">Middle Value</string>
+    <string name="editor_label_mode">Mode</string>
+    <string name="editor_label_opacity">Opacity</string>
+    <string name="editor_label_swipe_down">Swipe Down</string>
+    <string name="editor_label_swipe_left">Swipe Left</string>
+    <string name="editor_label_swipe_right">Swipe Right</string>
+    <string name="editor_label_swipe_up">Swipe Up</string>
+    <string name="editor_label_text_size">Text size</string>
+    <string name="editor_label_trackpad_mode">Trackpad</string>
+    <string name="editor_label_width">Width</string>
+    <string name="editor_label_x" translatable="false">X</string>
+    <string name="editor_label_y" translatable="false">Y</string>
+    <string name="editor_loading">Loading…</string>
+    <string name="editor_save">Save</string>
+    <string name="editor_scheme_default_name">Default</string>
+    <string name="editor_scheme_prefix">Scheme</string>
+    <string name="editor_sensitivity_format">%1$s%%</string>
+    <string name="editor_title_color_settings">Color Settings</string>
+    <string name="editor_title_combo_property">Combo Property</string>
+    <string name="editor_title_new_combo">New Combo</string>
+    <string name="editor_title_new_element">New Key Element</string>
+    <string name="editor_toast_cleared_all">All keys cleared</string>
+    <string name="editor_toast_color_updated">Color updated</string>
+    <string name="editor_toast_combo_created">Combo created</string>
+    <string name="editor_toast_combo_updated">Combo updated</string>
+    <string name="editor_toast_copied_clipboard">Copied to clipboard</string>
+    <string name="editor_toast_create_failed">Failed to create</string>
+    <string name="editor_toast_created">Created</string>
+    <string name="editor_toast_duplicate_direction">Duplicate direction detected</string>
+    <string name="editor_toast_duplicate_name">This name already exists</string>
+    <string name="editor_toast_duplicate_scheme">A scheme with this name already exists</string>
+    <string name="editor_toast_duplicated">Duplicated</string>
+    <string name="editor_toast_pasted">Pasted</string>
+    <string name="editor_toast_property_updated">Property updated</string>
+    <string name="editor_toast_saved">Saved</string>
+    <string name="editor_toast_scheme_created">Scheme created</string>
+    <string name="editor_toast_scheme_name_empty">Scheme name cannot be empty</string>
+    <string name="editor_toast_select_all_directions">All directions selected</string>
+    <string name="editor_toast_select_click_key">Select a click key first</string>
+    <string name="editor_toast_select_key_first">Select a key first</string>
+    <string name="editor_toast_select_middle_value">Select a middle value</string>
+    <string name="editor_toolbar_grid_cols">Grid Cols</string>
+    <string name="editor_toolbar_grid_off">Grid Off</string>
+    <string name="editor_toolbar_key_list">Key List</string>
+    <string name="editor_toolbar_keys">Keys</string>
+    <string name="editor_toolbar_paste">Paste</string>
+    <string name="engine_abr_off">Adaptive bitrate off</string>
+    <string name="engine_abr_on">Adaptive bitrate on</string>
+    <string name="engine_audio_off">Audio off</string>
+    <string name="engine_audio_on">Audio on</string>
+    <string name="engine_conn_failed_msg">Connection failed (Stage: %1$d, Error: %2$d)</string>
+    <string name="engine_conn_failed_title">Connection Failed</string>
+    <string name="engine_conn_failed_vdd">Your graphics driver may have crashed. Try restarting your computer.</string>
+    <string name="engine_device_connected">%1$s connected</string>
+    <string name="engine_device_disconnected">%1$s disconnected</string>
+    <string name="engine_device_name_unknown">Unknown</string>
+    <string name="engine_disconnected_format">Disconnected: %1$s</string>
+    <string name="engine_disconnected_title">Disconnected</string>
+    <string name="engine_frame_conversion_failed">Frame conversion failed</string>
+    <string name="engine_gyro_off">Gyro off</string>
+    <string name="engine_gyro_on">Gyro on</string>
+    <string name="engine_init_failed">Init failed: %1$s</string>
+    <string name="engine_latency_decode">Decode: %1$dms</string>
+    <string name="engine_latency_end_to_end">Latency: %1$dms</string>
+    <string name="engine_metered_network">Warning: Your active network connection is metered!</string>
+    <string name="engine_mic_off">Mic off</string>
+    <string name="engine_mic_on">Mic on</string>
+    <string name="engine_missing_host">Missing host</string>
+    <string name="engine_no_h264_decoder">No H.264 decoder available</string>
+    <string name="engine_no_video_frame">No video frame received</string>
+    <string name="engine_no_video_traffic">No video traffic</string>
+    <string name="engine_orientation_landscape">Landscape</string>
+    <string name="engine_orientation_portrait">Portrait</string>
+    <string name="engine_perf_draggable">Drag to move</string>
+    <string name="engine_perf_hidden">Performance overlay hidden</string>
+    <string name="engine_perf_locked">Performance overlay locked</string>
+    <string name="engine_pip_off">PiP off</string>
+    <string name="engine_pip_on">PiP on</string>
+    <string name="engine_port_check_failed">Port check failed. Please check your network and firewall settings:</string>
+    <string name="engine_resolution_changed">Resolution changed to %1$d x %2$d</string>
+    <string name="engine_unexpected_termination">Stream ended unexpectedly</string>
+    <string name="engine_unknown_device">Unknown device</string>
+    <string name="engine_unnamed">Unnamed</string>
+    <string name="input_hint_global_keyboard">Global keyboard →</string>
+    <string name="input_option_back_key">Back key</string>
+    <string name="input_option_other_keys">Other keys</string>
+    <string name="input_title_absolute_mouse">Absolute mouse mode</string>
+    <string name="input_title_double_tap">Double tap to exit</string>
+    <string name="input_title_esc_menu">ESC opens menu</string>
+    <string name="input_title_esc_menu_key">ESC menu key</string>
+    <string name="input_title_fix_middle">Fix middle button</string>
+    <string name="input_title_fix_wheel">Fix mouse wheel</string>
+    <string name="input_title_keyboard_toggle">Keyboard toggle</string>
+    <string name="input_title_mouse_nav">Mouse navigation</string>
+    <string name="input_title_special_keys">Special keys</string>
+    <string name="input_title_sync_touch">Sync touch mode</string>
+    <string name="input_title_tap_fingers">Tap fingers</string>
+    <string name="keyboard_done_mode">Done</string>
+    <string name="keyboard_edit_mode">Edit</string>
+    <string name="keyboard_ime_hint">Select input method</string>
+    <string name="keyboard_reset">Reset</string>
+    <string name="keyboard_tab_host">Host Keyboard</string>
+    <string name="keyboard_tab_ime">IME</string>
+    <string name="keyboard_tab_shortcuts">Shortcuts</string>
+    <string name="keyboard_tab_virtual">Virtual Keyboard</string>
+    <string name="kme_dir_down">Down</string>
+    <string name="kme_dir_left">Left</string>
+    <string name="kme_dir_right">Right</string>
+    <string name="kme_dir_up">Up</string>
+    <string name="kme_shared_tap_to_select">Tap to select</string>
+    <string name="kv_category_gamepad">Gamepad</string>
+    <string name="kv_category_mouse">Mouse</string>
+    <string name="kv_category_special">Special</string>
+    <string name="kv_title_select_key">Select Key</string>
+    <string name="ok">OK</string>
+    <string name="perf_option_bottom">Bottom</string>
+    <string name="perf_option_bottom_left">Bottom Left</string>
+    <string name="perf_option_bottom_right">Bottom Right</string>
+    <string name="perf_option_horizontal">Horizontal</string>
+    <string name="perf_option_top">Top</string>
+    <string name="perf_option_top_left">Top Left</string>
+    <string name="perf_option_top_right">Top Right</string>
+    <string name="perf_option_vertical">Vertical</string>
+    <string name="perf_summary_disable_warnings">Show no warning messages</string>
+    <string name="perf_summary_display_items">Items to display in the overlay</string>
+    <string name="perf_summary_enable_analytics">Collect and display streaming analytics</string>
+    <string name="perf_summary_enable_overlay">Show performance overlay during streaming</string>
+    <string name="perf_summary_post_stream_toast">Show streaming summary after disconnecting</string>
+    <string name="perf_title_bg_opacity">Background opacity</string>
+    <string name="perf_title_disable_warnings">Disable warnings</string>
+    <string name="perf_title_display_items">Display items</string>
+    <string name="perf_title_enable_analytics">Enable analytics</string>
+    <string name="perf_title_enable_overlay">Enable overlay</string>
+    <string name="perf_title_overlay_orientation">Overlay orientation</string>
+    <string name="perf_title_overlay_position">Overlay position</string>
+    <string name="perf_title_post_stream_toast">Post-stream summary</string>
+    <string name="scheme_builtin_name">Built-in</string>
+    <string name="scheme_delete_confirm">Delete this scheme?</string>
+    <string name="scheme_delete_failed">Failed to delete scheme</string>
+    <string name="scheme_delete_title">Delete Scheme</string>
+    <string name="scheme_deleted">Scheme deleted</string>
+    <string name="scheme_new">New</string>
+    <string name="scheme_search_hint">Search schemes…</string>
+    <string name="scheme_title">Key Mapping Schemes</string>
+    <string name="vpn_placeholder_desc">VPN features are not available in this version</string>
+    <string name="vpn_placeholder_title">VPN</string>
+    <string name="widget_bind_title">Bind Widget</string>
+    <string name="widget_clear_bind">Clear Bind</string>
+    <string name="widget_confirm_unbind">Unbind this computer from the widget?</string>
+    <string name="widget_empty_desc">Long press home screen to add widget →</string>
+    <string name="widget_empty_title">No Widget</string>
+    <string name="widget_hint">Long press to edit</string>
+    <string name="widget_no_computers">No computers found</string>
+    <string name="widget_tap_to_change">Tap to change</string>
+    <string name="widget_unbound">Unbound</string>
+
+
+    <!-- DeleteCustomKeyDialog -->
+    <string name="customkey_title_delete">Delete Custom Keys</string>
+    <string name="customkey_empty">No custom keys</string>
+    <string name="customkey_select_hint">Select keys to delete:</string>
+    <string name="customkey_error_no_selection">Please select keys to delete</string>
+    <string name="customkey_error_delete_failed">Delete failed, please try again</string>
+    <string name="customkey_keycode_format">Key code: %1$s</string>
+
+    <!-- PreferenceComponents -->
+    <string name="pref_item_selected_format">%1$s (%2$d selected)</string>
+
+    <!-- StreamOverlay connection progress -->
+    <string name="stream_starting">Starting</string>
+    <string name="stream_starting_stage">Starting %s</string>
+
+    <!-- iPerf3 test -->
+    <string name="iperf_invalid_server_address">Invalid server address</string>
+    <string name="iperf_invalid_port">Invalid port number (1-65535)</string>
+
+    <!-- Quick action labels -->
+    <string name="qa_label_win" translatable="false">Win</string>
+    <string name="qa_label_esc" translatable="false">ESC</string>
+    <string name="qa_label_audio">Audio</string>
+    <string name="qa_label_mic">Mic</string>
+    <string name="qa_label_tab" translatable="false">Tab</string>
+    <string name="qa_label_alt_tab" translatable="false">Alt+Tab</string>
+    <string name="qa_label_alt_f4" translatable="false">Alt+F4</string>
+    <string name="qa_label_controller">Controller</string>
+    <string name="qa_label_performance">Performance</string>
+    <string name="qa_label_pip">PiP</string>
+    <string name="qa_label_adaptive_bitrate">Adaptive Bitrate</string>
+
+    <!-- Shortcut descriptions -->
+    <string name="shortcut_desc_copy">Copy</string>
+    <string name="shortcut_desc_cut">Cut</string>
+    <string name="shortcut_desc_select_all">Select All</string>
+    <string name="shortcut_desc_start_menu">Start Menu</string>
+    <string name="shortcut_desc_undo">Undo</string>
+    <string name="shortcut_desc_show_desktop">Show Desktop</string>
+    <string name="shortcut_desc_switch_window">Switch Window</string>
+    <string name="shortcut_desc_lock_screen">Lock Screen</string>
+    <string name="shortcut_desc_switch_app">Switch App</string>
+    <string name="shortcut_desc_close_window">Close Window</string>
+    <string name="shortcut_desc_task_manager">Task Manager</string>
 </resources>

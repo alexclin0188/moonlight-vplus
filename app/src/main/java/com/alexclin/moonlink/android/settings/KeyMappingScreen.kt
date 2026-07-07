@@ -255,7 +255,7 @@ private fun SchemeSelectionDialog(
                 enabled = schemes.any { it.configId == selectedId },
             ) { Text(stringResource(R.string.btn_export)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) } },
     )
 }
 
@@ -279,7 +279,7 @@ private fun ImportMlkDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.title_import_mlk_dialog)) },
+        title = { Text(stringResource(R.string.title_import_key_mapping)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -326,7 +326,7 @@ private fun ImportMlkDialog(
                 enabled = name.trim().isNotEmpty(),
             ) { Text(stringResource(R.string.btn_import)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) } },
     )
 }
 
@@ -526,7 +526,7 @@ private fun ImportMdatDialog(
                 enabled = name.trim().isNotEmpty(),
             ) { Text(stringResource(R.string.btn_import)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) } },
     )
 }
 

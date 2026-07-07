@@ -3,11 +3,9 @@
     <!-- PC view menu entries -->
     <string name="pcview_menu_app_list">Ver lista de juegos</string>
     <string name="pcview_menu_pair_pc">Emparejar con PC</string>
-    <string name="pcview_menu_unpair_pc">Desemparejar</string>
     <string name="pcview_menu_send_wol">Enviar petición Wake-On-LAN</string>
     <string name="pcview_menu_delete_pc">Eliminar PC</string>
     <!-- Pair messages -->
-    <string name="pairing">Emparejando…</string>
     <string name="pair_pc_offline">El ordenador está apagado</string>
     <string name="pair_pc_ingame">El ordenador está actualmente en un juego. Debes cerrar el juego antes de emparejar.</string>
     <string name="pair_pairing_title">Emparejando</string>
@@ -15,54 +13,20 @@
     <string name="pair_incorrect_pin">PIN incorrecto</string>
     <string name="pair_fail">Fallo al emparejar</string>
     <!-- WOL messages -->
-    <string name="wol_pc_online">Ordenador encendido</string>
-    <string name="wol_no_mac">No se puede activar el PC porque no hay ninguna dirección MAC almacenada</string>
-    <string name="wol_waking_pc">Iniciando PC…</string>
-    <string name="wol_waking_msg">Puede tomar algunos segundos iniciar tu PC.
-	    Si no se inicia asegúrate que está configurado correctamente para Wake-On-LAN.
-    </string>
-    <string name="wol_fail">Fallo al enviar paquetes Wake-On-LAN</string>
     <!-- Unpair messages -->
-    <string name="unpairing">Desemparejando…</string>
-    <string name="unpair_success">Desemparejado con éxito</string>
-    <string name="unpair_fail">Error al desemparejar</string>
-    <string name="unpair_error">El dispositivo no estaba emparejado</string>
     <!-- Errors -->
-    <string name="error_pc_offline">El ordenador está apagado</string>
-    <string name="error_manager_not_running">El servicio "ComputerManager" no está en ejecución. Por favor, espera unos segundos o reinicia la aplicación.</string>
     <string name="error_unknown_host">Fallo al resolver el host</string>
     <string name="error_404">GFE ha devuelto un error HTTP 404. Asegúrate que el PC tiene una GPU soportada.
 	    Usar software de Escritorio Remoto puede causar este error. Intenta reiniciar el equipo o reinstalar GFE.
     </string>
     <!-- Start application messages -->
     <string name="conn_establishing_title">Estableciendo conexión</string>
-    <string name="conn_establishing_msg">Iniciando conexión</string>
-    <string name="conn_metered">Aviso: ¡Tu conexión de red está siendo medida!</string>
-    <string name="conn_client_latency">Latencia media decodificando frames:</string>
-    <string name="conn_client_latency_hw">latencia decodificación por hardware:</string>
-    <string name="conn_hardware_latency">Latencia media decodificando por hardware:</string>
-    <string name="conn_starting">Iniciando</string>
     <string name="conn_error_title">Error de conexión</string>
-    <string name="conn_error_msg">Fallo al iniciar</string>
-    <string name="conn_terminated_title">Conexión finalizada</string>
-    <string name="conn_terminated_msg">La conexión ha finalizado.</string>
     <!-- General strings -->
     <string name="ip_hint">Dirección IP del host del ordenador</string>
-    <string name="searching_pc">Buscando el hostal del PC en tu red local...
-\n
-\n Asegúrate de que Sunshine se está ejecutando en el PC anfitrión o de que GameStream está activado en los ajustes de GeForce Experience SHIELD.</string>
     <string name="yes">Si</string>
     <string name="no">No</string>
-    <string name="lost_connection">Conexión perdida</string>
     <!-- AppList activity -->
-    <string name="applist_menu_resume">Reanudar sesión</string>
-    <string name="applist_menu_quit">Cerrar sesión</string>
-    <string name="applist_menu_quit_and_start">Cerrar juego actual e iniciar</string>
-    <string name="applist_menu_cancel">Cancelar</string>
-    <string name="applist_refresh_title">Lista de aplicaciones</string>
-    <string name="applist_refresh_msg">Actualizando lista de aplicaciones…</string>
-    <string name="applist_refresh_error_title">Error</string>
-    <string name="applist_refresh_error_msg">Error al cargar lista de aplicaciones</string>
     <string name="applist_quit_app">Cerrando</string>
     <string name="applist_quit_success">Cerrado satisfactoriamente</string>
     <string name="applist_quit_fail">Error al cerrar</string>
@@ -75,39 +39,12 @@
     <string name="addpc_unknown_host">Imposible resolver la dirección del PC. Asegúrate que no hay ningún error en la dirección.</string>
     <string name="addpc_enter_ip">Debes introducir una dirección IP</string>
     <!-- Preferences -->
-    <string name="category_basic_settings">Configuración básica</string>
-    <string name="title_resolution_list">Seleccionar resolución</string>
-    <string name="summary_resolution_list">Establecer unos valores demasiado altos puede causar retraso o cierres inesperados.</string>
-    <string name="title_seekbar_bitrate">Seleccionar bitrate de vídeo</string>
-    <string name="summary_seekbar_bitrate">Usa bitrate bajo para reducir "parpadeo". Incrementa el bitrate para mayor calidad de imagen.</string>
     <string name="title_checkbox_stretch_video">Ajustar vídeo a pantalla completa</string>
-    <string name="title_checkbox_disable_warnings">Desactivar mensajes de advertencia</string>
-    <string name="summary_checkbox_disable_warnings">Desactivar mensajes de advertencia en pantalla durante la transmisión</string>
-    <string name="category_audio_settings">Ajustes del audio</string>
     <string name="title_checkbox_multi_controller">Soporte para múltiples mandos</string>
-    <string name="summary_checkbox_multi_controller">Si no está marcado, todos los mandos aparecen como uno solo</string>
     <string name="title_seekbar_deadzone">Ajustar zona muerta del stick analógico</string>
-    <string name="suffix_seekbar_deadzone">%</string>
     <string name="title_checkbox_xb1_driver">Driver para mando Xbox 360/One</string>
-    <string name="summary_checkbox_xb1_driver">Activa el driver USB incluido para dispositivos sin soporte nativo para mandos de Xbox</string>
-    <string name="category_on_screen_controls_settings">Configuración de controles en pantalla</string>
-    <string name="title_checkbox_show_onscreen_controls">Mostrar controles en pantalla</string>
-    <string name="summary_checkbox_show_onscreen_controls">Muestra controles virtuales superpuestos en la pantalla táctil</string>
-    <string name="title_only_l3r3">Solo muestra L3 y R3</string>
-    <string name="summary_only_l3r3">Ocultar todo excepto L3 y R3</string>
     <string name="category_ui_settings">Configuración de la interfaz</string>
-    <string name="title_language_list">Idioma</string>
-    <string name="summary_language_list">Idioma a usar por MoonLink</string>
-    <string name="title_checkbox_small_icon_mode">Usar iconos pequeños</string>
-    <string name="summary_checkbox_small_icon_mode">Usar iconos pequeños en las entradas de cuadrículas para permitir más entradas en la pantalla</string>
     <string name="category_host_settings">Configuración de servidor</string>
-    <string name="title_checkbox_enable_sops">Optimizar configuración del juego</string>
-    <string name="summary_checkbox_enable_sops">Permitir que GFE modifique la configuración del juego para una transmisión óptima</string>
-    <string name="title_checkbox_host_audio">Reproducir audio en PC</string>
-    <string name="summary_checkbox_host_audio">Reproducir audio en el ordenador y en este dispositivo</string>
-    <string name="category_advanced_settings">Configuración avanzada</string>
-    <string name="title_video_format">Cambiar la configuración del códec</string>
-    <string name="summary_video_format">Los códecs más recientes pueden reducir los requisitos del ancho de banda del vídeo si tu dispositivo los admite. Las selecciones de los códecs pueden ignorarse si no son compatibles con el software del host o la GPU.</string>
     <!-- Array strings -->
     <string name="videoformat_auto">Automático (Recomendado)</string>
     <string name="videoformat_hevcalways">Preferir HEVC</string>
@@ -115,9 +52,7 @@
     <string name="scut_not_paired">PC no emparejado</string>
     <string name="scut_invalid_uuid">El PC proporcionado no es válido</string>
     <string name="scut_invalid_app_id">La App proporcionada no es válida</string>
-    <string name="help_loading_title">Visor de ayuda</string>
     <string name="pcview_menu_header_online">En línea</string>
-    <string name="pcview_menu_header_unknown">Actualizando</string>
     <string name="pcview_menu_test_network">Probar Conexión de Red</string>
     <string name="pcview_menu_details">Ver Detalles</string>
     <string name="nettest_title_waiting">Probando Conexión de Red</string>
@@ -130,312 +65,82 @@
 \nSe han bloqueado los siguientes puertos de red:
 \n</string>
     <string name="title_decoding_error">Falló el Decodificador de Video</string>
-    <string name="scut_deleted_pc">PC eliminado</string>
     <string name="scut_pc_not_found">PC no encontrado</string>
-    <string name="help_loading_msg">Cargando página de ayuda…</string>
     <string name="pcview_menu_header_offline">Fuera de línea</string>
     <string name="nettest_text_success">Tu red parece no estar bloqueando MoonLink. Si aun tienes problemas de conexión, comprueba la configuración del firewall de tu PC.
 \n
 \nSi estas intentado transmitir mediante Internet, instala en tu pc la MoonLink Internet Hosting Tool y ejecuta el Internet Streaming Tester incluido para comprobar la conexión de tu PC a internet.</string>
     <string name="nettest_text_blocked">La conexión de red actual de tu dispositivo esta bloqueando MoonLink. La Transmisión mediante Internet puede no funcionar mientras estés conectado a esta red.</string>
     <string name="pair_already_in_progress">Emparejamiento ya en progreso</string>
-    <string name="resolution_prefix_native_fullscreen">Pantalla Completa Nativa</string>
-    <string name="title_audio_config_list">Configuración de Sonido Envolvente</string>
     <string name="title_decoding_reset">Reiniciar Opciones de Video</string>
-    <string name="no_video_received_error">No se recibe video desde el equipo anfitrión.</string>
-    <string name="applist_details_id">ID de Aplicación:</string>
     <string name="title_checkbox_mouse_emulation">Emulación de ratón usando el mando</string>
     <string name="pacing_latency">Preferir la menor latencia posible</string>
-    <string name="pacing_balanced">Equilibrado</string>
     <string name="pacing_smoothness">Preferir mayor fluidez de video (puede incrementar significativamente la latencia)</string>
-    <string name="perf_overlay_decoder">Decodificador: %1$s</string>
-    <string name="perf_overlay_incomingfps">Tasa de cuadros obtenida de la red: %1$.2f FPS</string>
-    <string name="perf_overlay_renderingfps">Tasa de Cuadros Renderizada: %1$.2f FPS</string>
-    <string name="perf_overlay_netdrops">Cuadros perdidos por tu conexión de internet: %1$.2f%%</string>
-    <string name="perf_overlay_netlatency">Latencia promedio de red:%1$d ms (variación: %2$d ms)</string>
-    <string name="perf_overlay_dectime">Tiempo promedio de descodificado: %1$.2f ms</string>
-    <string name="perf_overlay_streamdetails">Transmisión video: %1$s %2$.2f FPS</string>
-    <string name="title_fps_list">Tasa de cuadros en el video</string>
-    <string name="summary_fps_list">Incrementar para una experiencia mas fluida en la transmisión. Disminuir para una mejoría en el rendimiento en dispositivos de gama de entrada.</string>
-    <string name="summary_reset_osc">Reiniciar toda la configuración a las predeterminadas de tamaño y posición para los controles en pantalla</string>
-    <string name="summary_troubleshooting">Mostrar consejos para diagnosticar y corregir errores comunes respecto a la transmisión</string>
     <string name="title_privacy_policy">Política de Privacidad</string>
-    <string name="resolution_360p">360p</string>
-    <string name="resolution_1440p">1440p</string>
-    <string name="resolution_4k">4K</string>
-    <string name="suffix_osc_opacity">%</string>
-    <string name="title_checkbox_enable_pip">Activar modo Pantalla-en-Pantalla para modo espectador</string>
-    <string name="resolution_720p">720p</string>
-    <string name="fps_120">120 FPS</string>
     <string name="audioconf_71surround">7.1 Sonido Envolvente</string>
-    <string name="title_troubleshooting">Guía de Solución de Errores</string>
-    <string name="resolution_1080p">1080p</string>
-    <string name="summary_frame_pacing">Especificar como balancear la latencia de video y la fluidez</string>
     <string name="pacing_balanced_alt">Equilibrado con limitador de FPS (Cuadros por Segundo)</string>
     <string name="audioconf_51surround">5.1 Sonido Envolvente</string>
     <string name="audioconf_stereo">Estéreo</string>
-    <string name="check_ports_msg">Revisa la configuración de tu firewall, así como, las reglas de redireccionamiento para él(los) puerto(s):</string>
     <string name="error_usb_prohibited">El acceso a USB está restringido en tu dispositivo por el administrador. Revisar tus ajustes en MDM o Knox.</string>
     <string name="message_decoding_error">MoonLink se ha bloqueado debido a una incompatibilidad con el descodificador de vídeo de este dispositivo. Intenta ajustar la configuración de streaming si los bloqueos continúan.</string>
     <string name="message_decoding_reset">La decodificación de video de tu equipo sigue fallando con las opciones elegidas. Las opciones de la transmisión han sido revertidas a las predeterminadas.</string>
-    <string name="video_decoder_init_failed">El descodificador de video no pudo ser iniciado. Tu dispositivo puede no soportar la resolución elegida o la tasa de cuadros por segundo.</string>
-    <string name="no_frame_received_error">La conexión de internet no está teniendo un buen desempeño. Reduce la tasa de bits de video o prueba en una conexión de mayor velocidad.</string>
-    <string name="unable_to_pin_shortcut">Tu lanzador predeterminado no permite la creación de accesos directos anclados.</string>
-    <string name="early_termination_error">Algo ha fallado en tu ordenador al iniciar la transmisión.
-\n
-\nAsegúrate de que no tienes ningún contenido protegido por DRM abierto en tu ordenador. También puedes probar a reiniciar el ordenador.</string>
-    <string name="title_details">Detalles</string>
-    <string name="poor_connection_msg">Conexión pobre al PC</string>
-    <string name="applist_menu_details">Ver Detalles</string>
-    <string name="applist_menu_scut">Crear Acceso Directo</string>
-    <string name="applist_menu_tv_channel">Agregar al Canal</string>
-    <string name="applist_menu_hide_app">Esconder Aplicación</string>
     <string name="applist_connect_msg">Conectando al Equipo…</string>
-    <string name="summary_checkbox_mouse_nav_buttons">Activar esta opción puede desconfigurar la función de clic derecho en algunos dispositivos inestables</string>
-    <string name="text_native_res_dialog">Es posible que la resolución nativa y/o los FPS no sean compatibles con el servidor de streaming. Es probable que tengas que configurar manualmente un modo de visualización personalizado para el PC host.
-\n
-\nSi decides crear una resolución personalizada en el Panel de control de NVIDIA para que coincida con la configuración de tu pantalla, asegúrate de haber leído y comprendido la advertencia de NVIDIA sobre posibles daños en el monitor, inestabilidad del PC y otros problemas potenciales.
-\n
-\nNo nos hacemos responsables de ningún problema derivado de la creación de una resolución personalizada en tu PC.
-\n
-\nEs posible que tu monitor no admita la configuración de pantalla necesaria. Si es así, puede intentar configurar un monitor virtual. Por último, si tu dispositivo o PC anfitrión no soporta streaming a una resolución o frecuencia de refresco específica, lamentablemente no tienes suerte.</string>
     <string name="resolution_prefix_native">Nativo</string>
-    <string name="summary_audio_config_list">Activar sonido envolvente de 5.1 o 7.1 canales para sistemas de teatro en casa</string>
     <string name="title_checkbox_vibrate_fallback">Emular la vibración del mando con vibración del equipo</string>
-    <string name="summary_checkbox_enable_audiofx">Permitir funcionar efectos de sonido durante la transmisión, pero podría incrementar la latencia del sonido</string>
-    <string name="summary_checkbox_usb_bind_all">Usar el controlador de USB de MoonLink para todos los mandos soportados, incluso si el control de Xbox se encuentra presente</string>
-    <string name="summary_checkbox_mouse_emulation">Presionar por un periodo largo el botón de inicio hará cambiar el mando a modo de ratón</string>
-    <string name="title_checkbox_mouse_nav_buttons">Activar los botones atrás y adelante del ratón</string>
-    <string name="title_unlock_fps">Desbloquear todas las opciones de tasa de cuadros disponibles</string>
-    <string name="summary_unlock_fps">Transmitir a 90 o 120 FPS puede reducir latencia en dispositivos de gama alta pero puede causar retrasos en dispositivos que no lo soporten</string>
-    <string name="summary_enable_post_stream_toast">Mostrar un mensaje sobre la información de latencia cuando la transmisión termine</string>
     <string name="help">Ayuda</string>
     <string name="delete_pc_msg">¿Estás seguro de eliminar este PC\?</string>
-    <string name="slow_connection_msg">Conexión lenta al PC
-\nReduce la tasa de bits</string>
     <string name="addpc_wrong_sitelocal">La dirección no luce correcta. Debes usar la dirección IP Pública de tu Rúter para la transmisión por Internet.</string>
-    <string name="title_native_res_dialog">Advertencia Resolución Nativa</string>
-    <string name="suffix_seekbar_bitrate_mbps">Mbps</string>
     <string name="category_input_settings">Opciones de Entrada</string>
-    <string name="title_checkbox_touchscreen_trackpad">Usa la pantalla táctil como panel táctil</string>
-    <string name="summary_checkbox_touchscreen_trackpad">Si está activo, la pantalla táctil funcionará como panel táctil. Si está desactivado, la pantalla táctil directamente controlará el cursor del ratón.</string>
-    <string name="summary_seekbar_deadzone">Nota: Algunos juegos pueden forzar una zona muerta mayor a la que MoonLink esta configurada a usar.</string>
     <string name="title_checkbox_flip_face_buttons">Invertir botones frontales</string>
-    <string name="summary_checkbox_absolute_mouse_mode">Esto puede hacer que la aceleración de mouse se comporte mas natural para uso de escritorio remoto, pero es incompatible con muchos juegos.</string>
-    <string name="title_checkbox_enable_audiofx">Activar el soporte para ecualizador de sistema</string>
-    <string name="summary_checkbox_vibrate_fallback">Vibrar el dispositivo para emular el retumbe si tu mando de control no lo soporta</string>
     <string name="title_checkbox_usb_bind_all">Sobrescribir el soporte nativo del control de Xbox</string>
-    <string name="summary_checkbox_flip_face_buttons">Invertir botones frontales A/B y X/Y para los mandos y los botones sobre la pantalla</string>
-    <string name="title_checkbox_absolute_mouse_mode">Modo de ratón para escritorio remoto</string>
-    <string name="title_checkbox_vibrate_osc">Activar vibración</string>
-    <string name="summary_checkbox_vibrate_osc">Hacer vibrar tu dispositivo para emular la vibración del juego para los controles en pantalla</string>
-    <string name="title_reset_osc">Borrar la configuración guardada de la plantilla para el control en pantalla</string>
-    <string name="dialog_title_reset_osc">Reiniciar a Plantilla Predeterminada</string>
-    <string name="dialog_text_reset_osc">¿Estás seguro de que quieres eliminar tus configuraciones guardadas para las plantillas de los controles en pantalla\?</string>
-    <string name="toast_reset_osc_success">Establecer Controles en Pantalla en modo Predeterminado</string>
-    <string name="title_osc_opacity">Cambiar la transparencia de los controles en pantalla</string>
-    <string name="summary_osc_opacity">Hacer los controles en pantalla más/menos transparentes</string>
-    <string name="dialog_title_osc_opacity">Cambiar opacidad</string>
-    <string name="summary_checkbox_enable_pip">Permite que la transmisión sea vista (pero no controlable) mientras se usa la multitarea</string>
-    <string name="title_disable_frame_drop">Nunca disminuir cuadros</string>
-    <string name="summary_disable_frame_drop">Puede reducir micro-tartamudeos (Stuttering) en algunos dispositivos , pero puede incrementar latencia</string>
-    <string name="title_enable_hdr">Activar HDR (Alto Rango Dinámico / Experimental)</string>
-    <string name="summary_enable_hdr">Transmite en HDR cuando el juego y la GPU del PC lo admitan. HDR requiere una GPU compatible con la codificación HEVC Main 10.</string>
-    <string name="title_enable_post_stream_toast">Mostrar mensajes sobre latencia mientras se transmite</string>
-    <string name="category_help">Ayuda</string>
-    <string name="title_setup_guide">Guía para la Configuración</string>
-    <string name="summary_setup_guide">Mostrar instrucciones para como configurar tu PC para juegos para la transmisión</string>
-    <string name="summary_privacy_policy">Mostrar la política de privacidad de MoonLink</string>
-    <string name="resolution_480p">480p</string>
-    <string name="fps_30">30 FPS</string>
-    <string name="fps_60">60 FPS</string>
-    <string name="fps_90">90 FPS</string>
-    <string name="title_frame_pacing">Ritmo de cuadros por segundo en video</string>
-    <string name="resolution_prefix_native_portrait">(Retrato)</string>
-    <string name="frame_conversion_error">El PC anfitrión ha reportado un error fatal en el codificador de video.
-\n
-\nIntenta deshabilitar el modo HDR, cambiar la resolución de la transmisión, o cambiar la resolución de pantalla del PC anfitrión.</string>
-    <string name="resolution_prefix_native_landscape">(Panorama)</string>
-    <string name="summary_checkbox_reduce_refresh_rate">Tasa de refresco menores pueden ahorrar energía a cambio de una mayor latencia de video</string>
-    <string name="title_checkbox_reduce_refresh_rate">Permitir reducción de la tasa de refresco</string>
-    <string name="title_full_range">Forzar video de rango completo (Experimental)</string>
-    <string name="summary_full_range">Esto provocará la pérdida de detalles en las áreas claras y oscuras si su dispositivo no muestra correctamente el contenido de video de rango completo.</string>
-    <string name="pair_pairing_help">Si el hostal del ordenador ejecuta Sunshine, navegue a la interfaz de usuario web de Sunshine para ingresar el PIN.</string>
-    <string name="pcview_menu_eol">Fin de servicio de NVIDIA GameStream</string>
-    <string name="fps_suffix_fps">FPS</string>
-    <string name="title_native_fps_dialog">Advertencia sobre FPS nativos</string>
     <string name="category_gamepad_settings">Ajustes del Gamepad</string>
     <string name="title_checkbox_gamepad_motion_sensors">Permitir el uso de los sensores de movimiento del gamepad</string>
     <string name="videoformat_av1always">Preferir AV1 (Experimental)</string>
     <string name="videoformat_h264always">Prefiero H.264</string>
-    <string name="perf_overlay_hostprocessinglatency">Latencia de procesamiento del host mín/máx/promedio: %1$.1f/%2$.1f/%3$.1f ms</string>
-    <string name="summary_checkbox_gamepad_touchpad_as_mouse">Fuerza la entrada del touchpad del gamepad para controlar el ratón del host, incluso cuando se emula un gamepad con touchpad.</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Controla siempre el ratón con el touchpad</string>
-    <string name="summary_checkbox_gamepad_motion_sensors">Permite a los hosts compatibles solicitar datos de los sensores de movimiento al emular un gamepad con los sensores de movimiento. La desactivación puede reducir ligeramente el consumo de energía y el uso de la red si los sensores de movimiento no se utilizan en el juego.</string>
     <string name="toast_controller_type_changed">El tipo del Gamepad puede cambiar debido a la emulación del sensor de movimiento</string>
-    <string name="summary_checkbox_gamepad_motion_fallback">Utiliza los sensores de movimiento integrados de tu dispositivo si el gamepad conectado o tu versión de Android no admiten los sensores del gamepad.
-\nNota: Activar esta opción puede hacer que tu gamepad aparezca como un mando de PlayStation en el host.</string>
     <string name="title_checkbox_gamepad_motion_fallback">Emular el sensor de movimiento del gamepad</string>
     <string name="analogscroll_none">Ninguno (ambos joysticks mueven el mouse)</string>
     <string name="analogscroll_right">Joystick analógico derecho</string>
     <string name="analogscroll_left">Joystick analógico izquierdo</string>
     <string name="title_analog_scrolling">Usa un joystick analógico para hacer scroll</string>
-    <string name="summary_analog_scrolling">Selecciona un joystick analógico para scroll cuando la emulación del mouse está habilitada</string>
-    <string name="error_code_prefix">Código del error:</string>
     <string name="title_seekbar_vibrate_fallback_strength">Ajustar la intensidad del ruido emulado</string>
-    <string name="summary_seekbar_vibrate_fallback_strength">Amplifica o reduce la intensidad de la vibración de tu dispositivo</string>
-    <string name="suffix_seekbar_vibrate_fallback_strength">%</string>
 
 
     <!-- 新添加的翻译 -->
-    <string name="about_dialog_close">Cerrar</string>
     <string name="about_dialog_description">MoonLink es una versión mejorada del cliente Android de MoonLink, que proporciona una mejor experiencia de transmisión con características adicionales.</string>
-    <string name="about_dialog_github">GitHub</string>
     <string name="about_dialog_project_info">Basado en el proyecto MoonLink-Android, mejorado por el equipo V+</string>
-    <string name="about_dialog_star">Destacar Proyecto</string>
-    <string name="about_dialog_qq">Unirse al Grupo QQ</string>
     <string name="about_dialog_thanks">¡Gracias por usar MoonLink! Si te gusta, por favor danos una estrella en GitHub.</string>
     <string name="accessibility_service_label">Servicio de Teclado MoonLink</string>
-    <string name="accessibility_service_description">Para proporcionar una experiencia completa de juegos de PC con tu teclado externo, este servicio necesita capturar todas las teclas del teclado.\n\nUna vez habilitado, podrás usar todos los atajos del sistema como las teclas Win/Command, Alt+Tab, etc., igual que en tu computadora.\n\nTen la seguridad de que este servicio solo se usa para enviar operaciones de teclas directamente a tu computadora, y no grabaremos ni subiremos ningún contenido de tu entrada.</string>
-    <string name="add_resolution">Agregar Resolución</string>
-    <string name="applist_menu_start_with_vdd"> Iniciar Con Pantalla Virtual </string>
-    <string name="author_web">https://space.bilibili.com/393593468</string>
     <string name="category_key_mapping_features">Área de Asignación de Teclas</string>
-    <string name="category_enhanced_touch_settings">👆 Toque Multi-Punto Mejorado</string>
-    <string name="category_screen_position_settings">Configuración de Pantalla</string>
     <string name="check_for_updates">Buscar actualizaciones</string>
     <string name="copy_content">Copiar Contenido</string>
     <string name="copy_details">Copiar Detalles</string>
     <string name="copy_success">Contenido copiado al portapapeles</string>
 
-    <string name="custom_resolution_input_title">Ingresar Resolución Personalizada</string>
     <string name="dialog_button_cancel">CANCELAR</string>
-    <string name="dialog_button_clear">LIMPIAR</string>
     <string name="dialog_button_delete">ELIMINAR</string>
-    <string name="dialog_button_save">GUARDAR</string>
-    <string name="dialog_hint_key_codes">Códigos de tecla (ej. 0x11, 0x10, 0x1B)</string>
-    <string name="dialog_hint_key_name">Nombre de tecla (ej. Ctrl+Shift+Esc)</string>
-    <string name="dialog_message_background_image_api">Por favor ingresa la API de imagen completa</string>
-    <string name="dialog_title_add_custom_key">Agregar botones personalizados</string>
     <string name="dialog_title_background_image_api">API de Imagen de Fondo</string>
-    <string name="dialog_title_enhanced_touch_zone_divider" formatted="false">Menos del 50% significa dividir desde un punto a la izquierda, más del 50% significa derecha</string>
-    <string name="dialog_title_fixed_x_velocity">Establecer velocidad X (horizontal) fija en píxeles. Establecer 0 para deshabilitar velocidad x fija.</string>
-    <string name="dialog_title_pointer_velocity_factor">Establecer factor de velocidad del puntero para la zona de toque mejorada. Establecer 100% para deshabilitar</string>
-    <string name="dialog_title_select_keys_to_delete">Seleccionar el botón a eliminar</string>
     <string name="fps_144">144 FPS</string>
     <string name="fps_165">165 FPS</string>
-    <string name="game_menu_add_custom_key">Agregar botón personalizado</string>
-    <string name="game_menu_adjust_bitrate">Ajustar Tasa de Bits</string>
-    <string name="game_menu_bitrate_adjustment_failed">Error al ajustar tasa de bits</string>
-    <string name="game_menu_bitrate_adjustment_success">Tasa de bits ajustada exitosamente a %d Mbps</string>
-    <string name="game_menu_bitrate_current">Actual: %d Mbps</string>
-    <string name="game_menu_bitrate_custom">Tasa de Bits Personalizada</string>
-    <string name="game_menu_bitrate_range">Rango de Tasa de Bits:</string>
-    <string name="game_menu_bitrate_range_value">0.5 - 200 Mbps</string>
-    <string name="game_menu_bitrate_tip">Arrastra el deslizador para ajustar la tasa de bits en tiempo real. Valores más altos significan mejor calidad pero requieren mejor red.</string>
-    <string name="game_menu_cancel">Cancelar</string>
 
 
-    <string name="game_menu_delete_custom_key">Eliminar botón personalizado</string>
-    <string name="game_menu_disconnect">Desconectar</string>
-    <string name="game_menu_disconnect_and_quit">Desconectar y Salir</string>
 
-    <string name="game_menu_ok">OK</string>
-    <string name="game_menu_send_keys">Enviar tecla(s) especial(es)</string>
-    <string name="game_menu_send_keys_alt_home">Enviar ALT + HOME (Alternar RTSS)</string>
-    <string name="game_menu_send_keys_ctrl_v">Enviar CTRL + V (Pegar Portapapeles)</string>
-    <string name="game_menu_send_keys_esc">Enviar ESC (Menú)</string>
-    <string name="game_menu_send_keys_f11">Enviar F11 (Alternar Pantalla Completa)</string>
-    <string name="game_menu_send_keys_shift_tab">Enviar SHIFT + TAB (Abrir Superposición de Steam)</string>
-    <string name="game_menu_send_keys_win">Enviar WIN (Alternar Menú Inicio de Windows)</string>
-    <string name="game_menu_send_keys_win_d">Enviar WIN + D (Cambiar a Escritorio)</string>
-    <string name="game_menu_send_keys_win_g">Enviar WIN + G (Abrir Barra de Juegos Xbox)</string>
-    <string name="game_menu_switch_touch_mode">Cambiar modo de toque</string>
-    <string name="game_menu_toggle_elements_visibility">Mostrar/Ocultar Teclas Virtuales</string>
     <string name="game_menu_toggle_mouse_off">Deshabilitar Emulación de Ratón del Controlador</string>
     <string name="game_menu_toggle_mouse_on">Habilitar Emulación de Ratón del Controlador</string>
-    <string name="game_menu_toggle_performance_overlay">Alternar Superposición de Rendimiento</string>
-    <string name="game_menu_toggle_virtual_controller">Alternar Controlador Virtual</string>
     <string name="game_menu_touch_mode_classic">Modo de Ratón Clásico</string>
     <string name="game_menu_touch_mode_enhanced">Toque Multi-Punto Mejorado</string>
-    <string name="game_menu_touch_mode_native_mouse">Puntero de ratón nativo</string>
     <string name="game_menu_touch_mode_trackpad">Modo panel táctil</string>
-    <string name="gyro_activation_always">Siempre Activado</string>
-    <string name="gyro_activation_method">Método de Activación</string>
-    <string name="gyro_invert_x_axis">X Rev</string>
-    <string name="gyro_invert_y_axis">Y Rev</string>
-    <string name="gyro_sensitivity">Sensibilidad</string>
-    <string name="gyro_sensitivity_format">Sensibilidad %.1fx</string>
-    <string name="height_hint">ej. 1080</string>
-    <string name="height_label">Alto:</string>
-    <string name="invalid_resolution_format">Formato de resolución inválido, por favor usa el formato ancho x alto</string>
-    <string name="mic_button">Micrófono</string>
     <string name="mic_disabled">Micrófono deshabilitado</string>
     <string name="mic_enabled">Micrófono habilitado</string>
     <string name="mic_permission_required">Permiso de micrófono requerido</string>
     <string name="mic_stats_continuity">Continuidad de audio: %1$.1f%% (Capturado:%2$d Codificado:%3$d Enviado:%4$d Perdido:%5$d)</string>
-    <string name="notification_icon">Icono de notificación</string>
     <string name="pacing_experimental_low_latency">Experimental: Latencia ultra-baja (avanzado)</string>
     <string name="pcview_menu_sleep_fail">Falló el sueño del host</string>
     <string name="pcview_menu_sleep_success">Éxito del sueño del host</string>
-    <string name="perf_decode_latency_title">⏱️ Información de Latencia de Decodificación</string>
-    <string name="perf_decode_latency_info">La latencia de decodificación representa el tiempo requerido para decodificar cuadros de video.\n\nRango de Latencia:\n• &lt;5ms: Rendimiento excelente del decodificador\n• 5-10ms: Buen rendimiento del decodificador\n• 10-20ms: Rendimiento justo del decodificador\n• &gt;20ms: Rendimiento pobre del decodificador\n\nFactores que Influyen:\n• Rendimiento del decodificador de hardware\n• Complejidad de codificación de video\n• Carga de CPU/GPU del dispositivo\n• Cuando la latencia de decodificación es menor a 10ms, se recomienda prestar atención a otro rendimiento del dispositivo (ej. tasa de cuadros, resolución, calidad de imagen, etc.)</string>
-    <string name="perf_decoder_title">🎬 Información del Decodificador</string>
-    <string name="perf_decoder_info">El decodificador es responsable de decodificar flujos de video en imágenes mostrables.\n\nDecodificadores Comunes:\n• H.264 (AVC) - Mejor compatibilidad\n• H.265 (HEVC) - Mayor compresión\n• AV1 - Estándar más reciente, más eficiente\n\nSoporte HDR:\n• Video de Alto Rango Dinámico\n• Representación de color más rica\n• Requiere soporte de hardware</string>
-    <string name="perf_fps_title">📊 Información de Tasa de Cuadros</string>
-    <string name="perf_fps_info">Rx FPS: Tasa de Cuadros Recibida\n• Número de cuadros de video recibidos del host\n• Debería ser estable bajo condiciones ideales\n\nRd FPS: Tasa de Cuadros Renderizada\n• Número de cuadros realmente renderizados a pantalla\n• Puede reducirse debido al rendimiento del dispositivo\n\nIndicadores de Rendimiento:\n• Valores cercanos indican buen rendimiento\n• FPS de renderizado bajo puede afectar la fluidez</string>
-    <string name="perf_host_latency_title">🖥️ Información de Latencia del Host</string>
-    <string name="perf_host_latency_info">La latencia del host representa el tiempo para que el host del juego procese cuadros.\n\nRango de Latencia:\n• &lt;5ms: Rendimiento fuerte del host\n• 5-10ms: Buen rendimiento del host\n• 10-20ms: Rendimiento justo del host\n• &gt;20ms: Rendimiento débil del host\n\nFactores que Influyen:\n• Rendimiento del hardware del host\n• Carga del juego\n• Uso de programas en segundo plano\n\nVer.X:\n• Indica información de versión\n• Se muestra cuando no hay datos de latencia del host disponibles</string>
-    <string name="perf_network_latency_title">🌐 Información de Latencia de Red</string>
-    <string name="perf_network_latency_info">La latencia de red representa el tiempo de ida y vuelta para paquetes de datos del host al dispositivo.\n\nRango de Latencia:\n• &lt;20ms: Excelente\n• 20-50ms: Bueno\n• 50-100ms: Aceptable\n• &gt;100ms: Pobre\n\nAncho de Banda:\n• Representa la velocidad de transmisión de red\n• Afecta la calidad máxima de video\n\nValor ±:\n• Representa el rango de fluctuación de latencia\n• Valores más pequeños indican más estabilidad</string>
-    <string name="perf_packet_loss_title">📶 Información de Pérdida de Paquetes</string>
-    <string name="perf_packet_loss_info" formatted="false">La pérdida de paquetes representa el porcentaje de paquetes de datos perdidos durante la transmisión de red.\n\nRango Normal:\n• 0-0.5%: Excelente calidad de red\n• 0.5-2%: Buena calidad de red\n• 2-5%: Calidad justa de red\n• &gt;5%: Pobre calidad de red\n\nFactores que Influyen:\n• Estabilidad de red\n• Rendimiento del router\n• Fuerza de señal inalámbrica</string>
-    <string name="perf_moon_phase_info">Fase Lunar de Hoy\n\n%1$s %2$s\nCiclo de Fase Lunar: %3$.1f%%\nDía del Ciclo: Día %4$d\nFecha: %5$s\n\n%6$s</string>
     <!-- perf Battery Information -->
-    <string name="perf_battery_info_title">🔋 Información de Batería</string>
-    <string name="perf_battery_status_sufficient">El nivel de batería es suficiente</string>
-    <string name="perf_battery_status_low">El nivel de batería es bajo, se recomienda cargar</string>
-    <string name="perf_battery_status_critical">El nivel de batería es críticamente bajo, por favor carga pronto</string>
-    <string name="perf_battery_info_content">Batería Actual: %1$d%%\nEstado: %2$s\n\nConsejo: Un nivel bajo de batería puede afectar la experiencia de juego, se recomienda conectar el cargador</string>
-    <string name="resolution_added_successfully">Resolución agregada exitosamente</string>
-    <string name="resolution_already_exists">Esta resolución ya existe</string>
-    <string name="suffix_enhanced_touch_zone_divider">%</string>
-    <string name="suffix_fixed_x_velocity">píxeles</string>
-    <string name="suffix_pointer_velocity_factor">%</string>
-    <string name="suffix_seekbar_flat_region_pixels">píxeles</string>
-    <string name="suffix_seekbar_mic_bitrate_kbps">kbps</string>
 
-    <string name="summary_about_mode">Ver información de la aplicación y detalles del proyecto</string>
-    <string name="summary_background_image_api">Ingresa una API de imagen de fondo personalizada, o una URL de imagen única. Deja vacío para ver imágenes aleatorias</string>
     <string name="summary_check_for_updates">Verificar si hay una nueva versión disponible</string>
-    <string name="summary_checkbox_enable_enhanced_touch">	</string>
-    <string name="summary_checkbox_enable_esc_menu">Cuando está habilitado, presionar doble ESC abre el menú de retorno de transmisión, una sola presión de ESC se pasa al host</string>
-    <string name="summary_checkbox_enable_mic">Redirigir el micrófono del dispositivo al computador host para chat de voz y comunicación, requiere versión Sunshine-Foundation 20250720 o superior en el host.</string>
-    <string name="summary_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada a la izquierda (predeterminado: en el lado derecho de la pantalla)</string>
-    <string name="summary_checkbox_reverse_resolution">Intercambiar valores de ancho y alto para requisitos especiales de visualización</string>
-    <string name="summary_checkbox_sync_touch_event_with_display">Si está habilitado, el evento de toque se sincronizará con la tasa de refresco de la pantalla, como 60Hz.</string>
-    <string name="summary_key_mapping_features">Botones y configuraciones personalizadas durante la transmisión, guardadas en configuraciones personalizadas para cambio rápido</string>
-    <string name="summary_custom_resolutions">Crear tus propias resoluciones personalizadas</string>
-    <string name="summary_enable_analytics">Ayudar a mejorar la aplicación compartiendo estadísticas de uso anónimas</string>
-    <string name="summary_enable_perf_overlay">Mostrar información de rendimiento de transmisión en tiempo real mientras transmites</string>
-    <string name="summary_enhanced_touch_zone_divider" formatted="false">Define dónde dividir zonas de toque nativo y toque mejorado, menos del 50% significa dividir desde un punto a la izquierda, más del 50% significa derecha</string>
-    <string name="summary_export_super_config">Exportar archivo de configuración de botones personalizados y configuraciones de transmisión</string>
-    <string name="summary_fixed_x_velocity">Establecer velocidad X (horizontal) fija. Establecer 0 para deshabilitar modo de velocidad x fija. Mayor que 0 significa deshabilitar factor de velocidad horizontal para usar velocidad fija en su lugar.</string>
-    <string name="summary_import_super_config">Importar archivo de configuración de botones personalizados y configuraciones de transmisión</string>
-    <string name="summary_merge_super_config">Fusionar botones de configuración nuevos en configuración existente</string>
-    <string name="summary_perf_overlay_display_items">Seleccionar elementos de información para mostrar en la superposición de rendimiento</string>
-    <string name="summary_perf_overlay_orientation">Elegir la orientación de visualización para estadísticas de rendimiento</string>
-    <string name="summary_perf_overlay_position">Elegir arriba/abajo para orientación horizontal, o cuatro posiciones de esquina para orientación vertical</string>
-    <string name="summary_pointer_velocity_factor" formatted="false">Establecer factor de velocidad del puntero para zona de toque mejorada. Establecer 100% para deshabilitar</string>
-    <string name="summary_reset_perf_overlay_position">Reiniciar superposición de rendimiento a posición preestablecida</string>
-    <string name="summary_screen_offset_x">Desplazamiento horizontal de la pantalla</string>
-    <string name="summary_screen_offset_y">Desplazamiento vertical de la pantalla</string>
-    <string name="summary_screen_position">Elegir la posición de la pantalla cuando se usa resolución no pantalla completa</string>
-    <string name="summary_seekbar_long_press_flat_region">Funciona para toda la pantalla. Incrementar para región plana de presión larga más grande, dentro de la cual la aplicación envía coordenadas de contacto inicial al servidor.</string>
-    <string name="summary_seekbar_mic_bitrate">Ajustar la calidad de audio de redirección del micrófono. Tasas de bits más altas proporcionan mejor calidad de audio pero usan más ancho de banda.</string>
-    <string name="summary_seekbar_scale">La resolución solicitada al host es equivalente a la resolución base del cliente * factor de escala. Esto cambiará la precisión del material de renderizado del juego en el lado del host (transmisión de super-resolución). Reducir esta proporción también puede usarse para reducir la presión de GPU en el lado del host. ⚠Nota: Verificar si el host soporta la resolución escalada antes de aplicar esta opción.</string>
-    <string name="summary_show_guide_button">Mostrar el botón de guía en pantalla</string>
-    <string name="summary_use_external_display">Si se conecta una pantalla externa, mostrar la transmisión en la pantalla externa</string>
     <string name="tip_5ghz_wifi">💡 Consejo: Usar modo de tasa de cuadros \'Equilibrado\' te da el mejor balance de tasa de cuadros y latencia, ¡perfecto!</string>
     <string name="tip_audio_config">💡 Consejo: Habilitar Dolby Atmos o DTS:X proporciona una experiencia de audio más inmersiva, y necesitas habilitar el ecualizador del sistema para el mejor efecto~</string>
     <string name="tip_cards_show">💡 Consejo: Puedes editar las tarjetas de función mostradas en el menú del juego. Las tarjetas innecesarias pueden ocultarse~</string>
@@ -453,55 +158,7 @@
     <string name="tip_virtual_display">💡 Consejo: La función de pantalla virtual puede crear espacios de pantalla independientes, especialmente adecuada para escenarios de multi-tarea, haciendo la transmisión más flexible~</string>
     <string name="tip_volume_keys">💡 Consejo: Usar WiFi de 5GHz proporciona una mejor experiencia, ¡velocidades súper rápidas~</string>
     <string name="tip_wallpaper_change">💡 Consejo: La opción de API de fondo de pantalla puede establecer la API para fuentes de fondo de pantalla aleatorias, o una dirección de imagen única</string>
-    <string name="title_about_author">Esto es V+ X Royal Edition</string>
-    <string name="title_about_mode">Acerca de</string>
-    <string name="title_background_image_api">API de Imagen de Fondo</string>
-    <string name="title_checkbox_enable_enhanced_touch">Habilitar toque mejorado</string>
-    <string name="title_checkbox_enable_esc_menu">Permitir tecla ESC para abrir menú de retorno</string>
-    <string name="title_checkbox_enable_mic">Habilitar redirección del micrófono</string>
-    <string name="title_checkbox_enhanced_touch_on_which_side">Invertir zona de toque mejorada</string>
-    <string name="title_checkbox_reverse_resolution">Resolución Inversa</string>
     <string name="title_checkbox_sync_touch_event_with_display">Sincronizar evento de toque con refresco de pantalla </string>
-    <string name="title_key_mapping_features">Características Super Crown</string>
-    <string name="title_custom_resolutions">Resoluciones personalizadas</string>
-    <string name="title_enable_analytics">Habilitar Análisis</string>
-    <string name="title_enable_perf_overlay">Mostrar estadísticas de rendimiento mientras transmites</string>
-    <string name="title_enhanced_touch_zone_divider">Divisor de zona de toque mejorada</string>
-    <string name="title_export_super_config">Exportar Configuración</string>
-    <string name="title_fixed_x_velocity">Establecer velocidad X (horizontal) fija</string>
-    <string name="title_import_super_config">Importar Configuración</string>
-    <string name="title_merge_super_config">Fusionar Configuración</string>
-    <string name="title_moonlight_X_pc_download">Descarga de MoonLink PC</string>
-    <string name="title_perf_overlay_display_items">Elementos de Visualización de Superposición de Rendimiento</string>
-    <string name="title_perf_overlay_orientation">Orientación de Superposición de Rendimiento</string>
-    <string name="title_perf_overlay_position">Posición de Superposición de Rendimiento</string>
-    <string name="title_pointer_velocity_factor">Factor de velocidad del puntero</string>
-    <string name="title_reset_perf_overlay_position">Reiniciar Posición de Superposición de Rendimiento</string>
-    <string name="title_screen_offset_x">Desplazamiento Horizontal</string>
-    <string name="title_screen_offset_y">Desplazamiento Vertical</string>
-    <string name="title_screen_position">Posición de Pantalla</string>
-    <string name="title_seekbar_long_press_flat_region">Región plana para eliminación de temblor de presión larga en modo de toque multi-punto</string>
-    <string name="title_seekbar_mic_bitrate">Tasa de bits del micrófono</string>
-    <string name="title_seekbar_scale">Escala de Resolución del Host</string>
-    <string name="title_show_guide_button">Mostrar Botón de Guía</string>
-    <string name="title_use_external_display">Usar Pantalla Externa</string>
-
-    <string name="toast_custom_key_saved">El botón personalizado \'%s\' ha sido guardado</string>
-    <string name="toast_delete_failed">Eliminación falló</string>
-    <string name="toast_elements_hidden">Botón virtual oculto</string>
-    <string name="toast_elements_visible">Botón virtual mostrado</string>
-    <string name="toast_key_code_format_error">Error de formato, el código de tecla debe comenzar con \'0x\'</string>
-    <string name="toast_load_custom_keys_corrupted">Falló al cargar botón personalizado</string>
-    <string name="toast_load_key_list_failed">Falló al cargar lista de botones</string>
-    <string name="toast_name_and_codes_cannot_be_empty">El nombre y código de tecla no pueden estar vacíos</string>
-    <string name="toast_no_custom_keys_to_delete">No hay teclas personalizadas que se puedan eliminar</string>
-    <string name="toast_save_failed">Guardar falló, por favor verifica el formato</string>
-    <string name="toast_selected_keys_deleted">El botón seleccionado ha sido eliminado</string>
-    <string name="toast_touch_mode_classic_on">Modo de ratón clásico habilitado</string>
-    <string name="toast_touch_mode_enhanced_on">Toque multi-punto mejorado habilitado</string>
-    <string name="toast_touch_mode_native_mouse_on">Puntero de ratón nativo habilitado</string>
-    <string name="toast_touch_mode_trackpad_on">Modo panel táctil habilitado</string>
-    <string name="width_hint">ej. 1920</string>
-    <string name="width_label">Ancho:</string>
+    <string name="title_key_mapping_features">Asignación de Teclas</string>
 
 </resources>

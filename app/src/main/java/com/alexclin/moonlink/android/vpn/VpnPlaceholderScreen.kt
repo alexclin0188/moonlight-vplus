@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.R
 
 /**
  * 虚拟局域网 Tab 占位页面。
@@ -28,13 +30,13 @@ fun VpnPlaceholderScreen() {
             )
             Spacer(Modifier.height(16.dp))
             Text(
-                "虚拟局域网",
+                stringResource(R.string.vpn_placeholder_title),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "EasyTier 控制面板将迁移至此页面",
+                stringResource(R.string.vpn_placeholder_desc),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
             )

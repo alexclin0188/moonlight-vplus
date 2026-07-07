@@ -527,9 +527,6 @@ class PreferenceConfiguration {
         const val AUDIO_PASSTHROUGH_BUFFER_PREF_STRING = "list_audio_passthrough_buffer"
         const val DEFAULT_AUDIO_PASSTHROUGH_BUFFER = "normal"
         const val UNLOCK_FPS_STRING = "checkbox_unlock_fps"
-        const val IMPORT_CONFIG_STRING = "import_super_config"
-        const val EXPORT_CONFIG_STRING = "export_super_config"
-        const val MERGE_CONFIG_STRING = "merge_super_config"
         const val ABOUT_AUTHOR = "about_author"
 
         // ---- Default values (package-private promoted to public) ----
@@ -625,7 +622,7 @@ class PreferenceConfiguration {
         private const val DEFAULT_AUDIO_VIBRATION_MODE = "auto"
         private const val DEFAULT_AUDIO_VIBRATION_SCENE = 0 // Game/Movie
         private const val DEFAULT_FLIP_FACE_BUTTONS = false
-        private const val DEFAULT_TOUCHSCREEN_TRACKPAD = true
+        private const val DEFAULT_TOUCHSCREEN_TRACKPAD = false
         private const val DEFAULT_TOUCHPAD_SENSITIVITY = 100
         private const val DEFAULT_AUDIO_CONFIG = "2" // Stereo
         private const val DEFAULT_LATENCY_TOAST = false

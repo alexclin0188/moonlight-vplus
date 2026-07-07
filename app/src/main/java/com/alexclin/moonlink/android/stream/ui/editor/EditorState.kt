@@ -10,16 +10,16 @@ import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 // ════════════════════════════════════════════════════════════════════════════
 
 enum class ElementType(val value: Int, val displayName: String) {
-    DIGITAL_COMMON_BUTTON(0, "普通按键"),
-    DIGITAL_SWITCH_BUTTON(1, "开关按键"),
-    DIGITAL_MOVABLE_BUTTON(2, "可移动按键"),
-    DIGITAL_COMBINE_BUTTON(3, "组合键"),
-    DIGITAL_PAD(20, "方向键"),
-    ANALOG_STICK(30, "模拟摇杆"),
-    DIGITAL_STICK(31, "数字摇杆"),
-    INVISIBLE_ANALOG_STICK(32, "隐形模拟摇杆"),
-    INVISIBLE_DIGITAL_STICK(33, "隐形数字摇杆"),
-    UNKNOWN(-1, "未知");
+    DIGITAL_COMMON_BUTTON(0, "Common Button"),
+    DIGITAL_SWITCH_BUTTON(1, "Switch Button"),
+    DIGITAL_MOVABLE_BUTTON(2, "Movable Button"),
+    DIGITAL_COMBINE_BUTTON(3, "Combo Key"),
+    DIGITAL_PAD(20, "D-Pad"),
+    ANALOG_STICK(30, "Analog Stick"),
+    DIGITAL_STICK(31, "Digital Stick"),
+    INVISIBLE_ANALOG_STICK(32, "Invisible Analog Stick"),
+    INVISIBLE_DIGITAL_STICK(33, "Invisible Digital Stick"),
+    UNKNOWN(-1, "Unknown");
 
     companion object {
         private val map = entries.associateBy { it.value }
@@ -136,8 +136,8 @@ class EditorState(
 
     /** 读取方案的 config 属性 */
     fun getConfigName(): String {
-        return db.queryConfigAttribute(configId, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "按键方案") as? String
-            ?: "按键方案"
+        return db.queryConfigAttribute(configId, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "Key Scheme") as? String
+            ?: "Key Scheme"
     }
 
     // ═══════════════════════════════════════════════════════════════════════

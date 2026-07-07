@@ -524,7 +524,7 @@ private fun AppIconItem(
             if (isRunning) {
                 Icon(
                     Icons.Default.PlayCircle,
-                    contentDescription = stringResource(R.string.label_running),
+                    contentDescription = stringResource(R.string.cd_running),
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.primary,
                 )
@@ -768,7 +768,7 @@ private fun DesktopThumbnailBox(
 
         // Status badge (top-start)
         val badgeColor = if (isOnline) statusOnline else statusOffline
-        val badgeText  = if (isOnline) stringResource(R.string.label_online) else stringResource(R.string.label_offline)
+        val badgeText  = if (isOnline) stringResource(R.string.pcview_menu_header_online) else stringResource(R.string.pcview_menu_header_offline)
         Box(
             modifier = Modifier
                 .align(Alignment.TopStart)

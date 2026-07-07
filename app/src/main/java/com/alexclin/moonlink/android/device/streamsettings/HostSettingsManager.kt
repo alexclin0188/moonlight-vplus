@@ -147,7 +147,7 @@ class HostSettingsManager(private val context: Context) {
 
         return HostSettings(
             // 触控模式
-            enableEnhancedTouch = bool(KEY_ENABLE_ENHANCED_TOUCH),
+            enableEnhancedTouch = sp.getBoolean(KEY_ENABLE_ENHANCED_TOUCH, true),
             enhancedTouchOnWhichSide = sp.getBoolean(KEY_ENHANCED_TOUCH_ON_RIGHT, true),
             enhanceTouchZoneDivider = int(KEY_ENHANCE_TOUCH_ZONE_DIVIDER, 50),
             pointerVelocityFactor = int(KEY_POINTER_VELOCITY_FACTOR, 100),

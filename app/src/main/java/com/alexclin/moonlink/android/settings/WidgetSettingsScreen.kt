@@ -21,6 +21,7 @@ import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.limelight.nvstream.http.ComputerDetails
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.home.GameListWidgetProvider
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -87,13 +88,13 @@ fun WidgetSettingsScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "尚未添加桌面小组件",
+                        text = stringResource(R.string.widget_empty_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "请在桌面长按空白处 → 选择「小组件」→ 找到 MoonLink\n添加到桌面后，可在此页面管理绑定电脑",
+                        text = stringResource(R.string.widget_empty_desc),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         textAlign = TextAlign.Center,
@@ -117,7 +118,7 @@ fun WidgetSettingsScreen(
                         shape = MaterialTheme.shapes.medium,
                     ) {
                         Text(
-                            text = "点击小组件可重新选择绑定的电脑，向左滑动可清除绑定",
+                            text = stringResource(R.string.widget_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(12.dp),
@@ -150,10 +151,10 @@ fun WidgetSettingsScreen(
         val onDismiss = { showComputerPicker = null }
         AlertDialog(
             onDismissRequest = onDismiss,
-            title = { Text("选择绑定电脑") },
+            title = { Text(stringResource(R.string.widget_bind_title)) },
             text = {
                 if (computers.isEmpty()) {
-                    Text("没有可用的电脑，请先添加设备")
+                    Text(stringResource(R.string.widget_no_computers))
                 } else {
                     Column {
                         computers.forEach { computer ->
@@ -172,13 +173,13 @@ fun WidgetSettingsScreen(
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Text(
-                                    text = computer.name ?: "未知设备",
+                                    text = computer.name ?: stringResource(R.string.engine_device_name_unknown),
                                     modifier = Modifier.weight(1f),
                                 )
                                 if (computer.state == ComputerDetails.State.ONLINE) {
                                     Icon(
                                         Icons.Default.CheckCircle,
-                                        contentDescription = "在线",
+                                        contentDescription = stringResource(R.string.pcview_menu_header_online),
                                         tint = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.size(18.dp),
                                     )
@@ -191,7 +192,7 @@ fun WidgetSettingsScreen(
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = onDismiss) {
-                    Text("取消")
+                    Text(stringResource(R.string.dialog_button_cancel))
                 }
             },
         )
@@ -219,14 +220,14 @@ private fun WidgetInstanceCard(
     ListItem(
         headlineContent = {
             Text(
-                text = instance.boundComputerName ?: "未绑定",
+                text = instance.boundComputerName ?: stringResource(R.string.widget_unbound),
                 style = MaterialTheme.typography.bodyLarge,
             )
         },
         supportingContent = {
             Text(
                 text = "Widget #${instance.appWidgetId}" +
-                        if (instance.boundComputerName == null) " — 点击选择电脑" else " — 点击更换电脑",
+                        if (instance.boundComputerName == null) stringResource(R.string.kme_shared_tap_to_select) else stringResource(R.string.widget_tap_to_change),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -246,7 +247,7 @@ private fun WidgetInstanceCard(
                 IconButton(onClick = { showConfirmUnbind = true }) {
                     Icon(
                         Icons.Default.Delete,
-                        contentDescription = "清除绑定",
+                        contentDescription = stringResource(R.string.widget_clear_bind),
                         tint = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -264,21 +265,21 @@ private fun WidgetInstanceCard(
     if (showConfirmUnbind) {
         AlertDialog(
             onDismissRequest = { showConfirmUnbind = false },
-            title = { Text("清除绑定") },
+            title = { Text(stringResource(R.string.widget_clear_bind)) },
             text = {
-                Text("确定要清除这个小组件与「${instance.boundComputerName}」的绑定吗？\n小组件将回到未配置状态。")
+                Text(stringResource(R.string.widget_confirm_unbind, instance.boundComputerName ?: ""))
             },
             confirmButton = {
                 TextButton(onClick = {
                     showConfirmUnbind = false
                     onUnbind()
                 }) {
-                    Text("确定", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.dialog_button_confirm), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showConfirmUnbind = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.dialog_button_cancel))
                 }
             },
         )

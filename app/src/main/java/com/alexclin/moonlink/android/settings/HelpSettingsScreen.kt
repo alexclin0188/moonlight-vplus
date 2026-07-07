@@ -35,23 +35,6 @@ fun HelpSettingsScreen() {
                         UpdateManager.checkForUpdates(context, false)
                     },
             )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
-            ListItem(
-                headlineContent = { Text(context.getString(R.string.title_moonlight_X_pc_download)) },
-                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/qiin2333/moonlight-qt")
-                        )
-                        context.startActivity(intent)
-                    },
-            )
-            HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
-
             ListItem(
                 headlineContent = { Text(context.getString(R.string.title_privacy_policy)) },
                 colors = ListItemDefaults.colors(containerColor = Color.Transparent),

@@ -59,9 +59,9 @@ internal fun findDuplicateKeyValues(labeledValues: Map<String, String>): String?
     }
     val duplicates = valueToLabels.filter { it.value.size > 1 }
     if (duplicates.isEmpty()) return null
-    return duplicates.entries.joinToString("；") { (value, labels) ->
+    return duplicates.entries.joinToString("; ") { (value, labels) ->
         val keyLabel = getKeyLabelByValue(value) ?: value
-        "「$keyLabel」重复用于：${labels.joinToString("、")}"
+        "\"$keyLabel\" duplicated for: ${labels.joinToString(", ")}"
     }
 }
 

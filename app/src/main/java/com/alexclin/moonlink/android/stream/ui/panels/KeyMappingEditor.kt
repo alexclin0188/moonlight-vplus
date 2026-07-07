@@ -77,6 +77,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.editor.CanvasCallbacks
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
@@ -127,13 +129,13 @@ private fun doExit(
 
     val name = schemeName.trim()
     if (name.isEmpty()) {
-        ToastUtil.show(context, "方案名称不能为空", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_scheme_name_empty), Toast.LENGTH_SHORT)
         return
     }
 
     // 校验名称不重复
     if (isSchemeNameDuplicate(context, name)) {
-        ToastUtil.show(context, "已存在同名方案「$name」，请修改名称", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_scheme, name), Toast.LENGTH_SHORT)
         return
     }
 
@@ -162,10 +164,10 @@ private fun doExit(
         prefs.edit().putLong(StreamEngine.PREF_CURRENT_CONFIG_ID, newId).apply()
         engine.setKeyMappingEnabled(true)
         engine.reloadOverlay()
-        ToastUtil.show(context, "方案「$name」已创建", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_scheme_created, name), Toast.LENGTH_SHORT)
         onClose()
     } catch (e: Exception) {
-        ToastUtil.show(context, "创建失败: ${e.message}", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_create_failed, e.message), Toast.LENGTH_SHORT)
     }
 }
 
@@ -192,16 +194,16 @@ fun KeyMappingEditor(
     var schemeName by remember {
         mutableStateOf(
             if (isNewScheme) {
-                // 生成"我的按键方案+数字"名称，自动取下一个可用编号
+                // 生成"My Scheme +数字"名称，自动取下一个可用编号
                 val existingNames = loadAllSchemeNames(context)
-                val prefix = "我的按键方案"
+                val prefix = context.getString(R.string.editor_scheme_prefix)
                 val maxNum = existingNames.mapNotNull { name ->
                     if (name.startsWith(prefix)) {
                         name.removePrefix(prefix).toIntOrNull()
                     } else null
                 }.maxOrNull() ?: 0
                 "$prefix${maxNum + 1}"
-            } else "按键方案"
+            } else context.getString(R.string.editor_scheme_default_name)
         )
     }
     var isEditingName by remember { mutableStateOf(false) }
@@ -262,7 +264,7 @@ fun KeyMappingEditor(
         editorState.addElement(newEl)
         selectedIds = setOf(newEl.elementId)
         reloadElements()
-        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_duplicated, src.text.ifBlank { src.type.displayName }), Toast.LENGTH_SHORT)
     }
 
     // ── 复制到跨方案剪贴板 ──
@@ -270,7 +272,7 @@ fun KeyMappingEditor(
         val src = elements.find { it.elementId in selectedIds } ?: return
         EditorClipboard.copy(src)
         clipboardHasData = true
-        ToastUtil.show(context, "已复制「${src.text.ifBlank { src.type.displayName }}」到剪贴板", Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_copied_clipboard, src.text.ifBlank { src.type.displayName }), Toast.LENGTH_SHORT)
     }
 
     // ── 从跨方案剪贴板粘贴 ──
@@ -289,8 +291,7 @@ fun KeyMappingEditor(
         reloadElements()
         selectedIds = setOf(result.rootElement.elementId)
 
-        val summary = "已粘贴「${result.rootElement.text.ifBlank { result.rootElement.type.displayName }}」"
-        ToastUtil.show(context, summary, Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_pasted, result.rootElement.text.ifBlank { result.rootElement.type.displayName }), Toast.LENGTH_SHORT)
     }
 
     // ── 删除元素 ──
@@ -419,10 +420,10 @@ fun KeyMappingEditor(
 
             when {
                 isLoading -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("加载中...", color = Color.White.copy(alpha = 0.5f))
+                    Text(stringResource(R.string.editor_loading), color = Color.White.copy(alpha = 0.5f))
                 }
                 elements.isEmpty() -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("暂无元素，点击顶栏「按键」添加", color = Color.White.copy(alpha = 0.5f),
+                    Text(stringResource(R.string.editor_empty_hint), color = Color.White.copy(alpha = 0.5f),
                         style = MaterialTheme.typography.bodyMedium)
                 }
                 else -> {
@@ -481,7 +482,7 @@ fun KeyMappingEditor(
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                             editorState.saveElement(updated)
                             selectedIds = emptySet()
-                            ToastUtil.show(context, "已保存", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_saved), Toast.LENGTH_SHORT)
                         },
                         onDelete = { showDeleteConfirm = true },
                         onDuplicate = { duplicateSelected() },
@@ -514,7 +515,7 @@ fun KeyMappingEditor(
                             elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                             editorState.saveElement(updated)
                             selectedIds = emptySet()
-                            ToastUtil.show(context, "已保存", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_saved), Toast.LENGTH_SHORT)
                         },
                         onDelete = { showDeleteConfirm = true },
                         onDuplicate = { duplicateSelected() },
@@ -560,13 +561,13 @@ fun KeyMappingEditor(
         if (showColorEditor && pendingColorEditorElement != null) {
             val el = pendingColorEditorElement!!
             ColorPickerDialog(
-                title = "颜色设置",
+                title = stringResource(R.string.editor_title_color_settings),
                 items = listOf(
-                    ColorPickerItem("正常色", "normal", el.normalColor),
-                    ColorPickerItem("按下色", "pressed", el.pressedColor),
-                    ColorPickerItem("背景色", "bg", el.backgroundColor),
-                    ColorPickerItem("文字色", "normalText", el.normalTextColor),
-                    ColorPickerItem("按下文字色", "pressedText", el.pressedTextColor),
+                    ColorPickerItem("Normal", "normal", el.normalColor),
+                    ColorPickerItem("Pressed", "pressed", el.pressedColor),
+                    ColorPickerItem("Background", "bg", el.backgroundColor),
+                    ColorPickerItem("Text", "normalText", el.normalTextColor),
+                    ColorPickerItem("Pressed Text", "pressedText", el.pressedTextColor),
                 ),
                 onSave = { result ->
                     val map = result.toMap()
@@ -587,7 +588,7 @@ fun KeyMappingEditor(
                     } catch (_: Exception) { }
                     showColorEditor = false
                     pendingColorEditorElement = null
-                    ToastUtil.show(context, "颜色已更新", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.editor_toast_color_updated), Toast.LENGTH_SHORT)
                 },
                 onDismiss = { showColorEditor = false; pendingColorEditorElement = null },
             )
@@ -608,27 +609,27 @@ fun KeyMappingEditor(
             )
             if (el.type in stickTypes) {
                 StickPropertyDialog(
-                    title = "${el.type.displayName}属性设置",
+                    title = context.getString(R.string.editor_title_new_element, el.type.displayName),
                     element = el,
                     onSave = { updated: EditorElement ->
                         elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                         editorState.saveElement(updated)
                         showTypeSpecificEditor = false
                         pendingTypeSpecificEditorElement = null
-                        ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_property_updated), Toast.LENGTH_SHORT)
                     },
                     onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
                 )
             } else {
                 ButtonPropertyDialog(
-                    title = "${el.type.displayName}属性设置",
+                    title = context.getString(R.string.editor_title_new_element, el.type.displayName),
                     element = el,
                     onSave = { updated: EditorElement ->
                         elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                         editorState.saveElement(updated)
                         showTypeSpecificEditor = false
                         pendingTypeSpecificEditorElement = null
-                        ToastUtil.show(context, "属性已更新", Toast.LENGTH_SHORT)
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_property_updated), Toast.LENGTH_SHORT)
                     },
                     onDismiss = { showTypeSpecificEditor = false; pendingTypeSpecificEditorElement = null },
                     existingTextNames = existingTextNames,
@@ -677,7 +678,7 @@ fun KeyMappingEditor(
                 ElementType.INVISIBLE_ANALOG_STICK,
                 ElementType.DIGITAL_PAD,
             )
-            val title = "新建${el.type.displayName}"
+            val title = context.getString(R.string.editor_title_new_element, el.type.displayName)
             val existingTextNames = collectElementDisplayNames(elements)
             val onSaveNew: (EditorElement) -> Unit = { updated ->
                 val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
@@ -693,7 +694,7 @@ fun KeyMappingEditor(
                 selectedIds = setOf(finalEl.elementId)
                 reloadElements()
                 pendingNewElement = null
-                ToastUtil.show(context, "已创建「${el.type.displayName}」", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.editor_toast_created, el.type.displayName), Toast.LENGTH_SHORT)
             }
             if (el.type in stickTypes) {
                 StickPropertyDialog(
@@ -719,7 +720,7 @@ fun KeyMappingEditor(
         if (showComboKeyEditor) {
             val editingEl = editingComboKeyElement
             ComboKeyEditorDialog(
-                title = if (editingEl != null) "组合键属性设置" else "新建组合键",
+                title = if (editingEl != null) stringResource(R.string.editor_title_combo_property) else stringResource(R.string.editor_title_new_combo),
                 initialElement = editingEl,
                 existingTextNames = collectElementDisplayNames(
                     elements, excludeElementId = editingEl?.elementId
@@ -739,7 +740,7 @@ fun KeyMappingEditor(
                         )
                         editorState.saveElement(finalEl)
                         reloadElements()
-                        ToastUtil.show(context, "组合键已更新", Toast.LENGTH_SHORT)
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_combo_updated), Toast.LENGTH_SHORT)
                     } else {
                         // 新建组合键
                         val finalEl = newEl.copy(
@@ -752,7 +753,7 @@ fun KeyMappingEditor(
                         editorState.addElement(finalEl)
                         selectedIds = setOf(finalEl.elementId)
                         reloadElements()
-                        ToastUtil.show(context, "已创建组合键「${finalEl.text}」", Toast.LENGTH_SHORT)
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_combo_created, finalEl.text), Toast.LENGTH_SHORT)
                     }
                     showComboKeyEditor = false
                     editingComboKeyElement = null
@@ -769,17 +770,18 @@ fun KeyMappingEditor(
             val el = selectedElement
             AlertDialog(
                 onDismissRequest = { showDeleteConfirm = false },
-                title = { Text("删除元素") },
+                title = { Text(stringResource(R.string.editor_delete_title)) },
                 text = {
-                    Text("确定要删除「${el?.text?.ifBlank { el?.type?.displayName ?: "元素" }}」吗？")
+                    val name = el?.text?.ifBlank { el?.type?.displayName } ?: "Element"
+                    Text(stringResource(R.string.editor_content_desc_delete, name))
                 },
                 confirmButton = {
                     Button(
                         onClick = { showDeleteConfirm = false; deleteSelected() },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    ) { Text("删除") }
+                    ) { Text(stringResource(R.string.editor_content_desc_delete)) }
                 },
-                dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text("取消") } },
+                dismissButton = { TextButton(onClick = { showDeleteConfirm = false }) { Text(stringResource(R.string.editor_cancel)) } },
             )
         }
 
@@ -787,8 +789,8 @@ fun KeyMappingEditor(
         if (showClearAllConfirm) {
             AlertDialog(
                 onDismissRequest = { showClearAllConfirm = false },
-                title = { Text("清空所有按键") },
-                text = { Text("确定要删除屏幕上所有按键元素吗？此操作不可撤销。") },
+                title = { Text(stringResource(R.string.editor_clear_all_title)) },
+                text = { Text(stringResource(R.string.editor_clear_all_confirm)) },
                 confirmButton = {
                     Button(
                         onClick = {
@@ -799,12 +801,12 @@ fun KeyMappingEditor(
                             }
                             selectedIds = emptySet()
                             reloadElements()
-                            ToastUtil.show(context, "已清空所有按键", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_cleared_all), Toast.LENGTH_SHORT)
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                    ) { Text("清空") }
+                    ) { Text(stringResource(R.string.editor_confirm_clear)) }
                 },
-                dismissButton = { TextButton(onClick = { showClearAllConfirm = false }) { Text("取消") } },
+                dismissButton = { TextButton(onClick = { showClearAllConfirm = false }) { Text(stringResource(R.string.editor_cancel)) } },
             )
         }
     }
@@ -826,7 +828,7 @@ private fun SelectionInfoBar(element: EditorElement) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                "类型: ${element.type.displayName}",
+                stringResource(R.string.editor_btn_type_settings, element.type.displayName),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -905,7 +907,7 @@ private fun EditorToolbar(
                             .padding(horizontal = 8.dp, vertical = 4.dp),
                     )
                     IconButton(onClick = onConfirmName) {
-                        Icon(Icons.Default.Check, contentDescription = "确认",
+                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.editor_content_desc_confirm_name),
                             tint = MaterialTheme.colorScheme.primary)
                     }
                 } else {
@@ -916,7 +918,7 @@ private fun EditorToolbar(
                             .padding(horizontal = 8.dp),
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                     IconButton(onClick = onStartEditName) {
-                        Icon(Icons.Default.BorderColor, contentDescription = "编辑名称",
+                        Icon(Icons.Default.BorderColor, contentDescription = stringResource(R.string.editor_content_desc_edit_name),
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -928,13 +930,13 @@ private fun EditorToolbar(
                 TextButton(onClick = actions.addElement) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("按键", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.editor_toolbar_keys), style = MaterialTheme.typography.labelMedium)
                 }
 
                 TextButton(onClick = actions.showElementList) {
                     Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("按键列表", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.editor_toolbar_key_list), style = MaterialTheme.typography.labelMedium)
                 }
 
                 HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
@@ -945,7 +947,7 @@ private fun EditorToolbar(
                     TextButton(onClick = actions.pasteClipboard) {
                         Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(2.dp))
-                        Text("粘贴", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_toolbar_paste), style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -955,7 +957,7 @@ private fun EditorToolbar(
                         tint = if (showGridSlider) MaterialTheme.colorScheme.primary
                                else MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(Modifier.width(2.dp))
-                    Text(if (gridWidth == 0) "网格 关闭" else "网格 ${gridWidth}列",
+                    Text(if (gridWidth == 0) stringResource(R.string.editor_toolbar_grid_off) else stringResource(R.string.editor_toolbar_grid_cols, gridWidth),
                         style = MaterialTheme.typography.labelMedium,
                         color = if (showGridSlider) MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface)
@@ -974,12 +976,12 @@ private fun EditorToolbar(
                     Icon(Icons.Default.Delete, contentDescription = null, modifier = Modifier.size(16.dp),
                         tint = MaterialTheme.colorScheme.error)
                     Spacer(Modifier.width(2.dp))
-                    Text("清空", style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.editor_confirm_clear), style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.error)
                 }
 
                 TextButton(onClick = actions.exit) {
-                    Text("取消", style = MaterialTheme.typography.labelMedium,
+                    Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Button(
@@ -987,7 +989,7 @@ private fun EditorToolbar(
                     modifier = Modifier.height(32.dp),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
                 ) {
-                    Text("保存", style = MaterialTheme.typography.labelMedium)
+                    Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
                 }
             }
 
@@ -1001,7 +1003,7 @@ private fun EditorToolbar(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(if (gridWidth == 0) "关闭" else "${GRID_MIN_ACTIVE}列",
+                        Text(if (gridWidth == 0) stringResource(R.string.editor_grid_slider_off) else stringResource(R.string.editor_grid_cols_format, GRID_MIN_ACTIVE),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Slider(
@@ -1020,10 +1022,10 @@ private fun EditorToolbar(
                             valueRange = GRID_MIN.toFloat()..GRID_MAX.toFloat(),
                             modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                         )
-                        Text("${GRID_MAX}列", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.editor_grid_cols_format, GRID_MAX), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.width(8.dp))
-                        Text(if (gridWidth == 0) "关闭" else "${gridWidth}列",
+                        Text(if (gridWidth == 0) stringResource(R.string.editor_grid_slider_off) else stringResource(R.string.editor_grid_cols_format, gridWidth),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary,
                             fontWeight = FontWeight.Medium)
@@ -1043,27 +1045,27 @@ private fun EditorToolbar(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
                         IconButton(onClick = actions.delete, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Delete, contentDescription = "删除",
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.editor_content_desc_delete),
                                 tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
                         }
                         IconButton(onClick = actions.duplicate, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "复制",
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.editor_content_desc_duplicate),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.FileCopy, contentDescription = "复制到剪贴板",
+                            Icon(Icons.Default.FileCopy, contentDescription = stringResource(R.string.editor_content_desc_copy_clipboard),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.Layers, contentDescription = "上移一层",
+                            Icon(Icons.Default.Layers, contentDescription = stringResource(R.string.editor_content_desc_layer_up),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
+                            Icon(Icons.Default.LayersClear, contentDescription = stringResource(R.string.editor_content_desc_layer_down),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.BorderColor, contentDescription = "属性",
+                            Icon(Icons.Default.BorderColor, contentDescription = stringResource(R.string.editor_content_desc_properties),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
                         Spacer(Modifier.width(4.dp))
@@ -1092,27 +1094,27 @@ private fun EditorSelectionBar(
             horizontalArrangement = Arrangement.SpaceEvenly,
         ) {
             IconButton(onClick = actions.delete, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Delete, contentDescription = "删除",
+                Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.editor_content_desc_delete),
                     tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
             }
             IconButton(onClick = actions.duplicate, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.ContentCopy, contentDescription = "复制",
+                Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.editor_content_desc_duplicate),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.FileCopy, contentDescription = "复制到剪贴板",
+                Icon(Icons.Default.FileCopy, contentDescription = stringResource(R.string.editor_content_desc_copy_clipboard),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.Layers, contentDescription = "上移一层",
+                Icon(Icons.Default.Layers, contentDescription = stringResource(R.string.editor_content_desc_layer_up),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             IconButton(onClick = actions.layerDown, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.LayersClear, contentDescription = "下移一层",
+                Icon(Icons.Default.LayersClear, contentDescription = stringResource(R.string.editor_content_desc_layer_down),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             IconButton(onClick = actions.properties, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.BorderColor, contentDescription = "属性",
+                Icon(Icons.Default.BorderColor, contentDescription = stringResource(R.string.editor_content_desc_properties),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             Spacer(Modifier.width(4.dp))
@@ -1203,12 +1205,12 @@ private fun ElementListDialog(
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("按键列表 (${elements.size} 个)",
+                    Text(stringResource(R.string.editor_element_list_title, elements.size),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭",
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.btn_close),
                             modifier = Modifier.size(20.dp))
                     }
                 }
@@ -1310,7 +1312,7 @@ private fun buildElementSummary(el: EditorElement): String {
             dirLabel(el.downValue, "↓"),
             dirLabel(el.leftValue, "←"),
             dirLabel(el.rightValue, "→"),
-            dirLabel(el.middleValue, "中"),
+            dirLabel(el.middleValue, "N"),
         ).joinToString(" ")
 
         else -> keyName ?: el.type.displayName

@@ -42,11 +42,11 @@ private data class CategoryEntry(
 private fun rememberCategories(context: Context) = remember {
     listOf(
         CategoryEntry("touch", context.getString(R.string.category_touch_mode), Icons.Default.TouchApp),
-        CategoryEntry("display", context.getString(R.string.category_display_settings), Icons.Default.Tv),
+        CategoryEntry("display", context.getString(R.string.title_display_settings), Icons.Default.Tv),
         CategoryEntry("switches", context.getString(R.string.category_display_switches), Icons.Default.Tune),
         CategoryEntry("host", context.getString(R.string.category_host_settings), Icons.Default.Computer),
         CategoryEntry("audio", context.getString(R.string.title_sound_settings), Icons.Default.VolumeUp),
-        CategoryEntry("gyro", context.getString(R.string.category_gyro), Icons.Default.Sensors),
+        CategoryEntry("gyro", context.getString(R.string.subpanel_title_gyro), Icons.Default.Sensors),
         CategoryEntry("other", context.getString(R.string.category_other_settings), Icons.Default.Extension),
     )
 }
@@ -169,7 +169,7 @@ fun TouchModeCategory(settings: HostSettings, onSettingsChange: (HostSettings) -
         item {
             AnimatedVisibility(visible = !settings.touchscreenTrackpad && !settings.enableEnhancedTouch) {
                 Column {
-                    SectionTitle(stringResource(R.string.section_mouse_settings))
+                    SectionTitle(stringResource(R.string.peripherals_mouse_settings))
                     SettingSwitchRow(stringResource(R.string.label_local_mouse_pointer), settings.enableNativeMousePointer) { onSettingsChange(settings.copy(enableNativeMousePointer = it)) }
                 }
             }
@@ -199,9 +199,9 @@ fun TouchModeCategory(settings: HostSettings, onSettingsChange: (HostSettings) -
                     var showSchemeDialog by remember { mutableStateOf(false) }
                     val prefs = remember { PreferenceManager.getDefaultSharedPreferences(context) }
                     var currentConfigId by remember { mutableLongStateOf(prefs.getLong(StreamEngine.PREF_CURRENT_CONFIG_ID, 0L)) }
-                    val loadingText = stringResource(R.string.label_loading)
+                    val loadingText = stringResource(R.string.editor_loading)
                     val builtinGamepadText = stringResource(R.string.label_builtin_virtual_gamepad)
-                    val unknownText = stringResource(R.string.label_unknown)
+                    val unknownText = stringResource(R.string.engine_device_name_unknown)
                     var currentSchemeName by remember { mutableStateOf(loadingText) }
 
                     LaunchedEffect(Unit) {
@@ -263,7 +263,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
     }
 
     LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)) {
-        item { SectionTitle(stringResource(R.string.section_video)) }
+        item { SectionTitle(stringResource(R.string.display_section_video)) }
         item {
             Text(stringResource(R.string.label_bitrate_settings), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 6.dp))
             ChipSelector(options = presets, selectedValue = selectedPreset, onSelect = { value ->
@@ -288,7 +288,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
         }
         item {
             Divider()
-            Text(stringResource(R.string.label_video_codec), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 6.dp))
+            Text(stringResource(R.string.display_video_format_title), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 6.dp))
             ChipSelector(options = listOf(stringResource(R.string.option_auto) to "auto", "AV1" to "forceav1", "HEVC" to "forceh265", "H264" to "neverh265"), selectedValue = settings.videoFormat, onSelect = { onSettingsChange(settings.copy(videoFormat = it)) })
         }
         item {
@@ -308,7 +308,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
         item {
             Divider()
             Text(stringResource(R.string.label_frame_pacing), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 6.dp))
-            ChipSelector(options = listOf(stringResource(R.string.pacing_latency) to "0", stringResource(R.string.pacing_balanced) to "1", stringResource(R.string.pacing_balanced_alt) to "2", stringResource(R.string.pacing_smoothness) to "3", stringResource(R.string.pacing_experimental_low_latency) to "4", stringResource(R.string.pacing_precise_sync) to "5"), selectedValue = settings.framePacing.toString(), onSelect = { value -> onSettingsChange(settings.copy(framePacing = value.toIntOrNull() ?: 0)) }, columns = 3, spacingDp = 6)
+            ChipSelector(options = listOf(stringResource(R.string.pacing_latency) to "0", stringResource(R.string.abr_mode_balanced) to "1", stringResource(R.string.pacing_balanced_alt) to "2", stringResource(R.string.pacing_smoothness) to "3", stringResource(R.string.pacing_experimental_low_latency) to "4", stringResource(R.string.pacing_precise_sync) to "5"), selectedValue = settings.framePacing.toString(), onSelect = { value -> onSettingsChange(settings.copy(framePacing = value.toIntOrNull() ?: 0)) }, columns = 3, spacingDp = 6)
         }
         item {
             Divider()
@@ -356,7 +356,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
         }
         item {
             Divider()
-            SectionTitle(stringResource(R.string.section_virtual_display))
+            SectionTitle(stringResource(R.string.label_virtual_display))
             Text(stringResource(R.string.desc_virtual_display), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 6.dp))
             val nativeRes2 = remember {
                 val size = Point()
@@ -526,9 +526,9 @@ fun GyroCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> Uni
             ChipSelector(options = listOf(stringResource(R.string.option_always) to 0, "LT" to KeyEvent.KEYCODE_BUTTON_L2, "RT" to KeyEvent.KEYCODE_BUTTON_R2).map { (label, value) -> label to value.toString() }, selectedValue = settings.gyroActivationKeyCode.toString(), onSelect = { value -> onSettingsChange(settings.copy(gyroActivationKeyCode = value.toIntOrNull() ?: KeyEvent.KEYCODE_BUTTON_L2)) })
         }
         item {
-            Divider(); SectionTitle(stringResource(R.string.label_mode))
+            Divider(); SectionTitle(stringResource(R.string.editor_label_mode))
             val currentMode = if (settings.gyroToMouse) "mouse" else "right_stick"
-            ChipSelector(options = listOf(stringResource(R.string.option_right_stick) to "right_stick", stringResource(R.string.option_mouse) to "mouse"), selectedValue = currentMode, onSelect = { value -> onSettingsChange(settings.copy(gyroToRightStick = value == "right_stick", gyroToMouse = value == "mouse")) }, columns = 2)
+            ChipSelector(options = listOf(stringResource(R.string.option_right_stick) to "right_stick", stringResource(R.string.kv_category_mouse) to "mouse"), selectedValue = currentMode, onSelect = { value -> onSettingsChange(settings.copy(gyroToRightStick = value == "right_stick", gyroToMouse = value == "mouse")) }, columns = 2)
         }
         item {
             Divider()
@@ -591,7 +591,7 @@ private fun CustomResolutionInputDialog(onDismiss: () -> Unit, onConfirm: (Int, 
     val errorWidthEven = stringResource(R.string.error_width_must_be_even)
     val errorHeightEven = stringResource(R.string.error_height_must_be_even)
     val btnAdd = stringResource(R.string.btn_add)
-    val btnCancel = stringResource(R.string.btn_cancel)
+    val btnCancel = stringResource(R.string.editor_cancel)
 
     AlertDialog(
         onDismissRequest = onDismiss,

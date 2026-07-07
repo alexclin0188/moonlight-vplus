@@ -61,8 +61,10 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
+import androidx.compose.ui.res.stringResource
 
 /**
  * 键盘子面板 — 四标签页重构版。
@@ -246,8 +248,6 @@ fun KeyboardSubPanel(
 // TabBar
 // ────────────────────────────────────────────────────────────────────────────
 
-private val TAB_LABELS = listOf("输入法", "快捷键", "虚拟键盘", "主机键盘")
-
 /**
  * 底部固定 TabBar。
  */
@@ -270,7 +270,13 @@ private fun KeyboardTabBar(
         ) {
             // Tab 标签等宽均分
             Row(modifier = Modifier.weight(1f)) {
-                TAB_LABELS.forEachIndexed { index, label ->
+                val tabLabels = listOf(
+                    stringResource(R.string.keyboard_tab_ime),
+                    stringResource(R.string.keyboard_tab_shortcuts),
+                    stringResource(R.string.keyboard_tab_virtual),
+                    stringResource(R.string.keyboard_tab_host),
+                )
+                tabLabels.forEachIndexed { index, label ->
                     val isSelected = selectedTab == index
                     Text(
                         text = label,
@@ -291,7 +297,7 @@ private fun KeyboardTabBar(
             ) {
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "关闭",
+                    contentDescription = stringResource(R.string.btn_close),
                     modifier = Modifier.size(18.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -362,7 +368,7 @@ private fun ImeTabContent(
 
         // ── 提示文字 ──
         Text(
-            text = "使用系统输入法输入文字",
+            text = stringResource(R.string.keyboard_ime_hint),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -437,7 +443,7 @@ private fun ShortcutsTabContent(
             item(span = { GridItemSpan(1) }) {
                 ShortcutActionButton(
                     icon = Icons.Default.Add,
-                    label = "添加",
+                    label = stringResource(R.string.btn_add),
                     onClick = onAddCustomKey,
                 )
             }
@@ -445,7 +451,7 @@ private fun ShortcutsTabContent(
                 item(span = { GridItemSpan(1) }) {
                     ShortcutActionButton(
                         icon = Icons.Default.Close,
-                        label = "删除",
+                        label = stringResource(R.string.editor_content_desc_delete),
                         onClick = onDeleteCustomKey,
                     )
                 }
@@ -453,7 +459,7 @@ private fun ShortcutsTabContent(
             item(span = { GridItemSpan(1) }) {
                 ShortcutActionButton(
                     icon = Icons.Default.Refresh,
-                    label = "重置",
+                    label = stringResource(R.string.keyboard_reset),
                     onClick = onResetCustomKeys,
                 )
             }
@@ -486,14 +492,14 @@ private fun ShortcutEditButton(
         ) {
             Icon(
                 Icons.Default.Edit,
-                contentDescription = "编辑",
+                contentDescription = stringResource(R.string.keyboard_edit_mode),
                 modifier = Modifier.size(20.dp),
                 tint = if (isEditMode) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = if (isEditMode) "完成" else "编辑",
+                text = if (isEditMode) stringResource(R.string.keyboard_done_mode) else stringResource(R.string.keyboard_edit_mode),
                 style = MaterialTheme.typography.labelSmall,
                 color = if (isEditMode) MaterialTheme.colorScheme.onPrimary
                 else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -532,7 +538,7 @@ private fun PresetShortcutButton(
             )
             Spacer(modifier = Modifier.height(2.dp))
             Text(
-                text = preset.description,
+                text = stringResource(preset.descriptionResId),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 maxLines = 1,
@@ -575,7 +581,7 @@ private fun CustomShortcutButton(
                 Spacer(modifier = Modifier.height(2.dp))
                 Icon(
                     Icons.Default.Close,
-                    contentDescription = "删除",
+                    contentDescription = stringResource(R.string.editor_content_desc_delete),
                     modifier = Modifier.size(14.dp),
                     tint = MaterialTheme.colorScheme.error,
                 )

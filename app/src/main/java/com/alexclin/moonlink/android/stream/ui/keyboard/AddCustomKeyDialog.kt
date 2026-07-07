@@ -17,7 +17,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
 import com.alexclin.moonlink.android.stream.ui.common.SaveResult
 
@@ -44,7 +46,7 @@ fun AddCustomKeyDialog(
     fun validateAndSave() {
         val trimmedName = name.trim()
         if (trimmedName.isEmpty()) {
-            errorMessage = "名称不能为空"
+            errorMessage = context.getString(R.string.customkey_error_name_empty)
             return
         }
 
@@ -54,27 +56,27 @@ fun AddCustomKeyDialog(
             .filter { it.isNotEmpty() }
 
         if (codes.isEmpty()) {
-            errorMessage = "请输入至少一个键码"
+            errorMessage = context.getString(R.string.customkey_error_codes_empty)
             return
         }
 
         // 检查格式
         for (code in codes) {
             if (!code.startsWith("0x") && !code.startsWith("0X")) {
-                errorMessage = "键码 \"$code\" 格式错误，须以 0x 开头"
+                errorMessage = context.getString(R.string.customkey_error_code_format, code)
                 return
             }
             try {
                 code.substring(2).toInt(16)
             } catch (_: NumberFormatException) {
-                errorMessage = "键码 \"$code\" 不是有效的十六进制数"
+                errorMessage = context.getString(R.string.customkey_error_code_invalid, code)
                 return
             }
         }
 
         // 重复名称检查
         if (CustomKeyRepository.hasDuplicateName(context, trimmedName)) {
-            errorMessage = "名称 \"$trimmedName\" 已存在"
+            errorMessage = context.getString(R.string.customkey_error_name_duplicate, trimmedName)
             return
         }
 
@@ -85,7 +87,7 @@ fun AddCustomKeyDialog(
                 onSaved()
             }
             is SaveResult.DuplicateName -> {
-                errorMessage = "名称 \"${result.name}\" 已存在"
+                errorMessage = context.getString(R.string.customkey_error_name_duplicate, result.name)
             }
             is SaveResult.Error -> {
                 errorMessage = result.message
@@ -96,7 +98,7 @@ fun AddCustomKeyDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("添加自定义按键")
+            Text(stringResource(R.string.customkey_dialog_title))
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
@@ -106,8 +108,8 @@ fun AddCustomKeyDialog(
                         name = it
                         errorMessage = null
                     },
-                    label = { Text("按键名称") },
-                    placeholder = { Text("如：发送 F11") },
+                    label = { Text(stringResource(R.string.customkey_label_name)) },
+                    placeholder = { Text(stringResource(R.string.customkey_hint_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorMessage != null && name.trim().isEmpty(),
@@ -121,8 +123,8 @@ fun AddCustomKeyDialog(
                         hexCodesText = it
                         errorMessage = null
                     },
-                    label = { Text("键码（十六进制，逗号分隔）") },
-                    placeholder = { Text("如：0x7A 或 0x5B,0x44") },
+                    label = { Text(stringResource(R.string.customkey_label_codes)) },
+                    placeholder = { Text(stringResource(R.string.customkey_hint_codes)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     isError = errorMessage != null && hexCodesText.isBlank(),
@@ -140,12 +142,12 @@ fun AddCustomKeyDialog(
         },
         confirmButton = {
             TextButton(onClick = { validateAndSave() }) {
-                Text("确定")
+                Text(stringResource(R.string.editor_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.editor_cancel))
             }
         },
     )

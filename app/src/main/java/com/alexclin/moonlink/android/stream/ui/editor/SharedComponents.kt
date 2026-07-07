@@ -43,6 +43,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 // ════════════════════════════════════════════════════════════════════════════
 //  单个键值槽位（紧凑布局，标签在上、值在下）
@@ -81,7 +83,7 @@ internal fun KeySlotItem(
                 Spacer(Modifier.width(4.dp))
             }
             Text(
-                if (value.isNotEmpty()) (keyLabel ?: value) else "点击选择",
+                if (value.isNotEmpty()) (keyLabel ?: value) else stringResource(R.string.kme_shared_tap_to_select),
                 style = MaterialTheme.typography.bodySmall.copy(
                     color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
                     else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -150,11 +152,11 @@ internal fun DirectionValueFields(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        KeySlotItem("↑ 上", upValue,
+        KeySlotItem(stringResource(R.string.kme_dir_up), upValue,
             onClick = onUpClick,
             icon = Icons.Default.ArrowUpward,
             modifier = Modifier.weight(1f))
-        KeySlotItem("↓ 下", downValue,
+        KeySlotItem(stringResource(R.string.kme_dir_down), downValue,
             onClick = onDownClick,
             icon = Icons.Default.ArrowDownward,
             modifier = Modifier.weight(1f))
@@ -163,11 +165,11 @@ internal fun DirectionValueFields(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        KeySlotItem("← 左", leftValue,
+        KeySlotItem(stringResource(R.string.kme_dir_left), leftValue,
             onClick = onLeftClick,
             icon = Icons.Default.ChevronLeft,
             modifier = Modifier.weight(1f))
-        KeySlotItem("→ 右", rightValue,
+        KeySlotItem(stringResource(R.string.kme_dir_right), rightValue,
             onClick = onRightClick,
             icon = Icons.Default.ChevronRight,
             modifier = Modifier.weight(1f))

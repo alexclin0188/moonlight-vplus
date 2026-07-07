@@ -92,9 +92,9 @@ fun DrawScope.drawDigitalButton(
     val textArgb = element.argbWithOpacity(if (isPressed) element.pressedTextColor else element.normalTextColor)
     val valueLabel = getKeyLabelByValue(element.value) ?: element.value
 
-    // 组合键：text 为空时默认显示 "组合键{键值名}"
+    // 组合键：text 为空时默认显示 "Combo{键值名}"
     val displayText = if (element.type == ElementType.DIGITAL_COMBINE_BUTTON && element.text.isBlank()) {
-        "组合键"
+        "Combo"
     } else {
         element.text
     }

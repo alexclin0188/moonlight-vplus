@@ -27,6 +27,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 @Composable
 fun FloatingActionButton(
@@ -94,7 +96,7 @@ fun FloatingActionButton(
                 ) {
                     Icon(
                         Icons.Default.Menu,
-                        contentDescription = "菜单",
+                        contentDescription = stringResource(R.string.fab_menu),
                         tint = MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.size(20.dp),
                     )

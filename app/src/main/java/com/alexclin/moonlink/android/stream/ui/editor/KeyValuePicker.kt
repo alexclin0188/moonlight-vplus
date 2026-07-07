@@ -49,6 +49,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.res.stringResource
+import androidx.annotation.StringRes
+import com.alexclin.moonlink.android.R
 
 // ════════════════════════════════════════════════════════════════════════════
 //  键值数据模型
@@ -65,11 +68,11 @@ data class KeyEntry(
 /**
  * 键值分组类别。
  */
-private enum class KeyCategory(val label: String, val icon: ImageVector) {
-    KEYBOARD("键盘", Icons.Default.Keyboard),
-    MOUSE("鼠标", Icons.Default.Mouse),
-    GAMEPAD("手柄", Icons.Default.SportsEsports),
-    SPECIAL("特殊", Icons.Default.Keyboard),
+private enum class KeyCategory(@StringRes val labelRes: Int, val icon: ImageVector) {
+    KEYBOARD(R.string.bar_keyboard, Icons.Default.Keyboard),
+    MOUSE(R.string.kv_category_mouse, Icons.Default.Mouse),
+    GAMEPAD(R.string.kv_category_gamepad, Icons.Default.SportsEsports),
+    SPECIAL(R.string.kv_category_special, Icons.Default.Keyboard),
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -197,21 +200,21 @@ private val keyboardKeys = listOf(
 
 /** 鼠标按键列表 */
 private val mouseKeys = listOf(
-    KeyEntry("m1", "左键"),
-    KeyEntry("m2", "中键"),
-    KeyEntry("m3", "右键"),
+    KeyEntry("m1", "ML"),
+    KeyEntry("m2", "MM"),
+    KeyEntry("m3", "MR"),
     KeyEntry("m4", "X1"),
     KeyEntry("m5", "X2"),
-    KeyEntry("SU", "滚轮上"),
-    KeyEntry("SD", "滚轮下"),
+    KeyEntry("SU", "WU"),
+    KeyEntry("SD", "WD"),
 )
 
 /** 手柄按键列表 */
 private val gamepadKeys = listOf(
-    KeyEntry("g1", "DPad上"),
-    KeyEntry("g2", "DPad下"),
-    KeyEntry("g4", "DPad左"),
-    KeyEntry("g8", "DPad右"),
+    KeyEntry("g1", "D-Up"),
+    KeyEntry("g2", "D-Dn"),
+    KeyEntry("g4", "D-Lt"),
+    KeyEntry("g8", "D-Rt"),
     KeyEntry("g16", "Start"),
     KeyEntry("g32", "Back"),
     KeyEntry("g64", "LSB"),
@@ -342,16 +345,16 @@ private val keyboardLayout: List<List<KbCell>> = listOf(
 
 /** 特殊功能键列表 */
 private val specialKeys = listOf(
-    KeyEntry("MMS", "鼠标移动"),
-    KeyEntry("CMS", "鼠标滚轮模式"),
-    KeyEntry("TPM", "触控板模式"),
-    KeyEntry("MTM", "鼠标触控切换"),
-    KeyEntry("MES", "鼠标编辑切换"),
-    KeyEntry("PKS", "键盘模式"),
-    KeyEntry("AKS", "摇杆模式"),
-    KeyEntry("CSW", "滚轮切换"),
-    KeyEntry("PZM", "缩放模式"),
-    KeyEntry("OGM", "手柄模式"),
+    KeyEntry("MMS", "Move Ms"),
+    KeyEntry("CMS", "Whl Md"),
+    KeyEntry("TPM", "Trk Md"),
+    KeyEntry("MTM", "Tgl Ms"),
+    KeyEntry("MES", "Tgl Ed"),
+    KeyEntry("PKS", "Key Md"),
+    KeyEntry("AKS", "Stk Md"),
+    KeyEntry("CSW", "Whl Sw"),
+    KeyEntry("PZM", "Zoom M"),
+    KeyEntry("OGM", "Gpad M"),
 )
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -393,11 +396,11 @@ fun KeyValuePickerDialog(
                         .padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("选择键值", style = MaterialTheme.typography.titleSmall,
+                    Text(stringResource(R.string.kv_title_select_key), style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
                     IconButton(onClick = onDismiss, modifier = Modifier.size(32.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = "关闭",
+                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.btn_close),
                             modifier = Modifier.size(20.dp))
                     }
                 }
@@ -420,7 +423,7 @@ fun KeyValuePickerDialog(
                                 Icon(cat.icon, contentDescription = null,
                                     modifier = Modifier.size(14.dp))
                                 Spacer(Modifier.width(4.dp))
-                                Text(cat.label, style = MaterialTheme.typography.labelSmall)
+                                Text(stringResource(cat.labelRes), style = MaterialTheme.typography.labelSmall)
                             }
                         }
                     }

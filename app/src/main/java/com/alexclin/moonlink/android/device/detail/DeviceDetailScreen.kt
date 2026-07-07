@@ -90,8 +90,8 @@ private fun DetailContentCards(computer: ComputerDetails) {
         DetailRow(stringResource(R.string.label_uuid), computer.uuid ?: "—")
 
         val stateText = when (computer.state) {
-            ComputerDetails.State.ONLINE  -> stringResource(R.string.badge_online)
-            ComputerDetails.State.OFFLINE -> stringResource(R.string.badge_offline)
+            ComputerDetails.State.ONLINE  -> stringResource(R.string.pcview_menu_header_online)
+            ComputerDetails.State.OFFLINE -> stringResource(R.string.pcview_menu_header_offline)
             else -> stringResource(R.string.status_detecting)
         }
         DetailRow(stringResource(R.string.label_status), stateText)
@@ -123,9 +123,9 @@ private fun DetailContentCards(computer: ComputerDetails) {
     DetailCard {
         SectionTitle(stringResource(R.string.section_sunshine_info))
         DetailRow(stringResource(R.string.label_sunshine_version), computer.getSunshineVersionDisplay().ifBlank { "—" })
-        DetailRow(stringResource(R.string.label_nvidia_server), if (computer.nvidiaServer) stringResource(R.string.label_yes) else stringResource(R.string.label_no))
-        DetailRow(stringResource(R.string.label_multi_address), if (computer.hasMultipleAddresses()) stringResource(R.string.label_yes) else stringResource(R.string.label_no))
-        DetailRow(stringResource(R.string.label_desktop_quick_start), if (computer.supportsDesktopSpecialApp) stringResource(R.string.label_yes) else stringResource(R.string.label_no))
+        DetailRow(stringResource(R.string.label_nvidia_server), if (computer.nvidiaServer) stringResource(R.string.yes) else stringResource(R.string.no))
+        DetailRow(stringResource(R.string.label_multi_address), if (computer.hasMultipleAddresses()) stringResource(R.string.yes) else stringResource(R.string.no))
+        DetailRow(stringResource(R.string.label_desktop_quick_start), if (computer.supportsDesktopSpecialApp) stringResource(R.string.yes) else stringResource(R.string.no))
     }
 }
 
@@ -175,10 +175,10 @@ private fun EditRemoteAddressDialog(
                     ToastUtil.show(context, context.getString(R.string.toast_remote_address_updated), Toast.LENGTH_SHORT)
                 }
                 onDismiss()
-            }) { Text(stringResource(R.string.btn_confirm)) }
+            }) { Text(stringResource(R.string.dialog_button_confirm)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.btn_cancel)) }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.editor_cancel)) }
         },
     )
 }

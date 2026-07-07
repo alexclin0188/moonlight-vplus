@@ -51,8 +51,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.util.ToastUtil
 import android.widget.Toast
@@ -132,25 +134,25 @@ fun ButtonPropertyDialog(
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismiss) {
-                        Text("取消", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium)
                     }
                     Spacer(Modifier.width(4.dp))
                     TextButton(onClick = {
                         // 新建模式下必须选择键值
                         if (isCreateMode && value.isBlank()) {
-                            ToastUtil.show(context, "请先选择按键值", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_select_key_first), Toast.LENGTH_SHORT)
                             return@TextButton
                         }
                         if (isDuplicateElementName(text, existingTextNames)) {
                             val trimmedText = text.trim()
-                            ToastUtil.show(context, "已存在同名元素「$trimmedText」，请修改名称", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
                             return@TextButton
                         }
                         onSave(buildUpdated())
                     }) {
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("保存", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
                     }
                 }
 
@@ -171,7 +173,7 @@ fun ButtonPropertyDialog(
                     ) {
                         // 左半：按键名
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("按键名",
+                            Text(stringResource(R.string.customkey_label_name),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(2.dp))
@@ -216,7 +218,7 @@ fun ButtonPropertyDialog(
                         }
                         // 右半：按键值
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("按键值",
+                            Text(stringResource(R.string.editor_label_button_value),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Spacer(Modifier.height(2.dp))
@@ -231,8 +233,7 @@ fun ButtonPropertyDialog(
                                     .padding(horizontal = 8.dp, vertical = 6.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    if (value.isNotEmpty()) keyLabel else "点击选择",
+                                Text(                                        if (value.isNotEmpty()) keyLabel else stringResource(R.string.kme_shared_tap_to_select),
                                     style = TextStyle(
                                         color = if (value.isNotEmpty()) MaterialTheme.colorScheme.onSurface
                                                 else MaterialTheme.colorScheme.onSurfaceVariant,
@@ -266,11 +267,11 @@ fun ButtonPropertyDialog(
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
-                                Text("长按效果",
+                                Text(stringResource(R.string.editor_label_long_press),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium,
                                     color = MaterialTheme.colorScheme.onSurface)
-                                Text("开启后，按下按键即相当于长按，\n持续向主机发送此按键键值",
+                                Text(stringResource(R.string.editor_label_long_press_desc),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -293,19 +294,19 @@ fun ButtonPropertyDialog(
                                 modifier = Modifier.weight(1f),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text("模式",
+                                Text(stringResource(R.string.editor_label_mode),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(8.dp))
                                 CompactChip(
-                                    label = "按钮",
+                                    label = stringResource(R.string.editor_chip_button_mode),
                                     selected = mode == "0",
                                     onClick = { mode = "0" },
                                     modifier = Modifier.weight(1f),
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 CompactChip(
-                                    label = "摇杆",
+                                    label = stringResource(R.string.editor_chip_joystick_mode),
                                     selected = mode == "1",
                                     onClick = { mode = "1" },
                                     modifier = Modifier.weight(1f),
@@ -317,7 +318,7 @@ fun ButtonPropertyDialog(
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.Center,
                             ) {
-                                Text("触控板模式",
+                                Text(stringResource(R.string.editor_label_trackpad_mode),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.width(4.dp))
@@ -342,7 +343,7 @@ fun ButtonPropertyDialog(
                         }
                         // 灵敏度 Slider
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Text("灵敏度: ${sense.toIntOrNull() ?: 100}",
+                            Text(context.getString(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 100),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant)
                             Slider(

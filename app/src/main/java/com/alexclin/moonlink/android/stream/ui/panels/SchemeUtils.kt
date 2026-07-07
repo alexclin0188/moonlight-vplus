@@ -2,6 +2,7 @@ package com.alexclin.moonlink.android.stream.ui.panels
 
 import android.content.Context
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.data.ConfigColumns
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 
@@ -24,8 +25,8 @@ fun loadUserSchemes(context: Context): List<SchemeInfo> {
         ids.mapNotNull { id ->
             if (id == 0L) return@mapNotNull null
             val name = db.queryConfigAttribute(
-                id, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "未命名"
-            ) as? String ?: "未命名"
+                id, ConfigColumns.COLUMN_STRING_CONFIG_NAME, context.getString(R.string.scheme_default_name)
+            ) as? String ?: context.getString(R.string.scheme_default_name)
             SchemeInfo(configId = id, name = name)
         }
     } catch (_: Exception) {

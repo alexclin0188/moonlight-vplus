@@ -167,7 +167,7 @@ fun UiSettingsScreen() {
         if (currentSource is BackgroundSource.Api) {
             item {
                 ClickablePreference(
-                    title = context.getString(R.string.title_background_image_api),
+                    title = context.getString(R.string.dialog_title_background_image_api),
                     summary = if (apiUrl.isNotEmpty()) apiUrl else context.getString(R.string.summary_background_api_placeholder),
                     onClick = { apiUrlDialogVisible = true },
                 )
@@ -220,7 +220,7 @@ fun UiSettingsScreen() {
                             currentSource = BackgroundSource.current(context)
                             apiUrl = trimmed
                             apiUrlDialogVisible = false
-                        }) { Text(context.getString(R.string.btn_save)) }
+                        }) { Text(context.getString(R.string.editor_save)) }
                     },
                     dismissButton = {
                         TextButton(onClick = { apiUrlDialogVisible = false }) { Text(context.getString(R.string.no)) }

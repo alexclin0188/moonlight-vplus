@@ -47,7 +47,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 
@@ -97,8 +99,8 @@ fun KeyMappingSchemeSelector(
     deleteTarget?.let { target ->
         AlertDialog(
             onDismissRequest = { deleteTarget = null },
-            title = { Text("删除方案") },
-            text = { Text("确定要删除方案「${target.name}」吗？此操作不可撤销。") },
+            title = { Text(stringResource(R.string.scheme_delete_title)) },
+            text = { Text(stringResource(R.string.scheme_delete_confirm, target.name)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -109,16 +111,16 @@ fun KeyMappingSchemeSelector(
                             if (currentConfigId == target.configId) {
                                 selectScheme(0L)
                             }
-                            ToastUtil.show(context, "已删除", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.scheme_deleted), Toast.LENGTH_SHORT)
                         } catch (e: Exception) {
-                            ToastUtil.show(context, "删除失败: ${e.message}", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.scheme_delete_failed, e.message), Toast.LENGTH_SHORT)
                         }
                         deleteTarget = null
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-                ) { Text("删除") }
+                ) { Text(stringResource(R.string.editor_content_desc_delete)) }
             },
-            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { deleteTarget = null }) { Text(stringResource(R.string.editor_cancel)) } },
         )
     }
 
@@ -133,12 +135,12 @@ fun KeyMappingSchemeSelector(
                 IconButton(onClick = onClose) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "返回",
+                        contentDescription = stringResource(R.string.btn_back),
                         tint = MaterialTheme.colorScheme.onSurface,
                     )
                 }
                 Text(
-                    "按键映射方案",
+                        stringResource(R.string.scheme_title),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -154,7 +156,7 @@ fun KeyMappingSchemeSelector(
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
-                    placeholder = { Text("搜索方案名", style = MaterialTheme.typography.bodySmall) },
+                    placeholder = { Text(stringResource(R.string.scheme_search_hint), style = MaterialTheme.typography.bodySmall) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null, modifier = Modifier.size(18.dp))
                     },
@@ -171,20 +173,21 @@ fun KeyMappingSchemeSelector(
                 }) {
                     Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("新建")
+                    Text(stringResource(R.string.scheme_new))
                 }
             }
 
             // ── 方案列表（每行三个 Chip，内置方案 + 用户方案） ──
             if (isLoading) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("加载中...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.editor_loading), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             } else {
                 // 内置方案（代码固定生成，不存 DB）
-                val builtIn = SchemeInfo(configId = 0L, name = "内置虚拟手柄方案", isDefault = true)
+                val builtInName = stringResource(R.string.scheme_builtin_name)
+                val builtIn = SchemeInfo(configId = 0L, name = builtInName, isDefault = true)
                 val showBuiltIn = searchQuery.isBlank()
-                    || "内置虚拟手柄方案".contains(searchQuery, ignoreCase = true)
+                    || builtInName.contains(searchQuery, ignoreCase = true)
                 val userSchemes = schemes
                     .filter { searchQuery.isBlank() || it.name.contains(searchQuery, ignoreCase = true) }
                 val allItems = (if (showBuiltIn) listOf(builtIn) else emptyList()) + userSchemes

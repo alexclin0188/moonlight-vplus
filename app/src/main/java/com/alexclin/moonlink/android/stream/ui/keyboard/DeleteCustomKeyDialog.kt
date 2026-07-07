@@ -23,7 +23,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
 
 /**
@@ -47,7 +49,7 @@ fun DeleteCustomKeyDialog(
 
     fun deleteSelected() {
         if (checkedIndices.isEmpty()) {
-            errorMessage = "请选择要删除的按键"
+            errorMessage = context.getString(R.string.customkey_error_no_selection)
             return
         }
 
@@ -56,27 +58,27 @@ fun DeleteCustomKeyDialog(
         if (success) {
             onDeleted()
         } else {
-            errorMessage = "删除失败，请重试"
+            errorMessage = context.getString(R.string.customkey_error_delete_failed)
         }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("删除自定义按键")
+            Text(stringResource(R.string.customkey_title_delete))
         },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
                 if (keys.isEmpty()) {
                     Text(
-                        text = "暂无自定义按键",
+                        text = stringResource(R.string.customkey_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 16.dp),
                     )
                 } else {
                     Text(
-                        text = "选择要删除的按键：",
+                        text = stringResource(R.string.customkey_select_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -113,7 +115,7 @@ fun DeleteCustomKeyDialog(
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
                                     Text(
-                                        text = "键码: ${key.keys.joinToString(", ") { "0x${it.toInt().and(0xFF).toString(16).uppercase()}" }}",
+                                        text = context.getString(R.string.customkey_keycode_format, key.keys.joinToString(", ") { "0x${it.toInt().and(0xFF).toString(16).uppercase()}" }),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -145,7 +147,7 @@ fun DeleteCustomKeyDialog(
                 enabled = keys.isNotEmpty(),
             ) {
                 Text(
-                    "删除",
+                    stringResource(R.string.dialog_button_delete),
                     color = if (keys.isNotEmpty()) MaterialTheme.colorScheme.error
                     else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                 )
@@ -153,7 +155,7 @@ fun DeleteCustomKeyDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("取消")
+                Text(stringResource(R.string.dialog_button_cancel))
             }
         },
     )

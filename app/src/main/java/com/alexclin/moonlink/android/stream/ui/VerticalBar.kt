@@ -37,7 +37,9 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.PanelAnimations
+import androidx.compose.ui.res.stringResource
 
 /**
  * 竖向窄条面板（一级面板），用于竖屏。
@@ -77,28 +79,28 @@ fun VerticalBar(
         ) {
             PanelEntry(
                 icon = Icons.Default.Settings,
-                label = "操作",
+                label = stringResource(R.string.bar_operations),
                 isSelected = activeEntry == "operations",
                 onClick = { onEntryClick("operations") },
             )
 
             PanelEntry(
                 icon = Icons.Default.Keyboard,
-                label = "键盘",
+                label = stringResource(R.string.bar_keyboard),
                 isSelected = activeEntry == "keyboard",
                 onClick = { onEntryClick("keyboard") },
             )
 
             PanelEntry(
                 icon = Icons.Default.DesktopWindows,
-                label = "桌面",
+                label = stringResource(R.string.bar_desktop),
                 isSelected = false,
                 onClick = { onEntryClick("show_desktop") },
             )
 
             PanelEntry(
                 icon = Icons.Default.Window,
-                label = "窗口",
+                label = stringResource(R.string.bar_window),
                 isSelected = false,
                 onClick = { onEntryClick("show_windows") },
             )
@@ -140,28 +142,28 @@ fun HorizontalBar(
         ) {
             PanelEntry(
                 icon = Icons.Default.Settings,
-                label = "操作",
+                label = stringResource(R.string.bar_operations),
                 isSelected = activeEntry == "operations",
                 onClick = { onEntryClick("operations") },
             )
 
             PanelEntry(
                 icon = Icons.Default.Keyboard,
-                label = "键盘",
+                label = stringResource(R.string.bar_keyboard),
                 isSelected = activeEntry == "keyboard",
                 onClick = { onEntryClick("keyboard") },
             )
 
             PanelEntry(
                 icon = Icons.Default.DesktopWindows,
-                label = "桌面",
+                label = stringResource(R.string.bar_desktop),
                 isSelected = false,
                 onClick = { onEntryClick("show_desktop") },
             )
 
             PanelEntry(
                 icon = Icons.Default.Window,
-                label = "窗口",
+                label = stringResource(R.string.bar_window),
                 isSelected = false,
                 onClick = { onEntryClick("show_windows") },
             )

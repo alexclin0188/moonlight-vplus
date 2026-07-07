@@ -318,7 +318,7 @@ private fun AppGridItem(
                     ) {
                         Icon(
                             Icons.Default.PlayCircle,
-                            contentDescription = stringResource(R.string.label_running),
+                            contentDescription = stringResource(R.string.cd_running),
                             modifier = Modifier.padding(2.dp),
                             tint = Color.White,
                         )

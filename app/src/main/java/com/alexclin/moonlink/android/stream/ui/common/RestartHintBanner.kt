@@ -8,9 +8,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 /**
- * 提示横幅：部分配置修改在退出设置时才会生效。
  *
  * 在各子面板（显示设置、主机设置等）顶部显示，引导用户关闭面板触发重启。
  */
@@ -22,7 +23,7 @@ fun RestartHintBanner(modifier: Modifier = Modifier) {
         modifier = modifier,
     ) {
         Text(
-            text = "部分配置修改在退出设置时才会生效",
+            text = stringResource(R.string.restart_hint_text),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onTertiaryContainer,
             modifier = Modifier.padding(12.dp),

@@ -64,6 +64,8 @@ import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.stream.ui.common.RestartHintBanner
 import com.limelight.preferences.CustomResolutionsConsts
 import com.limelight.preferences.PreferenceConfiguration
+import com.alexclin.moonlink.android.R
+import androidx.compose.ui.res.stringResource
 import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -97,7 +99,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
         }
     }
 
-    DetailScaffold(title = "显示设置", onBack = handleBack) {
+    DetailScaffold(title = stringResource(R.string.title_display_settings), onBack = handleBack) {
         var activeExpandableId by remember { mutableIntStateOf(-1) }
         val onSectionExpand = { id: Int -> activeExpandableId = id }
 
@@ -113,7 +115,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
             }
 
             // ── 分组一：帧率与画面 ──
-            item { SectionTitle("画面") }
+            item { SectionTitle(stringResource(R.string.display_section_video)) }
 
             // DB-1: 码率选择行(含智能码率 & 流量估算)
             item {
@@ -166,7 +168,7 @@ fun DisplaySettingsPanel(engine: StreamEngine, onBack: () -> Unit) {
 
             // ── 分组二：显示器（仅在检测到显示器时显示标题） ──
             if (engine.currentDisplayName != null || engine.currentDeviceId != null) {
-                item { SectionTitle("显示器") }
+                item { SectionTitle(stringResource(R.string.display_section_monitor)) }
             }
 
             // DD-1: 显示器信息 + 分辨率 + DPI缩放 + 切换
@@ -189,9 +191,9 @@ private fun FpsSelector(engine: StreamEngine) {
             modifier = Modifier.padding(vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("视频帧率", style = MaterialTheme.typography.bodyLarge,
+            Text(stringResource(R.string.label_video_framerate), style = MaterialTheme.typography.bodyLarge,
                  modifier = Modifier.weight(1f))
-            Text("解锁帧率", style = MaterialTheme.typography.bodySmall,
+            Text(stringResource(R.string.label_unlock_framerate), style = MaterialTheme.typography.bodySmall,
                  color = MaterialTheme.colorScheme.onSurfaceVariant)
             Spacer(Modifier.width(4.dp))
             Switch(
@@ -267,15 +269,14 @@ private fun BitrateSelector(
 
     Column {
         // 码率设置小标题
-        Text("码率设置", style = MaterialTheme.typography.bodyLarge,
+        Text(stringResource(R.string.label_bitrate_settings), style = MaterialTheme.typography.bodyLarge,
              modifier = Modifier.padding(vertical = 6.dp))
-        // 自定义标签映射
         val customLabels = mapOf(
-            BitrateUtils.BitratePreset.AUTO to "自动",
-            BitrateUtils.BitratePreset.M2 to "清晰\n2M",
-            BitrateUtils.BitratePreset.M8 to "高清\n8M",
-            BitrateUtils.BitratePreset.M20 to "原画\n20M",
-            BitrateUtils.BitratePreset.CUSTOM to "自定义",
+            BitrateUtils.BitratePreset.AUTO to stringResource(R.string.option_auto),
+            BitrateUtils.BitratePreset.M2 to stringResource(R.string.display_bitrate_2m),
+            BitrateUtils.BitratePreset.M8 to stringResource(R.string.display_bitrate_8m),
+            BitrateUtils.BitratePreset.M20 to stringResource(R.string.display_bitrate_20m),
+            BitrateUtils.BitratePreset.CUSTOM to stringResource(R.string.option_custom),
         )
         Row(horizontalArrangement = Arrangement.spacedBy(2.dp),
              modifier = Modifier.fillMaxWidth()) {
@@ -315,9 +316,9 @@ private fun BitrateSelector(
         // 自动 → 智能码率模式（可展开收起）
         AnimatedVisibility(visible = selectedPreset == BitrateUtils.BitratePreset.AUTO) {
             val abrLabels = mapOf(
-                "quality" to "画质优先",
-                "balanced" to "均衡",
-                "lowLatency" to "低延迟",
+                "quality" to stringResource(R.string.abr_mode_quality),
+                "balanced" to stringResource(R.string.abr_mode_balanced),
+                "lowLatency" to stringResource(R.string.abr_mode_low_latency),
             )
             var abrExpanded by remember { mutableStateOf(false) }
             // 其它 section 展开时收起 ABR 模式
@@ -338,9 +339,9 @@ private fun BitrateSelector(
                         .padding(vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text("智能码率模式", style = MaterialTheme.typography.bodyLarge,
+                    Text(stringResource(R.string.label_abr_mode), style = MaterialTheme.typography.bodyLarge,
                          modifier = Modifier.weight(1f))
-                    Text(abrLabels[abrMode] ?: "均衡",
+                    Text(abrLabels[abrMode] ?: stringResource(R.string.abr_mode_balanced),
                          style = MaterialTheme.typography.bodyMedium,
                          color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Icon(
@@ -368,7 +369,7 @@ private fun BitrateSelector(
         AnimatedVisibility(visible = selectedPreset == BitrateUtils.BitratePreset.CUSTOM) {
             Column(Modifier.padding(top = 8.dp)) {
                 val displayKbps = BitrateUtils.customProgressToKbps(sliderProgress.roundToInt())
-                Text("码率: ${displayKbps / 1000} Mbps ($displayKbps kbps)",
+                Text(stringResource(R.string.display_bitrate_label, displayKbps / 1000, displayKbps),
                      style = MaterialTheme.typography.bodyMedium)
                 Slider(
                     value = sliderProgress,
@@ -406,10 +407,16 @@ private fun BitrateSelector(
 
 @Composable
 private fun TrafficEstimateLine(bitrateKbps: Int) {
+    val context = LocalContext.current
     val text = if (bitrateKbps > 0) {
-        BitrateUtils.formatTrafficEstimate(bitrateKbps)
+        val mbPerMin = BitrateUtils.estimateTrafficMbPerMin(bitrateKbps)
+        if (mbPerMin >= 10) {
+            context.getString(R.string.bitrate_traffic_estimate_int, mbPerMin.toInt())
+        } else {
+            context.getString(R.string.bitrate_traffic_estimate_float, mbPerMin)
+        }
     } else {
-        "码率自适应中…"
+        stringResource(R.string.display_bitrate_adapting)
     }
     Text(
         text = text,
@@ -457,7 +464,7 @@ private fun setFixedBitrate(
                     }
             override fun onFailure(errorMessage: String) {
                 // 服务端拒绝，恢复之前的状态
-                ToastUtil.show(context, "码率设置失败: $errorMessage", Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.display_bitrate_failed, errorMessage), Toast.LENGTH_SHORT)
             }
         })
     }
@@ -480,14 +487,14 @@ private fun VideoFormatSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
 
     Column {
-        Text("视频编码格式", style = MaterialTheme.typography.bodyLarge,
+        Text(stringResource(R.string.display_video_format_title), style = MaterialTheme.typography.bodyLarge,
              modifier = Modifier.padding(vertical = 6.dp))
         ChipSelector(
             options = listOf(
-                "自动" to PreferenceConfiguration.FormatOption.AUTO.name,
-                "AV1" to PreferenceConfiguration.FormatOption.FORCE_AV1.name,
-                "HEVC" to PreferenceConfiguration.FormatOption.FORCE_HEVC.name,
-                "H264" to PreferenceConfiguration.FormatOption.FORCE_H264.name,
+                stringResource(R.string.videoformat_auto) to PreferenceConfiguration.FormatOption.AUTO.name,
+                stringResource(R.string.display_videoformat_av1) to PreferenceConfiguration.FormatOption.FORCE_AV1.name,
+                stringResource(R.string.display_videoformat_hevc) to PreferenceConfiguration.FormatOption.FORCE_HEVC.name,
+                stringResource(R.string.display_videoformat_h264) to PreferenceConfiguration.FormatOption.FORCE_H264.name,
             ),
             selectedValue = pref.videoFormat.name,
             onSelect = { value ->
@@ -511,21 +518,21 @@ private fun HdrSection(engine: StreamEngine) {
     var hdrMode by remember { mutableIntStateOf(pref.hdrMode) }
 
     Column {
-        SettingSwitch("HDR", hdrEnabled) {
+        SettingSwitch(stringResource(R.string.display_hdr), hdrEnabled) {
             hdrEnabled = it; pref.enableHdr = it; 
                     engine.displaySettingsRestartPending = true
         }
         AnimatedVisibility(visible = hdrEnabled) {
             Column(modifier = Modifier.padding(start = 24.dp)) {
-                SettingSwitch("HDR高亮度", highBrightness) {
+                SettingSwitch(stringResource(R.string.label_hdr_high_brightness), highBrightness) {
                     highBrightness = it; pref.enableHdrHighBrightness = it; 
                     engine.displaySettingsRestartPending = true
                 }
                 Spacer(Modifier.height(4.dp))
-                Text("HDR模式", style = MaterialTheme.typography.bodySmall,
+                Text(stringResource(R.string.label_hdr_mode), style = MaterialTheme.typography.bodySmall,
                      color = MaterialTheme.colorScheme.primary)
                 ChipSelector(
-                    options = listOf("HDR10/PQ" to "1", "HLG" to "2"),
+                    options = listOf("HDR10/PQ" to "1", stringResource(R.string.hdr_mode_hlg) to "2"),
                     selectedValue = hdrMode.toString(),
                     onSelect = { value ->
                         val mode = value.toIntOrNull() ?: 1
@@ -578,9 +585,9 @@ private fun OutputBufferSlider(
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("输出缓冲区大小", style = MaterialTheme.typography.bodyLarge,
+            Text(stringResource(R.string.label_output_buffer), style = MaterialTheme.typography.bodyLarge,
                  modifier = Modifier.weight(1f))
-            Text("${sliderValue.toInt()} 帧", style = MaterialTheme.typography.bodyMedium,
+            Text(stringResource(R.string.label_output_buffer_frames, sliderValue.toInt()), style = MaterialTheme.typography.bodyMedium,
                  color = MaterialTheme.colorScheme.onSurfaceVariant)
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
@@ -602,9 +609,9 @@ private fun OutputBufferSlider(
                     valueRange = 1f..5f, steps = 3,
                 )
                 Row(Modifier.fillMaxWidth()) {
-                    Text("1帧", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.display_buffer_1frame), style = MaterialTheme.typography.labelSmall)
                     Spacer(Modifier.weight(1f))
-                    Text("5帧", style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.display_buffer_5frame), style = MaterialTheme.typography.labelSmall)
                 }
             }
         }
@@ -617,12 +624,12 @@ private fun MtkSwitch(engine: StreamEngine) {
     val pref = engine.prefConfig
     Column {
         var checked by remember { mutableStateOf(pref.forceMtkMaxOperatingRate) }
-        SettingSwitch("MTK专属选项", checked) {
+        SettingSwitch(stringResource(R.string.label_mtk_option), checked) {
             checked = it; pref.forceMtkMaxOperatingRate = it; 
                     engine.displaySettingsRestartPending = true
         }
         Text(
-            "强制MTK解码器高频运行以降低延迟，其它设备可能异常，默认关闭。",
+            stringResource(R.string.display_mtk_desc),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 16.dp, bottom = 4.dp),
@@ -639,10 +646,10 @@ private fun VideoSwitches(engine: StreamEngine) {
     var rotable by remember { mutableStateOf(pref.rotableScreen) }
 
     Column {
-        SettingSwitch("拉伸视频", stretch) { stretch = it; engine.stretchVideo = it }
-        SettingSwitch("反转分辨率", reverse) { reverse = it; pref.reverseResolution = it; 
+        SettingSwitch(stringResource(R.string.title_checkbox_stretch_video), stretch) { stretch = it; engine.stretchVideo = it }
+        SettingSwitch(stringResource(R.string.label_reverse_resolution), reverse) { reverse = it; pref.reverseResolution = it; 
                     ; engine.displaySettingsRestartPending = true }
-        SettingSwitch("可旋转画面", rotable) { rotable = it; pref.rotableScreen = it; 
+        SettingSwitch(stringResource(R.string.title_checkbox_rotable_screen), rotable) { rotable = it; pref.rotableScreen = it; 
                     ; engine.displaySettingsRestartPending = true }
     }
 }
@@ -656,12 +663,12 @@ private fun FramePacingSelector(engine: StreamEngine) {
     val pref = engine.prefConfig
 
     Column {
-        Text("帧时序模式", style = MaterialTheme.typography.bodyLarge,
+        Text(stringResource(R.string.label_frame_pacing), style = MaterialTheme.typography.bodyLarge,
              modifier = Modifier.padding(vertical = 6.dp))
         ChipSelector(
             options = listOf(
-                "最低延迟" to "0", "均衡" to "1", "均衡+FPS限制" to "2",
-                "最高流畅度" to "3", "超低延迟(实验)" to "4", "精确同步" to "5",
+                stringResource(R.string.pacing_latency) to "0", stringResource(R.string.abr_mode_balanced) to "1", stringResource(R.string.pacing_balanced_alt) to "2",
+                stringResource(R.string.pacing_smoothness) to "3", stringResource(R.string.pacing_experimental_low_latency) to "4", stringResource(R.string.pacing_precise_sync) to "5",
             ),
             selectedValue = pref.framePacing.toString(),
             onSelect = { value ->
@@ -709,7 +716,7 @@ private fun DisplaySection(engine: StreamEngine) {
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("当前显示器", style = MaterialTheme.typography.bodyLarge)
+                Text(stringResource(R.string.display_current_monitor), style = MaterialTheme.typography.bodyLarge)
                 Text(currentName, style = MaterialTheme.typography.bodyMedium,
                      color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
@@ -741,14 +748,14 @@ private fun DisplaySection(engine: StreamEngine) {
 
         val allResolutions = remember {
             val nativeLabel = if (nativeRes !in STANDARD_RESOLUTIONS) {
-                listOf("Native ($nativeRes)")
+                listOf(context.getString(R.string.resolution_prefix_native, nativeRes))
             } else emptyList()
-            STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { "$it (自定义)" }
+            STANDARD_RESOLUTIONS + nativeLabel + customResSet.map { context.getString(R.string.display_resolution_custom, it) }
         }
 
         var selectedRes by remember { mutableStateOf("${pref.width}x${pref.height}") }
 
-        Text("切换分辨率", style = MaterialTheme.typography.labelLarge,
+        Text(stringResource(R.string.display_switch_resolution), style = MaterialTheme.typography.labelLarge,
              color = MaterialTheme.colorScheme.primary,
              modifier = Modifier.padding(bottom = 4.dp))
 
@@ -808,7 +815,7 @@ private fun DisplaySection(engine: StreamEngine) {
         if (scaleSupported) {
             Row(verticalAlignment = Alignment.CenterVertically,
                  modifier = Modifier.padding(vertical = 4.dp)) {
-                Text("DPI缩放", Modifier.weight(1f))
+                Text(stringResource(R.string.display_dpi_scale), Modifier.weight(1f))
                 var expanded by remember { mutableStateOf(false) }
                 Box {
                     OutlinedButton(onClick = { expanded = true }) {
@@ -832,7 +839,7 @@ private fun DisplaySection(engine: StreamEngine) {
                                             } catch (_: Exception) { false }
                                         }
                                         if (!ok) {
-                                            ToastUtil.show(context, "DPI缩放设置失败", Toast.LENGTH_SHORT)
+                                            ToastUtil.show(context, context.getString(R.string.display_dpi_scale_failed), Toast.LENGTH_SHORT)
                                         }
                                     }
                                 },
@@ -856,7 +863,7 @@ private fun DisplaySection(engine: StreamEngine) {
 
             if (otherDisplays.isNotEmpty()) {
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text("其它显示器", style = MaterialTheme.typography.labelLarge,
+                Text(stringResource(R.string.display_other_monitors), style = MaterialTheme.typography.labelLarge,
                      color = MaterialTheme.colorScheme.primary,
                      modifier = Modifier.padding(bottom = 4.dp))
 
@@ -868,14 +875,14 @@ private fun DisplaySection(engine: StreamEngine) {
                     ) {
                         Text(display.name, modifier = Modifier.weight(1f))
                         if (display.isPrimary) {
-                            Text("[主]", style = MaterialTheme.typography.labelSmall,
+                            Text(stringResource(R.string.display_primary_tag), style = MaterialTheme.typography.labelSmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant,
                                  modifier = Modifier.padding(end = 8.dp))
                         }
                         TextButton(onClick = {
                             engine.changeDisplay(display.name, display.guid)
                         }) {
-                            Text("切换")
+                            Text(stringResource(R.string.display_switch))
                         }
                     }
                 }
@@ -926,7 +933,7 @@ private fun ExternalDisplaySection(engine: StreamEngine) {
     val pref = engine.prefConfig
     var useExternal by remember { mutableStateOf(pref.useExternalDisplay) }
 
-    SettingSwitch("使用外接显示器", useExternal) {
+    SettingSwitch(stringResource(R.string.label_use_external_display), useExternal) {
         useExternal = it
         pref.useExternalDisplay = it
     }
@@ -936,11 +943,11 @@ private fun ExternalDisplaySection(engine: StreamEngine) {
 private fun PipSwitch(engine: StreamEngine) {
     val pref = engine.prefConfig
     var checked by remember { mutableStateOf(pref.enablePip) }
-    SettingSwitch("画中画 (PiP)", checked) {
+    SettingSwitch(stringResource(R.string.label_pip), checked) {
         checked = it
         pref.enablePip = it
         if (it) {
-            ToastUtil.show(engine.activity, "离开应用时将自动进入画中画模式", Toast.LENGTH_SHORT)
+            ToastUtil.show(engine.activity, engine.activity.getString(R.string.display_pip_toast), Toast.LENGTH_SHORT)
         }
     }
 }

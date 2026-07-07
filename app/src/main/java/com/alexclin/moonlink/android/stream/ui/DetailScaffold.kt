@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 /**
  * 共享详情页导航栏组件。
@@ -42,7 +44,7 @@ fun DetailScaffold(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "返回",
+                    contentDescription = stringResource(R.string.btn_back),
                     modifier = Modifier.size(20.dp),
                 )
             }

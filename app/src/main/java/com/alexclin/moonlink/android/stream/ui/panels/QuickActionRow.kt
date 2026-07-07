@@ -43,11 +43,13 @@ import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.MoonLinkQuickActions
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
-import com.alexclin.moonlink.android.stream.ui.common.getActionLabel
+import com.alexclin.moonlink.android.stream.ui.common.getActionLabelResId
 import com.alexclin.moonlink.android.util.QuickActionRegistry
 import com.limelight.binding.input.KeyboardTranslator
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import com.alexclin.moonlink.android.R
+import androidx.compose.ui.res.stringResource
 
 @Composable
 fun QuickActionRow(
@@ -64,7 +66,7 @@ fun QuickActionRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "快捷操作",
+                stringResource(R.string.title_quick_actions),
                 style = MaterialTheme.typography.labelMedium.copy(
                     lineHeight = MaterialTheme.typography.labelMedium.fontSize,
                     platformStyle = PlatformTextStyle(includeFontPadding = false),
@@ -78,7 +80,7 @@ fun QuickActionRow(
                 contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
             ) {
                 Text(
-                    "编辑",
+                    stringResource(R.string.keyboard_edit_mode),
                     style = MaterialTheme.typography.labelSmall.copy(
                         lineHeight = MaterialTheme.typography.labelSmall.fontSize,
                         platformStyle = PlatformTextStyle(includeFontPadding = false),
@@ -105,7 +107,7 @@ fun QuickActionRow(
                     else -> null
                 }
                 val icon = getActionIcon(id, isActive)
-                val label = getActionLabel(id)
+                val label = stringResource(getActionLabelResId(id))
                 val isAvailable = id != "toggle_mic" || engine.prefConfig.enableMic
 
                 QuickActionChip(
@@ -121,7 +123,7 @@ fun QuickActionRow(
                         } else {
                             ToastUtil.show(
                                 context,
-                                "麦克风功能不可用，需要PC端安装对应虚拟驱动",
+                                context.getString(R.string.quick_action_mic_unavailable),
                                 Toast.LENGTH_SHORT,
                             )
                         }
@@ -132,7 +134,7 @@ fun QuickActionRow(
             item {
                 QuickActionChip(
                     modifier = Modifier.padding(end = 4.dp),
-                    label = "终止串流",
+                    label = stringResource(R.string.quick_action_terminate),
                     icon = Icons.Default.PowerSettingsNew,
                     isFixed = true,
                     onClick = { engine.disconnectAndQuit() },
@@ -142,7 +144,7 @@ fun QuickActionRow(
                 item {
                     QuickActionChip(
                         modifier = Modifier.padding(end = 4.dp),
-                        label = "暂停串流",
+                        label = stringResource(R.string.quick_action_pause_stream),
                         icon = Icons.Default.ExitToApp,
                         isFixed = true,
                         onClick = { engine.disconnect() },
@@ -225,7 +227,7 @@ private fun QuickActionChip(
                 ) {
                     Icon(
                         Icons.Default.Close,
-                        contentDescription = "删除",
+                        contentDescription = stringResource(R.string.editor_content_desc_delete),
                         modifier = Modifier.size(12.dp),
                         tint = Color.Red,
                     )

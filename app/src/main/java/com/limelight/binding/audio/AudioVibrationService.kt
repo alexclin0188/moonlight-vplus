@@ -12,6 +12,7 @@ import androidx.annotation.RequiresApi
 
 import com.alexclin.moonlink.android.util.LimeLog
 import com.limelight.binding.input.ControllerHandler
+import com.limelight.nvstream.jni.MoonBridge
 
 /**
  * Audio-driven vibration service for Android.
@@ -32,7 +33,7 @@ import com.limelight.binding.input.ControllerHandler
  *   - Music/Rhythm (1): Short pulse vibration for beats/onsets
  *   - Auto (2): C++ layer auto-detects content type
  */
-class AudioVibrationService(context: Context) {
+class AudioVibrationService(context: Context) : MoonBridge.BassEnergyListener {
 
     private var enabled = false
     private var strength = 100       // 0-100
@@ -129,7 +130,7 @@ class AudioVibrationService(context: Context) {
      * @param intensity Bass energy intensity (0-100)
      * @param lowFreqRatio Low-frequency energy ratio (0-100), for motor allocation
      */
-    fun handleBassEnergy(intensity: Int, lowFreqRatio: Int) {
+    override fun onBassEnergy(intensity: Int, lowFreqRatio: Int) {
         if (!enabled) return
 
         if (intensity == 0) {

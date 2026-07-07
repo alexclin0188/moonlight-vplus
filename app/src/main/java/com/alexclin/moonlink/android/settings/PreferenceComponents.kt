@@ -12,7 +12,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
 import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.R
 
 /**
  * Shared Preference access helpers for Compose settings screens.
@@ -158,7 +160,7 @@ fun ListPreference(
             },
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.dialog_button_cancel))
                 }
             },
         )
@@ -248,12 +250,12 @@ fun SeekBarPreference(
                     prefs.edit().putInt(key, sliderValue.toInt()).apply()
                     showDialog = false
                 }) {
-                    Text("确定")
+                    Text(stringResource(R.string.dialog_button_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("取消")
+                    Text(stringResource(R.string.dialog_button_cancel))
                 }
             },
         )
@@ -298,7 +300,7 @@ fun MultiSelectPreference(
             Text(title, style = MaterialTheme.typography.bodyLarge)
         },
         supportingContent = if (summary.isNotEmpty()) {
-            { Text(if (enabled) "$summary（已选 $enabledCount 项）" else summary, style = MaterialTheme.typography.bodySmall) }
+            { Text(if (enabled) context.getString(R.string.pref_item_selected_format, summary, enabledCount) else summary, style = MaterialTheme.typography.bodySmall) }
         } else null,
         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier
@@ -340,7 +342,7 @@ fun MultiSelectPreference(
             },
             confirmButton = {
                 TextButton(onClick = { showDialog = false }) {
-                    Text("确定")
+                    Text(stringResource(R.string.dialog_button_confirm))
                 }
             },
         )

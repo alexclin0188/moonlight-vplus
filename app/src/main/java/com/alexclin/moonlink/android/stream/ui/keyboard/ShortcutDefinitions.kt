@@ -11,7 +11,7 @@ package com.alexclin.moonlink.android.stream.ui.keyboard
  */
 data class PresetShortcut(
     val label: String,
-    val description: String,
+    val descriptionResId: Int,
     val keys: List<Short>,
 )
 
@@ -48,22 +48,22 @@ object ShortcutDefinitions {
      */
     val presets: List<PresetShortcut> = listOf(
         // ── 第1行（编辑按钮由 UI 层处理） ──
-        PresetShortcut("Ctrl+C", "复制",    listOf(VK_LCONTROL, VK_C)),
-        PresetShortcut("Ctrl+V", "粘贴",    listOf(VK_LCONTROL, VK_V)),
-        PresetShortcut("Ctrl+X", "剪切",    listOf(VK_LCONTROL, VK_X)),
-        PresetShortcut("Ctrl+A", "全选",    listOf(VK_LCONTROL, VK_A)),
-        PresetShortcut("Win",    "开始菜单", listOf(VK_LWIN)),
+        PresetShortcut("Ctrl+C", com.alexclin.moonlink.android.R.string.shortcut_desc_copy,    listOf(VK_LCONTROL, VK_C)),
+        PresetShortcut("Ctrl+V", com.alexclin.moonlink.android.R.string.editor_toolbar_paste,    listOf(VK_LCONTROL, VK_V)),
+        PresetShortcut("Ctrl+X", com.alexclin.moonlink.android.R.string.shortcut_desc_cut,    listOf(VK_LCONTROL, VK_X)),
+        PresetShortcut("Ctrl+A", com.alexclin.moonlink.android.R.string.shortcut_desc_select_all,    listOf(VK_LCONTROL, VK_A)),
+        PresetShortcut("Win",    com.alexclin.moonlink.android.R.string.shortcut_desc_start_menu, listOf(VK_LWIN)),
 
-        // ── 第2行 ──
-        PresetShortcut("Ctrl+Z",   "撤销",     listOf(VK_LCONTROL, VK_Z)),
-        PresetShortcut("Ctrl+S",   "保存",     listOf(VK_LCONTROL, VK_S)),
-        PresetShortcut("Win+D",    "显示桌面",  listOf(VK_LWIN, VK_D)),
-        PresetShortcut("Win+Tab",  "切换窗口",  listOf(VK_LWIN, VK_TAB)),
-        PresetShortcut("Win+L",    "锁定屏幕",  listOf(VK_LWIN, VK_L)),
-        PresetShortcut("Alt+Tab",  "应用切换",  listOf(VK_MENU, VK_TAB)),
+        // ── Row 2 ──
+        PresetShortcut("Ctrl+Z",   com.alexclin.moonlink.android.R.string.shortcut_desc_undo,     listOf(VK_LCONTROL, VK_Z)),
+        PresetShortcut("Ctrl+S",   com.alexclin.moonlink.android.R.string.editor_save,     listOf(VK_LCONTROL, VK_S)),
+        PresetShortcut("Win+D",    com.alexclin.moonlink.android.R.string.shortcut_desc_show_desktop,  listOf(VK_LWIN, VK_D)),
+        PresetShortcut("Win+Tab",  com.alexclin.moonlink.android.R.string.shortcut_desc_switch_window,  listOf(VK_LWIN, VK_TAB)),
+        PresetShortcut("Win+L",    com.alexclin.moonlink.android.R.string.shortcut_desc_lock_screen,  listOf(VK_LWIN, VK_L)),
+        PresetShortcut("Alt+Tab",  com.alexclin.moonlink.android.R.string.shortcut_desc_switch_app,  listOf(VK_MENU, VK_TAB)),
 
-        // ── 第3行（滚动可见） ──
-        PresetShortcut("Alt+F4",          "关闭窗口",   listOf(VK_MENU, VK_F4)),
-        PresetShortcut("Ctrl+Shift+Esc",  "任务管理器",  listOf(VK_LCONTROL, VK_LSHIFT, VK_ESCAPE)),
+        // ── Row 3 (scrollable) ──
+        PresetShortcut("Alt+F4",          com.alexclin.moonlink.android.R.string.shortcut_desc_close_window,   listOf(VK_MENU, VK_F4)),
+        PresetShortcut("Ctrl+Shift+Esc",  com.alexclin.moonlink.android.R.string.shortcut_desc_task_manager,  listOf(VK_LCONTROL, VK_LSHIFT, VK_ESCAPE)),
     )
 }

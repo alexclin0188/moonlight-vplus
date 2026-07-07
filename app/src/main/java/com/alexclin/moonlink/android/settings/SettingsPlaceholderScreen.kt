@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 /**
  * 设置 Tab 占位页面。
@@ -21,7 +23,7 @@ fun SettingsPlaceholderScreen() {
             TopAppBar(
                 title = {
                     Text(
-                        "设置",
+                        stringResource(R.string.settings_title),
                         style = MaterialTheme.typography.titleLarge,
                     )
                 },
@@ -46,13 +48,13 @@ fun SettingsPlaceholderScreen() {
                 )
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    "设置",
+                    stringResource(R.string.settings_title),
                     style = MaterialTheme.typography.headlineMedium,
                     color = MaterialTheme.colorScheme.onBackground,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "设置分类页面将在此处实现",
+                    stringResource(R.string.settings_placeholder_desc),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                 )

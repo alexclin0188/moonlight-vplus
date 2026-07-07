@@ -69,6 +69,8 @@ import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.util.ToastUtil
 import android.widget.Toast
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 
 /**
  * 属性编辑面板 —— 6 列网格布局（匹配设计文档）。
@@ -243,7 +245,7 @@ fun EditorPropertiesPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl1: 按键名（右对齐）
-                GridLabel("按键名", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.customkey_label_name), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 输入框（使用 pendingText，失焦时提交）
                 Box(modifier = Modifier.weight(1.5f).padding(end = 2.dp)) {
@@ -256,7 +258,7 @@ fun EditorPropertiesPanel(
                         onCommit = {
                             if (isDuplicateElementName(pendingText, existingTextNames, currentText = text)) {
                                 val trimmed = pendingText.trim()
-                                ToastUtil.show(context, "已存在同名元素「$trimmed」，请修改名称", Toast.LENGTH_SHORT)
+                                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmed), Toast.LENGTH_SHORT)
                                 pendingText = text
                                 return@InlineTextField
                             }
@@ -285,7 +287,7 @@ fun EditorPropertiesPanel(
                     }
                 }
                 // Lbl1: 键值（右对齐）
-                GridLabel("按键值", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_key_value), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 选择框
                 val keyLabel = getKeyLabelByValue(value) ?: value
@@ -306,13 +308,13 @@ fun EditorPropertiesPanel(
                                 else MaterialTheme.colorScheme.onSurfaceVariant).copy(alpha = keyAlpha)),
                             maxLines = 1, modifier = Modifier.weight(1f))
                         Icon(Icons.Default.ArrowDropDown,
-                            contentDescription = "选择键值",
+                            contentDescription = stringResource(R.string.editor_content_desc_select_key),
                             modifier = Modifier.size(12.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = keyAlpha))
                     }
                 }
                 // Lbl2: 粗细（右对齐）
-                GridLabel("边框粗细", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_border_thickness), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: 粗细值
                 StepperIntField(getValue = { thick }, value = thick, onValueChange = { thick = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
@@ -321,11 +323,11 @@ fun EditorPropertiesPanel(
                 TextButton(onClick = { onOpenColorEditor(snapshot()) },
                     modifier = Modifier.weight(1.5f).wrapContentHeight(),
                     contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                    Text("颜色设置", style = MaterialTheme.typography.labelSmall,
+                    Text(stringResource(R.string.editor_btn_color_settings), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary)
                 }
                 // Lbl4: 不透明度（右对齐）
-                GridLabel("不透明度", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_opacity), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Content: 滑块（占多格）
                 Box(Modifier.weight(3f).padding(end = 4.dp)) {
@@ -353,7 +355,7 @@ fun EditorPropertiesPanel(
                     Icon(Icons.Default.Check, contentDescription = null,
                         tint = androidx.compose.ui.graphics.Color(0xFF4CAF50), modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("保存", style = MaterialTheme.typography.labelSmall,
+                    Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelSmall,
                         color = androidx.compose.ui.graphics.Color(0xFF4CAF50))
                 }
             }
@@ -366,13 +368,13 @@ fun EditorPropertiesPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl2: W宽（右对齐）
-                GridLabel("按钮宽度", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_width), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: W值
                 StepperIntField(getValue = { width }, value = width, onValueChange = { width = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: H高（右对齐）
-                GridLabel("按钮高度", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_height), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: H值（圆形模式禁用，显示宽度值）
                 StepperIntField(getValue = { if (isCircle) width else height },
@@ -381,7 +383,7 @@ fun EditorPropertiesPanel(
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp),
                     enabled = !isCircle)
                 // Lbl3: 圆角（右对齐）
-                GridLabel("边框圆角", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_corner_radius), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: 圆角值
                 StepperIntField(getValue = { if (isCircle) (currentWidth() / 2).toString() else radius },
@@ -424,7 +426,7 @@ fun EditorPropertiesPanel(
                             checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
                         ),
                     )
-                    Text("圆形",
+                    Text(stringResource(R.string.editor_label_circle),
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 9.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -432,7 +434,7 @@ fun EditorPropertiesPanel(
                 }
 
                 // Lbl4: 文字大小（右对齐）
-                GridLabel("文字大小", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_text_size), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Content: 滑块（占多格）
                 Box(Modifier.weight(3f).padding(end = 4.dp)) {
@@ -454,7 +456,7 @@ fun EditorPropertiesPanel(
                     Icon(Icons.Default.ContentCopy, contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("复制", style = MaterialTheme.typography.labelSmall,
+                    Text(stringResource(R.string.editor_content_desc_duplicate), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary)
                 }
             }
@@ -467,19 +469,19 @@ fun EditorPropertiesPanel(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Lbl2: X坐标（右对齐）
-                GridLabel("X坐标", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_x), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input2: X值
                 StepperIntField(getValue = { centralX }, value = centralX, onValueChange = { centralX = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl3: Y坐标（右对齐）
-                GridLabel("Y坐标", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_y), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input3: Y值
                 StepperIntField(getValue = { centralY }, value = centralY, onValueChange = { centralY = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 // Lbl1: 图层（右对齐）
-                GridLabel("所在图层", Modifier.weight(0.8f), rightAlign = true)
+                GridLabel(stringResource(R.string.editor_label_layer), Modifier.weight(0.8f), rightAlign = true)
                 Spacer(Modifier.width(2.dp))
                 // Input1: 图层值
                 StepperIntField(getValue = { layer }, value = layer, onValueChange = { layer = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
@@ -499,7 +501,7 @@ fun EditorPropertiesPanel(
                         TextButton(onClick = { onOpenTypeSpecificEditor(snapshot()) },
                             modifier = Modifier.weight(1f).wrapContentHeight(),
                             contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                            Text("${element.type.displayName}属性设置", style = MaterialTheme.typography.labelSmall,
+                            Text(context.getString(R.string.editor_btn_type_settings, element.type.displayName), style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary)
                         }
                     }
@@ -510,7 +512,7 @@ fun EditorPropertiesPanel(
                     Icon(Icons.Default.Delete, contentDescription = null,
                         tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(14.dp))
                     Spacer(Modifier.width(2.dp))
-                    Text("删除", style = MaterialTheme.typography.labelSmall,
+                    Text(stringResource(R.string.editor_content_desc_delete), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.error)
                 }
             }

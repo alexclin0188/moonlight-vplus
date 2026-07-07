@@ -16,6 +16,7 @@ import com.alexclin.moonlink.android.util.ToastUtil
 import com.alexclin.moonlink.android.stream.StreamIntentKeys
 import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.util.PlatformBinding
+import com.limelight.binding.audio.AudioVibrationService
 import com.limelight.binding.audio.SmartAudioRenderer
 import com.limelight.binding.input.ControllerHandler
 import com.limelight.binding.input.GameInputDevice
@@ -61,6 +62,7 @@ import kotlin.math.roundToInt
 import java.io.ByteArrayInputStream
 import java.security.cert.CertificateFactory
 import java.security.cert.X509Certificate
+import com.alexclin.moonlink.android.R
 
 /**
  * 封装 Moonlight 串流核心引擎：NvConnection 创建、解码器、音频渲染。
@@ -117,6 +119,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 音频渲染器 */
     private var audioRenderer: SmartAudioRenderer? = null
+
+    /** 音频驱动振动服务 */
+    private var audioVibrationService: AudioVibrationService? = null
 
     /** 是否已连接 */
     var connected = false
@@ -309,8 +314,16 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             // 2d. 用最终值重新同步 NativeTouchContext 静态参数
             syncNativeTouchContext()
 
+            // 同步 Compose 可观察的触控模式状态（与 restoreSavedTouchMode 逻辑一致）
+            touchModeState = when {
+                prefConfig.touchscreenTrackpad -> 2
+                prefConfig.enableEnhancedTouch -> 0
+                prefConfig.enableNativeMousePointer -> 3
+                else -> 1
+            }
+
             // 3. 从 Intent 提取参数
-            host = intent.getStringExtra(StreamIntentKeys.EXTRA_HOST) ?: return fail("缺少 host")
+            host = intent.getStringExtra(StreamIntentKeys.EXTRA_HOST) ?: return fail(activity.getString(R.string.engine_missing_host))
             port = intent.getIntExtra(StreamIntentKeys.EXTRA_PORT, NvHTTP.DEFAULT_HTTP_PORT)
             httpsPort = intent.getIntExtra(StreamIntentKeys.EXTRA_HTTPS_PORT, 0)
             uniqueId = intent.getStringExtra(StreamIntentKeys.EXTRA_UNIQUEID) ?: ""
@@ -382,7 +395,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             true
         } catch (e: Exception) {
             LimeLog.severe("StreamEngine: 初始化失败 ${e.message}")
-            ToastUtil.show(activity, "串流初始化失败: ${e.message}", Toast.LENGTH_LONG)
+            ToastUtil.show(activity, activity.getString(R.string.engine_init_failed, e.message), Toast.LENGTH_LONG)
             false
         }
     }
@@ -448,7 +461,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         // 2) 检查 AVC 解码器是否可用（旧代码 line 479）
         if (decoderRenderer?.isAvcSupported() != true) {
-            ToastUtil.show(activity, "设备不支持 H.264 硬件解码", Toast.LENGTH_LONG)
+            ToastUtil.show(activity, activity.getString(R.string.engine_no_h264_decoder), Toast.LENGTH_LONG)
             throw IllegalStateException("No AVC decoder available")
         }
 
@@ -699,6 +712,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         LimeLog.info("StreamEngine: conn.start() 已调用")
 
+        // 初始化音频驱动振动服务（在 conn.start 后、BassEnergyAnalyzer 回调到来前注册监听器）
+        initAudioVibrationService()
+
         // 初始化外设监听
         initPeripheralMonitoring()
 
@@ -719,6 +735,60 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             // 此时 SV 虽已创建但尚未附加到窗口，defer 到下一帧以确保 findViewById 能找到
             handler.post { initInputCapture() }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // 音频驱动振动服务
+    // ═══════════════════════════════════════════════════════════
+
+    /** 初始化音频驱动振动服务，注册 BassEnergyListener 并配置原生分析器 */
+    private fun initAudioVibrationService() {
+        val handler = controllerHandler
+        val svc = AudioVibrationService(activity).apply {
+            controllerHandler = handler
+            setSettings(
+                enabled = prefConfig.enableAudioVibration,
+                strength = prefConfig.audioVibrationStrength,
+                vibrationMode = mapAudioVibrationMode(prefConfig.audioVibrationMode),
+                sceneMode = mapAudioVibrationScene(prefConfig.audioVibrationScene),
+            )
+        }
+        MoonBridge.setBassEnergyListener(svc)
+        MoonBridge.setBassEnergyEnabled(prefConfig.enableAudioVibration)
+        MoonBridge.setBassEnergySensitivity(prefConfig.audioVibrationStrength / 200f)
+        MoonBridge.setBassEnergySceneMode(mapNativeBassEnergyScene(prefConfig.audioVibrationScene))
+        audioVibrationService = svc
+        LimeLog.info("StreamEngine: AudioVibrationService 已初始化")
+    }
+
+    /**
+     * 将 HostSettings 的振动路由模式映射为 [AudioVibrationService] 的内部常量。
+     *
+     * UI 层使用 "speaker" / "headset"（指振动输出目标），
+     * AudioVibrationService 使用 "device" / "gamepad" 表示物理输出设备。
+     */
+    private fun mapAudioVibrationMode(mode: String): String = when (mode) {
+        "speaker" -> AudioVibrationService.MODE_DEVICE_ONLY
+        "headset" -> AudioVibrationService.MODE_GAMEPAD_ONLY
+        else -> AudioVibrationService.MODE_AUTO
+    }
+
+    /**
+     * 将 HostSettings 的音频振动场景值（0=通用 1=游戏 2=电影 3=音乐）
+     * 映射为 [AudioVibrationService] 的 SCENE_* 常量（0=Game 1=Music 2=Auto）。
+     */
+    private fun mapAudioVibrationScene(scene: Int): Int = when (scene) {
+        3 -> AudioVibrationService.SCENE_MUSIC
+        else -> AudioVibrationService.SCENE_GAME
+    }
+
+    /**
+     * 将 HostSettings 的音频振动场景值映射为原生 BassEnergyAnalyzer 的场景值。
+     * 原生层 SCENE_GAME=0, SCENE_MUSIC=1, SCENE_AUTO=2。
+     */
+    private fun mapNativeBassEnergyScene(scene: Int): Int = when (scene) {
+        3 -> 1  // 音乐 → SCENE_MUSIC
+        else -> 0  // 通用/游戏/电影 → SCENE_GAME
     }
 
     private fun initTouchHandler(view: View) {
@@ -915,7 +985,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             val connMgr = activity.getSystemService(Context.CONNECTIVITY_SERVICE)
                 as ConnectivityManager
             if (connMgr.isActiveNetworkMetered) {
-                displayTransientMessage("当前为计费网络，请注意流量消耗")
+                displayTransientMessage(activity.getString(R.string.engine_metered_network))
             }
         } catch (_: Exception) {}
     }
@@ -999,14 +1069,14 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.muteClientAudio = isAudioMuted
         prefConfig.writePreferences(activity)
         syncToHostSettings { it.copy(muteClientAudio = isAudioMuted) }
-        displayTransientMessage(if (isAudioMuted) "声音已关闭" else "声音已开启")
+        displayTransientMessage(if (isAudioMuted) activity.getString(R.string.engine_audio_off) else activity.getString(R.string.engine_audio_on))
     }
 
     fun toggleMicrophoneButton() {
         prefConfig.enableMic = !prefConfig.enableMic
         prefConfig.writePreferences(activity)
         syncToHostSettings { it.copy(enableMic = prefConfig.enableMic) }
-        displayTransientMessage(if (prefConfig.enableMic) "麦克风已开启" else "麦克风已关闭")
+        displayTransientMessage(if (prefConfig.enableMic) activity.getString(R.string.engine_mic_on) else activity.getString(R.string.engine_mic_off))
     }
 
     /** 设置暂停串流支持开关，同步到全局偏好和主机设置 */
@@ -1103,7 +1173,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             val device = InputDevice.getDevice(id) ?: continue
             // 仅识别外部设备（USB/蓝牙等外接，排除内置）
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !device.isExternal) continue
-            val name = device.name ?: "未知设备"
+            val name = device.name ?: activity.getString(R.string.engine_device_name_unknown)
             val descriptor = try { device.descriptor } catch (_: Exception) { null }
             // 使用 descriptor 去重：同一物理设备可能被识别为多个逻辑设备
             if (descriptor != null && !seenDescriptors.add(descriptor)) continue
@@ -1143,20 +1213,20 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             val accepted = peripheralDevices.any { it.deviceId == id }
             if (accepted) {
                 val device = InputDevice.getDevice(id)
-                val deviceName = device?.name ?: "外设"
+                val deviceName = device?.name ?: activity.getString(R.string.engine_unknown_device)
                 activity.runOnUiThread {
-                    ToastUtil.show(activity, "$deviceName 已连接", Toast.LENGTH_SHORT)
+                    ToastUtil.show(activity, activity.getString(R.string.engine_device_connected, deviceName), Toast.LENGTH_SHORT)
                 }
             }
         }
         override fun onInputDeviceRemoved(id: Int) {
             // 先记录是否在列表内，再扫描
             val wasInList = peripheralDevices.find { it.deviceId == id }
-            val deviceName = wasInList?.name ?: "外设"
+            val deviceName = wasInList?.name ?: activity.getString(R.string.engine_unknown_device)
             scanPeripherals()
             if (wasInList != null) {
                 activity.runOnUiThread {
-                    ToastUtil.show(activity, "$deviceName 已断开", Toast.LENGTH_SHORT)
+                    ToastUtil.show(activity, activity.getString(R.string.engine_device_disconnected, deviceName), Toast.LENGTH_SHORT)
                 }
             }
         }
@@ -1286,7 +1356,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 当前方案的名称，从数据库查询。内置方案固定返回"内置虚拟手柄方案"。 */
     val currentSchemeName: String
         get() {
-            if (currentSchemeConfigId == 0L) return "内置虚拟手柄方案"
+            if (currentSchemeConfigId == 0L) return activity.getString(R.string.editor_scheme_default_name)
             try {
                 val db = KeymappingDatabaseHelper(activity)
                 val name = db.queryConfigAttribute(
@@ -1294,9 +1364,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                     com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_STRING_CONFIG_NAME,
                     "未命名"
                 )
-                return name as? String ?: "未命名"
+                return name as? String ?: activity.getString(R.string.engine_unnamed)
             } catch (_: Exception) {
-                return "未命名"
+                return activity.getString(R.string.engine_unnamed)
             }
         }
 
@@ -1370,9 +1440,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         syncToHostSettings { it.copy(enablePerfOverlay = prefConfig.enablePerfOverlay, perfOverlayLocked = prefConfig.perfOverlayLocked) }
         displayTransientMessage(
             when {
-                prefConfig.enablePerfOverlay && !prefConfig.perfOverlayLocked -> "性能面板（可拖动）"
-                prefConfig.enablePerfOverlay -> "性能面板（已锁定）"
-                else -> "性能面板已隐藏"
+                prefConfig.enablePerfOverlay && !prefConfig.perfOverlayLocked -> activity.getString(R.string.engine_perf_draggable)
+                prefConfig.enablePerfOverlay -> activity.getString(R.string.engine_perf_locked)
+                else -> activity.getString(R.string.engine_perf_hidden)
             }
         )
     }
@@ -1381,7 +1451,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.enablePip = !prefConfig.enablePip
         prefConfig.writePreferences(activity)
         syncToHostSettings { it.copy(enablePip = prefConfig.enablePip) }
-        displayTransientMessage(if (prefConfig.enablePip) "画中画已开启" else "画中画已关闭")
+        displayTransientMessage(if (prefConfig.enablePip) activity.getString(R.string.engine_pip_on) else activity.getString(R.string.engine_pip_off))
     }
 
     fun toggleGyro() {
@@ -1391,7 +1461,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         } else {
             disableGyro()
         }
-        displayTransientMessage(if (enable) "体感已开启" else "体感已关闭")
+        displayTransientMessage(if (enable) activity.getString(R.string.engine_gyro_on) else activity.getString(R.string.engine_gyro_off))
     }
 
     /** 开启体感右摇杆模式，注册陀螺仪传感器 */
@@ -1441,7 +1511,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         prefConfig.enableAdaptiveBitrate = !prefConfig.enableAdaptiveBitrate
         prefConfig.writePreferences(activity)
         syncToHostSettings { it.copy(enableAdaptiveBitrate = prefConfig.enableAdaptiveBitrate) }
-        displayTransientMessage(if (prefConfig.enableAdaptiveBitrate) "自适应码率已开启" else "自适应码率已关闭")
+        displayTransientMessage(if (prefConfig.enableAdaptiveBitrate) activity.getString(R.string.engine_abr_on) else activity.getString(R.string.engine_abr_off))
     }
 
     /** 启动智能码率（如设置已开启）。在连接建立后调用，也供外部切换 AUTO 时调用。*/
@@ -1767,18 +1837,18 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         handler.post {
             if (activity.isFinishing) return@post
             onStageUpdate?.invoke(stage, false, true)
-            var msg = "连接失败: $stage (错误码 $errorCode)"
+            var msg = activity.getString(R.string.engine_conn_failed_msg, stage, errorCode)
             if (errorCode == 503) {
-                msg = "连接失败: Sunshine 拒绝显示模式设置\n请检查在 Sunshine 面板中虚拟显示器 (VDD) 配置。"
+                msg = activity.getString(R.string.engine_conn_failed_vdd)
             }
             if (portFlags != 0) {
-                msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
+                msg += "\n\n${activity.getString(R.string.engine_port_check_failed)}\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
             }
             activeDialog = android.app.AlertDialog.Builder(activity)
-                .setTitle("连接失败")
+                .setTitle(activity.getString(R.string.engine_conn_failed_title))
                 .setMessage(msg)
                 .setCancelable(false)
-                .setPositiveButton("确定") { _, _ ->
+                .setPositiveButton(activity.getString(R.string.ok)) { _, _ ->
                     activeDialog = null
                     activity.finish()
                 }
@@ -1819,6 +1889,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         connected = false
         // 停止智能码率
         stopAdaptiveBitrate()
+        // 停止音频振动（连接断开时立即停止，防止设备/手柄持续震动）
+        audioVibrationService?.stop()
         handler.post {
             // 如果正在切换分辨率/显示器，跳过 UI 提示和 finish，新 Activity 会接管
             if (isChangingResolution) return@post
@@ -1831,10 +1903,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                         val avgLat = decoderRenderer?.getAverageEndToEndLatency() ?: 0
                         val avgDecLat = decoderRenderer?.getAverageDecoderLatency() ?: 0
                         val latencyText = buildString {
-                            if (avgLat > 0) append("端到端延迟: ${avgLat}ms")
+                            if (avgLat > 0) append(activity.getString(R.string.engine_latency_end_to_end, avgLat))
                             if (avgDecLat > 0) {
                                 if (isNotEmpty()) append(" | ")
-                                append("解码延迟: ${avgDecLat}ms")
+                                append(activity.getString(R.string.engine_latency_decode, avgDecLat))
                             }
                         }
                         if (latencyText.isNotEmpty()) {
@@ -1845,23 +1917,23 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 if (errorCode != 0 && errorCode != MoonBridge.ML_ERROR_GRACEFUL_TERMINATION) {
                     val portFlags = MoonBridge.getPortFlagsFromTerminationErrorCode(errorCode)
                     var msg = when (errorCode) {
-                        MoonBridge.ML_ERROR_NO_VIDEO_TRAFFIC -> "未收到视频数据，请检查网络连接"
-                        MoonBridge.ML_ERROR_NO_VIDEO_FRAME -> "未收到视频帧，请检查网络连接"
+                        MoonBridge.ML_ERROR_NO_VIDEO_TRAFFIC -> activity.getString(R.string.engine_no_video_traffic)
+                        MoonBridge.ML_ERROR_NO_VIDEO_FRAME -> activity.getString(R.string.engine_no_video_frame)
                         MoonBridge.ML_ERROR_UNEXPECTED_EARLY_TERMINATION,
-                        MoonBridge.ML_ERROR_PROTECTED_CONTENT -> "串流被意外中断"
-                        MoonBridge.ML_ERROR_FRAME_CONVERSION -> "视频格式转换失败"
-                        else -> "串流已断开 (${if (kotlin.math.abs(errorCode) > 1000)
-                            "0x${Integer.toHexString(errorCode)}" else errorCode.toString()})"
+                        MoonBridge.ML_ERROR_PROTECTED_CONTENT -> activity.getString(R.string.engine_unexpected_termination)
+                        MoonBridge.ML_ERROR_FRAME_CONVERSION -> activity.getString(R.string.engine_frame_conversion_failed)
+                        else -> activity.getString(R.string.engine_disconnected_format, if (kotlin.math.abs(errorCode) > 1000)
+                            "0x${Integer.toHexString(errorCode)}" else errorCode.toString())
                     }
                     if (portFlags != 0) {
-                        msg += "\n\n端口检测失败，请检查路由器端口转发设置:\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
+                        msg += "\n\n${activity.getString(R.string.engine_port_check_failed)}\n${MoonBridge.stringifyPortFlags(portFlags, "\n")}"
                     }
                     if (!activity.isFinishing) {
                         activeDialog = android.app.AlertDialog.Builder(activity)
-                        .setTitle("串流已断开")
+                        .setTitle(activity.getString(R.string.engine_disconnected_title))
                         .setMessage(msg)
                         .setCancelable(false)
-                        .setPositiveButton("确定") { _, _ ->
+                        .setPositiveButton(activity.getString(R.string.ok)) { _, _ ->
                             activeDialog = null
                             activity.finish()
                         }
@@ -1930,9 +2002,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             lastFrameWidth = width
             lastFrameHeight = height
             handler.post {
-                val orientation = if (width > height) "横屏" else "竖屏"
+                val orientation = if (width > height) activity.getString(R.string.engine_orientation_landscape) else activity.getString(R.string.engine_orientation_portrait)
                 LimeLog.info("StreamEngine: 分辨率已变更为 ${width}x${height}，方向 $orientation")
-                ToastUtil.show(activity, "主机分辨率已变更为 ${width}x${height}", Toast.LENGTH_SHORT)
+                ToastUtil.show(activity, activity.getString(R.string.engine_resolution_changed, width, height), Toast.LENGTH_SHORT)
             }
         }
     }
@@ -2088,6 +2160,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         releaseWifiLocks()
         clipboardSyncManager?.stop()
         clipboardSyncManager = null
+        // 停止音频振动服务
+        audioVibrationService?.stop()
+        audioVibrationService = null
+
         controllerHandler = null
         inputCaptureProvider?.destroy()
         inputCaptureProvider = null

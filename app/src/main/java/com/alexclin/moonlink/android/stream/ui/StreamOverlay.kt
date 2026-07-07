@@ -53,6 +53,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -534,11 +536,11 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
                 trackColor = Color(0x33FFFFFF),
             )
 
-            // 进度文字（固定前缀 "启动中" + 连接阶段）
+            // 进度文字（固定前缀 + 连接阶段）
             val progressText = if (!connectionStage.isNullOrEmpty()) {
-                "启动中 $connectionStage"
+                context.getString(R.string.stream_starting_stage, connectionStage)
             } else {
-                "启动中"
+                context.getString(R.string.stream_starting)
             }
             Text(
                 text = progressText,
@@ -628,7 +630,7 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
                 onDismissRequest = { detailTitle = null },
                 title = { Text(detailTitle!!) },
                 text = { Text(detailMessage ?: "") },
-                confirmButton = { TextButton(onClick = { detailTitle = null }) { Text("确定") } },
+                confirmButton = { TextButton(onClick = { detailTitle = null }) { Text(stringResource(R.string.dialog_button_confirm)) } },
             )
         }
 

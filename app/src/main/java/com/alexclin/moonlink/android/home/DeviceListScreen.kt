@@ -84,11 +84,11 @@ private val ALL_MENU_ACTIONS = listOf(
     DeviceMenuAction("wol",            R.string.pcview_menu_send_wol)           { it.state == ComputerDetails.State.OFFLINE },
     DeviceMenuAction("delete",         R.string.pcview_menu_delete_pc)          { it.pairState == PairingManager.PairState.PAIRED },
     DeviceMenuAction("resume",         R.string.menu_resume_stream)             { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
-    DeviceMenuAction("quit",           R.string.menu_quit_app)                  { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
+    DeviceMenuAction("quit",           R.string.action_quit_app)                  { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
     DeviceMenuAction("applist",        R.string.pcview_menu_app_list)           { true },
     DeviceMenuAction("detail",         R.string.pcview_menu_details)            { true },
     DeviceMenuAction("sleep",          R.string.send_sleep_command)             { it.state == ComputerDetails.State.ONLINE },
-    DeviceMenuAction("iperf",          R.string.network_bandwidth_test)         { true },
+    DeviceMenuAction("iperf",          R.string.action_network_bandwidth_test)         { true },
     DeviceMenuAction("webui",          R.string.pcview_menu_open_webui)         { true },
     DeviceMenuAction("disable_ipv6",   R.string.pcview_menu_disable_ipv6)       { true },
     DeviceMenuAction("nettest",        R.string.pcview_menu_test_network)       { true },
@@ -96,7 +96,7 @@ private val ALL_MENU_ACTIONS = listOf(
         it.state == ComputerDetails.State.ONLINE &&
         it.pairState == PairingManager.PairState.PAIRED
     },
-    DeviceMenuAction("gs_eol",         R.string.pcview_menu_eol)                { it.nvidiaServer },
+    DeviceMenuAction("gs_eol",         R.string.action_gamestream_eol)                { it.nvidiaServer },
 )
 
 // ── Main screen composable ────────────────────────────────────────
@@ -776,7 +776,7 @@ private fun DeviceCard(
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = context.getString(R.string.cd_more),
+                    contentDescription = context.getString(R.string.subpanel_title_more),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 )

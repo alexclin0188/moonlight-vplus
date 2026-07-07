@@ -1,5 +1,6 @@
 package com.alexclin.moonlink.android.stream.ui.common
 
+import com.alexclin.moonlink.android.R
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
@@ -47,24 +48,24 @@ fun getActionIcon(id: String, isActive: Boolean? = null): ImageVector? {
     }
 }
 
-fun getActionLabel(id: String): String {
+fun getActionLabelResId(id: String): Int {
     return when (id) {
-        "send_win" -> "Win"
-        "send_esc" -> "ESC"
-        "toggle_hdr" -> "HDR"
-        "toggle_audio" -> "声音"
-        "toggle_mic" -> "麦克风"
-        "send_sleep" -> "睡眠"
-        "send_tab" -> "Tab"
-        "send_alt_tab" -> "Alt+Tab"
-        "send_alt_f4" -> "Alt+F4"
-        "toggle_keyboard" -> "键盘"
-        "toggle_controller" -> "手柄"
-        "toggle_perf" -> "性能"
-        MoonLinkQuickActions.TOGGLE_PIP -> "画中画"
-        MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> "自适应码率"
-        MoonLinkQuickActions.TOGGLE_GYRO -> "体感"
-        else -> id
+        "send_win" -> R.string.qa_label_win
+        "send_esc" -> R.string.qa_label_esc
+        "toggle_hdr" -> R.string.display_hdr
+        "toggle_audio" -> R.string.qa_label_audio
+        "toggle_mic" -> R.string.qa_label_mic
+        "send_sleep" -> R.string.action_sleep
+        "send_tab" -> R.string.qa_label_tab
+        "send_alt_tab" -> R.string.qa_label_alt_tab
+        "send_alt_f4" -> R.string.qa_label_alt_f4
+        "toggle_keyboard" -> R.string.bar_keyboard
+        "toggle_controller" -> R.string.qa_label_controller
+        "toggle_perf" -> R.string.qa_label_performance
+        MoonLinkQuickActions.TOGGLE_PIP -> R.string.qa_label_pip
+        MoonLinkQuickActions.TOGGLE_ADAPTIVE_BITRATE -> R.string.qa_label_adaptive_bitrate
+        MoonLinkQuickActions.TOGGLE_GYRO -> R.string.subpanel_title_gyro
+        else -> 0
     }
 }
 

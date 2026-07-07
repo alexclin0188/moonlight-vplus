@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
@@ -124,7 +126,7 @@ fun KeyMappingConfigPanel(
         syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
     }
 
-    DetailScaffold(title = "按键映射方案配置", onBack = onBack) {
+    DetailScaffold(title = stringResource(R.string.config_title), onBack = onBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -132,7 +134,7 @@ fun KeyMappingConfigPanel(
             // 触控开关
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("触控开关", Modifier.weight(1f))
+                    Text(stringResource(R.string.config_touch_switch), Modifier.weight(1f))
                     Switch(checked = touchEnabled, modifier = Modifier.scale(0.8f), onCheckedChange = { touchEnabled = it; saveToDb() })
                 }
             }
@@ -142,7 +144,7 @@ fun KeyMappingConfigPanel(
             // 游戏震动
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("游戏震动", Modifier.weight(1f))
+                    Text(stringResource(R.string.config_game_vibration), Modifier.weight(1f))
                     Switch(checked = gameVibrator, modifier = Modifier.scale(0.8f), onCheckedChange = { gameVibrator = it; saveToDb() })
                 }
             }
@@ -150,7 +152,7 @@ fun KeyMappingConfigPanel(
             // 按键震动
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("按键震动", Modifier.weight(1f))
+                    Text(stringResource(R.string.config_button_vibration), Modifier.weight(1f))
                     Switch(checked = buttonVibrator, modifier = Modifier.scale(0.8f), onCheckedChange = { buttonVibrator = it; saveToDb() })
                 }
             }
@@ -161,8 +163,8 @@ fun KeyMappingConfigPanel(
             item {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("鼠标滚轮速度", Modifier.weight(1f))
-                        Text(if (wheelSpeed < 40) "快" else if (wheelSpeed > 80) "慢" else "中",
+                        Text(stringResource(R.string.config_mouse_wheel_speed), Modifier.weight(1f))
+                        Text(if (wheelSpeed < 40) stringResource(R.string.config_speed_fast) else if (wheelSpeed > 80) stringResource(R.string.config_speed_slow) else stringResource(R.string.config_speed_medium),
                              style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -178,7 +180,7 @@ fun KeyMappingConfigPanel(
             // 增强触控
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("增强触控", Modifier.weight(1f))
+                    Text(stringResource(R.string.config_enhanced_touch), Modifier.weight(1f))
                     Switch(checked = enhancedTouch, modifier = Modifier.scale(0.8f), onCheckedChange = { enhancedTouch = it; saveToDb() })
                 }
             }
@@ -189,7 +191,7 @@ fun KeyMappingConfigPanel(
             item {
                 Column(Modifier.padding(vertical = 4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("全局不透明度", Modifier.weight(1f))
+                        Text(stringResource(R.string.config_global_opacity), Modifier.weight(1f))
                         Text("$globalOpacity%", style = MaterialTheme.typography.bodySmall,
                              color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
@@ -207,7 +209,7 @@ fun KeyMappingConfigPanel(
             // 统一颜色配置
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("统一颜色配置", Modifier.weight(1f))
+                    Text(stringResource(R.string.config_unified_colors), Modifier.weight(1f))
                     Switch(checked = unifiedColorEnabled, modifier = Modifier.scale(0.8f), onCheckedChange = {
                         unifiedColorEnabled = it
                         if (it) {
@@ -230,7 +232,7 @@ fun KeyMappingConfigPanel(
                         Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp).clickable { showUnifiedColorPicker = true },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("统一颜色", Modifier.weight(1f))
+                        Text(stringResource(R.string.config_unified_color_picker), Modifier.weight(1f))
                         // 五个色块
                         val chipModifier = Modifier.size(28.dp).padding(2.dp)
                         Box(chipModifier.background(Color(unifiedNormalColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
@@ -247,13 +249,13 @@ fun KeyMappingConfigPanel(
     // ── 统一颜色编辑器 ──
     if (showUnifiedColorPicker) {
         ColorPickerDialog(
-            title = "统一颜色",
+            title = stringResource(R.string.config_unified_color_picker),
             items = listOf(
-                ColorPickerItem("正常色", "normal", unifiedNormalColor),
-                ColorPickerItem("按下色", "pressed", unifiedPressedColor),
-                ColorPickerItem("背景色", "bg", unifiedBackgroundColor),
-                ColorPickerItem("文字色", "normalText", unifiedNormalTextColor),
-                ColorPickerItem("按下文字色", "pressedText", unifiedPressedTextColor),
+                ColorPickerItem("Normal", "normal", unifiedNormalColor),
+                ColorPickerItem("Pressed", "pressed", unifiedPressedColor),
+                ColorPickerItem("Background", "bg", unifiedBackgroundColor),
+                ColorPickerItem("Text", "normalText", unifiedNormalTextColor),
+                ColorPickerItem("Pressed Text", "pressedText", unifiedPressedTextColor),
             ),
             onSave = { result ->
                 val map = result.toMap()

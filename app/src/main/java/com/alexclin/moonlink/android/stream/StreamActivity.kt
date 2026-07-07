@@ -259,7 +259,7 @@ class StreamActivity : ComponentActivity() {
                                 modifier = Modifier.padding(horizontal = 32.dp),
                             ) {
                                 Text(
-                                    text = "当前为仅控制模式\n如需退出，请在主机串流设置的画面开关中关闭",
+                                    text = getString(R.string.stream_control_only_hint),
                                     color = Color(0xFFCCCCCC.toInt()),
                                     fontSize = 16.sp,
                                     textAlign = TextAlign.Center,
@@ -1170,7 +1170,7 @@ class StreamActivity : ComponentActivity() {
                                 modifier = Modifier.padding(horizontal = 32.dp),
                             ) {
                                 Text(
-                                    text = "当前为仅控制模式\n如需退出，请在主机串流设置的画面开关中关闭",
+                                    text = getString(R.string.stream_control_only_hint),
                                     color = Color(0xFFCCCCCC.toInt()),
                                     fontSize = 16.sp,
                                     textAlign = TextAlign.Center,

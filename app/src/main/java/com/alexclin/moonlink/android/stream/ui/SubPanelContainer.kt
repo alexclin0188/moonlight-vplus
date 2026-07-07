@@ -74,6 +74,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -85,7 +86,7 @@ import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.stream.ui.common.MoonLinkQuickActions
 import com.alexclin.moonlink.android.stream.ui.common.RestartHintBanner
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
-import com.alexclin.moonlink.android.stream.ui.common.getActionLabel
+import com.alexclin.moonlink.android.stream.ui.common.getActionLabelResId
 import com.alexclin.moonlink.android.stream.ui.panels.QuickActionRow
 import com.alexclin.moonlink.android.util.QuickActionRegistry
 import android.view.KeyEvent
@@ -95,6 +96,7 @@ import androidx.compose.ui.draw.scale
 import com.limelight.binding.input.ControllerGyroManager
 import com.alexclin.moonlink.android.stream.ui.display.DisplaySettingsPanel
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingConfigPanel
+import com.alexclin.moonlink.android.R
 
 enum class DetailPage {
     MAIN_LIST,
@@ -257,7 +259,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Tv,
-                label = "显示设置",
+                label = stringResource(R.string.label_display),
                 onClick = { onNavigate(DetailPage.DISPLAY) },
             )
         }
@@ -265,7 +267,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Computer,
-                label = "主机设置",
+                label = stringResource(R.string.subpanel_title_host),
                 onClick = { onNavigate(DetailPage.HOST_SETTINGS) },
             )
         }
@@ -273,7 +275,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Sensors,
-                label = "体感助手",
+                label = stringResource(R.string.subpanel_title_gyro),
                 onClick = { onNavigate(DetailPage.GYRO) },
             )
         }
@@ -290,7 +292,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Extension,
-                label = "其它设置",
+                label = stringResource(R.string.subpanel_title_more),
                 onClick = { onNavigate(DetailPage.MORE) },
             )
         }
@@ -298,7 +300,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Bolt,
-                label = "快捷键",
+                label = stringResource(R.string.keyboard_tab_shortcuts),
                 onClick = onOpenKeyboardShortcuts,
             )
         }
@@ -359,7 +361,7 @@ private fun PanZoomSection(engine: StreamEngine) {
     ) {
         Icon(Icons.Default.PanTool, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(12.dp))
-        Text("平移缩放", style = MaterialTheme.typography.bodyLarge,
+        Text(stringResource(R.string.subpanel_pan_zoom), style = MaterialTheme.typography.bodyLarge,
              color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
         Switch(checked = enabled, modifier = Modifier.scale(0.8f), onCheckedChange = { enabled = it })
     }
@@ -382,7 +384,7 @@ private fun KeyMappingSection(
         ) {
             Icon(Icons.Default.VideogameAsset, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(12.dp))
-            Text("启用按键映射", style = MaterialTheme.typography.bodyLarge,
+            Text(stringResource(R.string.subpanel_enable_key_mapping), style = MaterialTheme.typography.bodyLarge,
                  color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Switch(checked = enabled,
                 modifier = Modifier.scale(0.8f),
@@ -392,7 +394,7 @@ private fun KeyMappingSection(
                     // 自动切换触控板模式并立即生效
                     engine.applyTouchMode(2)  // 2 = 触控板模式
                     engine.prefConfig.touchscreenTrackpad = true
-                    ToastUtil.show(context, "已自动切换为触控板模式，可在触控模式中更改", Toast.LENGTH_SHORT)
+                    ToastUtil.show(context, context.getString(R.string.subpanel_auto_trackpad_toast), Toast.LENGTH_SHORT)
                 }
             })
         }
@@ -404,13 +406,13 @@ private fun KeyMappingSection(
                     onClick = {
                         onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR)
                     },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
                         Column {
-                            Text("切换按键映射方案 >", style = MaterialTheme.typography.bodyMedium)
-                            Text("当前方案：${engine.currentSchemeName}",
+                            Text(stringResource(R.string.subpanel_switch_scheme), style = MaterialTheme.typography.bodyMedium)
+                            Text(stringResource(R.string.subpanel_current_scheme, engine.currentSchemeName),
                                  style = MaterialTheme.typography.bodySmall,
                                  color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
@@ -422,22 +424,22 @@ private fun KeyMappingSection(
                     onClick = {
                         onOpenFullScreenPage(FullScreenPage.KEY_MAPPING_EDITOR)
                     },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                        Text("编辑当前方案 >")
+                        Text(stringResource(R.string.subpanel_edit_scheme))
                     }
                 }
 
                 // 3. 按键映射配置（所有方案统一使用此入口）
                 TextButton(
                     onClick = { onNavigateToConfig(DetailPage.KEY_MAPPING_CONFIG) },
-                    modifier = Modifier.fillMaxWidth().height(40.dp),
+                    modifier = Modifier.fillMaxWidth().height(46.dp),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Start) {
-                        Text("按键映射配置 >")
+                        Text(stringResource(R.string.subpanel_config))
                     }
                 }
             }
@@ -445,10 +447,10 @@ private fun KeyMappingSection(
     }
 }
 
-private enum class TouchMode(val label: String) {
-    ENHANCED("增强式多点触控"),
-    TRACKPAD("触控板模式"),
-    MOUSE("鼠标模式"),
+private enum class TouchMode(val labelResId: Int) {
+    ENHANCED(R.string.game_menu_touch_mode_enhanced),
+    TRACKPAD(R.string.game_menu_touch_mode_trackpad),
+    MOUSE(R.string.game_menu_touch_mode_classic),
 }
 
 @Composable
@@ -473,7 +475,7 @@ private fun TouchModeSection(engine: StreamEngine) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.TouchApp, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
             Spacer(Modifier.width(12.dp))
-            Text("触控模式", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.subpanel_touch_mode), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
         }
         Spacer(Modifier.height(6.dp))
 
@@ -484,7 +486,7 @@ private fun TouchModeSection(engine: StreamEngine) {
         ) {
             TouchMode.entries.forEach { mode ->
                 CompactChip(
-                    label = mode.label,
+                    label = context.getString(mode.labelResId),
                     selected = selectedMode == mode,
                     onClick = {
                         selectedMode = mode
@@ -503,7 +505,7 @@ private fun TouchModeSection(engine: StreamEngine) {
                 // 触控灵敏度：单行展示 灵敏度 + Slider
                 var sensitivity by remember { mutableIntStateOf(engine.prefConfig.touchpadSensitivity) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("灵敏度", style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(R.string.label_sensitivity), style = MaterialTheme.typography.bodyMedium)
                     Spacer(Modifier.width(8.dp))
                     Slider(
                         value = sensitivity.toFloat(),
@@ -521,7 +523,7 @@ private fun TouchModeSection(engine: StreamEngine) {
                          modifier = Modifier.padding(start = 4.dp))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("双击按住", Modifier.weight(1f))
+                    Text(stringResource(R.string.subpanel_double_click_drag), Modifier.weight(1f))
                     Switch(checked = doubleClickDrag,
                         modifier = Modifier.scale(0.8f),
                         onCheckedChange = {
@@ -531,7 +533,7 @@ private fun TouchModeSection(engine: StreamEngine) {
                     })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("本地光标渲染", Modifier.weight(1f))
+                    Text(stringResource(R.string.subpanel_local_cursor), Modifier.weight(1f))
                     Switch(checked = localCursor,
                         modifier = Modifier.scale(0.8f),
                         onCheckedChange = {
@@ -547,7 +549,7 @@ private fun TouchModeSection(engine: StreamEngine) {
                 var nativeMouse by remember { mutableStateOf(engine.prefConfig.enableNativeMousePointer) }
                 var remoteMouseVisible by remember { mutableStateOf(false) }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("本地鼠标指针", Modifier.weight(1f))
+                    Text(stringResource(R.string.subpanel_local_mouse), Modifier.weight(1f))
                     Switch(checked = nativeMouse,
                         modifier = Modifier.scale(0.8f),
                         onCheckedChange = {
@@ -558,7 +560,7 @@ private fun TouchModeSection(engine: StreamEngine) {
                     })
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("切换远程鼠标显示/隐藏", Modifier.weight(1f))
+                    Text(stringResource(R.string.subpanel_toggle_remote_mouse), Modifier.weight(1f))
                     Switch(checked = remoteMouseVisible,
                         modifier = Modifier.scale(0.8f),
                         onCheckedChange = {
@@ -580,9 +582,9 @@ private fun applyTouchMode(engine: StreamEngine, mode: TouchMode, context: andro
     engine.applyTouchMode(modeInt)
     engine.prefConfig.writePreferences(context)
     val msg = when (mode) {
-        TouchMode.ENHANCED -> "已切换为增强式多点触控"
-        TouchMode.TRACKPAD -> "已切换为触控板模式"
-        TouchMode.MOUSE -> "已切换为鼠标模式"
+        TouchMode.ENHANCED -> context.getString(R.string.toast_touch_mode_enhanced_switched)
+        TouchMode.TRACKPAD -> context.getString(R.string.toast_touch_mode_trackpad_switched)
+        TouchMode.MOUSE -> context.getString(R.string.toast_touch_mode_mouse_switched)
     }
     ToastUtil.show(context, msg, Toast.LENGTH_SHORT)
 }
@@ -618,7 +620,7 @@ private fun PeripheralsSection(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Text(
-            "外设",
+            stringResource(R.string.subpanel_peripherals_label),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
@@ -637,7 +639,7 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
     val context = LocalContext.current
     val pref = engine.prefConfig
 
-    DetailScaffold(title = "体感助手", onBack = onBack) {
+    DetailScaffold(title = stringResource(R.string.subpanel_title_gyro), onBack = onBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -646,7 +648,7 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
             item {
                 val gyroActive = pref.gyroToRightStick || pref.gyroToMouse
                 var gyroEnabled by remember { mutableStateOf(gyroActive) }
-                SettingSwitch("体感开关", gyroEnabled) {
+                SettingSwitch(context.getString(R.string.subpanel_gyro_switch), gyroEnabled) {
                     gyroEnabled = it
                     if (!it) {
                         engine.disableGyro()
@@ -673,10 +675,10 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 val initIdx = keyToIdx[pref.gyroActivationKeyCode] ?: 1
                 var activateKey by remember { mutableIntStateOf(initIdx) }
 
-                Text("激活按键:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.subpanel_activate_key), style = MaterialTheme.typography.bodyMedium)
                 ChipSelector(
                     options = listOf(
-                        "始终" to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS.toString(),
+                        context.getString(R.string.subpanel_gyro_always) to ControllerGyroManager.GYRO_ACTIVATION_ALWAYS.toString(),
                         "LT" to KeyEvent.KEYCODE_BUTTON_L2.toString(),
                         "RT" to KeyEvent.KEYCODE_BUTTON_R2.toString(),
                     ),
@@ -695,10 +697,10 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 var gyroMode by remember { mutableIntStateOf(
                     if (pref.gyroToMouse) 1 else 0
                 ) }
-                Text("模式", style = MaterialTheme.typography.bodyMedium,
+                Text(stringResource(R.string.editor_label_mode), style = MaterialTheme.typography.bodyMedium,
                      modifier = Modifier.padding(bottom = 4.dp))
                 ChipSelector(
-                    options = listOf("右摇杆" to "0", "鼠标" to "1"),
+                    options = listOf(context.getString(R.string.subpanel_gyro_right_stick) to "0", context.getString(R.string.subpanel_gyro_mouse) to "1"),
                     selectedValue = gyroMode.toString(),
                     onSelect = { value ->
                         val mode = value.toIntOrNull() ?: 0
@@ -716,7 +718,7 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
                 val initSens = if (pref.gyroSensitivityMultiplier > 0f)
                     pref.gyroSensitivityMultiplier else 1.0f
                 var sensitivity by remember { mutableFloatStateOf(initSens) }
-                Text("灵敏度: ${"%.1f".format(sensitivity)}x")
+                Text(stringResource(R.string.subpanel_sensitivity_format, sensitivity))
                 Slider(
                     value = sensitivity,
                     onValueChange = { sensitivity = it },
@@ -732,10 +734,10 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
             item {
                 var invertX by remember { mutableStateOf(pref.gyroInvertXAxis) }
                 var invertY by remember { mutableStateOf(pref.gyroInvertYAxis) }
-                SettingSwitch("X轴反转", invertX) {
+                SettingSwitch(context.getString(R.string.subpanel_gyro_invert_x), invertX) {
                     invertX = it; pref.gyroInvertXAxis = it; pref.writePreferences(context)
                 }
-                SettingSwitch("Y轴反转", invertY) {
+                SettingSwitch(context.getString(R.string.subpanel_gyro_invert_y), invertY) {
                     invertY = it; pref.gyroInvertYAxis = it; pref.writePreferences(context)
                 }
             }
@@ -746,7 +748,7 @@ private fun GyroDetail(engine: StreamEngine, onBack: () -> Unit) {
 @Composable
 private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
     val context = LocalContext.current
-    DetailScaffold(title = "更多", onBack = onBack) {
+    DetailScaffold(title = stringResource(R.string.subpanel_title_more), onBack = onBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -754,7 +756,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
             item {
                 // 性能监控图层
                 var perfEnabled by remember { mutableStateOf(engine.prefConfig.enablePerfOverlay) }
-                SettingSwitch("启用性能图层", perfEnabled) {
+                SettingSwitch(context.getString(R.string.more_enable_perf_overlay), perfEnabled) {
                     perfEnabled = it
                     engine.prefConfig.enablePerfOverlay = it
                     engine.perfOverlayEnabled = it  // 立即生效
@@ -765,14 +767,14 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                         var bgAlpha by remember {
                             mutableFloatStateOf(engine.prefConfig.perfOverlayBgOpacity / 100f)
                         }
-                        Text("背景不透明度: ${(bgAlpha * 100).toInt()}%")
+                        Text(stringResource(R.string.subpanel_bg_opacity_format, (bgAlpha * 100).toInt()))
                         Slider(value = bgAlpha, onValueChange = {
                             bgAlpha = it
                             engine.prefConfig.perfOverlayBgOpacity = (it * 100).toInt()
                             engine.prefConfig.writePreferences(context)
                         }, valueRange = 0f..1f)
                         Text(
-                            "性能图层详细设置请到主页-设置-性能和统计分析中设置",
+                            context.getString(R.string.more_perf_hint),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 4.dp),
@@ -787,7 +789,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                 // 悬浮按钮不透明度
                 val initOpacity = engine.prefConfig.fabOpacity
                 var fabAlpha by remember { mutableFloatStateOf(initOpacity / 100f) }
-                Text("悬浮按钮不透明度: ${(fabAlpha * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.subpanel_fab_opacity_format, (fabAlpha * 100).toInt()), style = MaterialTheme.typography.bodyMedium)
                 Slider(
                     value = fabAlpha,
                     onValueChange = { fabAlpha = it },
@@ -806,12 +808,12 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
             item {
                 // 操作面板自动隐藏
                 var hideMode by remember { mutableIntStateOf(engine.prefConfig.toolPanelAutoHideMode) }
-                Text("操作面板自动隐藏:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.subpanel_panel_auto_hide_label), style = MaterialTheme.typography.bodyMedium)
                 ChipSelector(
                     options = listOf(
-                        "开启按键映射时隐藏" to "0",
-                        "2秒后自动隐藏" to "1",
-                        "不自动隐藏" to "2",
+                        context.getString(R.string.more_hide_when_keymapping) to "0",
+                        context.getString(R.string.more_auto_hide_2s) to "1",
+                        context.getString(R.string.more_no_auto_hide) to "2",
                     ),
                     selectedValue = hideMode.toString(),
                     onSelect = { value ->
@@ -829,7 +831,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
             item {
                 // 暂停串流支持开关
                 var showPause by remember { mutableStateOf(engine.prefConfig.showPauseStream) }
-                SettingSwitch("暂停串流支持", showPause) {
+                SettingSwitch(context.getString(R.string.more_show_pause_stream), showPause) {
                     showPause = it
                     engine.setShowPauseStream(it)
                 }
@@ -851,7 +853,7 @@ private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
         }
     }
 
-    DetailScaffold(title = "主机设置", onBack = handleBack) {
+    DetailScaffold(title = stringResource(R.string.subpanel_title_host), onBack = handleBack) {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -864,25 +866,25 @@ private fun HostSettingsSection(engine: StreamEngine, onBack: () -> Unit) {
             // 实时生效
             item {
                 var v by remember { mutableStateOf(pref.lockScreenAfterDisconnect) }
-                SettingSwitch("断开串流时锁定屏幕", v) { v = it; pref.lockScreenAfterDisconnect = it; pref.writePreferences(context) }
+                SettingSwitch(context.getString(R.string.host_lock_screen), v) { v = it; pref.lockScreenAfterDisconnect = it; pref.writePreferences(context) }
             }
 
             // ── 以下选项需重启串流才能生效 ──
             item {
                 var v by remember { mutableStateOf(pref.enableSops) }
-                SettingSwitch("自动优化主机设置", v) { v = it; pref.enableSops = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+                SettingSwitch(context.getString(R.string.host_auto_optimize), v) { v = it; pref.enableSops = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var v by remember { mutableStateOf(pref.playHostAudio) }
-                SettingSwitch("在电脑上播放声音", v) { v = it; pref.playHostAudio = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+                SettingSwitch(context.getString(R.string.host_play_audio), v) { v = it; pref.playHostAudio = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var v by remember { mutableStateOf(pref.enableClipboardSyncText) }
-                SettingSwitch("同步剪贴板文本", v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+                SettingSwitch(context.getString(R.string.host_sync_clipboard_text), v) { v = it; pref.enableClipboardSyncText = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
             item {
                 var v by remember { mutableStateOf(pref.enableClipboardSyncImage) }
-                SettingSwitch("同步剪贴板图片", v) { v = it; pref.enableClipboardSyncImage = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
+                SettingSwitch(context.getString(R.string.host_sync_clipboard_image), v) { v = it; pref.enableClipboardSyncImage = it; pref.writePreferences(context); engine.displaySettingsRestartPending = true }
             }
         }
     }
@@ -898,7 +900,7 @@ private fun PeripheralsDetail(
     val devices = engine.peripheralDevices
 
     if (subPage == null) {
-        DetailScaffold(title = "外设", onBack = onBack) {
+        DetailScaffold(title = stringResource(R.string.subpanel_peripherals_label), onBack = onBack) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
@@ -906,17 +908,17 @@ private fun PeripheralsDetail(
                 val gamepadCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.GAMEPAD }
                 val keyboardCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.KEYBOARD }
                 val mouseCount = devices.count { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.MOUSE }
-                fun countText(n: Int) = if (n == 0) "无" else n.toString()
-                item { PeripheralEntry("手柄", Icons.Default.VideogameAsset, countText(gamepadCount)) { subPage = "gamepad" } }
-                item { PeripheralEntry("键盘", Icons.Default.Keyboard, countText(keyboardCount)) { subPage = "keyboard" } }
-                item { PeripheralEntry("鼠标", Icons.Default.Mouse, countText(mouseCount)) { subPage = "mouse" } }
+                fun countText(n: Int) = if (n == 0) "0" else n.toString()
+                item { PeripheralEntry(stringResource(R.string.kv_category_gamepad), Icons.Default.VideogameAsset, countText(gamepadCount)) { subPage = "gamepad" } }
+                item { PeripheralEntry(stringResource(R.string.bar_keyboard), Icons.Default.Keyboard, countText(keyboardCount)) { subPage = "keyboard" } }
+                item { PeripheralEntry(stringResource(R.string.kv_category_mouse), Icons.Default.Mouse, countText(mouseCount)) { subPage = "mouse" } }
                 // 麦克风：直接开关，不进入子页面
                 item {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Mic, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.width(12.dp))
-                        Text("麦克风", Modifier.weight(1f))
+                        Text(stringResource(R.string.qa_label_mic), Modifier.weight(1f))
                         Switch(
                             checked = engine.prefConfig.enableMic,
                             onCheckedChange = { enabled ->
@@ -931,9 +933,9 @@ private fun PeripheralsDetail(
         }
     } else {
         DetailScaffold(title = when(subPage) {
-            "gamepad" -> "手柄设置"
-            "keyboard" -> "键盘设置"
-            "mouse" -> "鼠标设置"
+            "gamepad" -> stringResource(R.string.category_gamepad_settings)
+            "keyboard" -> stringResource(R.string.peripherals_keyboard_settings)
+            "mouse" -> stringResource(R.string.peripherals_mouse_settings)
             else -> ""
         }, onBack = { subPage = null }) {
             LazyColumn(
@@ -944,7 +946,7 @@ private fun PeripheralsDetail(
                     "keyboard" -> {
                         val keyboards = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.KEYBOARD }
                         if (keyboards.isEmpty()) {
-                            item { Text("未检测到键盘", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            item { Text(stringResource(R.string.subpanel_no_keyboard), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         } else {
                             keyboards.forEach { dev ->
                                 item {
@@ -958,7 +960,7 @@ private fun PeripheralsDetail(
                     "mouse" -> {
                         val mice = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.MOUSE }
                         if (mice.isEmpty()) {
-                            item { Text("未检测到鼠标", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            item { Text(stringResource(R.string.subpanel_no_mouse), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         } else {
                             mice.forEach { dev ->
                                 item {
@@ -972,7 +974,7 @@ private fun PeripheralsDetail(
                     "gamepad" -> {
                         val gamepads = devices.filter { it.type == com.alexclin.moonlink.android.stream.engine.StreamEngine.PeripheralType.GAMEPAD }
                         if (gamepads.isEmpty()) {
-                            item { Text("未检测到手柄", color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                            item { Text(stringResource(R.string.subpanel_no_gamepad), color = MaterialTheme.colorScheme.onSurfaceVariant) }
                         } else {
                             gamepads.forEach { dev ->
                                 item {
@@ -1004,7 +1006,7 @@ private fun PeripheralEntry(
         Spacer(Modifier.width(12.dp))
         Text(label, Modifier.weight(1f))
         Text(countText, style = MaterialTheme.typography.bodySmall,
-            color = if (countText == "无") MaterialTheme.colorScheme.onSurfaceVariant
+            color = if (countText == "0") MaterialTheme.colorScheme.onSurfaceVariant
                     else MaterialTheme.colorScheme.primary)
         Spacer(Modifier.width(4.dp))
         Icon(Icons.Default.ChevronRight, null, Modifier.size(18.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -1029,6 +1031,7 @@ private fun QuickActionEditorPage(
     onSave: (List<String>) -> Unit,
     onBack: () -> Unit,
 ) {
+    val context = LocalContext.current
     val allAvailableIds = remember { getAllEditorActionIds() }
     val items = remember(configIds) {
         val result = configIds.toMutableList()
@@ -1052,13 +1055,13 @@ private fun QuickActionEditorPage(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "快捷操作调整",
+                stringResource(R.string.qa_editor_title),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(Modifier.weight(1f))
             TextButton(onClick = { onSave(reorderableItems.toList().take(activeCount)) }) {
-                Text("保存")
+                Text(stringResource(R.string.editor_save))
             }
         }
         HorizontalDivider()
@@ -1141,7 +1144,7 @@ private fun QuickActionEditorPage(
                             Spacer(Modifier.width(12.dp))
                         }
                         Text(
-                            getActionLabel(id),
+                            stringResource(getActionLabelResId(id)),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.weight(1f),
@@ -1152,7 +1155,7 @@ private fun QuickActionEditorPage(
                         ) {
                             Icon(
                                 Icons.Default.Menu,
-                                contentDescription = "拖动排序",
+                                contentDescription = stringResource(R.string.qa_editor_drag_hint),
                                 modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

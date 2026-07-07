@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.util.ToastUtil
 import android.widget.Toast
 
@@ -58,7 +60,7 @@ import android.widget.Toast
  */
 @Composable
 fun ComboKeyEditorDialog(
-    title: String = "新建组合键",
+    title: String = "",   // 由调用方传入或通过默认值 stringResource 设置
     initialElement: EditorElement? = null,
     onSaveNew: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
@@ -73,6 +75,7 @@ fun ComboKeyEditorDialog(
     var newRightValue by remember { mutableStateOf(initialElement?.rightValue ?: "") }
     var showKeyPickerForSlot by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
+    val effectiveTitle = title.ifEmpty { context.getString(R.string.combo_editor_default_title) }
     val backdropInteractionSource = remember { MutableInteractionSource() }
 
     Box(
@@ -97,35 +100,35 @@ fun ComboKeyEditorDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(title, style = MaterialTheme.typography.titleMedium,
+                    Text(effectiveTitle, style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.weight(1f))
                     TextButton(onClick = onDismiss) {
-                        Text("取消")
+                        Text(stringResource(R.string.editor_cancel))
                     }
                     Spacer(Modifier.width(4.dp))
                     TextButton(onClick = {
                         // 新建模式下必须选择主键（单击）
                         if (isCreateMode && newMainValue.isBlank()) {
-                            ToastUtil.show(context, "请先选择单击键值", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_select_click_key), Toast.LENGTH_SHORT)
                             return@TextButton
                         }
                         // 名称查重
                         if (isDuplicateElementName(newText, existingTextNames)) {
                             val trimmedText = newText.trim()
-                            ToastUtil.show(context, "已存在同名元素「$trimmedText」，请修改名称", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
                             return@TextButton
                         }
                         // 内部方向值互斥校验
                         val dupMsg = findDuplicateKeyValues(mapOf(
-                            "单击" to newMainValue,
-                            "上滑" to newUpValue,
-                            "下滑" to newDownValue,
-                            "左滑" to newLeftValue,
-                            "右滑" to newRightValue,
+                            "Click" to newMainValue,
+                            "Swipe Up" to newUpValue,
+                            "Swipe Down" to newDownValue,
+                            "Swipe Left" to newLeftValue,
+                            "Swipe Right" to newRightValue,
                         ))
                         if (dupMsg != null) {
-                            ToastUtil.show(context, "方向值重复：$dupMsg", Toast.LENGTH_SHORT)
+                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
                             return@TextButton
                         }
                         val newEl = EditorElement(
@@ -145,7 +148,7 @@ fun ComboKeyEditorDialog(
                     }) {
                         Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("保存", style = MaterialTheme.typography.labelMedium)
+                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
                     }
                 }
                 HorizontalDivider()
@@ -158,7 +161,7 @@ fun ComboKeyEditorDialog(
                 ) {
                     // 左：按钮文字
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("按钮文字", style = MaterialTheme.typography.bodySmall,
+                        Text(stringResource(R.string.editor_label_button_text), style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                         Spacer(Modifier.height(2.dp))
                         Box(modifier = Modifier.fillMaxWidth()) {
@@ -180,7 +183,7 @@ fun ComboKeyEditorDialog(
                             )
                             // 按钮文字为空时以单击键值名作为 hint
                             if (newText.isEmpty()) {
-                                val hintText = "组合键${getKeyLabelByValue(newMainValue) ?: newMainValue}"
+                                val hintText = "Combo: ${getKeyLabelByValue(newMainValue) ?: newMainValue}"
                                 if (hintText.isNotEmpty()) {
                                     Text(
                                         hintText,
@@ -197,7 +200,7 @@ fun ComboKeyEditorDialog(
                     }
                     // 右：单击
                     KeySlotItem(
-                        label = "单击", value = newMainValue,
+                        label = stringResource(R.string.editor_label_click), value = newMainValue,
                         onClick = { showKeyPickerForSlot = "new_main" },
                         icon = Icons.Default.Keyboard,
                         modifier = Modifier.weight(1f),
@@ -206,14 +209,14 @@ fun ComboKeyEditorDialog(
 
                 // ↑ 上滑 | ↓ 下滑（一行均分宽度）
                 KeySlotRowPair(
-                    label1 = "↑ 上滑", value1 = newUpValue, onClick1 = { showKeyPickerForSlot = "new_up" }, icon1 = Icons.Default.ArrowUpward,
-                    label2 = "↓ 下滑", value2 = newDownValue, onClick2 = { showKeyPickerForSlot = "new_down" }, icon2 = Icons.Default.ArrowDownward,
+                    label1 = stringResource(R.string.editor_label_swipe_up), value1 = newUpValue, onClick1 = { showKeyPickerForSlot = "new_up" }, icon1 = Icons.Default.ArrowUpward,
+                    label2 = stringResource(R.string.editor_label_swipe_down), value2 = newDownValue, onClick2 = { showKeyPickerForSlot = "new_down" }, icon2 = Icons.Default.ArrowDownward,
                 )
 
                 // ← 左滑 | → 右滑（一行均分宽度）
                 KeySlotRowPair(
-                    label1 = "← 左滑", value1 = newLeftValue, onClick1 = { showKeyPickerForSlot = "new_left" }, icon1 = Icons.Default.ChevronLeft,
-                    label2 = "→ 右滑", value2 = newRightValue, onClick2 = { showKeyPickerForSlot = "new_right" }, icon2 = Icons.Default.ChevronRight,
+                    label1 = stringResource(R.string.editor_label_swipe_left), value1 = newLeftValue, onClick1 = { showKeyPickerForSlot = "new_left" }, icon1 = Icons.Default.ChevronLeft,
+                    label2 = stringResource(R.string.editor_label_swipe_right), value2 = newRightValue, onClick2 = { showKeyPickerForSlot = "new_right" }, icon2 = Icons.Default.ChevronRight,
                 )
 
 

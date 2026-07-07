@@ -128,11 +128,11 @@ class ColorPickerDialog(
         }
 
         buttonLayout.addView(Button(context).apply {
-            setText(R.string.game_menu_cancel)
+            setText(R.string.editor_cancel)
             setOnClickListener { dismiss() }
         })
         buttonLayout.addView(Button(context).apply {
-            setText(R.string.game_menu_ok)
+            setText(R.string.ok)
             setOnClickListener {
                 listener?.onColorSelected(getColor())
                 dismiss()

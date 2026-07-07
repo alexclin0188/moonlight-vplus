@@ -5,6 +5,7 @@ import com.alexclin.moonlink.android.util.LimeLog
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import com.alexclin.moonlink.android.R
 
 /**
  * 自定义按键数据模型。
@@ -96,18 +97,18 @@ object CustomKeyRepository {
     fun save(context: Context, name: String, hexCodes: List<String>): SaveResult {
         val trimmedName = name.trim()
         if (trimmedName.isEmpty()) {
-            return SaveResult.Error("名称不能为空")
+            return SaveResult.Error(context.getString(R.string.custom_key_error_name_empty))
         }
 
         // 验证 hexCodes 格式
         for (code in hexCodes) {
             if (!code.startsWith("0x") && !code.startsWith("0X")) {
-                return SaveResult.Error("键码 \"$code\" 格式错误，须以 0x 开头")
+                return SaveResult.Error(context.getString(R.string.custom_key_error_format, code))
             }
             try {
                 code.substring(2).toInt(16)
             } catch (_: NumberFormatException) {
-                return SaveResult.Error("键码 \"$code\" 不是有效的十六进制数")
+                return SaveResult.Error(context.getString(R.string.custom_key_error_invalid_hex, code))
             }
         }
 
@@ -143,7 +144,7 @@ object CustomKeyRepository {
             return SaveResult.Success
         } catch (e: Exception) {
             LimeLog.warning("CustomKeyRepository: save failed: ${e.message}")
-            return SaveResult.Error("保存失败: ${e.message}")
+            return SaveResult.Error(context.getString(R.string.custom_key_error_save_failed, e.message ?: ""))
         }
     }
 

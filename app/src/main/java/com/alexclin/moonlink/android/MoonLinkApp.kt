@@ -81,7 +81,7 @@ private fun rememberTopTabs(context: android.content.Context): List<TopLevelTab>
         TopLevelTab(MoonLinkRoute.DeviceList.route, R.string.tab_my_devices,   Icons.Filled.Devices, Icons.Outlined.Devices),
         // TODO(2.0): VPN 功能延后开启
         // TopLevelTab("tab_vpn",     R.string.tab_virtual_lan,   Icons.Filled.Wifi,    Icons.Outlined.Wifi),
-        TopLevelTab("tab_settings",R.string.title_settings,     Icons.Filled.Settings,Icons.Outlined.Settings),
+        TopLevelTab("tab_settings",R.string.settings_title,     Icons.Filled.Settings,Icons.Outlined.Settings),
     )
 }
 
@@ -101,17 +101,17 @@ private fun computeTitle(context: android.content.Context, route: String?, devic
         MoonLinkRoute.DeviceList.route       -> context.getString(R.string.tab_my_devices)
         // TODO(2.0): VPN 功能延后开启
     // "tab_vpn"                            -> context.getString(R.string.tab_virtual_lan)
-        "tab_settings"                       -> context.getString(R.string.title_settings)
+        "tab_settings"                       -> context.getString(R.string.settings_title)
         MoonLinkRoute.DeviceOverview.route   -> deviceName.ifEmpty { context.getString(R.string.title_device_overview) }
         MoonLinkRoute.DeviceDetail.route     -> context.getString(R.string.title_device_detail)
         MoonLinkRoute.DeviceStreamSettings.route -> deviceName + context.getString(R.string.title_stream_settings)
-        MoonLinkRoute.DeviceStreamSettingsTouch.route -> deviceName + context.getString(R.string.title_touch_mode)
+        MoonLinkRoute.DeviceStreamSettingsTouch.route -> deviceName + context.getString(R.string.category_touch_mode)
         MoonLinkRoute.DeviceStreamSettingsDisplay.route -> deviceName + context.getString(R.string.title_display_settings)
-        MoonLinkRoute.DeviceStreamSettingsSwitches.route -> deviceName + context.getString(R.string.title_display_switches)
+        MoonLinkRoute.DeviceStreamSettingsSwitches.route -> deviceName + context.getString(R.string.category_display_switches)
         MoonLinkRoute.DeviceStreamSettingsHost.route -> deviceName + context.getString(R.string.category_host_settings)
         MoonLinkRoute.DeviceStreamSettingsAudio.route -> deviceName + context.getString(R.string.title_sound_settings)
-        MoonLinkRoute.DeviceStreamSettingsGyro.route -> deviceName + context.getString(R.string.title_gyro)
-        MoonLinkRoute.DeviceStreamSettingsOther.route -> deviceName + context.getString(R.string.title_other_settings)
+        MoonLinkRoute.DeviceStreamSettingsGyro.route -> deviceName + context.getString(R.string.subpanel_title_gyro)
+        MoonLinkRoute.DeviceStreamSettingsOther.route -> deviceName + context.getString(R.string.category_other_settings)
         MoonLinkRoute.SettingsUi.route       -> context.getString(R.string.category_ui_settings)
         MoonLinkRoute.SettingsGamepad.route  -> context.getString(R.string.category_gamepad_settings)
         MoonLinkRoute.SettingsInput.route    -> context.getString(R.string.category_input_settings)

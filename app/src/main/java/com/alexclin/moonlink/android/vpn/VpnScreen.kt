@@ -340,7 +340,7 @@ private fun ConfigTab(
         ConfigField(stringResource(R.string.label_network_secret), networkSecret, onNetworkSecretChange)
         ConfigField(stringResource(R.string.label_local_ipv4), localIpv4, onLocalIpv4Change, stringResource(R.string.hint_local_ipv4), KeyboardType.Number)
         ConfigMultilineField(stringResource(R.string.label_listeners), listeners, onListenersChange, stringResource(R.string.hint_listeners))
-        ConfigMultilineField(stringResource(R.string.label_peers_config), peersText, onPeersTextChange, stringResource(R.string.hint_peers))
+        ConfigMultilineField(stringResource(R.string.label_peers), peersText, onPeersTextChange, stringResource(R.string.hint_peers))
 
         Card(
             modifier = Modifier.fillMaxWidth().clickable(onClick = onAdvancedToggle),
@@ -364,7 +364,7 @@ private fun ConfigTab(
                         FlagSwitch(stringResource(R.string.flag_latency_first), flags.latency) { onFlagChange("latency", it) }
                         FlagSwitch(stringResource(R.string.flag_disable_p2p), flags.p2p) { onFlagChange("p2p", it) }
                         FlagSwitch(stringResource(R.string.flag_private_mode), flags.private) { onFlagChange("private", it) }
-                        FlagSwitch(stringResource(R.string.flag_disable_ipv6), flags.ipv6) { onFlagChange("ipv6", it) }
+                        FlagSwitch(stringResource(R.string.pcview_menu_disable_ipv6), flags.ipv6) { onFlagChange("ipv6", it) }
 
                         Spacer(Modifier.height(8.dp))
                         Text(stringResource(R.string.section_proxy_protocol), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
