@@ -279,7 +279,7 @@ fun DeviceListScreen(
                                 DeviceCard(
                                     computer = computer,
                                     managerBinder = managerBinder,
-                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onStream = { launchStream(context, computer, managerBinder, forceResume = computer.runningGameId != 0) },
                                     onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
                                     onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                                     snackbarHostState = snackbarHostState,
@@ -315,7 +315,7 @@ fun DeviceListScreen(
                                 DeviceCard(
                                     computer = computer,
                                     managerBinder = managerBinder,
-                                    onStream = { launchStream(context, computer, managerBinder) },
+                                    onStream = { launchStream(context, computer, managerBinder, forceResume = computer.runningGameId != 0) },
                                     onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
                                     onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                                     snackbarHostState = snackbarHostState,
@@ -355,7 +355,7 @@ fun DeviceListScreen(
                             DeviceCard(
                                 computer = computer,
                                 managerBinder = managerBinder,
-                                onStream = { launchStream(context, computer, managerBinder) },
+                                onStream = { launchStream(context, computer, managerBinder, forceResume = computer.runningGameId != 0) },
                                 onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
                                 onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                                 snackbarHostState = snackbarHostState,
@@ -379,7 +379,7 @@ fun DeviceListScreen(
                             DeviceCard(
                                 computer = computer,
                                 managerBinder = managerBinder,
-                                onStream = { launchStream(context, computer, managerBinder) },
+                                onStream = { launchStream(context, computer, managerBinder, forceResume = computer.runningGameId != 0) },
                                 onClickInfo = { onNavigateToOverview(computer.uuid.orEmpty()) },
                                 onNavigateToDetail = { onNavigateToDetail(computer.uuid.orEmpty()) },
                                 snackbarHostState = snackbarHostState,

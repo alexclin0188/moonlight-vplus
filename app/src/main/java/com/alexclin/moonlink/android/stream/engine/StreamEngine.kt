@@ -1260,10 +1260,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
      * 从 DB 读取当前方案的配置面板设置并同步到运行时状态。
      * 在打开配置面板时或切换方案后调用。
      */
-    fun loadConfigFromDb() {
+    fun loadConfigFromDb(configId: Long = currentSchemeConfigId) {
         try {
             val db = KeymappingDatabaseHelper(activity)
-            val configId = currentSchemeConfigId
             configTouchEnabled = java.lang.Boolean.parseBoolean(
                 (db.queryConfigAttribute(configId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_TOUCH_ENABLE, "true") as? String) ?: "true"
             )
@@ -1283,7 +1282,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
     }
 
-    /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。 */
+    /** 从 DB 重新加载当前方案的覆盖层元素（仅读取，不做换算）。
+     * 自动校验 config 是否存在：不存在则回退为内置方案（configId=0）并持久化修正。 */
     fun reloadOverlay() {
         if (!keyMappingState) {
             currentOverlayElements.value = emptyList()
@@ -1291,13 +1291,27 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
         try {
             val db = KeymappingDatabaseHelper(activity)
-            currentOverlayElements.value = com.alexclin.moonlink.android.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
+            val configId = resolveValidConfigId(db, currentSchemeConfigId)
+            currentOverlayElements.value = com.alexclin.moonlink.android.stream.ui.overlay.DbElementLoader.loadElements(db, configId, activity)
 
-            // 同时加载配置状态
-            loadConfigFromDb()
+            // 同时加载配置状态（传入已验证的 configId，避免 apply() 异步导致读回旧值）
+            loadConfigFromDb(configId)
         } catch (_: Exception) {
             currentOverlayElements.value = emptyList()
         }
+    }
+
+    /** 校验 configId 是否有效：<=0 → 内置方案；>0 但在 DB 中不存在 → 回退内置方案并修正 SharedPreferences */
+    private fun resolveValidConfigId(db: KeymappingDatabaseHelper, rawId: Long): Long {
+        if (rawId <= 0) return 0L
+        // config 已在 DB 中存在则直接使用
+        if (db.queryConfigAttribute(rawId, com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_STRING_CONFIG_NAME, null) != null) {
+            return rawId
+        }
+        // config 不存在（已被删除）→ 回退内置方案
+        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
+        prefs.edit().putLong(PREF_CURRENT_CONFIG_ID, 0L).apply()
+        return 0L
     }
 
     /**
@@ -1346,11 +1360,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     val isKeyMappingFucEnabled: Boolean
         get() = keyMappingState
 
-    /** 当前选中的方案 configId，从 SharedPreferences 读取。 */
+    /** 当前选中的方案 configId，从 SharedPreferences 读取。负值（如新建方案的哨兵 -1）回退为内置方案。 */
     val currentSchemeConfigId: Long
         get() {
             val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(activity)
-            return prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)
+            val raw = prefs.getLong(PREF_CURRENT_CONFIG_ID, 0L)
+            return if (raw >= 0) raw else 0L
         }
 
     /** 当前方案的名称，从数据库查询。内置方案固定返回"内置虚拟手柄方案"。 */

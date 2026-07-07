@@ -938,6 +938,7 @@
     <string name="editor_label_layer">图层</string>
     <string name="editor_label_long_press">长按</string>
     <string name="editor_label_long_press_desc">长按触发</string>
+    <string name="editor_long_press_repeat_format">重复间隔: %dms</string>
     <string name="editor_label_middle_value">中间值</string>
     <string name="editor_label_mode">模式</string>
     <string name="editor_label_opacity">不透明度</string>

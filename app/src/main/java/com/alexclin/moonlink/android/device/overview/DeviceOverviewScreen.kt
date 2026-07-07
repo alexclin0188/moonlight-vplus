@@ -228,6 +228,7 @@ fun DeviceOverviewScreen(
                                     computer.useVdd = false
                                     launchStreamFromOverview(
                                         context, computer, managerBinder,
+                                        forceResume = computer.runningGameId != 0,
                                         displayName = name,
                                         screenCombinationMode = -1,
                                     )
@@ -239,6 +240,7 @@ fun DeviceOverviewScreen(
                                     computer.useVdd = true
                                     launchStreamFromOverview(
                                         context, computer, managerBinder,
+                                        forceResume = computer.runningGameId != 0,
                                         vddScreenMode = 3,
                                     )
                                 },
@@ -339,6 +341,7 @@ fun DeviceOverviewScreen(
                                 computer.useVdd = false
                                 launchStreamFromOverview(
                                     context, computer, managerBinder,
+                                    forceResume = computer.runningGameId != 0,
                                     displayName = name,
                                     screenCombinationMode = -1,
                                 )
@@ -350,6 +353,7 @@ fun DeviceOverviewScreen(
                                     computer.useVdd = true
                                     launchStreamFromOverview(
                                         context, computer, managerBinder,
+                                        forceResume = computer.runningGameId != 0,
                                         vddScreenMode = 3,
                                     )
                                 },
@@ -947,7 +951,7 @@ private fun QuickLaunchGrid(
                         uuid = uuid,
                         isRunning = computer.runningGameId != 0 && computer.runningGameId == app.appId,
                         onClick = {
-                            launchStreamFromOverview(context, computer, managerBinder, app = app)
+                            launchStreamFromOverview(context, computer, managerBinder, app = app, forceResume = computer.runningGameId != 0)
                         },
                         modifier = Modifier.weight(1f),
                     )

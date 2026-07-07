@@ -910,6 +910,7 @@
     <string name="editor_label_layer">Layer</string>
     <string name="editor_label_long_press">Long Press</string>
     <string name="editor_label_long_press_desc">Trigger on long press</string>
+    <string name="editor_long_press_repeat_format">Repeat: %dms</string>
     <string name="editor_label_middle_value">Middle Value</string>
     <string name="editor_label_mode">Mode</string>
     <string name="editor_label_opacity">Opacity</string>
