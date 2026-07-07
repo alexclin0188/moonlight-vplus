@@ -17,6 +17,5 @@ object ConfigColumns {
     const val COLUMN_INT_MOUSE_WHEEL_SPEED = "mouse_wheel_speed"
     const val COLUMN_BOOLEAN_ENHANCED_TOUCH = "enhanced_touch"
     const val COLUMN_INT_GLOBAL_OPACITY = "global_opacity"
-    const val COLUMN_INT_GLOBAL_BORDER_COLOR = "global_border_color"
-    const val COLUMN_INT_GLOBAL_TEXT_COLOR = "global_text_color"
+    const val COLUMN_BOOLEAN_UNIFIED_COLOR_ENABLED = "unified_color_enabled"
 }

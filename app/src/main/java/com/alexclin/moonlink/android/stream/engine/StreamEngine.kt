@@ -1222,23 +1222,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         try {
             val db = KeymappingDatabaseHelper(activity)
             currentOverlayElements.value = com.alexclin.moonlink.android.stream.ui.overlay.DbElementLoader.loadElements(db, currentSchemeConfigId, activity)
-            // 应用全局颜色（覆盖元素的边框色和文字色）
-            val borderColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long
-            val textColor = db.queryConfigAttribute(currentSchemeConfigId,
-                com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long
-            if (borderColor != null || textColor != null) {
-                val bc = borderColor?.toInt()
-                val tc = textColor?.toInt()
-                currentOverlayElements.value = currentOverlayElements.value.map { el ->
-                    el.copy(
-                        normalColor = bc ?: el.normalColor,
-                        pressedColor = bc ?: el.pressedColor,
-                        normalTextColor = tc ?: el.normalTextColor,
-                        pressedTextColor = tc ?: el.pressedTextColor,
-                    )
-                }
-            }
+
             // 同时加载配置状态
             loadConfigFromDb()
         } catch (_: Exception) {

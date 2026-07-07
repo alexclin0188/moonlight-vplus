@@ -579,11 +579,10 @@ fun KeyMappingEditor(
                     )
                     elements = elements.map { if (it.elementId == updated.elementId) updated else it }
                     editorState.saveElement(updated)
-                    // 编辑了单个元素颜色 → 关闭该方案的全局颜色开关
+                    // 编辑了单个元素颜色 → 关闭该方案的统一颜色配置开关
                     try {
                         val cv = android.content.ContentValues()
-                        cv.putNull(com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
-                        cv.putNull(com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
+                        cv.put(com.alexclin.moonlink.android.stream.data.ConfigColumns.COLUMN_BOOLEAN_UNIFIED_COLOR_ENABLED, "false")
                         db.updateConfig(editorState.configId, cv)
                     } catch (_: Exception) { }
                     showColorEditor = false

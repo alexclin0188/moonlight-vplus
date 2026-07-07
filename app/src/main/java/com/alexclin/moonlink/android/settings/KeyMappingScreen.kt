@@ -341,8 +341,6 @@ private fun buildMlkJson(context: android.content.Context, db: KeymappingDatabas
         "button_vibrator" to "boolean",
         "enhanced_touch" to "boolean",
         "global_opacity" to "int",
-        "global_border_color" to "int",
-        "global_text_color" to "int",
     )
     for ((key, type) in configAttrs) {
         val value = db.queryConfigAttribute(scheme.configId, key, null)
@@ -404,10 +402,13 @@ private fun importMlkFromJson(context: android.content.Context, json: String, ne
         ScreenScaleHelper.getDeviceScreenSize(context)
     } catch (_: Exception) { Pair(0, 0) }
 
+    // 旧列黑名单（已废弃，导入时跳过）
+    val deprecatedConfigKeys = setOf("global_border_color", "global_text_color")
     val configValues = ContentValues().apply {
         put(ConfigColumns.COLUMN_LONG_CONFIG_ID, newConfigId)
         put(ConfigColumns.COLUMN_STRING_CONFIG_NAME, newName)
         for (key in configObj.keys()) {
+            if (key in deprecatedConfigKeys) continue
             val v = configObj.opt(key)
             when (v) {
                 is Boolean -> put(key, v.toString())

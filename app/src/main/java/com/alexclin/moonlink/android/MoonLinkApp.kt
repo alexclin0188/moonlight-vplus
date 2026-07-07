@@ -52,7 +52,8 @@ import com.alexclin.moonlink.android.home.DeviceListScreen
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.settings.*
 import com.alexclin.moonlink.android.stream.engine.DeviceStateManager
-import com.alexclin.moonlink.android.vpn.VpnScreen
+// TODO(2.0): VPN 功能延后开启
+// import com.alexclin.moonlink.android.vpn.VpnScreen
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.RequestOptions
@@ -78,14 +79,16 @@ private data class TopLevelTab(
 private fun rememberTopTabs(context: android.content.Context): List<TopLevelTab> = remember {
     listOf(
         TopLevelTab(MoonLinkRoute.DeviceList.route, R.string.tab_my_devices,   Icons.Filled.Devices, Icons.Outlined.Devices),
-        TopLevelTab("tab_vpn",     R.string.tab_virtual_lan,   Icons.Filled.Wifi,    Icons.Outlined.Wifi),
+        // TODO(2.0): VPN 功能延后开启
+        // TopLevelTab("tab_vpn",     R.string.tab_virtual_lan,   Icons.Filled.Wifi,    Icons.Outlined.Wifi),
         TopLevelTab("tab_settings",R.string.title_settings,     Icons.Filled.Settings,Icons.Outlined.Settings),
     )
 }
 
 private val TOP_LEVEL_ROUTES = listOf(
     MoonLinkRoute.DeviceList.route,
-    "tab_vpn",
+    // TODO(2.0): VPN 功能延后开启
+    // "tab_vpn",
     "tab_settings",
 )
 
@@ -96,7 +99,8 @@ private fun computeTitle(context: android.content.Context, route: String?, devic
     val deviceName = deviceManager.getDevice(uuid ?: "")?.name ?: ""
     return when (route) {
         MoonLinkRoute.DeviceList.route       -> context.getString(R.string.tab_my_devices)
-        "tab_vpn"                            -> context.getString(R.string.tab_virtual_lan)
+        // TODO(2.0): VPN 功能延后开启
+    // "tab_vpn"                            -> context.getString(R.string.tab_virtual_lan)
         "tab_settings"                       -> context.getString(R.string.title_settings)
         MoonLinkRoute.DeviceOverview.route   -> deviceName.ifEmpty { context.getString(R.string.title_device_overview) }
         MoonLinkRoute.DeviceDetail.route     -> context.getString(R.string.title_device_detail)
@@ -240,8 +244,9 @@ fun MoonLinkApp(
     val topBarTitle = computeTitle(context, currentRoute, deviceManager, currentUuid)
     val showBack = currentRoute != null && currentRoute !in TOP_LEVEL_ROUTES
 
+    // TODO(2.0): VPN 功能延后开启
     // External refresh trigger for VPN screen
-    val vpnRefreshTrigger = remember { mutableIntStateOf(0) }
+    // val vpnRefreshTrigger = remember { mutableIntStateOf(0) }
 
     // Device detail page action triggers (copies → triggers → Int increments)
     val detailCopyTrigger = remember { mutableIntStateOf(0) }
@@ -288,12 +293,13 @@ fun MoonLinkApp(
                 )
             }
 
+            // TODO(2.0): VPN 功能延后开启
             // ── Tab 2: 虚拟局域网 ─────────────────────────
-            composable("tab_vpn") {
-                VpnScreen(
-                    externalRefreshTrigger = vpnRefreshTrigger.intValue,
-                )
-            }
+            // composable("tab_vpn") {
+            //     VpnScreen(
+            //         externalRefreshTrigger = vpnRefreshTrigger.intValue,
+            //     )
+            // }
 
             // ── Tab 3: 设置 ────────────────────────────────
             composable("tab_settings") {
@@ -597,11 +603,12 @@ fun MoonLinkApp(
                     },
                     actions = {
                         when (currentRoute) {
-                            "tab_vpn" -> {
-                                IconButton(onClick = { vpnRefreshTrigger.intValue++ }) {
-                                    Icon(Icons.Default.Refresh, contentDescription = context.getString(R.string.cd_refresh_status))
-                                }
-                            }
+                            // TODO(2.0): VPN 功能延后开启
+                            // "tab_vpn" -> {
+                            //     IconButton(onClick = { vpnRefreshTrigger.intValue++ }) {
+                            //         Icon(Icons.Default.Refresh, contentDescription = context.getString(R.string.cd_refresh_status))
+                            //     }
+                            // }
                             MoonLinkRoute.DeviceDetail.route -> {
                                 IconButton(onClick = { detailCopyTrigger.intValue++ }) {
                                     Icon(Icons.Default.ContentCopy, contentDescription = context.getString(R.string.copy_details))

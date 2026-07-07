@@ -91,8 +91,7 @@ public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
                 "mouse_wheel_speed INTEGER," +
                 ConfigColumns.COLUMN_BOOLEAN_ENHANCED_TOUCH + " TEXT DEFAULT 'false'," +
                 ConfigColumns.COLUMN_INT_GLOBAL_OPACITY + " INTEGER DEFAULT 100," +
-                ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR + " INTEGER," +
-                ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR + " INTEGER," +
+                ConfigColumns.COLUMN_BOOLEAN_UNIFIED_COLOR_ENABLED + " TEXT DEFAULT 'false'," +
                 "scheme_type TEXT DEFAULT 'game_key_mapping'," +
                 "osc_vibrate INTEGER DEFAULT 1," +
                 "osc_opacity INTEGER DEFAULT 90," +
@@ -112,19 +111,6 @@ public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
         // MoonLink 重新开始，版本号从 1 开始，无升级路径
     }
 
-
-
-    private void normalizeGlobalStyleSettings(ContentValues settingValues) {
-        Long borderColor = settingValues.getAsLong(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR);
-        if (borderColor != null && borderColor == -1L) {
-            settingValues.putNull(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR);
-        }
-
-        Long textColor = settingValues.getAsLong(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR);
-        if (textColor != null && textColor == -1L) {
-            settingValues.putNull(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR);
-        }
-    }
 
     public void insertElement(ContentValues values) {
         writableDataBase.insert("element", null, values);
@@ -484,8 +470,9 @@ public class KeymappingDatabaseHelper extends SQLiteOpenHelper {
         } catch (JSONException e) {
             return -1; // -1: 文件格式错误
         }
-        normalizeGlobalStyleSettings(settingValues);
-
+        // 移除已废弃的旧列
+        settingValues.remove("global_border_color");
+        settingValues.remove("global_text_color");
         // ── 屏幕参数缩放：根据源屏幕与当前设备屏幕的比例换算元素坐标 ──
         scaleElementsFromExport(sourceWidth, sourceHeight, elements);
 

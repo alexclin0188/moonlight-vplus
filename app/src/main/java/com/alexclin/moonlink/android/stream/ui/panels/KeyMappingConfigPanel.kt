@@ -40,6 +40,7 @@ import com.alexclin.moonlink.android.stream.ui.DetailScaffold
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
 import com.alexclin.moonlink.android.stream.data.ConfigColumns
+import com.alexclin.moonlink.android.stream.data.ElementColumns
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 
 /**
@@ -88,18 +89,19 @@ fun KeyMappingConfigPanel(
         ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_OPACITY, 100L) as? Long) ?: 100L).toInt()
     ) }
 
-    // ── 全局颜色 ──
-    var useGlobalColors by remember { mutableStateOf(
-        db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) != null
+    // ── 统一颜色配置 ──
+    var unifiedColorEnabled by remember { mutableStateOf(
+        java.lang.Boolean.parseBoolean(
+            (db.queryConfigAttribute(configId, ConfigColumns.COLUMN_BOOLEAN_UNIFIED_COLOR_ENABLED, "false") as? String) ?: "false"
+        )
     ) }
-    var globalBorderColor by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, null) as? Long) ?: 0xF0888888L).toInt()
-    ) }
-    var globalTextColor by remember { mutableIntStateOf(
-        ((db.queryConfigAttribute(configId, ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, null) as? Long) ?: 0xFFFFFFFFL).toInt()
-    ) }
-    var showGlobalBorderPicker by remember { mutableStateOf(false) }
-    var showGlobalTextPicker by remember { mutableStateOf(false) }
+    // 统一颜色值（从最小 ID 元素读取，或用户通过颜色编辑器修改）
+    var unifiedNormalColor by remember { mutableIntStateOf(0xF0888888.toInt()) }
+    var unifiedPressedColor by remember { mutableIntStateOf(0xF00000FF.toInt()) }
+    var unifiedBackgroundColor by remember { mutableIntStateOf(0x00FFFFFF) }
+    var unifiedNormalTextColor by remember { mutableIntStateOf(0xFFFFFFFF.toInt()) }
+    var unifiedPressedTextColor by remember { mutableIntStateOf(0xFFCCCCCC.toInt()) }
+    var showUnifiedColorPicker by remember { mutableStateOf(false) }
 
     // ── 运行时同步：将 DB 值同步到 engine 运行时状态（打开面板时执行一次） ──
     LaunchedEffect(Unit) {
@@ -115,14 +117,8 @@ fun KeyMappingConfigPanel(
         cv.put(ConfigColumns.COLUMN_INT_MOUSE_WHEEL_SPEED, wheelSpeed.toLong())
         cv.put(ConfigColumns.COLUMN_BOOLEAN_ENHANCED_TOUCH, enhancedTouch.toString())
         cv.put(ConfigColumns.COLUMN_INT_GLOBAL_OPACITY, globalOpacity.toLong())
-        // 全局颜色
-        if (useGlobalColors) {
-            cv.put(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR, globalBorderColor.toLong())
-            cv.put(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR, globalTextColor.toLong())
-        } else {
-            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
-            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
-        }
+        // 统一颜色配置不持久化值，仅持久化开关状态
+        cv.put(ConfigColumns.COLUMN_BOOLEAN_UNIFIED_COLOR_ENABLED, unifiedColorEnabled.toString())
         db.updateConfig(configId, cv)
 
         syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
@@ -208,98 +204,128 @@ fun KeyMappingConfigPanel(
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }
 
-            // 统一边框和文字颜色
+            // 统一颜色配置
             item {
                 Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("统一边框和文字颜色", Modifier.weight(1f))
-                    Switch(checked = useGlobalColors, modifier = Modifier.scale(0.8f), onCheckedChange = {
-                        useGlobalColors = it
-                        if (!it) {
-                            // 关闭时清除 DB 中的全局颜色值
-                            val cv = ContentValues()
-                            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_BORDER_COLOR)
-                            cv.putNull(ConfigColumns.COLUMN_INT_GLOBAL_TEXT_COLOR)
-                            db.updateConfig(configId, cv)
-                        } else {
-                            saveToDb()
+                    Text("统一颜色配置", Modifier.weight(1f))
+                    Switch(checked = unifiedColorEnabled, modifier = Modifier.scale(0.8f), onCheckedChange = {
+                        unifiedColorEnabled = it
+                        if (it) {
+                            // 开启：以最小 element_id 元素的颜色为基准，应用到所有元素
+                            applyUnifiedColorsFromMinIdElement(context, configId, db) { n, p, bg, nt, pt ->
+                                unifiedNormalColor = n; unifiedPressedColor = p
+                                unifiedBackgroundColor = bg; unifiedNormalTextColor = nt; unifiedPressedTextColor = pt
+                            }
+                            engine.reloadOverlay()
                         }
+                        saveToDb()
                     })
                 }
             }
 
-            // 全局颜色选择器（仅开关打开时显示）
-            if (useGlobalColors) {
+            // 统一颜色选择器（仅开关打开时显示）
+            if (unifiedColorEnabled) {
                 item {
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Text("全局边框颜色", Modifier.weight(1f))
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
-                                .background(Color(globalBorderColor), RoundedCornerShape(4.dp))
-                                .clickable { showGlobalBorderPicker = true }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = { showGlobalBorderPicker = true }) {
-                            Text("选择颜色", style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                }
-                item {
-                    Row(Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Text("全局文字颜色", Modifier.weight(1f))
-                        Box(
-                            modifier = Modifier
-                                .size(32.dp)
-                                .border(1.dp, Color.Gray, RoundedCornerShape(4.dp))
-                                .background(Color(globalTextColor), RoundedCornerShape(4.dp))
-                                .clickable { showGlobalTextPicker = true }
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        TextButton(onClick = { showGlobalTextPicker = true }) {
-                            Text("选择颜色", style = MaterialTheme.typography.bodySmall)
-                        }
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 16.dp).clickable { showUnifiedColorPicker = true },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text("统一颜色", Modifier.weight(1f))
+                        // 五个色块
+                        val chipModifier = Modifier.size(28.dp).padding(2.dp)
+                        Box(chipModifier.background(Color(unifiedNormalColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
+                        Box(chipModifier.background(Color(unifiedPressedColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
+                        Box(chipModifier.background(Color(unifiedBackgroundColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
+                        Box(chipModifier.background(Color(unifiedNormalTextColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
+                        Box(chipModifier.background(Color(unifiedPressedTextColor), RoundedCornerShape(3.dp)).border(1.dp, Color.Gray, RoundedCornerShape(3.dp)))
                     }
                 }
             }
         }
     }
 
-    // ── 全局边框颜色选择器 ──
-    if (showGlobalBorderPicker) {
+    // ── 统一颜色编辑器 ──
+    if (showUnifiedColorPicker) {
         ColorPickerDialog(
-            title = "全局边框颜色",
+            title = "统一颜色",
             items = listOf(
-                ColorPickerItem("边框颜色", "border", globalBorderColor),
+                ColorPickerItem("正常色", "normal", unifiedNormalColor),
+                ColorPickerItem("按下色", "pressed", unifiedPressedColor),
+                ColorPickerItem("背景色", "bg", unifiedBackgroundColor),
+                ColorPickerItem("文字色", "normalText", unifiedNormalTextColor),
+                ColorPickerItem("按下文字色", "pressedText", unifiedPressedTextColor),
             ),
             onSave = { result ->
-                globalBorderColor = result.firstOrNull()?.second ?: globalBorderColor
-                showGlobalBorderPicker = false
-                saveToDb()
+                val map = result.toMap()
+                unifiedNormalColor = map["normal"] ?: unifiedNormalColor
+                unifiedPressedColor = map["pressed"] ?: unifiedPressedColor
+                unifiedBackgroundColor = map["bg"] ?: unifiedBackgroundColor
+                unifiedNormalTextColor = map["normalText"] ?: unifiedNormalTextColor
+                unifiedPressedTextColor = map["pressedText"] ?: unifiedPressedTextColor
+                // 应用到所有元素
+                applyUnifiedColorsToAllElements(context, configId, db,
+                    unifiedNormalColor, unifiedPressedColor, unifiedBackgroundColor,
+                    unifiedNormalTextColor, unifiedPressedTextColor)
+                showUnifiedColorPicker = false
                 engine.reloadOverlay()
             },
-            onDismiss = { showGlobalBorderPicker = false },
-        )
-    }
-
-    // ── 全局文字颜色选择器 ──
-    if (showGlobalTextPicker) {
-        ColorPickerDialog(
-            title = "全局文字颜色",
-            items = listOf(
-                ColorPickerItem("文字颜色", "text", globalTextColor),
-            ),
-            onSave = { result ->
-                globalTextColor = result.firstOrNull()?.second ?: globalTextColor
-                showGlobalTextPicker = false
-                saveToDb()
-                engine.reloadOverlay()
-            },
-            onDismiss = { showGlobalTextPicker = false },
+            onDismiss = { showUnifiedColorPicker = false },
         )
     }
 }
 
+// ── 统一颜色工具函数 ───────────────────────────────────────────
 
+/**
+ * 以当前方案中最小 [element_id] 元素的颜色为基准，应用到所有元素。
+ * 通过回调返回读取到的颜色值供 UI 状态更新。
+ */
+private fun applyUnifiedColorsFromMinIdElement(
+    context: android.content.Context,
+    configId: Long,
+    db: KeymappingDatabaseHelper,
+    onColorsRead: (normal: Int, pressed: Int, bg: Int, normalText: Int, pressedText: Int) -> Unit,
+) {
+    try {
+        val elementIds = db.queryAllElementIds(configId)
+        if (elementIds.isNullOrEmpty()) return
+        // 取最小 element_id 的元素
+        val minId = elementIds.min()
+        val attrs = db.queryAllElementAttributes(configId, minId) ?: return
+        val n = (attrs[ElementColumns.COLUMN_INT_ELEMENT_NORMAL_COLOR] as? Long)?.toInt() ?: 0xF0888888.toInt()
+        val p = (attrs[ElementColumns.COLUMN_INT_ELEMENT_PRESSED_COLOR] as? Long)?.toInt() ?: 0xF00000FF.toInt()
+        val bg = (attrs[ElementColumns.COLUMN_INT_ELEMENT_BACKGROUND_COLOR] as? Long)?.toInt() ?: 0x00FFFFFF
+        val nt = (attrs[ElementColumns.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR] as? Long)?.toInt() ?: 0xFFFFFFFF.toInt()
+        val pt = (attrs[ElementColumns.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR] as? Long)?.toInt() ?: 0xFFCCCCCC.toInt()
+        onColorsRead(n, p, bg, nt, pt)
+        // 应用到所有元素
+        applyUnifiedColorsToAllElements(context, configId, db, n, p, bg, nt, pt)
+    } catch (_: Exception) { }
+}
+
+/**
+ * 将统一的 5 个颜色值覆盖写入所有元素的 DB 记录。
+ */
+private fun applyUnifiedColorsToAllElements(
+    context: android.content.Context,
+    configId: Long,
+    db: KeymappingDatabaseHelper,
+    normal: Int,
+    pressed: Int,
+    bg: Int,
+    normalText: Int,
+    pressedText: Int,
+) {
+    try {
+        val elementIds = db.queryAllElementIds(configId) ?: return
+        for (eid in elementIds) {
+            val cv = ContentValues()
+            cv.put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_COLOR, normal.toLong())
+            cv.put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_COLOR, pressed.toLong())
+            cv.put(ElementColumns.COLUMN_INT_ELEMENT_BACKGROUND_COLOR, bg.toLong())
+            cv.put(ElementColumns.COLUMN_INT_ELEMENT_NORMAL_TEXT_COLOR, normalText.toLong())
+            cv.put(ElementColumns.COLUMN_INT_ELEMENT_PRESSED_TEXT_COLOR, pressedText.toLong())
+            db.updateElement(configId, eid, cv)
+        }
+    } catch (_: Exception) { }
+}

@@ -252,6 +252,7 @@
                 android:resource="@xml/accessibility_service_config" />
         </service>
 
+        <!-- TODO(2.0): VPN 功能延后开启
         <service
             android:name="com.easytier.jni.EasyTierVpnService"
             android:permission="android.permission.BIND_VPN_SERVICE"
@@ -260,6 +261,7 @@
                 <action android:name="android.net.VpnService"/>
             </intent-filter>
         </service>
+        -->
 
         <!-- stopWithTask="false" 表示当用户从最近任务划掉 App 时，服务尝试不立即停止 -->
         <service
