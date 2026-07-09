@@ -8,6 +8,7 @@ import com.limelight.nvstream.http.ComputerDetails
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -34,11 +35,15 @@ class DeviceStateManager(
     var binder: ComputerManagerService.ComputerManagerBinder? = null
         private set
 
-    /** 是否已开始收集设备更新 */
-    private var collecting = false
+    /** 上次 collectLatest 的 Job，bind 重入时取消旧协程防止累积 */
+    private var collectJob: Job? = null
 
     /**
      * 绑定 [ComputerManagerBinder] 并开始收集设备更新。
+     *
+     * 每次 bind 都会重新启动轮询和 Flow 收集，支持 Service 断开重连场景：
+     * - App 后台时 Service 被系统杀死 → onServiceDisconnected → onServiceConnected
+     * - 新 binder 需要重新调用 startPolling() 并建立新的 Flow 收集
      *
      * @param b 已连接的 ComputerManagerBinder
      * @param initialDevices 初始设备列表（来自 binder.getAllComputers()）
@@ -49,17 +54,17 @@ class DeviceStateManager(
             devices.clear()
             devices.addAll(initialDevices)
         }
-        if (!collecting) {
-            collecting = true
-            b.startPolling()
-            scope.launch {
-                b.computerUpdates.collectLatest { details ->
-                    val idx = devices.indexOfFirst { it.uuid == details.uuid }
-                    if (idx >= 0) {
-                        devices[idx] = details
-                    } else {
-                        devices.add(details)
-                    }
+        // 始终启动轮询并建立 Flow 收集
+        // 旧 Service 的 Flow 已随 serviceScope.cancel() 终止，不重启则设备状态永不更新
+        b.startPolling()
+        collectJob?.cancel()
+        collectJob = scope.launch {
+            b.computerUpdates.collectLatest { details ->
+                val idx = devices.indexOfFirst { it.uuid == details.uuid }
+                if (idx >= 0) {
+                    devices[idx] = details
+                } else {
+                    devices.add(details)
                 }
             }
         }
@@ -84,7 +89,7 @@ class DeviceStateManager(
     fun release() {
         binder?.stopPolling()
         binder = null
-        collecting = false
+        collectJob = null
         scope.cancel()
     }
 }

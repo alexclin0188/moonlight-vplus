@@ -176,10 +176,10 @@ class ShortcutTrampoline : com.alexclin.moonlink.android.BaseActivity() {
                     true)
         }
 
+        // 仅解绑自身连接；轮询生命周期由 MoonLinkMainActivity 统一管理
         if (managerBinder != null) {
             pollingCollectJob?.cancel()
             pollingCollectJob = null
-            managerBinder?.stopPolling()
             unbindService(serviceConnection)
             managerBinder = null
         }
@@ -373,8 +373,8 @@ class ShortcutTrampoline : com.alexclin.moonlink.android.BaseActivity() {
 
         Dialog.closeDialogs()
 
+        // 仅解绑自身连接；轮询生命周期由 MoonLinkMainActivity 统一管理
         if (managerBinder != null) {
-            managerBinder?.stopPolling()
             unbindService(serviceConnection)
             managerBinder = null
         }

@@ -325,6 +325,9 @@ class ComputerManagerService : Service() {
          */
         fun forceRefresh() {
             synchronized(pollingTuples) {
+                // 确保 pollingActive 为 true，防止 createPollingJob 中的 while 循环因
+                // pollingActive == false 而立即退出；放在 synchronized 内避免与 onUnbind 竞态
+                pollingActive = true
                 for (tuple in pollingTuples) {
                     // 保持当前状态不变，仅重启轮询 Job
                     // 不设为 UNKNOWN，避免 UI 闪"检测中…"
