@@ -63,7 +63,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
+import com.alexclin.moonlink.android.stream.ui.common.CustomKeyData
 import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
+import com.alexclin.moonlink.android.stream.ui.editor.EditorDialog
 import androidx.compose.ui.res.stringResource
 
 /**
@@ -155,7 +157,7 @@ fun KeyboardSubPanel(
     var customKeys by remember { mutableStateOf(CustomKeyRepository.loadAll(context)) }
     var isEditMode by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
-    var showDeleteDialog by remember { mutableStateOf(false) }
+    var deleteTargetKey by remember { mutableStateOf<CustomKeyData?>(null) }
 
     // ── 虚拟键盘 Bridge（标签 2 使用） ──
     val keyboardBridge = remember { VirtualKeyboardBridge(engine) }
@@ -203,7 +205,7 @@ fun KeyboardSubPanel(
                         isEditMode = isEditMode,
                         onToggleEditMode = { isEditMode = !isEditMode },
                         onAddCustomKey = { showAddDialog = true },
-                        onDeleteCustomKey = { showDeleteDialog = true },
+                        onDeleteCustomKey = { key -> deleteTargetKey = key },
                         onResetCustomKeys = {
                             CustomKeyRepository.resetAll(context)
                             customKeys = CustomKeyRepository.loadAll(context)
@@ -232,14 +234,35 @@ fun KeyboardSubPanel(
         )
     }
 
-    if (showDeleteDialog) {
-        DeleteCustomKeyDialog(
-            onDismiss = { showDeleteDialog = false },
-            onDeleted = {
+    deleteTargetKey?.let { key ->
+        EditorDialog(
+            title = stringResource(R.string.customkey_title_delete_single),
+            onDismiss = { deleteTargetKey = null },
+            onCancel = { deleteTargetKey = null },
+            onSave = {
+                CustomKeyRepository.delete(context, listOf(key.name))
                 customKeys = CustomKeyRepository.loadAll(context)
-                showDeleteDialog = false
+                deleteTargetKey = null
             },
-        )
+            saveText = stringResource(R.string.dialog_button_delete),
+            modifier = Modifier.fillMaxWidth(0.4f),
+        ) {
+            Text(
+                text = key.name,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(start = 16.dp, top = 12.dp, end = 16.dp),
+            )
+            if (key.description.isNotEmpty()) {
+                Text(
+                    text = key.description,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(start = 16.dp, top = 4.dp, end = 16.dp, bottom = 12.dp),
+                )
+            } else {
+                Spacer(Modifier.height(12.dp))
+            }
+        }
     }
 }
 
@@ -393,7 +416,7 @@ private fun ShortcutsTabContent(
     isEditMode: Boolean,
     onToggleEditMode: () -> Unit,
     onAddCustomKey: () -> Unit,
-    onDeleteCustomKey: () -> Unit,
+    onDeleteCustomKey: (com.alexclin.moonlink.android.stream.ui.common.CustomKeyData) -> Unit,
     onResetCustomKeys: () -> Unit,
     onHideKeyboard: () -> Unit,
 ) {
@@ -425,14 +448,16 @@ private fun ShortcutsTabContent(
             )
         }
 
-        // ── 自定义快捷键（编辑模式下可删除） ──
+        // ── 自定义快捷键（编辑模式下点按弹出删除确认） ──
         itemsIndexed(customKeys) { _, customKey ->
             ShortcutButton(
                 label = customKey.name,
                 description = customKey.description.ifEmpty { null },
-                onClick = { engine.sendKeys(customKey.keys.toShortArray()) },
-                isCustom = true,
-                isEditMode = isEditMode,
+                onClick = {
+                    if (isEditMode) onDeleteCustomKey(customKey)
+                    else engine.sendKeys(customKey.keys.toShortArray())
+                },
+                onDeleteClick = if (isEditMode) ({ onDeleteCustomKey(customKey) }) else null,
                 vkCodes = customKey.keys,
             )
         }
@@ -445,15 +470,6 @@ private fun ShortcutsTabContent(
                     label = stringResource(R.string.btn_add),
                     onClick = onAddCustomKey,
                 )
-            }
-            if (customKeys.isNotEmpty()) {
-                item(span = { GridItemSpan(1) }) {
-                    ShortcutActionButton(
-                        icon = Icons.Default.Close,
-                        label = stringResource(R.string.editor_content_desc_delete),
-                        onClick = onDeleteCustomKey,
-                    )
-                }
             }
             item(span = { GridItemSpan(1) }) {
                 ShortcutActionButton(
@@ -511,13 +527,12 @@ private fun ShortcutEditButton(
  * 统一快捷键按钮 — 同时支持预置快捷键和用户自定义快捷键。
  *
  * 第一行展示标签（键名），第二行展示功能说明。
- * 自定义快捷键在编辑模式下显示删除图标和错误色底色。
+ * 当 [onDeleteClick] 不为 null 时显示 X 删除图标，点按弹出删除确认。
  *
  * @param label 第一行显示的键名（如 "Ctrl+C"）
  * @param description 第二行显示的功能说明（为 null 时显示键码回退）
- * @param onClick 点击回调
- * @param isCustom 是否为自定义快捷键（影响编辑模式行为）
- * @param isEditMode 编辑模式（自定义快捷键有效）
+ * @param onClick 点按时回调（预设快捷键 / 非编辑模式下的自定义快捷键）
+ * @param onDeleteClick 传非 null 时显示 X 图标，点按触发删除确认
  * @param vkCodes 自定义快捷键的 VK 码列表（description 为 null 时显示键码回退用）
  */
 @Composable
@@ -525,16 +540,16 @@ private fun ShortcutButton(
     label: String,
     description: String?,
     onClick: () -> Unit,
-    isCustom: Boolean = false,
-    isEditMode: Boolean = false,
+    onDeleteClick: (() -> Unit)? = null,
     vkCodes: List<Short> = emptyList(),
 ) {
+    val hasDelete = onDeleteClick != null
     Surface(
         modifier = Modifier
             .heightIn(min = 46.dp)
-            .clickable(enabled = !(isCustom && isEditMode), onClick = onClick),
+            .clickable(onClick = if (hasDelete) onDeleteClick!! else onClick),
         shape = RoundedCornerShape(8.dp),
-        color = if (isCustom && isEditMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        color = if (hasDelete) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Column(
@@ -562,13 +577,13 @@ private fun ShortcutButton(
                 Text(
                     text = descText,
                     style = MaterialTheme.typography.labelSmall,
-                    color = if (isCustom && isEditMode) MaterialTheme.colorScheme.onErrorContainer
+                    color = if (hasDelete) MaterialTheme.colorScheme.onErrorContainer
                     else MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                 )
             }
-            // 编辑模式：删除图标
-            if (isCustom && isEditMode) {
+            // 删除图标
+            if (hasDelete) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Icon(
                     Icons.Default.Close,

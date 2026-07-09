@@ -12,11 +12,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -26,14 +24,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -58,10 +50,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
-import com.alexclin.moonlink.android.R
 
 // ════════════════════════════════════════════════════════════════════════════
 //  颜色项描述（公开给调用方）
@@ -347,50 +335,21 @@ fun ColorPickerDialog(
         }
     }
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+    val screenHeightDp = LocalConfiguration.current.screenHeightDp
+    val maxHeightDp = (screenHeightDp * 0.95f).coerceAtMost(800f)
+
+    EditorDialog(
+        title = title,
+        onDismiss = onDismiss,
+        onCancel = onDismiss,
+        onSave = { onSave(buildResult()) },
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .fillMaxHeight()
+            .heightIn(max = maxHeightDp.dp),
     ) {
-        val screenHeightDp = LocalConfiguration.current.screenHeightDp
-        val maxHeightDp = (screenHeightDp * 0.95f).coerceAtMost(800f)
-
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .wrapContentHeight()
-                .heightIn(max = maxHeightDp.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = 12.dp,
-        ) {
-            Column(modifier = Modifier.fillMaxSize().imePadding()) {
-                // ── 标题行（末尾放置取消/保存按钮） ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(title, style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium)
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = {
-                        onSave(buildResult())
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-
-                HorizontalDivider()
-
-                // ── 三列主体：SatVal 拾色区 | Hue 竖向条 | 颜色项+预览+Hex ──
-                Row(
+        // ── 三列主体：SatVal 拾色区 | Hue 竖向条 | 颜色项+预览+Hex ──
+        Row(
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
@@ -554,9 +513,5 @@ fun ColorPickerDialog(
                         }
                     }
                 }
-
-
-            }
-        }
     }
 }

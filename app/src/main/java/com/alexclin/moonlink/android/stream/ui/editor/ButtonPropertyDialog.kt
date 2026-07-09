@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -24,15 +23,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,8 +48,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.CompactChip
 import com.alexclin.moonlink.android.util.ToastUtil
@@ -104,66 +98,33 @@ fun ButtonPropertyDialog(
     val focusManager = LocalFocusManager.current
     val context = LocalContext.current
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
+    EditorDialog(
+        title = title,
+        onDismiss = onDismiss,
+        onCancel = onDismiss,
+        onSave = {
+            // 新建模式下必须选择键值
+            if (isCreateMode && value.isBlank()) {
+                ToastUtil.show(context, context.getString(R.string.editor_toast_select_key_first), Toast.LENGTH_SHORT)
+                return@EditorDialog
+            }
+            if (isDuplicateElementName(text, existingTextNames)) {
+                val trimmedText = text.trim()
+                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
+                return@EditorDialog
+            }
+            onSave(buildUpdated())
+        },
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+            .wrapContentHeight()
+            .heightIn(max = (screenHeightDp * 0.95f).dp),
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .wrapContentHeight()
-                .heightIn(max = (screenHeightDp * 0.95f).dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = 12.dp,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .imePadding()
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                // ── 标题行 ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 0.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium)
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = {
-                        // 新建模式下必须选择键值
-                        if (isCreateMode && value.isBlank()) {
-                            ToastUtil.show(context, context.getString(R.string.editor_toast_select_key_first), Toast.LENGTH_SHORT)
-                            return@TextButton
-                        }
-                        if (isDuplicateElementName(text, existingTextNames)) {
-                            val trimmedText = text.trim()
-                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
-                            return@TextButton
-                        }
-                        onSave(buildUpdated())
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-
-                HorizontalDivider()
-
-                // ── 内容 ──
+        // ── 内容 ──
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                         .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
@@ -379,8 +340,6 @@ fun ButtonPropertyDialog(
                         }
                     }
                 }
-            }
-        }
     }
 
     // ── 键值选择器弹窗 ──

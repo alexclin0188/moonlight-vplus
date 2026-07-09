@@ -9,17 +9,17 @@ import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 //  元素类型枚举（与旧 Element.java 常量完全对应）
 // ════════════════════════════════════════════════════════════════════════════
 
-enum class ElementType(val value: Int, val displayName: String) {
-    DIGITAL_COMMON_BUTTON(0, "Common Button"),
-    DIGITAL_SWITCH_BUTTON(1, "Switch Button"),
-    DIGITAL_MOVABLE_BUTTON(2, "Movable Button"),
-    DIGITAL_COMBINE_BUTTON(3, "Combo Key"),
-    DIGITAL_PAD(20, "D-Pad"),
-    ANALOG_STICK(30, "Analog Stick"),
-    DIGITAL_STICK(31, "Digital Stick"),
-    INVISIBLE_ANALOG_STICK(32, "Invisible Analog Stick"),
-    INVISIBLE_DIGITAL_STICK(33, "Invisible Digital Stick"),
-    UNKNOWN(-1, "Unknown");
+enum class ElementType(val value: Int) {
+    DIGITAL_COMMON_BUTTON(0),
+    DIGITAL_SWITCH_BUTTON(1),
+    DIGITAL_MOVABLE_BUTTON(2),
+    DIGITAL_COMBINE_BUTTON(3),
+    DIGITAL_PAD(20),
+    ANALOG_STICK(30),
+    DIGITAL_STICK(31),
+    INVISIBLE_ANALOG_STICK(32),
+    INVISIBLE_DIGITAL_STICK(33),
+    UNKNOWN(-1);
 
     companion object {
         private val map = entries.associateBy { it.value }

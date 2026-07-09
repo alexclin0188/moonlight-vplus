@@ -21,14 +21,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
@@ -47,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
 import com.alexclin.moonlink.android.stream.ui.common.SaveResult
+import com.alexclin.moonlink.android.stream.ui.editor.EditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.KeyValuePickerDialog
 
 /**
@@ -123,177 +122,168 @@ fun AddCustomKeyDialog(
         }
     }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(stringResource(R.string.customkey_dialog_title))
-        },
-        text = {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                // ── 已选按键区域（最上方） ──
-                Text(
-                    text = stringResource(R.string.customkey_label_selected_keys),
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Spacer(modifier = Modifier.height(6.dp))
+    EditorDialog(
+        title = stringResource(R.string.customkey_dialog_title),
+        onDismiss = onDismiss,
+        onCancel = onDismiss,
+        onSave = { validateAndSave() },
+        modifier = Modifier.fillMaxWidth(0.5f).wrapContentHeight(),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            // ── 已选按键区域（最上方） ──
+            Text(
+                text = stringResource(R.string.customkey_label_selected_keys),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Spacer(modifier = Modifier.height(6.dp))
 
-                if (selectedPickerValues.isEmpty()) {
-                    // 空状态提示
-                    Surface(
+            if (selectedPickerValues.isEmpty()) {
+                // 空状态提示
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { showKeyPicker = true },
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                ) {
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showKeyPicker = true },
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.customkey_hint_add_key),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.customkey_hint_add_key),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     }
-                } else {
-                    // 已选按键标签流式布局
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        selectedPickerValues.forEachIndexed { index, value ->
-                            val label = KeyToVkMapping.toLabel(value) ?: value
-                            Surface(
-                                modifier = Modifier.clip(RoundedCornerShape(6.dp)),
-                                shape = RoundedCornerShape(6.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer,
+                }
+            } else {
+                // 已选按键标签流式布局
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    selectedPickerValues.forEachIndexed { index, value ->
+                        val label = KeyToVkMapping.toLabel(value) ?: value
+                        Surface(
+                            modifier = Modifier.clip(RoundedCornerShape(6.dp)),
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Row(
-                                    modifier = Modifier.padding(start = 8.dp, end = 2.dp, top = 2.dp, bottom = 2.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
+                                Text(
+                                    text = label,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                    fontWeight = FontWeight.Medium,
+                                )
+                                IconButton(
+                                    onClick = { selectedPickerValues.removeAt(index) },
+                                    modifier = Modifier.size(20.dp),
                                 ) {
-                                    Text(
-                                        text = label,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        fontWeight = FontWeight.Medium,
+                                    Icon(
+                                        Icons.Default.Close,
+                                        contentDescription = stringResource(R.string.editor_content_desc_delete),
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                     )
-                                    IconButton(
-                                        onClick = { selectedPickerValues.removeAt(index) },
-                                        modifier = Modifier.size(20.dp),
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Close,
-                                            contentDescription = stringResource(R.string.editor_content_desc_delete),
-                                            modifier = Modifier.size(14.dp),
-                                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        )
-                                    }
                                 }
                             }
                         }
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
-                    // 添加更多按键按钮
-                    Surface(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(6.dp))
-                            .clickable { showKeyPicker = true },
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                // 添加更多按键按钮
+                Surface(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(6.dp))
+                        .clickable { showKeyPicker = true },
+                    shape = RoundedCornerShape(6.dp),
+                    color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = stringResource(R.string.customkey_hint_add_key),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            )
-                        }
-                    }
-
-                    // 自动生成的名称提示
-                    if (selectedPickerValues.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = generateName(),
+                            text = stringResource(R.string.customkey_hint_add_key),
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // ── 功能说明输入 ──
-                OutlinedTextField(
-                    value = description,
-                    onValueChange = {
-                        description = it
-                        errorMessage = null
-                    },
-                    label = { Text(stringResource(R.string.customkey_label_description)) },
-                    placeholder = { Text(stringResource(R.string.customkey_hint_description)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(
-                        onDone = { focusManager.clearFocus() }
-                    ),
-                )
-
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                // 自动生成的名称提示
+                if (selectedPickerValues.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall,
+                        text = generateName(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
                     )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { validateAndSave() }) {
-                Text(stringResource(R.string.editor_save))
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── 功能说明输入 ──
+            OutlinedTextField(
+                value = description,
+                onValueChange = {
+                    description = it
+                    errorMessage = null
+                },
+                label = { Text(stringResource(R.string.customkey_label_description)) },
+                placeholder = { Text(stringResource(R.string.customkey_hint_description)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(
+                    onDone = { focusManager.clearFocus() }
+                ),
+            )
+
+            if (errorMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = errorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
             }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.editor_cancel))
-            }
-        },
-    )
+        }
+    }
 
     // ── 键值选择器弹窗 ──
     if (showKeyPicker) {

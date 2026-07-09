@@ -29,7 +29,7 @@
     <string name="pcview_menu_disable_ipv6">Disable IPv6</string>
     <string name="pcview_menu_open_webui">Open Web Management (Sunshine)</string>
     <string name="pcview_open_webui_unavailable">No reachable address available for Web management</string>
-    <string name="sunshine_webui_auth_title">Sign in to %1$s (%2$s)</string>
+    <string name="sunshine_webui_auth_title">Sign in to %1$s</string>
     <string name="pcview_ipv6_disabled">IPv6 disabled for this PC</string>
     <string name="pcview_ipv6_enabled">IPv6 enabled for this PC</string>
 
@@ -838,8 +838,8 @@
     <string name="config_unified_color_picker">Unified color picker</string>
     <string name="config_unified_colors">Unified colors</string>
     <string name="customkey_dialog_title">Custom Key Mapping</string>
-    <string name="customkey_error_code_format">Invalid code format: %1$s</string>
-    <string name="customkey_error_code_invalid">Invalid key code: %1$s</string>
+
+
     <string name="customkey_error_codes_empty">Key codes cannot be empty</string>
     <string name="customkey_error_name_duplicate">Name \"%1$s\" already exists</string>
     <string name="customkey_error_name_empty">Name cannot be empty</string>
@@ -865,7 +865,7 @@
     <string name="display_buffer_1frame">1 Frame</string>
     <string name="display_buffer_5frame">5 Frames</string>
     <string name="display_current_monitor">Current Monitor</string>
-    <string name="display_dpi_scale">DPI: %1$d%%</string>
+    <string name="display_dpi_scale">DPI</string>
     <string name="display_dpi_scale_failed">DPI scale acquiring failed</string>
     <string name="display_hdr" translatable="false">HDR</string>
     <string name="display_mtk_desc">Forces MTK decoder to run at high frequency to reduce latency. May cause issues on other devices.</string>
@@ -892,7 +892,7 @@
     <string name="editor_confirm_clear">Clear</string>
     <string name="editor_content_desc_confirm_name">Confirm name</string>
     <string name="editor_content_desc_copy_clipboard">Copy to clipboard</string>
-    <string name="editor_content_desc_delete">Delete %1$s</string>
+    <string name="editor_content_desc_delete">Delete</string>
     <string name="editor_content_desc_duplicate">Duplicate</string>
     <string name="editor_content_desc_edit_name">Edit name</string>
     <string name="editor_content_desc_layer_down">Layer down</string>
@@ -900,6 +900,7 @@
     <string name="editor_content_desc_properties">Properties</string>
     <string name="editor_content_desc_select_key">Select key</string>
     <string name="editor_delete_title">Delete Key Element</string>
+    <string name="editor_delete_element_format">Delete %1$s</string>
     <string name="editor_element_list_title">Elements (%1$d)</string>
     <string name="editor_empty_hint">Tap "+" to add a key element</string>
     <string name="editor_grid_cols_format">%1$d columns</string>
@@ -1078,7 +1079,6 @@
     <string name="customkey_select_hint">Select keys to delete:</string>
     <string name="customkey_error_no_selection">Please select keys to delete</string>
     <string name="customkey_error_delete_failed">Delete failed, please try again</string>
-    <string name="customkey_keycode_format">Key code: %1$s</string>
 
     <!-- PreferenceComponents -->
     <string name="pref_item_selected_format">%1$s (%2$d selected)</string>
@@ -1117,6 +1117,21 @@
     <string name="shortcut_desc_close_window">Close Window</string>
     <string name="shortcut_desc_task_manager">Task Manager</string>
     <string name="shortcut_desc_switch_ime">Switch input method</string>
+
+    <!-- Element type display names (used in key mapping editor) -->
+    <string name="element_type_common_button">Common Button</string>
+    <string name="element_type_switch_button">Switch Button</string>
+    <string name="element_type_movable_button">Movable Button</string>
+    <string name="element_type_combo_key">Combo Key</string>
+    <string name="element_type_dpad">D-Pad</string>
+    <string name="element_type_analog_stick">Analog Stick</string>
+    <string name="element_type_digital_stick">Digital Stick</string>
+    <string name="element_type_invisible_analog_stick">Invisible Analog Stick</string>
+    <string name="element_type_invisible_digital_stick">Invisible Digital Stick</string>
+    <string name="element_type_unknown">Unknown</string>
+
+    <!-- Delete custom shortcut dialog -->
+    <string name="customkey_title_delete_single">Delete Shortcut</string>
 
     <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
     <string name="custom_key_desc_fullscreen">Toggle fullscreen</string>

@@ -159,8 +159,13 @@ class SunshineWebUiActivity : com.alexclin.moonlink.android.BaseActivity() {
         inputLayout.addView(usernameInput)
         inputLayout.addView(passwordInput)
 
+        val dialogTitle = if (host != null) {
+            getString(R.string.sunshine_webui_auth_title, host)
+        } else {
+            getString(R.string.sunshine_webui_auth_title, getString(R.string.pcview_menu_open_webui))
+        }
         AlertDialog.Builder(this)
-            .setTitle(R.string.sunshine_webui_auth_title)
+            .setTitle(dialogTitle)
             .setView(inputLayout)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val username = usernameInput.text.toString()

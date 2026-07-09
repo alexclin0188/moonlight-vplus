@@ -20,6 +20,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
+import com.alexclin.moonlink.android.R
+import com.alexclin.moonlink.android.stream.ui.editor.ElementType
 import kotlin.math.roundToInt
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -71,6 +74,20 @@ fun EditorCanvas(
     val currentElements by rememberUpdatedState(elements)
     val currentSelectedIds by rememberUpdatedState(selectedIds)
     val currentCallbacks by rememberUpdatedState(callbacks)
+
+    // 预计算元素类型的本地化显示名称映射表（在 Composable 作用域内计算，供 DrawScope 使用）
+    val typeNameMap = mapOf(
+        ElementType.DIGITAL_COMMON_BUTTON to stringResource(R.string.element_type_common_button),
+        ElementType.DIGITAL_SWITCH_BUTTON to stringResource(R.string.element_type_switch_button),
+        ElementType.DIGITAL_MOVABLE_BUTTON to stringResource(R.string.element_type_movable_button),
+        ElementType.DIGITAL_COMBINE_BUTTON to stringResource(R.string.element_type_combo_key),
+        ElementType.DIGITAL_PAD to stringResource(R.string.element_type_dpad),
+        ElementType.ANALOG_STICK to stringResource(R.string.element_type_analog_stick),
+        ElementType.DIGITAL_STICK to stringResource(R.string.element_type_digital_stick),
+        ElementType.INVISIBLE_ANALOG_STICK to stringResource(R.string.element_type_invisible_analog_stick),
+        ElementType.INVISIBLE_DIGITAL_STICK to stringResource(R.string.element_type_invisible_digital_stick),
+        ElementType.UNKNOWN to stringResource(R.string.element_type_unknown),
+    )
 
     Canvas(
         modifier = modifier
@@ -132,7 +149,8 @@ fun EditorCanvas(
         for (element in sortedElements) {
             val isSelected = element.elementId in selectedIds
             val isPressed = element.elementId in pressedIds
-            drawElement(element, isSelected, isPressed)
+            val typeDisplayName = typeNameMap[element.type] ?: ""
+            drawElement(element, isSelected, isPressed, typeDisplayName)
         }
 
         // ── 5. 底部画布尺寸提示 ──
@@ -182,6 +200,7 @@ private fun DrawScope.drawElement(
     element: EditorElement,
     isSelected: Boolean,
     isPressed: Boolean,
+    typeDisplayName: String = "",
 ) {
     when (element.type) {
         ElementType.DIGITAL_COMMON_BUTTON,
@@ -192,7 +211,7 @@ private fun DrawScope.drawElement(
         ElementType.ANALOG_STICK,
         ElementType.DIGITAL_STICK -> drawAnalogStick(element)
         ElementType.INVISIBLE_ANALOG_STICK,
-        ElementType.INVISIBLE_DIGITAL_STICK -> drawInvisibleStickPreview(element)
+        ElementType.INVISIBLE_DIGITAL_STICK -> drawInvisibleStickPreview(element, typeDisplayName)
         ElementType.UNKNOWN -> drawUnknownElement(element)
     }
 
@@ -232,7 +251,7 @@ private fun DrawScope.drawSelectionHighlight(element: EditorElement) {
  * 隐形摇杆预览绘制（仅在编辑模式下显示）。
  * 使用半透明虚线边框 + 中心十字线 + 类型名提示，方便用户定位。
  */
-private fun DrawScope.drawInvisibleStickPreview(element: EditorElement) {
+private fun DrawScope.drawInvisibleStickPreview(element: EditorElement, typeDisplayName: String = "") {
     val rect = elementRect(element)
     val alpha = element.opacity / 100f * 0.4f
 
@@ -263,8 +282,7 @@ private fun DrawScope.drawInvisibleStickPreview(element: EditorElement) {
                 textAlign = android.graphics.Paint.Align.CENTER
                 isAntiAlias = true
             }
-            val typeName = element.type.displayName
-            drawText(typeName, cx, cy + 4f, paint)
+            drawText(typeDisplayName, cx, cy + 4f, paint)
         }
     }
 }

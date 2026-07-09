@@ -487,7 +487,7 @@ fun EditorPropertiesPanel(
                 StepperIntField(getValue = { layer }, value = layer, onValueChange = { layer = it }, onValueCommit = { onElementChanged?.invoke(snapshot()) },
                     modifier = Modifier.weight(1.5f).padding(end = 2.dp))
                 Spacer(Modifier.width(1.dp))
-                Text(element.type.displayName,
+                Text(element.type.toDisplayName(),
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -501,7 +501,7 @@ fun EditorPropertiesPanel(
                         TextButton(onClick = { onOpenTypeSpecificEditor(snapshot()) },
                             modifier = Modifier.weight(1f).wrapContentHeight(),
                             contentPadding = ButtonDefaults.TextButtonContentPadding) {
-                            Text(context.getString(R.string.editor_btn_type_settings, element.type.displayName), style = MaterialTheme.typography.labelSmall,
+                            Text(context.getString(R.string.editor_btn_type_settings, element.type.toDisplayName()), style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.primary)
                         }
                     }

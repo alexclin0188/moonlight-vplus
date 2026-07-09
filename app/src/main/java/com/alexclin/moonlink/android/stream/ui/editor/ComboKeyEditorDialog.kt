@@ -2,14 +2,11 @@ package com.alexclin.moonlink.android.stream.ui.editor
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,16 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,7 +30,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -76,85 +68,54 @@ fun ComboKeyEditorDialog(
     var showKeyPickerForSlot by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val effectiveTitle = title.ifEmpty { context.getString(R.string.combo_editor_default_title) }
-    val backdropInteractionSource = remember { MutableInteractionSource() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0x88000000))
-            .clickable(
-                indication = null,
-                interactionSource = backdropInteractionSource
-            ) { },
-        contentAlignment = Alignment.Center,
+    EditorDialog(
+        title = effectiveTitle,
+        onDismiss = onDismiss,
+        onCancel = onDismiss,
+        onSave = {
+            // 新建模式下必须选择主键（单击）
+            if (isCreateMode && newMainValue.isBlank()) {
+                ToastUtil.show(context, context.getString(R.string.editor_toast_select_click_key), Toast.LENGTH_SHORT)
+                return@EditorDialog
+            }
+            // 名称查重
+            if (isDuplicateElementName(newText, existingTextNames)) {
+                val trimmedText = newText.trim()
+                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
+                return@EditorDialog
+            }
+            // 内部方向值互斥校验
+            val dupMsg = findDuplicateKeyValues(mapOf(
+                "Click" to newMainValue,
+                "Swipe Up" to newUpValue,
+                "Swipe Down" to newDownValue,
+                "Swipe Left" to newLeftValue,
+                "Swipe Right" to newRightValue,
+            ))
+            if (dupMsg != null) {
+                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
+                return@EditorDialog
+            }
+            val newEl = EditorElement(
+                elementId = initialElement?.elementId ?: 0L,
+                configId = initialElement?.configId ?: 0L,
+                type = ElementType.DIGITAL_COMBINE_BUTTON,
+                text = newText,
+                value = newMainValue.ifBlank { "k29" },
+                upValue = newUpValue,
+                downValue = newDownValue,
+                leftValue = newLeftValue,
+                rightValue = newRightValue,
+                width = 100,
+                height = 100,
+            )
+            onSaveNew(newEl)
+        },
+        modifier = Modifier.fillMaxWidth(0.5f),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxWidth(0.5f),
-            shape = RoundedCornerShape(16.dp),
-            color = MaterialTheme.colorScheme.surface,
-            shadowElevation = 12.dp,
-        ) {
-            Column(modifier = Modifier.padding(16.dp,6.dp,16.dp,16.dp)) {
-                // ── 标题行（标题 + 取消/保存按钮） ──
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(effectiveTitle, style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.editor_cancel))
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = {
-                        // 新建模式下必须选择主键（单击）
-                        if (isCreateMode && newMainValue.isBlank()) {
-                            ToastUtil.show(context, context.getString(R.string.editor_toast_select_click_key), Toast.LENGTH_SHORT)
-                            return@TextButton
-                        }
-                        // 名称查重
-                        if (isDuplicateElementName(newText, existingTextNames)) {
-                            val trimmedText = newText.trim()
-                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_name, trimmedText), Toast.LENGTH_SHORT)
-                            return@TextButton
-                        }
-                        // 内部方向值互斥校验
-                        val dupMsg = findDuplicateKeyValues(mapOf(
-                            "Click" to newMainValue,
-                            "Swipe Up" to newUpValue,
-                            "Swipe Down" to newDownValue,
-                            "Swipe Left" to newLeftValue,
-                            "Swipe Right" to newRightValue,
-                        ))
-                        if (dupMsg != null) {
-                            ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
-                            return@TextButton
-                        }
-                        val newEl = EditorElement(
-                            elementId = initialElement?.elementId ?: 0L,
-                            configId = initialElement?.configId ?: 0L,
-                            type = ElementType.DIGITAL_COMBINE_BUTTON,
-                            text = newText,
-                            value = newMainValue.ifBlank { "k29" },
-                            upValue = newUpValue,
-                            downValue = newDownValue,
-                            leftValue = newLeftValue,
-                            rightValue = newRightValue,
-                            width = 100,
-                            height = 100,
-                        )
-                        onSaveNew(newEl)
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-                HorizontalDivider()
-                Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(6.dp))
 
-                // 按钮文字 | 单击（一行均分宽度，样式同下方键值槽位）
+        // 按钮文字 | 单击（一行均分宽度，样式同下方键值槽位）
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -218,10 +179,6 @@ fun ComboKeyEditorDialog(
                     label1 = stringResource(R.string.editor_label_swipe_left), value1 = newLeftValue, onClick1 = { showKeyPickerForSlot = "new_left" }, icon1 = Icons.Default.ChevronLeft,
                     label2 = stringResource(R.string.editor_label_swipe_right), value2 = newRightValue, onClick2 = { showKeyPickerForSlot = "new_right" }, icon2 = Icons.Default.ChevronRight,
                 )
-
-
-            }
-        }
     }
 
     // ── 键值选择器弹窗 ──

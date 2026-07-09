@@ -122,6 +122,24 @@
     <string name="shortcut_desc_task_manager">工作管理員</string>
     <string name="shortcut_desc_switch_ime">切換輸入法</string>
 
+    <string name="editor_delete_element_format">刪除%1$s</string>
+
+    <!-- Element type display names (used in key mapping editor) -->
+    <string name="element_type_common_button">普通按鍵</string>
+    <string name="element_type_switch_button">開關按鍵</string>
+    <string name="element_type_movable_button">可移動按鍵</string>
+    <string name="element_type_combo_key">組合鍵</string>
+    <string name="element_type_dpad">方向鍵</string>
+    <string name="element_type_analog_stick">模擬搖桿</string>
+    <string name="element_type_digital_stick">數字搖桿</string>
+    <string name="element_type_invisible_analog_stick">隱形模擬搖桿</string>
+    <string name="element_type_invisible_digital_stick">隱形數字搖桿</string>
+    <string name="element_type_unknown">未知</string>
+
+    <!-- Delete custom shortcut dialog -->
+    <string name="dialog_button_delete">刪除</string>
+    <string name="customkey_title_delete_single">刪除快捷鍵</string>
+
     <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
     <string name="custom_key_desc_fullscreen">全螢幕狀態切換</string>
     <string name="custom_key_desc_paste">貼上剪貼簿</string>

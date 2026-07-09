@@ -129,7 +129,7 @@
     <string name="pcview_menu_test_network">测试网络连接</string>
     <string name="pcview_menu_open_webui">打开 Web 管理（Sunshine）</string>
     <string name="pcview_open_webui_unavailable">未找到可用主机地址，无法打开 Web 管理</string>
-    <string name="sunshine_webui_auth_title">登录 %1$s（%2$s）</string>
+    <string name="sunshine_webui_auth_title">登录 %1$s</string>
     <string name="pcview_menu_header_offline">离线</string>
     <string name="pcview_menu_header_online">在线</string>
     <string name="resolution_prefix_native">本地</string>
@@ -874,8 +874,8 @@
     <string name="config_unified_color_picker">统一颜色选择器</string>
     <string name="config_unified_colors">统一颜色</string>
     <string name="customkey_dialog_title">自定义按键映射</string>
-    <string name="customkey_error_code_format">无效的键码格式：%1$s</string>
-    <string name="customkey_error_code_invalid">无效的键码：%1$s</string>
+
+
     <string name="customkey_error_codes_empty">键码不能为空</string>
     <string name="customkey_error_name_duplicate">名称「%1$s」已存在</string>
     <string name="customkey_error_name_empty">名称不能为空</string>
@@ -893,12 +893,12 @@
     <string name="display_bitrate_2m">清晰\n2M</string>
     <string name="display_bitrate_8m">高清\n8M</string>
     <string name="display_bitrate_adapting">码率自适应中…</string>
-    <string name="display_bitrate_failed">码率获取失败</string>
+    <string name="display_bitrate_failed">码率获取失败：%1$s</string>
     <string name="display_bitrate_label">码率: %1$d Mbps (%2$d kbps)</string>
     <string name="display_buffer_1frame">1 帧</string>
     <string name="display_buffer_5frame">5 帧</string>
     <string name="display_current_monitor">当前显示器</string>
-    <string name="display_dpi_scale">DPI: %1$d%%</string>
+    <string name="display_dpi_scale">DPI</string>
     <string name="display_dpi_scale_failed">DPI 缩放获取失败</string>
     <string name="display_mtk_desc">强制 MTK 解码器高频运行以减少延迟，可能在其他设备上引发问题。</string>
     <string name="display_other_monitors">其他显示器</string>
@@ -921,7 +921,7 @@
     <string name="editor_confirm_clear">清除</string>
     <string name="editor_content_desc_confirm_name">确认名称</string>
     <string name="editor_content_desc_copy_clipboard">复制到剪贴板</string>
-    <string name="editor_content_desc_delete">删除%1$s</string>
+    <string name="editor_content_desc_delete">删除</string>
     <string name="editor_content_desc_duplicate">复制</string>
     <string name="editor_content_desc_edit_name">编辑名称</string>
     <string name="editor_content_desc_layer_down">向下层</string>
@@ -929,6 +929,7 @@
     <string name="editor_content_desc_properties">属性</string>
     <string name="editor_content_desc_select_key">选择按键</string>
     <string name="editor_delete_title">删除按键元素</string>
+    <string name="editor_delete_element_format">删除%1$s</string>
     <string name="editor_element_list_title">元素（%1$d）</string>
     <string name="editor_empty_hint">点击 "+" 添加按键元素</string>
     <string name="editor_grid_cols_format">%1$d 列</string>
@@ -1103,10 +1104,24 @@
     <string name="customkey_select_hint">选择要删除的按键：</string>
     <string name="customkey_error_no_selection">请选择要删除的按键</string>
     <string name="customkey_error_delete_failed">删除失败，请重试</string>
-    <string name="customkey_keycode_format">键码: %1$s</string>
 
     <!-- Preference Components -->
     <string name="pref_item_selected_format">%1$s（已选 %2$d 项）</string>
+
+    <!-- Element type display names (used in key mapping editor) -->
+    <string name="element_type_common_button">普通按键</string>
+    <string name="element_type_switch_button">开关按键</string>
+    <string name="element_type_movable_button">可移动按键</string>
+    <string name="element_type_combo_key">组合键</string>
+    <string name="element_type_dpad">方向键</string>
+    <string name="element_type_analog_stick">模拟摇杆</string>
+    <string name="element_type_digital_stick">数字摇杆</string>
+    <string name="element_type_invisible_analog_stick">隐形模拟摇杆</string>
+    <string name="element_type_invisible_digital_stick">隐形数字摇杆</string>
+    <string name="element_type_unknown">未知</string>
+
+    <!-- Delete custom shortcut dialog -->
+    <string name="customkey_title_delete_single">删除快捷键</string>
 
     <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
     <string name="custom_key_desc_fullscreen">全屏状态切换</string>

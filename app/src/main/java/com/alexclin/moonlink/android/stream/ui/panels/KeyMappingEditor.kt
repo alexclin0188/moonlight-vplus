@@ -90,6 +90,8 @@ import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.android.stream.ui.editor.EditorState
 import com.alexclin.moonlink.android.stream.ui.editor.ElementType
+import com.alexclin.moonlink.android.stream.ui.editor.toDisplayName
+import com.alexclin.moonlink.android.stream.ui.editor.getDisplayName
 import com.alexclin.moonlink.android.stream.ui.editor.ButtonPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.StickPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
@@ -264,7 +266,7 @@ fun KeyMappingEditor(
         editorState.addElement(newEl)
         selectedIds = setOf(newEl.elementId)
         reloadElements()
-        ToastUtil.show(context, context.getString(R.string.editor_toast_duplicated, src.text.ifBlank { src.type.displayName }), Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_duplicated, src.text.ifBlank { src.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
 
     // ── 复制到跨方案剪贴板 ──
@@ -272,7 +274,7 @@ fun KeyMappingEditor(
         val src = elements.find { it.elementId in selectedIds } ?: return
         EditorClipboard.copy(src)
         clipboardHasData = true
-        ToastUtil.show(context, context.getString(R.string.editor_toast_copied_clipboard, src.text.ifBlank { src.type.displayName }), Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_copied_clipboard, src.text.ifBlank { src.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
 
     // ── 从跨方案剪贴板粘贴 ──
@@ -291,7 +293,7 @@ fun KeyMappingEditor(
         reloadElements()
         selectedIds = setOf(result.rootElement.elementId)
 
-        ToastUtil.show(context, context.getString(R.string.editor_toast_pasted, result.rootElement.text.ifBlank { result.rootElement.type.displayName }), Toast.LENGTH_SHORT)
+        ToastUtil.show(context, context.getString(R.string.editor_toast_pasted, result.rootElement.text.ifBlank { result.rootElement.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
 
     // ── 删除元素 ──
@@ -609,7 +611,7 @@ fun KeyMappingEditor(
             )
             if (el.type in stickTypes) {
                 StickPropertyDialog(
-                    title = context.getString(R.string.editor_title_new_element, el.type.displayName),
+                    title = context.getString(R.string.editor_title_new_element, el.type.getDisplayName(context)),
                     element = el,
                     onSave = { updated: EditorElement ->
                         elements = elements.map { if (it.elementId == updated.elementId) updated else it }
@@ -622,7 +624,7 @@ fun KeyMappingEditor(
                 )
             } else {
                 ButtonPropertyDialog(
-                    title = context.getString(R.string.editor_title_new_element, el.type.displayName),
+                    title = context.getString(R.string.editor_title_new_element, el.type.getDisplayName(context)),
                     element = el,
                     onSave = { updated: EditorElement ->
                         elements = elements.map { if (it.elementId == updated.elementId) updated else it }
@@ -678,7 +680,7 @@ fun KeyMappingEditor(
                 ElementType.INVISIBLE_ANALOG_STICK,
                 ElementType.DIGITAL_PAD,
             )
-            val title = context.getString(R.string.editor_title_new_element, el.type.displayName)
+            val title = context.getString(R.string.editor_title_new_element, el.type.getDisplayName(context))
             val existingTextNames = collectElementDisplayNames(elements)
             val onSaveNew: (EditorElement) -> Unit = { updated ->
                 val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
@@ -694,7 +696,7 @@ fun KeyMappingEditor(
                 selectedIds = setOf(finalEl.elementId)
                 reloadElements()
                 pendingNewElement = null
-                ToastUtil.show(context, context.getString(R.string.editor_toast_created, el.type.displayName), Toast.LENGTH_SHORT)
+                ToastUtil.show(context, context.getString(R.string.editor_toast_created, el.type.getDisplayName(context)), Toast.LENGTH_SHORT)
             }
             if (el.type in stickTypes) {
                 StickPropertyDialog(
@@ -772,8 +774,8 @@ fun KeyMappingEditor(
                 onDismissRequest = { showDeleteConfirm = false },
                 title = { Text(stringResource(R.string.editor_delete_title)) },
                 text = {
-                    val name = el?.text?.ifBlank { el?.type?.displayName } ?: "Element"
-                    Text(stringResource(R.string.editor_content_desc_delete, name))
+                    val name = el?.text?.ifBlank { el?.type?.getDisplayName(context) } ?: "Element"
+                    Text(stringResource(R.string.editor_delete_element_format, name))
                 },
                 confirmButton = {
                     Button(
@@ -828,7 +830,7 @@ private fun SelectionInfoBar(element: EditorElement) {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
-                stringResource(R.string.editor_btn_type_settings, element.type.displayName),
+                stringResource(R.string.editor_btn_type_settings, element.type.toDisplayName()),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -1162,7 +1164,7 @@ private fun AddElementMenu(
                         ),
                     ) {
                         Text(
-                            type.displayName,
+                            type.toDisplayName(),
                             style = MaterialTheme.typography.labelSmall,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
@@ -1185,6 +1187,7 @@ private fun ElementListDialog(
     onSelect: (EditorElement) -> Unit,
     onDismiss: () -> Unit,
 ) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize().background(Color(0x44000000)).clickable(onClick = onDismiss),
         contentAlignment = Alignment.Center,
@@ -1227,7 +1230,7 @@ private fun ElementListDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     items(elements, key = { it.elementId }) { el ->
-                        val label = buildElementSummary(el)
+                        val label = buildElementSummary(el, context)
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -1244,7 +1247,7 @@ private fun ElementListDialog(
                             ) {
                                 // 类型标签
                                 Text(
-                                    el.type.displayName,
+                                    el.type.toDisplayName(),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     fontSize = 9.sp,
@@ -1279,7 +1282,7 @@ private fun ElementListDialog(
  * - 十字键：显示方向值
  * - 摇杆类：显示方向值 + 中值
  */
-private fun buildElementSummary(el: EditorElement): String {
+private fun buildElementSummary(el: EditorElement, context: android.content.Context? = null): String {
     val keyName = getKeyLabelByValue(el.value)
     fun dirLabel(v: String, prefix: String): String? =
         v.ifBlank { null }?.let { "$prefix${getKeyLabelByValue(it) ?: it}" }
@@ -1315,6 +1318,6 @@ private fun buildElementSummary(el: EditorElement): String {
             dirLabel(el.middleValue, "N"),
         ).joinToString(" ")
 
-        else -> keyName ?: el.type.displayName
+        else -> keyName ?: (context?.let { el.type.getDisplayName(it) } ?: el.type.name)
     }
 }

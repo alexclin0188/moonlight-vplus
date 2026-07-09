@@ -7,24 +7,17 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,8 +30,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.res.stringResource
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.util.ToastUtil
@@ -93,87 +84,54 @@ fun StickPropertyDialog(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
     val context = LocalContext.current
 
-    Dialog(
-        onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .wrapContentHeight()
-                .heightIn(max = (screenHeightDp * 0.95f).dp),
-            color = MaterialTheme.colorScheme.surface,
-            shape = RoundedCornerShape(16.dp),
-            shadowElevation = 12.dp,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight()
-                    .imePadding()
-                    .verticalScroll(rememberScrollState()),
-            ) {
-                // ── 标题行 ──
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 0.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(title,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) {
-                        Text(stringResource(R.string.editor_cancel), style = MaterialTheme.typography.labelMedium)
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    TextButton(onClick = {
-                        // 新建模式下必须选择所需键值
-                        if (isCreateMode) {
-                            if (isPad || isDigitalStick) {
-                                if (upValue.isBlank() || downValue.isBlank() || leftValue.isBlank() || rightValue.isBlank()) {
-                                    ToastUtil.show(context, context.getString(R.string.editor_toast_select_all_directions), Toast.LENGTH_SHORT)
-                                    return@TextButton
-                                }
-                            }
-                            if (element.type in listOf(ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK)) {
-                                if (middleValue.isBlank()) {
-                                    ToastUtil.show(context, context.getString(R.string.editor_toast_select_middle_value), Toast.LENGTH_SHORT)
-                                    return@TextButton
-                                }
-                            }
-                        }
-                        // 方向值内部互斥校验（十字键/数字摇杆：↑↓←→ 不可重复）
-                        if (isPad || isDigitalStick) {
-                            val dupMsg = findDuplicateKeyValues(mapOf(
-                                "↑ Sw Up" to upValue,
-                                "↓ Sw Dn" to downValue,
-                                "← Sw Lt" to leftValue,
-                                "→ Sw Rt" to rightValue,
-                            ))
-                            if (dupMsg != null) {
-                                ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
-                                return@TextButton
-                            }
-                        }
-                        onSave(buildUpdated())
-                    }) {
-                        Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.editor_save), style = MaterialTheme.typography.labelMedium)
+    EditorDialog(
+        title = title,
+        onDismiss = onDismiss,
+        onCancel = onDismiss,
+        onSave = {
+            // 新建模式下必须选择所需键值
+            if (isCreateMode) {
+                if (isPad || isDigitalStick) {
+                    if (upValue.isBlank() || downValue.isBlank() || leftValue.isBlank() || rightValue.isBlank()) {
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_select_all_directions), Toast.LENGTH_SHORT)
+                        return@EditorDialog
                     }
                 }
-
-                HorizontalDivider()
-
-                // ── 内容 ──
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
+                if (element.type in listOf(ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK)) {
+                    if (middleValue.isBlank()) {
+                        ToastUtil.show(context, context.getString(R.string.editor_toast_select_middle_value), Toast.LENGTH_SHORT)
+                        return@EditorDialog
+                    }
+                }
+            }
+            // 方向值内部互斥校验（十字键/数字摇杆：↑↓←→ 不可重复）
+            if (isPad || isDigitalStick) {
+                val dupMsg = findDuplicateKeyValues(mapOf(
+                    "↑ Sw Up" to upValue,
+                    "↓ Sw Dn" to downValue,
+                    "← Sw Lt" to leftValue,
+                    "→ Sw Rt" to rightValue,
+                ))
+                if (dupMsg != null) {
+                    ToastUtil.show(context, context.getString(R.string.editor_toast_duplicate_direction, dupMsg), Toast.LENGTH_SHORT)
+                    return@EditorDialog
+                }
+            }
+            onSave(buildUpdated())
+        },
+        modifier = Modifier
+            .fillMaxWidth(0.5f)
+            .wrapContentHeight()
+            .heightIn(max = (screenHeightDp * 0.95f).dp),
+    ) {
+        // ── 内容 ──
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
                     // 摇杆：中值 + 灵敏度
                     if (isStick) {
                         Row(
@@ -220,8 +178,6 @@ fun StickPropertyDialog(
                         )
                     }
                 }
-            }
-        }
     }
 
     // ── 键值选择器弹窗 ──
