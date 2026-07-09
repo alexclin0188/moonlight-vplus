@@ -122,6 +122,7 @@
     <string name="shortcut_desc_task_manager">工作管理員</string>
     <string name="shortcut_desc_switch_ime">切換輸入法</string>
 
+    <string name="editor_default_config_name">按鍵方案</string>
     <string name="editor_delete_element_format">刪除%1$s</string>
 
     <!-- Element type display names (used in key mapping editor) -->

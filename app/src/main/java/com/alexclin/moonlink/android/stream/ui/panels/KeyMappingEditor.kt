@@ -243,7 +243,10 @@ fun KeyMappingEditor(
     // ── 加载 ──
     fun reloadElements() {
         elements = editorState.loadElements()
-        schemeName = editorState.getConfigName()
+        // 新建模式保留已生成的本地化方案名，不覆盖为 DB 的默认值
+        if (!isNewScheme) {
+            schemeName = editorState.getConfigName(context)
+        }
         isLoading = false
     }
     LaunchedEffect(currentConfigId) { reloadElements() }
@@ -371,9 +374,16 @@ fun KeyMappingEditor(
         doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
     }
 
-    // ── 取消退出（不触发额外保存） ──
+    // ── 取消退出 ──
+    // 新建模式：清理临时数据（configId = -1 下的元素），不保存方案，直接关闭
+    // 编辑模式：刷新覆盖层并关闭
     val exitEditor: () -> Unit = {
-        doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
+        if (isNewScheme) {
+            try { db.deleteConfig(-1L) } catch (_: Exception) { }
+            onClose()
+        } else {
+            doExit(context, isNewScheme, schemeName, db, editorState, prefs, engine, onClose)
+        }
     }
 
     // ── 返回键等同于点击工具栏"取消"按钮 ──

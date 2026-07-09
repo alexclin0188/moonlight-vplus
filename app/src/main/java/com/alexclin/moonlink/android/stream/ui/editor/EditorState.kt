@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.editor
 
 import android.content.ContentValues
+import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.data.ConfigColumns
 import com.alexclin.moonlink.android.stream.data.ElementColumns
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
@@ -136,9 +137,9 @@ class EditorState(
     }
 
     /** 读取方案的 config 属性 */
-    fun getConfigName(): String {
-        return db.queryConfigAttribute(configId, ConfigColumns.COLUMN_STRING_CONFIG_NAME, "Key Scheme") as? String
-            ?: "Key Scheme"
+    fun getConfigName(context: android.content.Context): String {
+        return db.queryConfigAttribute(configId, ConfigColumns.COLUMN_STRING_CONFIG_NAME, context.getString(R.string.editor_default_config_name)) as? String
+            ?: context.getString(R.string.editor_default_config_name)
     }
 
     // ═══════════════════════════════════════════════════════════════════════

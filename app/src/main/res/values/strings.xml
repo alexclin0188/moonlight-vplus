@@ -932,6 +932,7 @@
     <string name="editor_loading">Loading…</string>
     <string name="editor_save">Save</string>
     <string name="editor_scheme_default_name">Default</string>
+    <string name="editor_default_config_name">Key Scheme</string>
     <string name="editor_scheme_prefix">Scheme</string>
     <string name="editor_sensitivity_format">%1$s%%</string>
     <string name="editor_title_color_settings">Color Settings</string>

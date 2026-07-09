@@ -959,6 +959,7 @@
     <string name="editor_loading">加载中…</string>
     <string name="editor_save">保存</string>
     <string name="editor_scheme_default_name">默认</string>
+    <string name="editor_default_config_name">按键方案</string>
     <string name="editor_scheme_prefix">方案</string>
     <string name="editor_sensitivity_format">%1$s%%</string>
     <string name="editor_title_color_settings">颜色设置</string>
