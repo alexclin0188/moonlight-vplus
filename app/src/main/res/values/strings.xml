@@ -625,7 +625,7 @@
     <string name="title_export_mlk_dialog">Export Key Mapping Scheme (.mlk)</string>
     <string name="btn_export">Export</string>
     <string name="title_import_legacy_key_mapping_dialog">Import Legacy Crown Config</string>
-    <string name="hint_scheme_name">Scheme Name (1-10 chars)</string>
+    <string name="hint_scheme_name">Scheme Name (1-20 chars)</string>
     <string name="label_overwrite_existing">Overwrite Existing Scheme</string>
     <string name="option_import_as_new">Import as new scheme (don\'t overwrite)</string>
     <string name="btn_import">Import</string>

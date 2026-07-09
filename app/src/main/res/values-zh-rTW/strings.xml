@@ -125,6 +125,7 @@
     <string name="editor_delete_element_format">刪除%1$s</string>
 
     <!-- Element type display names (used in key mapping editor) -->
+    <string name="hint_scheme_name">方案名稱（1-20 字元）</string>
     <string name="element_type_common_button">普通按鍵</string>
     <string name="element_type_switch_button">開關按鍵</string>
     <string name="element_type_movable_button">可移動按鍵</string>

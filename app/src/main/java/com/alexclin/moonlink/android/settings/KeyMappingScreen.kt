@@ -284,7 +284,7 @@ private fun ImportMlkDialog(
             Column {
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { if (it.length <= 10) name = it },
+                    onValueChange = { if (it.length <= 20) name = it },
                     label = { Text(stringResource(R.string.hint_scheme_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
@@ -483,7 +483,7 @@ private fun ImportMdatDialog(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { if (it.length <= 10) name = it },
+                    onValueChange = { if (it.length <= 20) name = it },
                     label = { Text(stringResource(R.string.hint_scheme_name)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),

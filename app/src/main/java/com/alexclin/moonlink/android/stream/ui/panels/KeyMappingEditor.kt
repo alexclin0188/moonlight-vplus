@@ -196,15 +196,16 @@ fun KeyMappingEditor(
     var schemeName by remember {
         mutableStateOf(
             if (isNewScheme) {
-                // 生成"My Scheme +数字"名称，自动取下一个可用编号
+                // 生成本地化前缀 + 序号方案名，自动避开重复名称
                 val existingNames = loadAllSchemeNames(context)
                 val prefix = context.getString(R.string.editor_scheme_prefix)
-                val maxNum = existingNames.mapNotNull { name ->
-                    if (name.startsWith(prefix)) {
-                        name.removePrefix(prefix).toIntOrNull()
-                    } else null
-                }.maxOrNull() ?: 0
-                "$prefix${maxNum + 1}"
+                var counter = 1
+                var candidate = "$prefix$counter"
+                while (existingNames.any { it.equals(candidate, ignoreCase = true) }) {
+                    counter++
+                    candidate = "$prefix$counter"
+                }
+                candidate
             } else context.getString(R.string.editor_scheme_default_name)
         )
     }
@@ -899,7 +900,7 @@ private fun EditorToolbar(
                 if (isEditingName) {
                     BasicTextField(
                         value = schemeName,
-                        onValueChange = { if (it.length <= 10) onNameChange(it) },
+                        onValueChange = { if (it.length <= 20) onNameChange(it) },
                         singleLine = true,
                         textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface,
                             fontSize = 16.sp, fontWeight = FontWeight.Medium),

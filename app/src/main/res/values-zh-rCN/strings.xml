@@ -596,7 +596,7 @@
     <string name="title_export_mlk_dialog">导出按键映射方案 (.mlk)</string>
     <string name="btn_export">导出</string>
     <string name="title_import_legacy_key_mapping_dialog">导入旧王冠配置</string>
-    <string name="hint_scheme_name">方案名称（1-10 字符）</string>
+    <string name="hint_scheme_name">方案名称（1-20 字符）</string>
     <string name="label_overwrite_existing">覆盖已有方案</string>
     <string name="option_import_as_new">不覆盖，作为新方案导入</string>
     <string name="btn_import">导入</string>
