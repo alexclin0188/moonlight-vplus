@@ -576,11 +576,11 @@ fun KeyMappingEditor(
             ColorPickerDialog(
                 title = stringResource(R.string.editor_title_color_settings),
                 items = listOf(
-                    ColorPickerItem("Normal", "normal", el.normalColor),
-                    ColorPickerItem("Pressed", "pressed", el.pressedColor),
-                    ColorPickerItem("Background", "bg", el.backgroundColor),
-                    ColorPickerItem("Text", "normalText", el.normalTextColor),
-                    ColorPickerItem("Pressed Text", "pressedText", el.pressedTextColor),
+                    ColorPickerItem(stringResource(R.string.editor_color_normal), "normal", el.normalColor),
+                    ColorPickerItem(stringResource(R.string.editor_color_pressed), "pressed", el.pressedColor),
+                    ColorPickerItem(stringResource(R.string.editor_color_background), "bg", el.backgroundColor),
+                    ColorPickerItem(stringResource(R.string.editor_color_normal_text), "normalText", el.normalTextColor),
+                    ColorPickerItem(stringResource(R.string.editor_color_pressed_text), "pressedText", el.pressedTextColor),
                 ),
                 onSave = { result ->
                     val map = result.toMap()

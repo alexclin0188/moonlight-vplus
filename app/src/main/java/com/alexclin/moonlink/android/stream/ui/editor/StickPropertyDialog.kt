@@ -151,9 +151,18 @@ fun StickPropertyDialog(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
-                                Text(context.getString(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 30),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontSize = 10.sp)
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Text(stringResource(R.string.editor_label_sensitivity),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 10.sp)
+                                    Text(stringResource(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 30),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontSize = 10.sp)
+                                }
                                 Slider(
                                     value = (sense.toIntOrNull() ?: 30).toFloat(),
                                     onValueChange = { sense = it.roundToInt().toString() },

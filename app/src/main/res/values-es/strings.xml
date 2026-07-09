@@ -75,7 +75,7 @@
     <string name="title_decoding_reset">Reiniciar Opciones de Video</string>
     <string name="title_checkbox_mouse_emulation">Emulación de ratón usando el mando</string>
     <string name="pacing_latency">Preferir la menor latencia posible</string>
-    <string name="pacing_smoothness">Preferir mayor fluidez de video (puede incrementar significativamente la latencia)</string>
+    <string name="pacing_smoothness">Preferir mayor fluidez de video \n(puede incrementar significativamente la latencia)</string>
     <string name="title_privacy_policy">Política de Privacidad</string>
     <string name="audioconf_71surround">7.1 Sonido Envolvente</string>
     <string name="pacing_balanced_alt">Equilibrado con limitador de FPS (Cuadros por Segundo)</string>
@@ -130,7 +130,7 @@
     <string name="mic_enabled">Micrófono habilitado</string>
     <string name="mic_permission_required">Permiso de micrófono requerido</string>
     <string name="mic_stats_continuity">Continuidad de audio: %1$.1f%% (Capturado:%2$d Codificado:%3$d Enviado:%4$d Perdido:%5$d)</string>
-    <string name="pacing_experimental_low_latency">Experimental: Latencia ultra-baja (avanzado)</string>
+    <string name="pacing_experimental_low_latency">Experimental: Latencia ultra-baja \n(avanzado)</string>
     <string name="pcview_menu_sleep_fail">Falló el sueño del host</string>
     <string name="pcview_menu_sleep_success">Éxito del sueño del host</string>
     <!-- perf Battery Information -->

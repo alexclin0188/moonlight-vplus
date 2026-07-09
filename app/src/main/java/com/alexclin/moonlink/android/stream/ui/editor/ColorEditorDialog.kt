@@ -4,6 +4,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.alexclin.moonlink.android.R
 
+/** 颜色标签常量（用于 COLOR_ITEMS 引用，实际显示文字由 stringResource 提供） */
+internal const val NORMAL_LABEL = "Normal"
+internal const val PRESSED_LABEL = "Pressed"
+internal const val BACKGROUND_LABEL = "Background"
+internal const val TEXT_LABEL = "Text"
+internal const val PRESSED_TEXT_LABEL = "Pressed Text"
+
 /**
  * 颜色项描述（内部使用，供 [ColorPickerDialog] 引用）。
  */
@@ -13,11 +20,11 @@ internal data class ColorItem(val label: String, val key: String)
  * 固定 5 颜色项列表（供旧调用方 [ColorEditorDialog] 使用）。
  */
 internal val COLOR_ITEMS = listOf(
-    ColorItem("Normal", "normal"),
-    ColorItem("Pressed", "pressed"),
-    ColorItem("Background", "bg"),
-    ColorItem("Text", "normalText"),
-    ColorItem("Pressed Text", "pressedText"),
+    ColorItem(NORMAL_LABEL, "normal"),
+    ColorItem(PRESSED_LABEL, "pressed"),
+    ColorItem(BACKGROUND_LABEL, "bg"),
+    ColorItem(TEXT_LABEL, "normalText"),
+    ColorItem(PRESSED_TEXT_LABEL, "pressedText"),
 )
 
 /**
@@ -38,11 +45,11 @@ fun ColorEditorDialog(
     ColorPickerDialog(
         title = stringResource(R.string.editor_color_customize),
         items = listOf(
-            ColorPickerItem("Normal", "normal", element.normalColor),
-            ColorPickerItem("Pressed", "pressed", element.pressedColor),
-            ColorPickerItem("Background", "bg", element.backgroundColor),
-            ColorPickerItem("Text", "normalText", element.normalTextColor),
-            ColorPickerItem("Pressed Text", "pressedText", element.pressedTextColor),
+            ColorPickerItem(stringResource(R.string.editor_color_normal), "normal", element.normalColor),
+            ColorPickerItem(stringResource(R.string.editor_color_pressed), "pressed", element.pressedColor),
+            ColorPickerItem(stringResource(R.string.editor_color_background), "bg", element.backgroundColor),
+            ColorPickerItem(stringResource(R.string.editor_color_normal_text), "normalText", element.normalTextColor),
+            ColorPickerItem(stringResource(R.string.editor_color_pressed_text), "pressedText", element.pressedTextColor),
         ),
         onSave = { result ->
             val map = result.toMap()

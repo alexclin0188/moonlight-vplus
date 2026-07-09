@@ -31,7 +31,7 @@
     <string name="category_ui_settings">Nastavení zobrazení</string>
     <string name="videoformat_auto">Automaticky</string>
     <string name="audioconf_71surround">7.1 prostorový zvuk</string>
-    <string name="pacing_smoothness">Preferovat plynulejší video (může výrazně zvýšit zpoždění)</string>
+    <string name="pacing_smoothness">Preferovat plynulejší video \n(může výrazně zvýšit zpoždění)</string>
     <string name="category_input_settings">Nastavení vstupu</string>
     <string name="audioconf_stereo">Stereo</string>
     <string name="audioconf_51surround">5.1 prostorový zvuk</string>

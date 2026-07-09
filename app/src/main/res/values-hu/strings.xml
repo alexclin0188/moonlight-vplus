@@ -71,7 +71,7 @@
     <string name="scut_invalid_uuid">A kiválasztott PC nem érvényes</string>
     <string name="scut_pc_not_found">Pc nem található</string>
     <string name="scut_not_paired">PC nincs csatlakoztatva</string>
-    <string name="pacing_smoothness">A legsimább videó előnyben részesítése (jelentősen növelheti a késleltetést)</string>
+    <string name="pacing_smoothness">A legsimább videó előnyben részesítése \n(jelentősen növelheti a késleltetést)</string>
     <string name="videoformat_av1always">AV1 előnyben részesítése (kísérleti)</string>
     <string name="audioconf_71surround">7.1 Térhatású hangzás</string>
     <string name="title_checkbox_gamepad_motion_sensors">Gamepad mozgásérzékelők használatának engedélyezése</string>

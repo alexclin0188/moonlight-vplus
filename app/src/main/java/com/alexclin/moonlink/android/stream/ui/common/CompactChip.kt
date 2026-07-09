@@ -19,6 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -45,7 +46,7 @@ fun CompactChip(
                        else MaterialTheme.colorScheme.onSurfaceVariant,
         border = if (selected) BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                  else null,
-        modifier = modifier.heightIn(min = 44.dp),
+        modifier = modifier.heightIn(min = 36.dp),
     ) {
         Box(
             contentAlignment = Alignment.Center,
@@ -81,6 +82,7 @@ fun ChipSelector(
     onSelect: (String) -> Unit,
     columns: Int? = null,
     spacingDp: Int = 6,
+    chipMinHeight: Dp = 36.dp,
 ) {
     val gapDp = spacingDp.dp
     if (columns != null) {
@@ -96,7 +98,7 @@ fun ChipSelector(
                             label = label,
                             selected = value == selectedValue,
                             onClick = { onSelect(value) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier.weight(1f).heightIn(min = chipMinHeight),
                         )
                     }
                     repeat(columns - rowItems.size) { Spacer(Modifier.weight(1f)) }
@@ -113,7 +115,7 @@ fun ChipSelector(
                     label = label,
                     selected = value == selectedValue,
                     onClick = { onSelect(value) },
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).heightIn(min = chipMinHeight),
                 )
             }
         }

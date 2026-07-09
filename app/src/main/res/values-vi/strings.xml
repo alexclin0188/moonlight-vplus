@@ -72,7 +72,7 @@
     <string name="scut_pc_not_found">Không tìm thấy PC</string>
     <string name="scut_not_paired">PC chưa được ghép đôi</string>
     <string name="pacing_latency">Ưu tiên độ trễ thấp nhất</string>
-    <string name="pacing_smoothness">Ưu tiên video mượt nhất (có thể tăng độ trễ đáng kể)</string>
+    <string name="pacing_smoothness">Ưu tiên video mượt nhất \n(có thể tăng độ trễ đáng kể)</string>
     <string name="audioconf_stereo">Stereo</string>
     <string name="audioconf_51surround">Âm thanh vòm 5.1</string>
     <string name="audioconf_71surround">Âm thanh vòm 7.1</string>

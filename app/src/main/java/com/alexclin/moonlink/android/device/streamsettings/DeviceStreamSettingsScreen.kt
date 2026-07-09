@@ -342,7 +342,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
                                 selectedRes = cleanRes
                                 val parts = cleanRes.split("x")
                                 if (parts.size == 2) { val w = parts[0].toIntOrNull() ?: settings.width; val h = parts[1].toIntOrNull() ?: settings.height; onSettingsChange(settings.copy(width = w, height = h)) }
-                            }, modifier = Modifier.weight(1f).heightIn(min = 40.dp))
+                            }, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
                         }
                         repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }
@@ -383,7 +383,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
                                 selectedVddRes = res
                                 if (res.startsWith(deviceNativeLabel)) { onSettingsChange(settings.copy(vddWidth = 0, vddHeight = 0)) }
                                 else { val parts = cleanRes.split("x"); if (parts.size == 2) { val w = parts[0].toIntOrNull() ?: 0; val h = parts[1].toIntOrNull() ?: 0; onSettingsChange(settings.copy(vddWidth = w, vddHeight = h)) } }
-                            }, modifier = Modifier.weight(1f).heightIn(min = 40.dp))
+                            }, modifier = Modifier.weight(1f).heightIn(min = 44.dp))
                         }
                         repeat(3 - rowItems.size) { Spacer(Modifier.weight(1f)) }
                     }

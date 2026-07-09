@@ -94,7 +94,7 @@
     <string name="pacing_balanced_alt">FPS 제한과 균형</string>
     <string name="audioconf_51surround">5.1 서라운드 사운드</string>
     <string name="audioconf_71surround">7.1 서라운드 사운드</string>
-    <string name="pacing_smoothness">가장 부드러운 비디오 선호(대기 시간이 크게 증가할 수 있음)</string>
+    <string name="pacing_smoothness">가장 부드러운 비디오 선호\n(대기 시간이 크게 증가할 수 있음)</string>
     <string name="title_checkbox_gamepad_motion_sensors">컨트롤러 모션 센서 사용 허용</string>
     <string name="category_gamepad_settings">컨트롤러 설정</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">항상 터치패드로 마우스 제어</string>

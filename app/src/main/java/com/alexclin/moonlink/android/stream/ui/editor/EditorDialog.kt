@@ -68,10 +68,8 @@ fun EditorDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.5f)
-                .wrapContentHeight()
-                .then(modifier),
+            modifier = modifier
+                .wrapContentHeight(),
             color = MaterialTheme.colorScheme.surface,
             shape = RoundedCornerShape(16.dp),
             shadowElevation = 12.dp,

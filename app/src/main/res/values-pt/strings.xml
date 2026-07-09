@@ -41,7 +41,7 @@
     <string name="audioconf_stereo">Stereo</string>
     <string name="audioconf_51surround">5.1 Surround</string>
     <string name="videoformat_auto">Automático (recomendado)</string>
-    <string name="pacing_smoothness">Preferir vídeo mais suave (pode aumentar significativamente a latência)</string>
+    <string name="pacing_smoothness">Preferir vídeo mais suave \n(pode aumentar significativamente a latência)</string>
     <string name="category_host_settings">Configurações de Host</string>
     <string name="pacing_balanced_alt">Equilibrado com limite de FPS</string>
     <string name="audioconf_71surround">7.1 Surround</string>
@@ -140,7 +140,7 @@
     <!-- Video format -->
     <string name="videoformat_av1always">Preferir AV1 (Experimental)</string>
     <string name="videoformat_h264always">Preferir H.264</string>
-    <string name="pacing_experimental_low_latency">Experimental: Latência ultra-baixa (avançado)</string>
+    <string name="pacing_experimental_low_latency">Experimental: Latência ultra-baixa \n(avançado)</string>
     <string name="pacing_precise_sync">Sincronização precisa</string>
     
     <!-- Microphone -->

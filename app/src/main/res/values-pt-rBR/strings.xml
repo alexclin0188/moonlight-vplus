@@ -2,7 +2,7 @@
 <resources>
     <string name="pacing_latency">Preferir baixa latência</string>
     <string name="pcview_menu_header_offline">Indisponível</string>
-    <string name="pacing_smoothness">Preferir vídeo mais suave (pode aumentar significativamente a latência)</string>
+    <string name="pacing_smoothness">Preferir vídeo mais suave \n(pode aumentar significativamente a latência)</string>
     <string name="addpc_fail">Não foi possível conectar ao computador especificado. Certifique-se de que as portas necessárias sejam permitidas pelo firewall.</string>
     <string name="ip_hint">Endereço de IP do PC GeForce</string>
     <string name="nettest_text_success">Sua rede não parece estar bloqueando o MoonLink. Se você ainda tiver problemas para se conectar, verifique as configurações de firewall do seu PC.

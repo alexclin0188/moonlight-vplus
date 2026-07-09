@@ -287,14 +287,14 @@ fun ButtonPropertyDialog(
                                     label = stringResource(R.string.editor_chip_button_mode),
                                     selected = mode == "0",
                                     onClick = { mode = "0" },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).wrapContentHeight(),
                                 )
                                 Spacer(Modifier.width(4.dp))
                                 CompactChip(
                                     label = stringResource(R.string.editor_chip_joystick_mode),
                                     selected = mode == "1",
                                     onClick = { mode = "1" },
-                                    modifier = Modifier.weight(1f),
+                                    modifier = Modifier.weight(1f).wrapContentHeight(),
                                 )
                             }
                             // 右半：触控板模式
@@ -328,9 +328,18 @@ fun ButtonPropertyDialog(
                         }
                         // 灵敏度 Slider
                         Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                            Text(context.getString(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 100),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(stringResource(R.string.editor_label_sensitivity),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(R.string.editor_sensitivity_format, sense.toIntOrNull() ?: 100),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
                             Slider(
                                 value = (sense.toIntOrNull() ?: 100).toFloat(),
                                 onValueChange = { sense = it.roundToInt().toString() },

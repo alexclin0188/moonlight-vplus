@@ -206,8 +206,8 @@
 
     <string name="pacing_latency">Prefer lowest latency</string>
     <string name="pacing_balanced_alt">Balanced with FPS limit</string>
-    <string name="pacing_smoothness">Prefer smoothest video (may significantly increase latency)</string>
-    <string name="pacing_experimental_low_latency">Experimental: Ultra-low latency (advanced)</string>
+    <string name="pacing_smoothness">Prefer smoothest video \n(may significantly increase latency)</string>
+    <string name="pacing_experimental_low_latency">Experimental: Ultra-low latency \n(advanced)</string>
     <string name="pacing_precise_sync">Precise Sync</string>
 
     <string name="title_analog_scrolling">Use an analog stick to scroll</string>
@@ -935,6 +935,13 @@
     <string name="editor_default_config_name">Key Scheme</string>
     <string name="editor_scheme_prefix">Scheme</string>
     <string name="editor_sensitivity_format">%1$s%%</string>
+    <string name="editor_label_sensitivity">Sensitivity</string>
+    <!-- Color editor labels -->
+    <string name="editor_color_normal">Normal</string>
+    <string name="editor_color_pressed">Pressed</string>
+    <string name="editor_color_background">Background</string>
+    <string name="editor_color_normal_text">Text</string>
+    <string name="editor_color_pressed_text">Pressed Text</string>
     <string name="editor_title_color_settings">Color Settings</string>
     <string name="editor_title_combo_property">Combo Property</string>
     <string name="editor_title_new_combo">New Combo</string>

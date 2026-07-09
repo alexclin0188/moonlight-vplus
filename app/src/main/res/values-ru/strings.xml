@@ -84,7 +84,7 @@
     <string name="videoformat_auto">Автоматически</string>
     <string name="videoformat_hevcalways">Всегда использовать HEVC если доступно</string>
     <string name="pacing_latency">Минимальная задержка</string>
-    <string name="pacing_smoothness">Максимальная плавность (может значительно увеличить задержку)</string>
+    <string name="pacing_smoothness">Максимальная плавность \n(может значительно увеличить задержку)</string>
     <string name="title_privacy_policy">Политика конфиденциальности</string>
     <string name="pacing_balanced_alt">Сбалансированно с лимитом FPS</string>
 </resources>

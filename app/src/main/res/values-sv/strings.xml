@@ -60,7 +60,7 @@
     <string name="audioconf_71surround">7.1 surroundljud</string>
     <string name="pacing_latency">Föredrar lägsta latenstid</string>
     <string name="pacing_balanced_alt">Balanserad med FPS-gräns</string>
-    <string name="pacing_smoothness">Föredrar smidigast video (kan öka latensen avsevärt)</string>
+    <string name="pacing_smoothness">Föredrar smidigast video \n(kan öka latensen avsevärt)</string>
     <string name="nettest_title_done">Nätverkstestet fullföljt</string>
     <string name="nettest_text_failure">Din enhets aktuella nätverksanslutning verkar blockera MoonLink. Streaming via Internet kanske inte fungerar när du är ansluten till det här nätverket.
 \n

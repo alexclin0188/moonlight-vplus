@@ -91,7 +91,7 @@
     <string name="videoformat_auto">Automatique (recommandé)</string>
     <string name="videoformat_hevcalways">Préférer HEVC</string>
     <string name="pacing_latency">Préférer une latence plus faible</string>
-    <string name="pacing_smoothness">Préférer la qualité vidéo (risque d\'augmenter la latence)</string>
+    <string name="pacing_smoothness">Préférer la qualité vidéo \n(risque d\'augmenter la latence)</string>
     <string name="title_privacy_policy">Politique de confidentialité</string>
     <string name="pacing_balanced_alt">Équilibré avec limite FPS</string>
     <string name="category_gamepad_settings">Paramètres manette</string>

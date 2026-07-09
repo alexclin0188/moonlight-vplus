@@ -675,6 +675,7 @@ private fun FramePacingSelector(engine: StreamEngine) {
                 pref.framePacing = value.toIntOrNull() ?: 0
             },
             columns = 2,
+            chipMinHeight = 44.dp,
         )
     }
 }
@@ -776,7 +777,7 @@ private fun DisplaySection(engine: StreamEngine) {
                                 selectedRes = cleanRes
                                 onResolutionSelected(engine, context, cleanRes)
                             },
-                            modifier = Modifier.weight(1f).height(40.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 44.dp),
                         )
                     }
                     // 补齐不足 3 列的空位，保持对齐

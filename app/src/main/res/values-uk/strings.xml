@@ -85,7 +85,7 @@
     <string name="videoformat_auto">Автоматичний (рекомендовано)</string>
     <string name="videoformat_hevcalways">Використовувати HEVC</string>
     <string name="pacing_latency">Перевага найменшій затримці</string>
-    <string name="pacing_smoothness">Перевага плавному відео (може значно збільшити затримку)</string>
+    <string name="pacing_smoothness">Перевага плавному відео \n(може значно збільшити затримку)</string>
     <string name="audioconf_stereo">Стерео</string>
     <string name="audioconf_51surround">5.1 Об\'ємний Звук</string>
     <string name="audioconf_71surround">7.1 Об\'ємний Звук</string>

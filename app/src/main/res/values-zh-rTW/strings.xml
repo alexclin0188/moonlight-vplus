@@ -90,7 +90,7 @@
     <string name="audioconf_71surround">7.1 環場音效</string>
     <string name="videoformat_auto">自動 (建議)</string>
     <string name="videoformat_hevcalways">優先使用 HEVC</string>
-    <string name="pacing_smoothness">偏好平滑視訊 (可能顯著提高延遲)</string>
+    <string name="pacing_smoothness">偏好平滑視訊 \n(可能顯著提高延遲)</string>
     <string name="pacing_latency">偏好低延遲</string>
     <string name="pacing_balanced_alt">FPS 上限平衡</string>
     <string name="title_privacy_policy">隱私權政策</string>
@@ -124,6 +124,12 @@
 
     <string name="editor_default_config_name">按鍵方案</string>
     <string name="editor_delete_element_format">刪除%1$s</string>
+    <!-- Color editor labels -->
+    <string name="editor_color_normal">普通</string>
+    <string name="editor_color_pressed">按下</string>
+    <string name="editor_color_background">背景</string>
+    <string name="editor_color_normal_text">文字</string>
+    <string name="editor_color_pressed_text">按下文字</string>
 
     <!-- Element type display names (used in key mapping editor) -->
     <string name="hint_scheme_name">方案名稱（1-20 字元）</string>

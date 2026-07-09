@@ -336,17 +336,16 @@ fun ColorPickerDialog(
     }
 
     val screenHeightDp = LocalConfiguration.current.screenHeightDp
-    val maxHeightDp = (screenHeightDp * 0.95f).coerceAtMost(800f)
+    val maxHeightDp = (screenHeightDp * 0.8f).coerceAtMost(800f)
 
     EditorDialog(
         title = title,
         onDismiss = onDismiss,
         onCancel = onDismiss,
-        onSave = { onSave(buildResult()) },
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .fillMaxHeight()
-            .heightIn(max = maxHeightDp.dp),
+        onSave = { onSave(buildResult()) },            modifier = Modifier
+                    .fillMaxWidth(0.8f)
+                    .fillMaxHeight()
+                    .heightIn(max = maxHeightDp.dp),
     ) {
         // ── 三列主体：SatVal 拾色区 | Hue 竖向条 | 颜色项+预览+Hex ──
         Row(

@@ -88,7 +88,7 @@
     <string name="videoformat_auto">Automatisch</string>
     <string name="videoformat_hevcalways">Immer HEVC verwenden (könnte Crashes verursachen)</string>
     <string name="pacing_latency">Bevorzuge niedrigste Latenz</string>
-    <string name="pacing_smoothness">Bevorzuge flüssige Bildwiedergabe (kann die Latenzzeit deutlich erhöhen)</string>
+    <string name="pacing_smoothness">Bevorzuge flüssige Bildwiedergabe \n(kann die Latenzzeit deutlich erhöhen)</string>
     <string name="audioconf_stereo">Stereo</string>
     <string name="audioconf_51surround">5.1 Surround Sound</string>
     <string name="audioconf_71surround">7.1 Surround Sound</string>

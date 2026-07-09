@@ -108,6 +108,13 @@ fun KeyMappingConfigPanel(
     // ── 运行时同步：将 DB 值同步到 engine 运行时状态（打开面板时执行一次） ──
     LaunchedEffect(Unit) {
         syncConfigToEngine(engine, touchEnabled, gameVibrator, buttonVibrator, wheelSpeed, enhancedTouch, globalOpacity)
+        // 如果统一颜色已开启，从最小 element_id 元素加载实际颜色值显示在色块上
+        if (unifiedColorEnabled) {
+            applyUnifiedColorsFromMinIdElement(context, configId, db) { n, p, bg, nt, pt ->
+                unifiedNormalColor = n; unifiedPressedColor = p
+                unifiedBackgroundColor = bg; unifiedNormalTextColor = nt; unifiedPressedTextColor = pt
+            }
+        }
     }
 
     // ── 保存到 DB 并同步到控制器 ──
@@ -251,11 +258,11 @@ fun KeyMappingConfigPanel(
         ColorPickerDialog(
             title = stringResource(R.string.config_unified_color_picker),
             items = listOf(
-                ColorPickerItem("Normal", "normal", unifiedNormalColor),
-                ColorPickerItem("Pressed", "pressed", unifiedPressedColor),
-                ColorPickerItem("Background", "bg", unifiedBackgroundColor),
-                ColorPickerItem("Text", "normalText", unifiedNormalTextColor),
-                ColorPickerItem("Pressed Text", "pressedText", unifiedPressedTextColor),
+                ColorPickerItem(stringResource(R.string.editor_color_normal), "normal", unifiedNormalColor),
+                ColorPickerItem(stringResource(R.string.editor_color_pressed), "pressed", unifiedPressedColor),
+                ColorPickerItem(stringResource(R.string.editor_color_background), "bg", unifiedBackgroundColor),
+                ColorPickerItem(stringResource(R.string.editor_color_normal_text), "normalText", unifiedNormalTextColor),
+                ColorPickerItem(stringResource(R.string.editor_color_pressed_text), "pressedText", unifiedPressedTextColor),
             ),
             onSave = { result ->
                 val map = result.toMap()
