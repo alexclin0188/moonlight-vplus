@@ -114,10 +114,18 @@ fun DeleteCustomKeyDialog(
                                         text = key.name,
                                         style = MaterialTheme.typography.bodyLarge,
                                     )
+                                    if (key.description.isNotEmpty()) {
+                                        Text(
+                                            text = key.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 1,
+                                        )
+                                    }
                                     Text(
                                         text = context.getString(R.string.customkey_keycode_format, key.keys.joinToString(", ") { "0x${it.toInt().and(0xFF).toString(16).uppercase()}" }),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                                     )
                                 }
                             }

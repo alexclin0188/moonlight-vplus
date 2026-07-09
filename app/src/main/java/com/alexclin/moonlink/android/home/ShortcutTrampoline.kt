@@ -39,7 +39,7 @@ import java.io.StringReader
 import java.util.UUID
 import com.alexclin.moonlink.android.R
 
-class ShortcutTrampoline : Activity() {
+class ShortcutTrampoline : com.alexclin.moonlink.android.BaseActivity() {
     private var uuidString: String? = null
     private var app: NvApp? = null
     private val intentStack = ArrayList<Intent>()

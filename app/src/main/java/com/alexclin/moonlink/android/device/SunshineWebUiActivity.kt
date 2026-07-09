@@ -39,7 +39,7 @@ import com.alexclin.moonlink.android.R
  * 2. HTTP Basic Auth 弹出原生对话框收集凭据，并写回 WebView 的 HttpAuthDatabase
  *    便于同会话/同 host 复用，不持久化跨进程明文密码。
  */
-class SunshineWebUiActivity : Activity() {
+class SunshineWebUiActivity : com.alexclin.moonlink.android.BaseActivity() {
 
     private lateinit var webView: WebView
     private lateinit var progressBar: ProgressBar

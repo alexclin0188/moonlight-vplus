@@ -18,7 +18,7 @@ import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.home.ComputerDatabaseManager
 import com.limelight.nvstream.http.ComputerDetails
 
-class WidgetConfigurationActivity : Activity() {
+class WidgetConfigurationActivity : com.alexclin.moonlink.android.BaseActivity() {
 
     private var appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID
 

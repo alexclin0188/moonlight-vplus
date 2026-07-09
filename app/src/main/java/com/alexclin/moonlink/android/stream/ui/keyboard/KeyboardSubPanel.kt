@@ -205,9 +205,8 @@ fun KeyboardSubPanel(
                         onAddCustomKey = { showAddDialog = true },
                         onDeleteCustomKey = { showDeleteDialog = true },
                         onResetCustomKeys = {
-                            val namesToDelete = customKeys.map { it.name }
-                            CustomKeyRepository.delete(context, namesToDelete)
-                            customKeys = emptyList()
+                            CustomKeyRepository.resetAll(context)
+                            customKeys = CustomKeyRepository.loadAll(context)
                             isEditMode = false
                         },
                         onHideKeyboard = { hideKeyboard() },
@@ -419,22 +418,22 @@ private fun ShortcutsTabContent(
 
         // ── 预置快捷键（不可删除） ──
         items(ShortcutDefinitions.presets) { preset ->
-            PresetShortcutButton(
-                preset = preset,
-                onClick = {
-                    engine.sendKeys(preset.keys.toShortArray())
-                },
+            ShortcutButton(
+                label = preset.label,
+                description = stringResource(preset.descriptionResId),
+                onClick = { engine.sendKeys(preset.keys.toShortArray()) },
             )
         }
 
         // ── 自定义快捷键（编辑模式下可删除） ──
         itemsIndexed(customKeys) { _, customKey ->
-            CustomShortcutButton(
-                customKey = customKey,
+            ShortcutButton(
+                label = customKey.name,
+                description = customKey.description.ifEmpty { null },
+                onClick = { engine.sendKeys(customKey.keys.toShortArray()) },
+                isCustom = true,
                 isEditMode = isEditMode,
-                onClick = {
-                    engine.sendKeys(customKey.keys.toShortArray())
-                },
+                vkCodes = customKey.keys,
             )
         }
 
@@ -477,7 +476,7 @@ private fun ShortcutEditButton(
 ) {
     Surface(
         modifier = Modifier
-            .heightIn(min = 56.dp)
+            .heightIn(min = 46.dp)
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(8.dp),
         color = if (isEditMode) MaterialTheme.colorScheme.primary
@@ -486,7 +485,7 @@ private fun ShortcutEditButton(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 0.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -509,75 +508,67 @@ private fun ShortcutEditButton(
 }
 
 /**
- * 预置快捷键按钮。
+ * 统一快捷键按钮 — 同时支持预置快捷键和用户自定义快捷键。
+ *
+ * 第一行展示标签（键名），第二行展示功能说明。
+ * 自定义快捷键在编辑模式下显示删除图标和错误色底色。
+ *
+ * @param label 第一行显示的键名（如 "Ctrl+C"）
+ * @param description 第二行显示的功能说明（为 null 时显示键码回退）
+ * @param onClick 点击回调
+ * @param isCustom 是否为自定义快捷键（影响编辑模式行为）
+ * @param isEditMode 编辑模式（自定义快捷键有效）
+ * @param vkCodes 自定义快捷键的 VK 码列表（description 为 null 时显示键码回退用）
  */
 @Composable
-private fun PresetShortcutButton(
-    preset: PresetShortcut,
+private fun ShortcutButton(
+    label: String,
+    description: String?,
     onClick: () -> Unit,
+    isCustom: Boolean = false,
+    isEditMode: Boolean = false,
+    vkCodes: List<Short> = emptyList(),
 ) {
     Surface(
         modifier = Modifier
-            .heightIn(min = 56.dp)
-            .clickable(onClick = onClick),
+            .heightIn(min = 46.dp)
+            .clickable(enabled = !(isCustom && isEditMode), onClick = onClick),
         shape = RoundedCornerShape(8.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = preset.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stringResource(preset.descriptionResId),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-            )
-        }
-    }
-}
-
-/**
- * 自定义快捷键按钮。
- */
-@Composable
-private fun CustomShortcutButton(
-    customKey: com.alexclin.moonlink.android.stream.ui.common.CustomKeyData,
-    isEditMode: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        modifier = Modifier
-            .heightIn(min = 56.dp)
-            .clickable(enabled = !isEditMode, onClick = onClick),
-        shape = RoundedCornerShape(8.dp),
-        color = if (isEditMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+        color = if (isCustom && isEditMode) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
         else MaterialTheme.colorScheme.surfaceVariant,
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 4.dp, vertical = 8.dp),
+                .padding(horizontal = 4.dp, vertical = 4.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
+            // 第一行：键名
             Text(
-                text = customKey.name,
+                text = label,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
+                maxLines = 1,
             )
-            if (isEditMode) {
+            Spacer(modifier = Modifier.height(2.dp))
+            // 第二行：功能说明或键码回退
+            val descText = when {
+                description != null -> description
+                vkCodes.isNotEmpty() -> vkCodes.joinToString("+") { getKeyLabelForVkCode(it) }
+                else -> ""
+            }
+            if (descText.isNotEmpty()) {
+                Text(
+                    text = descText,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isCustom && isEditMode) MaterialTheme.colorScheme.onErrorContainer
+                    else MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                )
+            }
+            // 编辑模式：删除图标
+            if (isCustom && isEditMode) {
                 Spacer(modifier = Modifier.height(2.dp))
                 Icon(
                     Icons.Default.Close,
@@ -629,4 +620,75 @@ private fun ShortcutActionButton(
     }
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+//  VK 码 → 显示名辅助
+// ════════════════════════════════════════════════════════════════════════════
 
+/**
+ * 将 Windows VK 码转换为可读的键名标签。
+ * 用于无描述的自定义快捷键按钮上显示键名（如 "Ctrl+Shift+Esc"）。
+ */
+private fun getKeyLabelForVkCode(vkCode: Short): String {
+    return when (val code = vkCode.toInt() and 0xFF) {
+        8 -> "⌫"
+        9 -> "Tab"
+        12 -> "Clear"
+        13 -> "Enter"
+        18 -> "Alt"
+        19 -> "Pause"
+        20 -> "Caps"
+        27 -> "Esc"
+        32 -> "Space"
+        33 -> "PgUp"
+        34 -> "PgDn"
+        35 -> "End"
+        36 -> "Home"
+        37 -> "←"
+        38 -> "↑"
+        39 -> "→"
+        40 -> "↓"
+        44 -> "PrtSc"
+        45 -> "Ins"
+        46 -> "Del"
+        47 -> "/"
+        59 -> ";"
+        61 -> "="
+        91 -> "Win"
+        92 -> "RWin"
+        93 -> "Menu"
+        144 -> "NumLk"
+        145 -> "ScrLk"
+        160 -> "Shift"
+        161 -> "RShift"
+        162 -> "Ctrl"
+        163 -> "RCtrl"
+        164 -> "LAlt"
+        165 -> "RAlt"
+        192 -> "`"
+        220 -> "\\"
+        221 -> "]"
+        222 -> "'"
+        // 字母 A-Z (VK_A=65..VK_Z=90)
+        in 65..90 -> "${('A' + (code - 65)).toChar()}"
+        // 数字 0-9 (VK_0=48..VK_9=57)
+        in 48..57 -> "${(code - 48).toInt()}"
+        // 小键盘 (VK_NUMPAD0=96..VK_NUMPAD9=105)
+        in 96..105 -> "Num${(code - 96)}"
+        // 功能键 F1-F12 (VK_F1=112..VK_F12=123)
+        in 112..123 -> "F${code - 111}"
+        // 其他特殊键（无对应 VK 常量的 OEM 码）
+        0x6A -> "*"
+        0x6B -> "+"
+        0x6D -> "-"
+        0x6E -> "."
+        0x6F -> "/"
+        0xBA -> ";"
+        0xBB -> "="
+        0xBC -> ","
+        0xBD -> "-"
+        0xBE -> "."
+        0xBF -> "/"
+        0xDB -> "["
+        else -> "0x${code.toString(16).uppercase()}"
+    }
+}

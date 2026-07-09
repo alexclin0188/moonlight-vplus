@@ -36,9 +36,9 @@ import kotlinx.coroutines.withContext
  * 负责绑定 [ComputerManagerService]，通过 [DeviceStateManager] 维护设备列表，
  * 然后将设备管理器向下传递给 Compose UI 树。
  */
-class MoonLinkMainActivity : ComponentActivity() {
+class MoonLinkMainActivity : BaseComponentActivity() {
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+        override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
@@ -94,13 +94,13 @@ class MoonLinkMainActivity : ComponentActivity() {
 
             // Observe preference changes for live theme switching
             DisposableEffect(Unit) {
-                val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+                val themeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
                     if (key == "list_theme_mode") {
                         themeMode = prefs.getString("list_theme_mode", "dark") ?: "dark"
                     }
                 }
-                prefs.registerOnSharedPreferenceChangeListener(listener)
-                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+                prefs.registerOnSharedPreferenceChangeListener(themeListener)
+                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(themeListener) }
             }
 
             // ── 运行时权限：Android 10-13 需要 ACCESS_COARSE_LOCATION ──

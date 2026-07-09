@@ -142,8 +142,8 @@ fun ListPreference(
                                 .fillMaxWidth()
                                 .clickable {
                                     currentValue = value
-                                    prefs.edit().putString(key, value).apply()
                                     showDialog = false
+                                    prefs.edit().putString(key, value).apply()
                                 }
                                 .padding(vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,

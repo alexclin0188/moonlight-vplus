@@ -107,4 +107,26 @@
     <!-- 懸浮球手勢動作 -->
 
     <!-- 懸浮球動作選項 -->
+
+    <!-- Shortcut descriptions (missing translations) -->
+    <string name="shortcut_desc_copy">複製</string>
+    <string name="shortcut_desc_cut">剪下</string>
+    <string name="shortcut_desc_select_all">全選</string>
+    <string name="shortcut_desc_start_menu">開始功能表</string>
+    <string name="shortcut_desc_undo">復原</string>
+    <string name="shortcut_desc_show_desktop">顯示桌面</string>
+    <string name="shortcut_desc_switch_window">切換視窗</string>
+    <string name="shortcut_desc_lock_screen">鎖定螢幕</string>
+    <string name="shortcut_desc_switch_app">切換應用程式</string>
+    <string name="shortcut_desc_close_window">關閉視窗</string>
+    <string name="shortcut_desc_task_manager">工作管理員</string>
+    <string name="shortcut_desc_switch_ime">切換輸入法</string>
+
+    <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
+    <string name="custom_key_desc_fullscreen">全螢幕狀態切換</string>
+    <string name="custom_key_desc_paste">貼上剪貼簿</string>
+    <string name="custom_key_desc_desktop">切換到桌面</string>
+    <string name="custom_key_desc_xbox_game_bar">開啟 Xbox Game Bar</string>
+    <string name="custom_key_desc_perf_monitor">小飛機/RTSS 主機效能監控開關</string>
+    <string name="custom_key_desc_steam_overlay">開啟 Steam 圖層</string>
 </resources>

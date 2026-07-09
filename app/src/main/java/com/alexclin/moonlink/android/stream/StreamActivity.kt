@@ -76,7 +76,7 @@ import com.alexclin.moonlink.android.stream.StreamNotificationService
  * 使用 Compose 构建 UI，通过 [StreamEngine] 封装底层串流连接。
  * 与旧版 [com.limelight.Game] 并行存在，不修改任何旧代码。
  */
-class StreamActivity : ComponentActivity() {
+class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
 
     private lateinit var engine: StreamEngine
     private var wasPaused = false

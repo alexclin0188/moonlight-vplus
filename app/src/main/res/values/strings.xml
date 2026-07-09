@@ -796,11 +796,11 @@
     <string name="subpanel_pan_zoom">Pan/Zoom</string>
     <string name="subpanel_panel_auto_hide_label">Auto-hide</string>
     <string name="subpanel_peripherals_label">Peripherals</string>
-    <string name="subpanel_sensitivity_format">Sense: %1$d</string>
+    <string name="subpanel_sensitivity_format">Sense: %1$.1f</string>
     <string name="subpanel_switch_scheme">Switch scheme</string>
-    <string name="subpanel_title_gyro">Gyro</string>
-    <string name="subpanel_title_host">Host</string>
-    <string name="subpanel_title_more">More</string>
+    <string name="subpanel_title_gyro">Gyro Settings</string>
+    <string name="subpanel_title_host">Host Settings</string>
+    <string name="subpanel_title_more">More Settings</string>
     <string name="subpanel_toggle_remote_mouse">Toggle remote mouse</string>
     <string name="subpanel_touch_mode">Touch mode</string>
 
@@ -809,7 +809,7 @@
     <string name="qa_editor_title">Edit Quick Buttons</string>
 
     <!-- Touch mode toasts -->
-    <string name="toast_touch_mode_enhanced_switched">Enhanced multi-touch switched</string>
+    <string name="toast_touch_mode_enhanced_switched">Enhanced multitouch switched</string>
     <string name="toast_touch_mode_mouse_switched">Mouse mode switched</string>
     <string name="toast_touch_mode_trackpad_switched">Trackpad mode switched</string>
 
@@ -844,9 +844,14 @@
     <string name="customkey_error_name_duplicate">Name \"%1$s\" already exists</string>
     <string name="customkey_error_name_empty">Name cannot be empty</string>
     <string name="customkey_hint_codes">Enter key codes (comma separated)</string>
-    <string name="customkey_hint_name">Enter combo name</string>
+    <string name="customkey_hint_name">Enter shortcut name</string>
+    <string name="customkey_hint_description">Enter function description</string>
     <string name="customkey_label_codes">Key Codes</string>
     <string name="customkey_label_name">Name</string>
+    <string name="customkey_label_description">Description</string>
+    <string name="customkey_label_selected_keys">Selected Keys</string>
+    <string name="customkey_error_keys_empty">Please select at least one key</string>
+    <string name="customkey_hint_add_key">Tap to add key</string>
     <string name="dialog_button_confirm">Confirm</string>
     <string name="display_bitrate_20m">Original
 20M</string>
@@ -1111,4 +1116,13 @@
     <string name="shortcut_desc_switch_app">Switch App</string>
     <string name="shortcut_desc_close_window">Close Window</string>
     <string name="shortcut_desc_task_manager">Task Manager</string>
+    <string name="shortcut_desc_switch_ime">Switch input method</string>
+
+    <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
+    <string name="custom_key_desc_fullscreen">Toggle fullscreen</string>
+    <string name="custom_key_desc_paste">Paste from clipboard</string>
+    <string name="custom_key_desc_desktop">Show desktop</string>
+    <string name="custom_key_desc_xbox_game_bar">Open Xbox Game Bar</string>
+    <string name="custom_key_desc_perf_monitor">Toggle performance monitor (RTSS/OSD)</string>
+    <string name="custom_key_desc_steam_overlay">Open Steam overlay</string>
 </resources>

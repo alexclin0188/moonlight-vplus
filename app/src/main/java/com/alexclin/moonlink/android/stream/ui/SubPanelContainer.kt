@@ -259,7 +259,7 @@ private fun MainListView(
         item {
             SectionEntryRow(
                 icon = Icons.Default.Tv,
-                label = stringResource(R.string.label_display),
+                label = stringResource(R.string.title_display_settings),
                 onClick = { onNavigate(DetailPage.DISPLAY) },
             )
         }

@@ -765,6 +765,7 @@
     <string name="shortcut_desc_switch_app">切换应用</string>
     <string name="shortcut_desc_close_window">关闭窗口</string>
     <string name="shortcut_desc_task_manager">任务管理器</string>
+    <string name="shortcut_desc_switch_ime">切换输入法</string>
     <string name="ok">确定</string>
 
 
@@ -832,11 +833,11 @@
     <string name="subpanel_pan_zoom">平移/缩放</string>
     <string name="subpanel_panel_auto_hide_label">自动隐藏</string>
     <string name="subpanel_peripherals_label">外设</string>
-    <string name="subpanel_sensitivity_format">灵敏度: %1$d</string>
+    <string name="subpanel_sensitivity_format">灵敏度: %1$.1f</string>
     <string name="subpanel_switch_scheme">切换按键映射方案</string>
-    <string name="subpanel_title_gyro">体感</string>
-    <string name="subpanel_title_host">主机</string>
-    <string name="subpanel_title_more">更多</string>
+    <string name="subpanel_title_gyro">体感设置</string>
+    <string name="subpanel_title_host">主机设置</string>
+    <string name="subpanel_title_more">更多设置</string>
     <string name="subpanel_toggle_remote_mouse">切换远程鼠标</string>
     <string name="subpanel_touch_mode">触控模式</string>
 
@@ -879,9 +880,14 @@
     <string name="customkey_error_name_duplicate">名称「%1$s」已存在</string>
     <string name="customkey_error_name_empty">名称不能为空</string>
     <string name="customkey_hint_codes">输入键码（逗号分隔）</string>
-    <string name="customkey_hint_name">输入组合键名称</string>
+    <string name="customkey_hint_name">输入快捷键名称</string>
+    <string name="customkey_hint_description">输入功能说明</string>
     <string name="customkey_label_codes">键码</string>
     <string name="customkey_label_name">名称</string>
+    <string name="customkey_label_description">功能说明</string>
+    <string name="customkey_label_selected_keys">已选按键</string>
+    <string name="customkey_error_keys_empty">请至少选择一个按键</string>
+    <string name="customkey_hint_add_key">点击添加按键</string>
     <string name="dialog_button_confirm">确认</string>
     <string name="display_bitrate_20m">原画\n20M</string>
     <string name="display_bitrate_2m">清晰\n2M</string>
@@ -1101,4 +1107,12 @@
 
     <!-- Preference Components -->
     <string name="pref_item_selected_format">%1$s（已选 %2$d 项）</string>
+
+    <!-- Built-in custom key descriptions (from raw/default_special_keys.json) -->
+    <string name="custom_key_desc_fullscreen">全屏状态切换</string>
+    <string name="custom_key_desc_paste">粘贴剪贴板</string>
+    <string name="custom_key_desc_desktop">切到桌面</string>
+    <string name="custom_key_desc_xbox_game_bar">打开 Xbox Game Bar</string>
+    <string name="custom_key_desc_perf_monitor">小飞机/RTSS 主机性能监控开关</string>
+    <string name="custom_key_desc_steam_overlay">打开 Steam 图层</string>
 </resources>

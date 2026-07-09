@@ -33,7 +33,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.TextView
 import android.widget.Toast
 
-class AddComputerManually : Activity() {
+class AddComputerManually : com.alexclin.moonlink.android.BaseActivity() {
     private lateinit var hostText: TextView
     private var managerBinder: ComputerManagerService.ComputerManagerBinder? = null
     private val computersToAdd = LinkedBlockingQueue<String>()
@@ -283,8 +283,6 @@ class AddComputerManually : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        UiHelper.setLocale(this)
 
         setContentView(R.layout.activity_add_computer_manually)
 

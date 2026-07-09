@@ -1,0 +1,42 @@
+package com.alexclin.moonlink.android
+
+import android.content.SharedPreferences
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.util.UiHelper
+
+/**
+ * 所有继承 [ComponentActivity] 的 MoonLink Activity 基类。
+ * 自动在 [onCreate] 中调用 [UiHelper.setLocale] 应用用户设置的语言，
+ * 并监听语言偏好变更自动重建 Activity，避免每个子类手动重复实现。
+ */
+open class BaseComponentActivity : ComponentActivity() {
+
+    /** 语言变更监听器，用类属性强引用避免被 SharedPreferences 的 WeakHashMap GC */
+    private var langChangeListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        UiHelper.setLocale(this)
+
+        // ── 监听语言设置变更，切换语言时重建 Activity ──
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == "list_languages") {
+                recreate()
+            }
+        }
+        langChangeListener = listener
+        PreferenceManager.getDefaultSharedPreferences(this)
+            .registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    override fun onDestroy() {
+        langChangeListener?.let {
+            PreferenceManager.getDefaultSharedPreferences(this)
+                .unregisterOnSharedPreferenceChangeListener(it)
+        }
+        langChangeListener = null
+        super.onDestroy()
+    }
+}

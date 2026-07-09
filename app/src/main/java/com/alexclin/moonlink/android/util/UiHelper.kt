@@ -100,14 +100,18 @@ object UiHelper {
                 localeManager.applicationLocales = LocaleList.forLanguageTags(locale)
                 PreferenceConfiguration.completeLanguagePreferenceMigration(activity)
             } else {
-                val config = Configuration(activity.resources.configuration)
-                config.locale = if (locale.contains("-")) {
+                val resolvedLocale = if (locale.contains("-")) {
                     Locale(locale.substring(0, locale.indexOf('-')), locale.substring(locale.indexOf('-') + 1))
                 } else {
                     Locale(locale)
                 }
+                // 同时更新 Activity 和 Application 的资源，确保所有上下文都使用正确语言
+                val config = Configuration(activity.resources.configuration)
+                config.locale = resolvedLocale
                 @Suppress("DEPRECATION")
                 activity.resources.updateConfiguration(config, activity.resources.displayMetrics)
+                @Suppress("DEPRECATION")
+                activity.applicationContext.resources.updateConfiguration(config, activity.resources.displayMetrics)
             }
         }
     }
