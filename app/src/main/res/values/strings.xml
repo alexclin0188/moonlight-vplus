@@ -599,10 +599,7 @@
     <string name="option_never_hide">Never Auto-Hide</string>
     <string name="section_performance_display">Performance &amp; Display</string>
     <string name="label_enable_perf_overlay">Enable Performance Overlay</string>
-    <string name="label_bg_opacity">Background Opacity</string>
     <string name="label_bg_opacity_percent" translatable="false">%d%%</string>
-    <string name="label_lock_perf_overlay">Lock Performance Overlay</string>
-    <string name="desc_perf_overlay_settings">For detailed performance overlay settings go to Home → Settings → Performance &amp; Analytics</string>
     <string name="label_show_latency_after_stream">Show Latency Info After Streaming</string>
     <string name="label_disable_warnings">Disable Warning Prompts</string>
     <string name="label_pause_stream_support">Pause Stream Support</string>
@@ -769,13 +766,11 @@
     <string name="more_enable_perf_overlay">Show performance overlay</string>
     <string name="more_hide_when_keymapping">Hide when key mapping active</string>
     <string name="more_no_auto_hide">Never auto-hide</string>
-    <string name="more_perf_hint">Performance statistics overlay</string>
     <string name="more_show_pause_stream">Show pause stream button</string>
 
     <!-- SubPanel (stream overlay) -->
     <string name="subpanel_activate_key">Activation key</string>
     <string name="subpanel_auto_trackpad_toast">Auto-switched to trackpad mode</string>
-    <string name="subpanel_bg_opacity_format">BG opacity: %1$d%%</string>
     <string name="subpanel_config">Config</string>
     <string name="subpanel_current_scheme">Current scheme: %1$s</string>
     <string name="subpanel_double_click_drag">Double-tap drag</string>
@@ -998,9 +993,8 @@
     <string name="engine_no_video_traffic">No video traffic</string>
     <string name="engine_orientation_landscape">Landscape</string>
     <string name="engine_orientation_portrait">Portrait</string>
-    <string name="engine_perf_draggable">Drag to move</string>
+    <string name="engine_perf_visible">Performance overlay visible</string>
     <string name="engine_perf_hidden">Performance overlay hidden</string>
-    <string name="engine_perf_locked">Performance overlay locked</string>
     <string name="engine_pip_off">PiP off</string>
     <string name="engine_pip_on">PiP on</string>
     <string name="engine_port_check_failed">Port check failed. Please check your network and firewall settings:</string>
@@ -1043,22 +1037,18 @@
     <string name="perf_option_bottom">Bottom</string>
     <string name="perf_option_bottom_left">Bottom Left</string>
     <string name="perf_option_bottom_right">Bottom Right</string>
-    <string name="perf_option_horizontal">Horizontal</string>
     <string name="perf_option_top">Top</string>
     <string name="perf_option_top_left">Top Left</string>
     <string name="perf_option_top_right">Top Right</string>
-    <string name="perf_option_vertical">Vertical</string>
     <string name="perf_summary_disable_warnings">Show no warning messages</string>
     <string name="perf_summary_display_items">Items to display in the overlay</string>
     <string name="perf_summary_enable_analytics">Collect and display streaming analytics</string>
     <string name="perf_summary_enable_overlay">Show performance overlay during streaming</string>
     <string name="perf_summary_post_stream_toast">Show streaming summary after disconnecting</string>
-    <string name="perf_title_bg_opacity">Background opacity</string>
     <string name="perf_title_disable_warnings">Disable warnings</string>
     <string name="perf_title_display_items">Display items</string>
     <string name="perf_title_enable_analytics">Enable analytics</string>
     <string name="perf_title_enable_overlay">Enable overlay</string>
-    <string name="perf_title_overlay_orientation">Overlay orientation</string>
     <string name="perf_title_overlay_position">Overlay position</string>
     <string name="perf_title_post_stream_toast">Post-stream summary</string>
     <string name="scheme_delete_confirm">Delete scheme \"%1$s\"?</string>

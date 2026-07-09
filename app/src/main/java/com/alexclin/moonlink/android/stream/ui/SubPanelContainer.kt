@@ -762,25 +762,7 @@ private fun MoreDetail(engine: StreamEngine, onBack: () -> Unit) {
                     engine.perfOverlayEnabled = it  // 立即生效
                     engine.prefConfig.writePreferences(context)
                 }
-                AnimatedVisibility(visible = perfEnabled) {
-                    Column {
-                        var bgAlpha by remember {
-                            mutableFloatStateOf(engine.prefConfig.perfOverlayBgOpacity / 100f)
-                        }
-                        Text(stringResource(R.string.subpanel_bg_opacity_format, (bgAlpha * 100).toInt()))
-                        Slider(value = bgAlpha, onValueChange = {
-                            bgAlpha = it
-                            engine.prefConfig.perfOverlayBgOpacity = (it * 100).toInt()
-                            engine.prefConfig.writePreferences(context)
-                        }, valueRange = 0f..1f)
-                        Text(
-                            context.getString(R.string.more_perf_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                }
+                // 性能图层纯开关（背景不透明度、锁定等配置已移除）
             }
 
             item { HorizontalDivider(Modifier.padding(vertical = 4.dp)) }

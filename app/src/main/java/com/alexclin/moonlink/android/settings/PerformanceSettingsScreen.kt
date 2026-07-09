@@ -45,20 +45,7 @@ fun PerformanceSettingsScreen() {
                     summary = stringResource(R.string.perf_summary_enable_overlay),
                 )
             }
-            // 4. 性能图层方向
-            item {
-                ListPreference(
-                    key = "list_perf_overlay_orientation",
-                    title = stringResource(R.string.perf_title_overlay_orientation),
-                    entries = listOf(
-                        stringResource(R.string.perf_option_horizontal) to "horizontal",
-                        stringResource(R.string.perf_option_vertical) to "vertical",
-                    ),
-                    defaultValue = "horizontal",
-                    dependency = "checkbox_enable_perf_overlay",
-                )
-            }
-            // 5. 性能图层位置
+            // 4. 性能图层位置
             item {
                 ListPreference(
                     key = "list_perf_overlay_position",
@@ -75,7 +62,7 @@ fun PerformanceSettingsScreen() {
                     dependency = "checkbox_enable_perf_overlay",
                 )
             }
-            // 6. 性能图层显示项目
+            // 5. 性能图层显示项目
             item {
                 MultiSelectPreference(
                     key = "perf_overlay_display_items",
@@ -96,17 +83,7 @@ fun PerformanceSettingsScreen() {
                     dependency = "checkbox_enable_perf_overlay",
                 )
             }
-            // 7. 性能图层背景不透明度
-            item {
-                SeekBarPreference(
-                    key = "seekbar_perf_overlay_bg_opacity",
-                    title = stringResource(R.string.perf_title_bg_opacity),
-                    min = 0, max = 100, step = 5, defaultValue = 53,
-                    unit = "%",
-                    dependency = "checkbox_enable_perf_overlay",
-                )
-            }
-            // 8. 串流完毕显示延迟信息
+            // 6. 串流完毕显示延迟信息
             item {
                 CheckBoxPreference(
                     key = "checkbox_enable_post_stream_toast",

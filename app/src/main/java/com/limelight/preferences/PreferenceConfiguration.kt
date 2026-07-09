@@ -32,11 +32,6 @@ class PreferenceConfiguration {
         LEFT
     }
 
-    enum class PerfOverlayOrientation {
-        HORIZONTAL,
-        VERTICAL
-    }
-
     enum class PerfOverlayPosition {
         // 水平方向选项
         TOP,
@@ -114,11 +109,7 @@ class PreferenceConfiguration {
     var hdrMode = 0 // 0=HDR disabled, 1=HDR10/PQ, 2=HLG
     var enablePip = false
     var enablePerfOverlay = false
-    var perfOverlayLocked = false
-    var perfOverlayBgOpacity = 0
-    var perfOverlayOrientation: PerfOverlayOrientation = PerfOverlayOrientation.HORIZONTAL
     var perfOverlayPosition: PerfOverlayPosition = PerfOverlayPosition.TOP
-    var enableSimplifyPerfOverlay = false
     var enableLatencyToast = false
     var toolPanelAutoHideMode = 2 // 0=按键映射, 1=2秒, 2=不隐藏
     var enableStun = false
@@ -266,8 +257,7 @@ class PreferenceConfiguration {
                 .putBoolean(ENABLE_HDR_PREF_STRING, enableHdr)
                 .putBoolean(ENABLE_HDR_HIGH_BRIGHTNESS_PREF_STRING, enableHdrHighBrightness)
                 .putBoolean(ENABLE_PERF_OVERLAY_STRING, enablePerfOverlay)
-                .putBoolean(PERF_OVERLAY_LOCKED_STRING, perfOverlayLocked)
-                .putInt(PERF_OVERLAY_BG_OPACITY_STRING, perfOverlayBgOpacity)
+
                 .putBoolean(REVERSE_RESOLUTION_PREF_STRING, reverseResolution)
                 .putBoolean(ROTABLE_SCREEN_PREF_STRING, rotableScreen)
                 .putBoolean(SHOW_BITRATE_CARD_PREF_STRING, showBitrateCard)
@@ -331,9 +321,6 @@ class PreferenceConfiguration {
         copy.enableHdrHighBrightness = this.enableHdrHighBrightness
         copy.hdrMode = this.hdrMode
         copy.enablePerfOverlay = this.enablePerfOverlay
-        copy.perfOverlayLocked = this.perfOverlayLocked
-        copy.perfOverlayBgOpacity = this.perfOverlayBgOpacity
-        copy.perfOverlayOrientation = this.perfOverlayOrientation
         copy.perfOverlayPosition = this.perfOverlayPosition
         copy.reverseResolution = this.reverseResolution
         copy.rotableScreen = this.rotableScreen
@@ -408,9 +395,6 @@ class PreferenceConfiguration {
         private const val HDR_MODE_PREF_STRING = "list_hdr_mode" // 0=SDR, 1=HDR10, 2=HLG
         private const val ENABLE_PIP_PREF_STRING = "checkbox_enable_pip"
         private const val ENABLE_PERF_OVERLAY_STRING = "checkbox_enable_perf_overlay"
-        private const val PERF_OVERLAY_LOCKED_STRING = "perf_overlay_locked"
-        private const val PERF_OVERLAY_BG_OPACITY_STRING = "seekbar_perf_overlay_bg_opacity"
-        private const val PERF_OVERLAY_ORIENTATION_STRING = "list_perf_overlay_orientation"
         private const val PERF_OVERLAY_POSITION_STRING = "list_perf_overlay_position"
         private const val BIND_ALL_USB_STRING = "checkbox_usb_bind_all"
         private const val MOUSE_EMULATION_STRING = "checkbox_mouse_emulation"
@@ -602,9 +586,6 @@ class PreferenceConfiguration {
         private const val DEFAULT_HDR_MODE = 1 // 默认 HDR10/PQ 模式 (0=禁用自动HDR切换, 1=HDR10, 2=HLG)
         private const val DEFAULT_ENABLE_PIP = false
         private const val DEFAULT_ENABLE_PERF_OVERLAY = false
-        private const val DEFAULT_PERF_OVERLAY_LOCKED = false
-        private const val DEFAULT_PERF_OVERLAY_BG_OPACITY = 53
-        private const val DEFAULT_PERF_OVERLAY_ORIENTATION = "horizontal"
         private const val DEFAULT_PERF_OVERLAY_POSITION = "top"
         private const val DEFAULT_BIND_ALL_USB = false
         private const val DEFAULT_MOUSE_EMULATION = true
@@ -1127,17 +1108,6 @@ class PreferenceConfiguration {
             }
             config.enablePip = prefs.getBoolean(ENABLE_PIP_PREF_STRING, DEFAULT_ENABLE_PIP)
             config.enablePerfOverlay = prefs.getBoolean(ENABLE_PERF_OVERLAY_STRING, DEFAULT_ENABLE_PERF_OVERLAY)
-            config.perfOverlayLocked = prefs.getBoolean(PERF_OVERLAY_LOCKED_STRING, DEFAULT_PERF_OVERLAY_LOCKED)
-            config.perfOverlayBgOpacity = prefs.getInt(PERF_OVERLAY_BG_OPACITY_STRING, DEFAULT_PERF_OVERLAY_BG_OPACITY).coerceIn(0, 100)
-
-            // 读取性能覆盖层方向和位置设置
-            val perfOverlayOrientationStr = prefs.getString(PERF_OVERLAY_ORIENTATION_STRING, DEFAULT_PERF_OVERLAY_ORIENTATION)
-            config.perfOverlayOrientation = if ("vertical" == perfOverlayOrientationStr) {
-                PerfOverlayOrientation.VERTICAL
-            } else {
-                PerfOverlayOrientation.HORIZONTAL
-            }
-
             val perfOverlayPositionStr = prefs.getString(PERF_OVERLAY_POSITION_STRING, DEFAULT_PERF_OVERLAY_POSITION)
             config.perfOverlayPosition = when (perfOverlayPositionStr) {
                 "bottom" -> PerfOverlayPosition.BOTTOM
@@ -1205,8 +1175,6 @@ class PreferenceConfiguration {
             config.gamepadTouchpadAsMouse = prefs.getBoolean(GAMEPAD_TOUCHPAD_AS_MOUSE_PREF_STRING, DEFAULT_GAMEPAD_TOUCHPAD_AS_MOUSE)
             config.gamepadMotionSensors = prefs.getBoolean(GAMEPAD_MOTION_SENSORS_PREF_STRING, DEFAULT_GAMEPAD_MOTION_SENSORS)
             config.gamepadMotionSensorsFallbackToDevice = prefs.getBoolean(GAMEPAD_MOTION_FALLBACK_PREF_STRING, DEFAULT_GAMEPAD_MOTION_FALLBACK)
-            config.enableSimplifyPerfOverlay = false
-
             // 加载陀螺仪偏好设置
             config.gyroSensitivityMultiplier = prefs.getFloat(GYRO_SENSITIVITY_MULTIPLIER_PREF_STRING, DEFAULT_GYRO_SENSITIVITY_MULTIPLIER)
             config.gyroInvertXAxis = prefs.getBoolean(GYRO_INVERT_X_AXIS_PREF_STRING, DEFAULT_GYRO_INVERT_X_AXIS)

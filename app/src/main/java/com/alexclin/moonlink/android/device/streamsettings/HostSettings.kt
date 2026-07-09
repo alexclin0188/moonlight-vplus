@@ -186,16 +186,8 @@ data class HostSettings(
     // ═══════════════════════════════════════════
     /** 性能监控图层 */
     val enablePerfOverlay: Boolean = false,
-    /** 性能图层锁定 */
-    val perfOverlayLocked: Boolean = false,
-    /** 性能图层背景不透明度 0-100 */
-    val perfOverlayBgOpacity: Int = 53,
-    /** 性能图层方向: horizontal / vertical */
-    val perfOverlayOrientation: String = "horizontal",
     /** 性能图层位置 */
     val perfOverlayPosition: String = "top",
-    /** 启用简化性能覆盖层 */
-    val enableSimplifyPerfOverlay: Boolean = false,
     /** 延迟 toast */
     val enableLatencyToast: Boolean = false,
     /** 悬浮按钮不透明度 10-100 */

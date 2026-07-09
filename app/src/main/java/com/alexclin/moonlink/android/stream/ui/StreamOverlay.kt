@@ -11,7 +11,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,12 +27,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -49,7 +46,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -61,7 +57,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
@@ -592,11 +587,10 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
         modifier = modifier,
     ) {
         val info = perfInfo!!
-        val isHorizontal = engine.prefConfig.perfOverlayOrientation == PreferenceConfiguration.PerfOverlayOrientation.HORIZONTAL
-        val bgOpacity = (engine.prefConfig.perfOverlayBgOpacity.coerceIn(0, 100)) / 100f
-        val bgArgb = (bgOpacity * 255).toInt().coerceIn(0, 255) shl 24 or 0x161616
-        val bgColor = Color(bgArgb)
-        val isLocked = engine.prefConfig.perfOverlayLocked
+        // 根据位置决定布局方向：TOP/BOTTOM → 水平排列，四角 → 竖直排列
+        val perfPosition = engine.prefConfig.perfOverlayPosition
+        val isHorizontalLayout = perfPosition == PreferenceConfiguration.PerfOverlayPosition.TOP ||
+                perfPosition == PreferenceConfiguration.PerfOverlayPosition.BOTTOM
 
         // 月相
         val moonIcon = remember { MoonPhaseUtils.getMoonPhaseIcon(MoonPhaseUtils.getCurrentMoonPhase()) }
@@ -618,23 +612,7 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
             )
         }
 
-        // 拖拽状态
-        var dragOffset by remember { mutableStateOf(Offset.Zero) }
-
-        // 点击详情对话框
-        var detailTitle by remember { mutableStateOf<String?>(null) }
-        var detailMessage by remember { mutableStateOf<String?>(null) }
-
-        if (detailTitle != null) {
-            AlertDialog(
-                onDismissRequest = { detailTitle = null },
-                title = { Text(detailTitle!!) },
-                text = { Text(detailMessage ?: "") },
-                confirmButton = { TextButton(onClick = { detailTitle = null }) { Text(stringResource(R.string.dialog_button_confirm)) } },
-            )
-        }
-
-        val textSize = 12.sp
+        val textSize = 8.sp
         val textColor = Color.White
 
         @Composable
@@ -643,10 +621,7 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
-                    .clickable {
-                        detailTitle = item.name
-                        detailMessage = buildItemDetail(item, info, bandwidth, context)
-                    }
+                    .width(ITEM_FIXED_WIDTH)
                     .padding(vertical = 1.dp),
             ) {
                 Text(item.iconEmoji ?: "", fontSize = textSize)
@@ -663,7 +638,7 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
 
         val panelContent = @Composable {
             val container: @Composable (content: @Composable () -> Unit) -> Unit =
-                if (isHorizontal) { content -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() } }
+                if (isHorizontalLayout) { content -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() } }
                 else { content -> Column { content() } }
             container {
                 for ((item, enabled) in items) {
@@ -672,35 +647,17 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
             }
         }
 
-        // 拖拽手势（仅非锁定态可拖拽）
-        val dragModifier = if (!isLocked)
-            Modifier.pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    dragOffset = Offset(dragOffset.x + dragAmount.x, dragOffset.y + dragAmount.y)
-                }
-            }
-        else Modifier
-
-        val contentBox = @Composable {
-            Box(
-                modifier = dragModifier
-                    .background(bgColor, RoundedCornerShape(6.dp))
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-            ) {
-                panelContent()
-            }
-        }
-
-        if (isLocked) {
-            contentBox()
-        } else {
-            Box(modifier = Modifier.offset { IntOffset(dragOffset.x.roundToInt(), dragOffset.y.roundToInt()) }) {
-                contentBox()
-            }
+        // 纯展示容器：全透明背景，无触摸交互
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+        ) {
+            panelContent()
         }
     }
 }
+
+private val ITEM_FIXED_WIDTH = 110.dp
 
 private enum class PerfItem(
     val iconEmoji: String? = null,
@@ -754,7 +711,7 @@ private fun buildItemText(
         if (info.framesWithHostProcessingLatency > 0)
             "${"%.1f".format(info.aveHostProcessingLatency)}ms" to null
         else
-            "Ver.V+ 🧋" to null
+            "—" to null
     }
     PerfItem.BATTERY -> {
         val level = UiHelper.getBatteryLevel(context)
@@ -777,38 +734,5 @@ private fun buildItemText(
             }
             "1%Low ${"%.1f".format(info.onePercentLowFps)} FPS" to color
         }
-    }
-}
-
-private fun buildItemDetail(
-    item: PerfItem, info: PerformanceInfo, bandwidth: String, context: Context
-): String = when (item) {
-    PerfItem.RESOLUTION -> "Video stream: ${info.initialWidth}x${info.initialHeight} ${"%.2f".format(info.totalFps)} FPS"
-    PerfItem.DECODER -> "Decoder: ${info.decoder ?: "N/A"}"
-    PerfItem.FPS -> {
-        "Incoming frame rate: ${"%.2f".format(info.receivedFps)} FPS\nRendering frame rate: ${"%.2f".format(info.renderedFps)} FPS"
-    }
-    PerfItem.PACKET_LOSS -> "Packet loss: ${"%.2f".format(info.lostFrameRate)}%"
-    PerfItem.NETWORK -> {
-        val rtt = info.rttInfo.toInt()
-        val jitter = (info.rttInfo shr 32).toInt()
-        "Bandwidth: $bandwidth\nRTT: ${rtt}ms\nJitter: ${jitter}ms"
-    }
-    PerfItem.DECODE -> "Decode latency: ${"%.2f".format(info.decodeTimeMs)} ms"
-    PerfItem.HOST -> {
-        if (info.framesWithHostProcessingLatency > 0) {
-            "Min: ${"%.1f".format(info.minHostProcessingLatency)} ms\n" +
-            "Average: ${"%.1f".format(info.aveHostProcessingLatency)} ms\n" +
-            "Max: ${"%.1f".format(info.maxHostProcessingLatency)} ms"
-        } else "Host latency: N/A (requires V8+ host)"
-    }
-    PerfItem.BATTERY -> {
-        val level = UiHelper.getBatteryLevel(context)
-        val charging = UiHelper.isCharging(context)
-        "Battery: $level%${if (charging) " (charging)" else ""}"
-    }
-    PerfItem.ONE_LOW -> {
-        if (info.onePercentLowFps <= 0) "1% Low FPS: N/A (insufficient data)"
-        else "1% Low FPS: ${"%.2f".format(info.onePercentLowFps)} FPS"
     }
 }

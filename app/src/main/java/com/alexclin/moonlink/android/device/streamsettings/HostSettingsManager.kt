@@ -98,11 +98,7 @@ class HostSettingsManager(private val context: Context) {
 
         // 其它
         private const val KEY_ENABLE_PERF_OVERLAY = "checkbox_enable_perf_overlay"
-        private const val KEY_PERF_OVERLAY_LOCKED = "perf_overlay_locked"
-        private const val KEY_PERF_OVERLAY_BG_OPACITY = "seekbar_perf_overlay_bg_opacity"
-        private const val KEY_PERF_OVERLAY_ORIENTATION = "list_perf_overlay_orientation"
         private const val KEY_PERF_OVERLAY_POSITION = "list_perf_overlay_position"
-        private const val KEY_ENABLE_SIMPLIFY_PERF_OVERLAY = "checkbox_enable_simplify_perf_overlay"
         private const val KEY_ENABLE_LATENCY_TOAST = "checkbox_enable_post_stream_toast"
         private const val KEY_FAB_OPACITY = "seekbar_fab_opacity"
         private const val KEY_TOOL_PANEL_AUTO_HIDE_MODE = "tool_panel_auto_hide_mode"
@@ -230,11 +226,7 @@ class HostSettingsManager(private val context: Context) {
 
             // 其它
             enablePerfOverlay = bool(KEY_ENABLE_PERF_OVERLAY),
-            perfOverlayLocked = bool(KEY_PERF_OVERLAY_LOCKED),
-            perfOverlayBgOpacity = int(KEY_PERF_OVERLAY_BG_OPACITY, 53).coerceIn(0, 100),
-            perfOverlayOrientation = string(KEY_PERF_OVERLAY_ORIENTATION, "horizontal"),
             perfOverlayPosition = string(KEY_PERF_OVERLAY_POSITION, "top"),
-            enableSimplifyPerfOverlay = bool(KEY_ENABLE_SIMPLIFY_PERF_OVERLAY),
             enableLatencyToast = bool(KEY_ENABLE_LATENCY_TOAST),
             fabOpacity = int(KEY_FAB_OPACITY, 50).coerceIn(10, 100),
             toolPanelAutoHideMode = int(KEY_TOOL_PANEL_AUTO_HIDE_MODE, 2).coerceIn(0, 2),
@@ -337,11 +329,7 @@ class HostSettingsManager(private val context: Context) {
             .putBoolean(KEY_SHOW_GYRO_CARD, settings.showGyroCard)
             // 其它
             .putBoolean(KEY_ENABLE_PERF_OVERLAY, settings.enablePerfOverlay)
-            .putBoolean(KEY_PERF_OVERLAY_LOCKED, settings.perfOverlayLocked)
-            .putInt(KEY_PERF_OVERLAY_BG_OPACITY, settings.perfOverlayBgOpacity)
-            .putString(KEY_PERF_OVERLAY_ORIENTATION, settings.perfOverlayOrientation)
             .putString(KEY_PERF_OVERLAY_POSITION, settings.perfOverlayPosition)
-            .putBoolean(KEY_ENABLE_SIMPLIFY_PERF_OVERLAY, settings.enableSimplifyPerfOverlay)
             .putBoolean(KEY_ENABLE_LATENCY_TOAST, settings.enableLatencyToast)
             .putInt(KEY_FAB_OPACITY, settings.fabOpacity)
             .putInt(KEY_TOOL_PANEL_AUTO_HIDE_MODE, settings.toolPanelAutoHideMode)

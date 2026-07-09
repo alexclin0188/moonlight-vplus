@@ -1011,42 +1011,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         handler.post { activity.recreate() }
     }
 
-    /**
-     * 自动从远端主机查询显示器列表，选择合适的显示器设为当前显示器。
-     *
-     * 规则：
-     * - 如果主机只有一台显示器 → 自动选中该显示器
-     * - 如果主机有多台显示器 → 自动选中 is_primary=true 的主显示器
-     * - 查询失败或无显示器 → currentDisplayName 保持 null
-     *
-     * 注意：此方法在 createConnection() 之前调用，因此不能依赖 conn，
-     * 而是使用 Intent 参数直接创建 NvHTTP 实例。
-     */
-    private fun autoSelectDisplayFromHost() {
-        try {
-            val http = NvHTTP(
-                ComputerDetails.AddressTuple(host, port),
-                httpsPort,
-                uniqueId,
-                "",
-                serverCert,
-                PlatformBinding.getCryptoProvider(activity),
-            )
-            val displays = http.getDisplays()
-            if (displays.isEmpty()) return
-
-            val target = when {
-                displays.size == 1 -> displays[0]
-                else -> displays.find { it.isPrimary } ?: displays[0]
-            }
-            currentDisplayName = target.name
-            currentDeviceId = target.guid
-            LimeLog.info("StreamEngine: 自动选择显示器: ${target.name} (isPrimary=${target.isPrimary})")
-        } catch (e: Exception) {
-            LimeLog.warning("StreamEngine: 自动选择显示器失败: ${e.message}")
-        }
-    }
-
     /** 切换串流目标显示器，保存选择并重启串流。*/
     fun changeDisplay(displayName: String, deviceId: String) {
         currentDisplayName = displayName
@@ -1314,42 +1278,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         return 0L
     }
 
-    /**
-     * 更新内存中指定元素的位置（供长按拖动使用）。
-     * 立即反映到 Compose 状态，UI 层会重新渲染。
-     */
-    fun updateElementPosition(elementId: Long, centralX: Int, centralY: Int) {
-        val list = currentOverlayElements.value.toMutableList()
-        val idx = list.indexOfFirst { it.elementId == elementId }
-        if (idx >= 0) {
-            list[idx] = list[idx].copy(centralX = centralX, centralY = centralY)
-            currentOverlayElements.value = list
-        }
-    }
 
-    /**
-     * 持久化元素位置到数据库（供长按拖动使用）。
-     * 使用单线程 Executor 异步写入，避免多实例 SQLiteOpenHelper 并发锁问题。
-     */
-    fun saveElementPosition(elementId: Long, centralX: Int, centralY: Int) {
-        val configId = currentSchemeConfigId
-        val appCtx = activity.applicationContext
-        dbWriteExecutor.execute {
-            try {
-                val db = KeymappingDatabaseHelper(appCtx)
-                val cv = android.content.ContentValues().apply {
-                    put("element_central_x", centralX.toLong())
-                    put("element_central_y", centralY.toLong())
-                }
-                db.updateElement(configId, elementId, cv)
-            } catch (_: Exception) {
-                // 静默失败，位置已在内存中更新
-            }
-        }
-    }
-
-    /** 数据库写入专用单线程 Executor，避免多实例 SQLiteOpenHelper 并发锁冲突 */
-    private val dbWriteExecutor = java.util.concurrent.Executors.newSingleThreadExecutor()
 
     // ── 按键映射开关（Crown → MoonLink） ──
 
@@ -1438,27 +1367,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     }
 
     fun togglePerformanceOverlay() {
-        when {
-            !prefConfig.enablePerfOverlay -> {
-                prefConfig.enablePerfOverlay = true
-                prefConfig.perfOverlayLocked = false
-            }
-            !prefConfig.perfOverlayLocked -> {
-                prefConfig.perfOverlayLocked = true
-            }
-            else -> {
-                prefConfig.enablePerfOverlay = false
-                prefConfig.perfOverlayLocked = false
-            }
-        }
+        prefConfig.enablePerfOverlay = !prefConfig.enablePerfOverlay
         prefConfig.writePreferences(activity)
-        syncToHostSettings { it.copy(enablePerfOverlay = prefConfig.enablePerfOverlay, perfOverlayLocked = prefConfig.perfOverlayLocked) }
+        syncToHostSettings { it.copy(enablePerfOverlay = prefConfig.enablePerfOverlay) }
         displayTransientMessage(
-            when {
-                prefConfig.enablePerfOverlay && !prefConfig.perfOverlayLocked -> activity.getString(R.string.engine_perf_draggable)
-                prefConfig.enablePerfOverlay -> activity.getString(R.string.engine_perf_locked)
-                else -> activity.getString(R.string.engine_perf_hidden)
-            }
+            if (prefConfig.enablePerfOverlay) activity.getString(R.string.engine_perf_visible)
+            else activity.getString(R.string.engine_perf_hidden)
         )
     }
 
@@ -2185,7 +2099,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         audioRenderer = null
         decoderRenderer = null
         conn = null
-        dbWriteExecutor.shutdown()
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -2305,11 +2218,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         // ── 其它 ──
         prefConfig.enablePerfOverlay = settings.enablePerfOverlay
-        prefConfig.perfOverlayLocked = settings.perfOverlayLocked
-        prefConfig.perfOverlayBgOpacity = settings.perfOverlayBgOpacity
-        prefConfig.perfOverlayOrientation = parsePerfOverlayOrientation(settings.perfOverlayOrientation)
         prefConfig.perfOverlayPosition = parsePerfOverlayPosition(settings.perfOverlayPosition)
-        prefConfig.enableSimplifyPerfOverlay = settings.enableSimplifyPerfOverlay
         prefConfig.enableLatencyToast = settings.enableLatencyToast
         prefConfig.fabOpacity = settings.fabOpacity
         prefConfig.toolPanelAutoHideMode = settings.toolPanelAutoHideMode
@@ -2376,14 +2285,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             "low" -> 8 * 1024
             "high" -> 32 * 1024
             else -> 16 * 1024
-        }
-    }
-
-    private fun parsePerfOverlayOrientation(value: String): PreferenceConfiguration.PerfOverlayOrientation {
-        return if (value.lowercase() == "vertical") {
-            PreferenceConfiguration.PerfOverlayOrientation.VERTICAL
-        } else {
-            PreferenceConfiguration.PerfOverlayOrientation.HORIZONTAL
         }
     }
 

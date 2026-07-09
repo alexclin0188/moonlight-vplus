@@ -555,14 +555,6 @@ fun OtherCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> Un
             Divider(); SectionTitle(stringResource(R.string.section_performance_display))
             var perfEnabled by remember { mutableStateOf(settings.enablePerfOverlay) }
             SettingSwitchRow(stringResource(R.string.label_enable_perf_overlay), perfEnabled) { perfEnabled = it; onSettingsChange(settings.copy(enablePerfOverlay = it)) }
-            AnimatedVisibility(visible = perfEnabled) {
-                Column(Modifier.padding(start = 16.dp)) {
-                    var bgAlpha by remember { mutableFloatStateOf(settings.perfOverlayBgOpacity / 100f) }
-                    SettingSlider(value = bgAlpha, valueRange = 0f..1f, valueLabel = stringResource(R.string.label_bg_opacity) + ": " + stringResource(R.string.label_bg_opacity_percent, (bgAlpha * 100).toInt()), onValueChange = { bgAlpha = it }, onValueChangeFinished = { onSettingsChange(settings.copy(perfOverlayBgOpacity = (bgAlpha * 100).toInt())) })
-                    SettingSwitchRow(stringResource(R.string.label_lock_perf_overlay), settings.perfOverlayLocked) { onSettingsChange(settings.copy(perfOverlayLocked = it)) }
-                    Text(stringResource(R.string.desc_perf_overlay_settings), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 4.dp))
-                }
-            }
         }
         item { Divider(); SettingSwitchRow(stringResource(R.string.label_show_latency_after_stream), settings.enableLatencyToast) { onSettingsChange(settings.copy(enableLatencyToast = it)) } }
         item { Divider(); SettingSwitchRow(stringResource(R.string.label_disable_warnings), settings.disableWarnings) { onSettingsChange(settings.copy(disableWarnings = it)) } }
