@@ -185,9 +185,7 @@ data class HostSettings(
     // 其它 (OTHER)
     // ═══════════════════════════════════════════
     /** 性能监控图层 */
-    val enablePerfOverlay: Boolean = false,
-    /** 性能图层位置 */
-    val perfOverlayPosition: String = "top",
+    val enablePerfOverlay: Boolean = true,
     /** 延迟 toast */
     val enableLatencyToast: Boolean = false,
     /** 悬浮按钮不透明度 10-100 */

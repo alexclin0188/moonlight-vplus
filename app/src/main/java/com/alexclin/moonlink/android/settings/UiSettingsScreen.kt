@@ -157,7 +157,7 @@ fun UiSettingsScreen() {
                         }
                     },
                     confirmButton = {
-                        TextButton(onClick = { showSourceDialog = false }) { Text(context.getString(R.string.no)) }
+                        TextButton(onClick = { showSourceDialog = false }) { Text(context.getString(R.string.dialog_button_cancel)) }
                     },
                 )
             }
@@ -223,7 +223,7 @@ fun UiSettingsScreen() {
                         }) { Text(context.getString(R.string.editor_save)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { apiUrlDialogVisible = false }) { Text(context.getString(R.string.no)) }
+                        TextButton(onClick = { apiUrlDialogVisible = false }) { Text(context.getString(R.string.dialog_button_cancel)) }
                     },
                 )
                 }
@@ -264,10 +264,10 @@ fun UiSettingsScreen() {
                             apiUrl = ""
                             ToastUtil.show(context, context.getString(R.string.toast_restored_default_background), Toast.LENGTH_SHORT)
                             showDialog = false
-                        }) { Text(context.getString(R.string.yes)) }
+                        }) { Text(context.getString(R.string.ok)) }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showDialog = false }) { Text(context.getString(R.string.no)) }
+                        TextButton(onClick = { showDialog = false }) { Text(context.getString(R.string.dialog_button_cancel)) }
                     },
                 )
             }

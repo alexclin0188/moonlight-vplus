@@ -2218,7 +2218,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         // ── 其它 ──
         prefConfig.enablePerfOverlay = settings.enablePerfOverlay
-        prefConfig.perfOverlayPosition = parsePerfOverlayPosition(settings.perfOverlayPosition)
         prefConfig.enableLatencyToast = settings.enableLatencyToast
         prefConfig.fabOpacity = settings.fabOpacity
         prefConfig.toolPanelAutoHideMode = settings.toolPanelAutoHideMode
@@ -2285,17 +2284,6 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             "low" -> 8 * 1024
             "high" -> 32 * 1024
             else -> 16 * 1024
-        }
-    }
-
-    private fun parsePerfOverlayPosition(value: String): PreferenceConfiguration.PerfOverlayPosition {
-        return when (value.lowercase()) {
-            "bottom" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM
-            "top_left" -> PreferenceConfiguration.PerfOverlayPosition.TOP_LEFT
-            "top_right" -> PreferenceConfiguration.PerfOverlayPosition.TOP_RIGHT
-            "bottom_left" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM_LEFT
-            "bottom_right" -> PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT
-            else -> PreferenceConfiguration.PerfOverlayPosition.TOP
         }
     }
 

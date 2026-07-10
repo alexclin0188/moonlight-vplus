@@ -1073,7 +1073,7 @@ private fun doPair(
                         .setTitle(activity.getString(R.string.pair_pairing_title))
                         .setMessage(activity.getString(R.string.pair_pairing_msg) + "\n\n$pin")
                         .setCancelable(false)
-                        .setPositiveButton(activity.getString(R.string.yes), null)
+                        .setPositiveButton(activity.getString(R.string.ok), null)
                         .create()
                     pinDialog = dlg
                     dlg.show()

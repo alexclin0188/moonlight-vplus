@@ -35,8 +35,8 @@
     <string name="conn_error_title">連線錯誤</string>
     <!-- General strings -->
     <string name="ip_hint">主機電腦的 IP 位址</string>
-    <string name="yes"> 確定 </string>
-    <string name="no"> 取消 </string>
+    <string name="yes">是</string>
+    <string name="no">否</string>
     <string name="help">說明</string>
     <string name="delete_pc_msg"> 你確定要刪除這台電腦？ </string>
     <!-- AppList activity -->
@@ -101,6 +101,27 @@
     <string name="videoformat_av1always">偏好 AV1 (實驗性)</string>
     <string name="toast_controller_type_changed">手把類型可能會因動態感測器模擬而變更</string>
     <string name="title_checkbox_gamepad_motion_fallback">模擬手把動態感測器支援</string>
+
+    <!-- Performance overlay display items -->
+    <string name="perf_item_resolution">🎬 解析度 &amp; 目標幀率</string>
+    <string name="perf_item_decoder">編碼解碼器資訊</string>
+    <string name="perf_item_render_fps">Rx/Rd 接收 &amp; 渲染幀率</string>
+    <string name="perf_item_packet_loss">📶 封包遺失率</string>
+    <string name="perf_item_network_latency">🌐 碼率 &amp; 網路延遲</string>
+    <string name="perf_item_decode_latency">⏱️/⚠️ 解碼延遲</string>
+    <string name="perf_item_host_latency">🖥 主機延遲</string>
+    <string name="perf_item_battery">🔋 電量</string>
+    <string name="perf_item_one_percent_low">📉 1% Low 幀率（平滑度）</string>
+
+    <!-- Performance settings titles -->
+    <string name="perf_title_enable_analytics">啟用分析</string>
+    <string name="perf_title_disable_warnings">停用警告</string>
+    <string name="perf_title_enable_overlay">啟用圖層</string>
+    <string name="perf_title_overlay_position">性能圖層顯示位置</string>
+    <string name="perf_title_display_items">性能圖層顯示項目</string>
+    <string name="perf_title_post_stream_toast">串流後摘要</string>
+    <string name="perf_title_overlay_opacity">性能圖層文字不透明度</string>
+    <string name="perf_summary_overlay_opacity">調整性能圖層中文字的不透明度</string>
 
     <!-- 音訊振動設定 -->
 

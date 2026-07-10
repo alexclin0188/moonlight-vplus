@@ -37,15 +37,7 @@ fun PerformanceSettingsScreen() {
                     summary = stringResource(R.string.perf_summary_disable_warnings),
                 )
             }
-            // 3. 性能监控图层
-            item {
-                CheckBoxPreference(
-                    key = "checkbox_enable_perf_overlay",
-                    title = stringResource(R.string.perf_title_enable_overlay),
-                    summary = stringResource(R.string.perf_summary_enable_overlay),
-                )
-            }
-            // 4. 性能图层位置
+            // 3. 性能图层位置
             item {
                 ListPreference(
                     key = "list_perf_overlay_position",
@@ -59,36 +51,39 @@ fun PerformanceSettingsScreen() {
                         stringResource(R.string.perf_option_bottom_right) to "bottom_right",
                     ),
                     defaultValue = "top",
-                    dependency = "checkbox_enable_perf_overlay",
                 )
             }
-            // 5. 性能图层显示项目
+            // 4. 性能图层显示项目
             item {
                 MultiSelectPreference(
                     key = "perf_overlay_display_items",
                     title = stringResource(R.string.perf_title_display_items),
                     summary = stringResource(R.string.perf_summary_display_items),
                     items = listOf(
-                        "🎬 Resolution & Target FPS" to "resolution",
-                        "Codec Decoder Info" to "decoder",
-                        "Rx/Rd Received & Rendered FPS" to "render_fps",
-                        "📶 Packet Loss" to "packet_loss",
-                        "🌐 Bitrate & Network Latency" to "network_latency",
-                        "⏱️/🥵 Decode Latency" to "decode_latency",
-                        "🖥 Host Latency" to "host_latency",
-                        "🔋 Battery Level" to "battery",
-                        "📉 1% Low FPS (Smoothness)" to "one_percent_low",
+                        stringResource(R.string.perf_item_resolution) to "resolution",
+                        stringResource(R.string.perf_item_decoder) to "decoder",
+                        stringResource(R.string.perf_item_render_fps) to "render_fps",
+                        stringResource(R.string.perf_item_packet_loss) to "packet_loss",
+                        stringResource(R.string.perf_item_network_latency) to "network_latency",
+                        stringResource(R.string.perf_item_decode_latency) to "decode_latency",
+                        stringResource(R.string.perf_item_host_latency) to "host_latency",
+                        stringResource(R.string.perf_item_battery) to "battery",
+                        stringResource(R.string.perf_item_one_percent_low) to "one_percent_low",
                     ),
                     defaultValues = PerfOverlayDisplayItemsPreference.getDefaultDisplayItems(),
-                    dependency = "checkbox_enable_perf_overlay",
                 )
             }
-            // 6. 串流完毕显示延迟信息
+            // 5. 性能图层显示不透明度
             item {
-                CheckBoxPreference(
-                    key = "checkbox_enable_post_stream_toast",
-                    title = stringResource(R.string.perf_title_post_stream_toast),
-                    summary = stringResource(R.string.perf_summary_post_stream_toast),
+                SeekBarPreference(
+                    key = "seekbar_perf_overlay_opacity",
+                    title = stringResource(R.string.perf_title_overlay_opacity),
+                    summary = stringResource(R.string.perf_summary_overlay_opacity),
+                    min = 30,
+                    max = 100,
+                    step = 5,
+                    defaultValue = 80,
+                    unit = "%",
                 )
             }
         }

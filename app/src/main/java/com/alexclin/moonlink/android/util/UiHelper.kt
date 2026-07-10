@@ -209,8 +209,8 @@ object UiHelper {
     fun displayQuitConfirmationDialog(parent: Activity, onYes: Runnable?, onNo: Runnable?) {
         AlertDialog.Builder(parent, R.style.AppDialogStyle)
             .setMessage(parent.resources.getString(R.string.applist_quit_confirmation))
-            .setPositiveButton(parent.resources.getString(R.string.yes)) { _, _ -> onYes?.run() }
-            .setNegativeButton(parent.resources.getString(R.string.no)) { _, _ -> onNo?.run() }
+            .setPositiveButton(parent.resources.getString(R.string.ok)) { _, _ -> onYes?.run() }
+            .setNegativeButton(parent.resources.getString(R.string.dialog_button_cancel)) { _, _ -> onNo?.run() }
             .show()
     }
 
@@ -221,8 +221,8 @@ object UiHelper {
         AlertDialog.Builder(parent, R.style.AppDialogStyle)
             .setMessage(parent.resources.getString(R.string.delete_pc_msg))
             .setTitle(computer.name)
-            .setPositiveButton(parent.resources.getString(R.string.yes)) { _, _ -> onYes?.run() }
-            .setNegativeButton(parent.resources.getString(R.string.no)) { _, _ -> onNo?.run() }
+            .setPositiveButton(parent.resources.getString(R.string.ok)) { _, _ -> onYes?.run() }
+            .setNegativeButton(parent.resources.getString(R.string.dialog_button_cancel)) { _, _ -> onNo?.run() }
             .show()
     }
 

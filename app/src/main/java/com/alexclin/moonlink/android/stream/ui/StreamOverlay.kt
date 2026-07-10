@@ -12,29 +12,24 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,14 +44,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.stringResource
 import com.alexclin.moonlink.android.R
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
@@ -72,8 +66,12 @@ import com.limelight.binding.video.PerformanceInfo
 import android.content.Context
 import android.os.SystemClock
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.widthIn
+import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingSchemeSelector
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingEditor
+import kotlin.time.Duration.Companion.milliseconds
 
 /** 面板展开状态 */
 enum class PanelState {
@@ -150,7 +148,7 @@ fun StreamOverlay(
     LaunchedEffect(panelState) {
         val mode = engine.prefConfig.toolPanelAutoHideMode
         if (mode == 1 && panelState == PanelState.VERTICAL_BAR) {
-            delay(2000)
+            delay(2000.milliseconds)
             if (panelState == PanelState.VERTICAL_BAR && engine.prefConfig.toolPanelAutoHideMode == 1) {
                 panelState = PanelState.HIDDEN
                 activeEntry = null
@@ -473,23 +471,23 @@ private fun ConnectionProgressOverlay(connectionStage: String?) {
     val context = LocalContext.current
     val tipResIds = remember {
         intArrayOf(
-            com.alexclin.moonlink.android.R.string.tip_esc_exit,
-            com.alexclin.moonlink.android.R.string.tip_double_tap_mouse,
-            com.alexclin.moonlink.android.R.string.tip_long_press_controller,
-            com.alexclin.moonlink.android.R.string.tip_volume_keys,
-            com.alexclin.moonlink.android.R.string.tip_wallpaper_change,
-            com.alexclin.moonlink.android.R.string.tip_5ghz_wifi,
-            com.alexclin.moonlink.android.R.string.tip_close_apps,
-            com.alexclin.moonlink.android.R.string.tip_home_saves,
-            com.alexclin.moonlink.android.R.string.tip_hdr_colors,
-            com.alexclin.moonlink.android.R.string.tip_touch_modes,
-            com.alexclin.moonlink.android.R.string.tip_custom_keys,
-            com.alexclin.moonlink.android.R.string.tip_performance_overlay,
-            com.alexclin.moonlink.android.R.string.tip_audio_config,
-            com.alexclin.moonlink.android.R.string.tip_external_display,
-            com.alexclin.moonlink.android.R.string.tip_virtual_display,
-            com.alexclin.moonlink.android.R.string.tip_dynamic_bitrate,
-            com.alexclin.moonlink.android.R.string.tip_cards_show,
+            R.string.tip_esc_exit,
+            R.string.tip_double_tap_mouse,
+            R.string.tip_long_press_controller,
+            R.string.tip_volume_keys,
+            R.string.tip_wallpaper_change,
+            R.string.tip_5ghz_wifi,
+            R.string.tip_close_apps,
+            R.string.tip_home_saves,
+            R.string.tip_hdr_colors,
+            R.string.tip_touch_modes,
+            R.string.tip_custom_keys,
+            R.string.tip_performance_overlay,
+            R.string.tip_audio_config,
+            R.string.tip_external_display,
+            R.string.tip_virtual_display,
+            R.string.tip_dynamic_bitrate,
+            R.string.tip_cards_show,
         )
     }
     val random = remember { Random }
@@ -591,6 +589,16 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
         val perfPosition = engine.prefConfig.perfOverlayPosition
         val isHorizontalLayout = perfPosition == PreferenceConfiguration.PerfOverlayPosition.TOP ||
                 perfPosition == PreferenceConfiguration.PerfOverlayPosition.BOTTOM
+        val isRightSide = perfPosition == PreferenceConfiguration.PerfOverlayPosition.TOP_RIGHT ||
+                perfPosition == PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT
+        val isBottomVertical = perfPosition == PreferenceConfiguration.PerfOverlayPosition.BOTTOM_LEFT ||
+                perfPosition == PreferenceConfiguration.PerfOverlayPosition.BOTTOM_RIGHT
+
+        // 文字不透明度
+        val textAlpha = remember {
+            PreferenceManager.getDefaultSharedPreferences(context)
+                .getInt("seekbar_perf_overlay_opacity", 80).coerceIn(30, 100) / 100f
+        }
 
         // 月相
         val moonIcon = remember { MoonPhaseUtils.getMoonPhaseIcon(MoonPhaseUtils.getCurrentMoonPhase()) }
@@ -599,16 +607,16 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
 
         // 检测每个项目是否启用
         val items = remember {
-            listOf<Pair<PerfItem, Boolean>>(
+            listOf(
                 PerfItem.RESOLUTION to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "resolution"),
-                PerfItem.DECODER to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "decoder"),
                 PerfItem.FPS to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "render_fps"),
-                PerfItem.PACKET_LOSS to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "packet_loss"),
                 PerfItem.NETWORK to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "network_latency"),
+                PerfItem.ONE_LOW to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "one_percent_low"),
                 PerfItem.DECODE to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "decode_latency"),
                 PerfItem.HOST to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "host_latency"),
+                PerfItem.PACKET_LOSS to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "packet_loss"),
+                PerfItem.DECODER to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "decoder"),
                 PerfItem.BATTERY to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "battery"),
-                PerfItem.ONE_LOW to PerfOverlayDisplayItemsPreference.isItemEnabled(context, "one_percent_low"),
             )
         }
 
@@ -618,30 +626,65 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
         @Composable
         fun renderItem(item: PerfItem) {
             val (valueText, itemColor) = buildItemText(item, info, bandwidth, moonIcon, context)
+            val isRight = isRightSide && !isHorizontalLayout
+            val iconText = item.iconEmoji ?: ""
             Row(
                 verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = if(isRight) Arrangement.End else Arrangement.Start,
                 modifier = Modifier
-                    .width(ITEM_FIXED_WIDTH)
-                    .padding(vertical = 1.dp),
+                    .widthIn(item.itemWidth)
+                    .padding(vertical = if (isHorizontalLayout) 1.dp else 0.dp),
             ) {
-                Text(item.iconEmoji ?: "", fontSize = textSize)
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    valueText,
-                    color = itemColor ?: textColor,
-                    fontSize = textSize,
-                    fontWeight = if (item == PerfItem.DECODER) FontWeight.Bold else FontWeight.Normal,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                if (isRight) {
+                    // Right side: value first, emoji after, right-aligned
+                    Text(
+                        valueText,
+                        color = (itemColor ?: textColor).copy(alpha = textAlpha),
+                        fontSize = textSize,
+                        fontWeight = if (item == PerfItem.DECODER) FontWeight.Bold else FontWeight.Normal,
+                        minLines = 1,
+                        lineHeight = textSize,
+                        textAlign = TextAlign.End,
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Text(
+                        iconText,
+                        fontSize = textSize,
+                        lineHeight = textSize,
+                        color = textColor.copy(alpha = textAlpha),
+                        textAlign = TextAlign.End,
+                    )
+                } else {
+                    // Left or horizontal: emoji first, then value, left-aligned
+                    Text(
+                        iconText,
+                        fontSize = textSize,
+                        lineHeight = textSize,
+                        color = textColor.copy(alpha = textAlpha),
+                        textAlign = TextAlign.Start,
+                    )
+                    Spacer(Modifier.width(2.dp))
+                    Text(
+                        valueText,
+                        color = (itemColor ?: textColor).copy(alpha = textAlpha),
+                        fontSize = textSize,
+                        fontWeight = if (item == PerfItem.DECODER) FontWeight.Bold else FontWeight.Normal,
+                        minLines = 1,
+                        lineHeight = textSize,
+                        textAlign = TextAlign.Start,
+                    )
+                }
             }
         }
 
         val panelContent = @Composable {
             val container: @Composable (content: @Composable () -> Unit) -> Unit =
                 if (isHorizontalLayout) { content -> FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) { content() } }
-                else { content -> Column { content() } }
+                else if (isRightSide) { content -> Column(horizontalAlignment = Alignment.End) { content() } }
+                else { content -> Column(horizontalAlignment = Alignment.Start) { content() } }
+            val displayItems = if (isBottomVertical) items.reversed() else items
             container {
-                for ((item, enabled) in items) {
+                for ((item, enabled) in displayItems) {
                     if (enabled) renderItem(item)
                 }
             }
@@ -650,28 +693,27 @@ private fun PerformanceOverlay(engine: StreamEngine, modifier: Modifier = Modifi
         // 纯展示容器：全透明背景，无触摸交互
         Box(
             modifier = Modifier
-                .padding(horizontal = 8.dp, vertical = 4.dp),
+                .padding(horizontal = 2.dp, vertical = 2.dp),
         ) {
             panelContent()
         }
     }
 }
 
-private val ITEM_FIXED_WIDTH = 110.dp
-
 private enum class PerfItem(
     val iconEmoji: String? = null,
-    val color: Int? = null,
+    val itemWidth: Dp = 80.dp,
 ) {
-    RESOLUTION(iconEmoji = "🎬", color = 0xFFBB86FC.toInt()),
-    DECODER(iconEmoji = "⚙️", color = 0xFF03DAC6.toInt()),
-    FPS(iconEmoji = "🖥️", color = 0xFF0DDAF4.toInt()),
-    PACKET_LOSS(iconEmoji = "📡"),
-    NETWORK(iconEmoji = "🌐", color = 0xFFBCEDD3.toInt()),
-    DECODE(iconEmoji = "⏱️", color = 0xFFD597E3.toInt()),
-    HOST(iconEmoji = "🖥️", color = 0xFF009688.toInt()),
-    BATTERY(iconEmoji = "🔋"),
-    ONE_LOW(iconEmoji = "📉", color = 0xFFFF7043.toInt()),
+    RESOLUTION(iconEmoji = "🎬"),
+    FPS(iconEmoji = "🖥️", 75.dp),
+    NETWORK(iconEmoji = "🌐", 75.dp),
+    ONE_LOW(iconEmoji = "📉", 72.dp),
+    DECODE(iconEmoji = "⏱️", 50.dp),
+    HOST(iconEmoji = "🖥️", 38.dp),
+    PACKET_LOSS(iconEmoji = "📡", 32.dp),
+    DECODER(iconEmoji = "⚙️", 20.dp),
+    BATTERY(iconEmoji = "🔋", 20.dp),
+
 }
 
 private fun buildItemText(
@@ -704,7 +746,7 @@ private fun buildItemText(
     }
     PerfItem.DECODE -> {
         val isHot = info.decodeTimeMs >= 15
-        val emoji = if (isHot) " 🥵" else ""
+        val emoji = if (isHot) " ⚠️" else ""
         "${"%.2f".format(info.decodeTimeMs)}ms$emoji" to null
     }
     PerfItem.HOST -> {

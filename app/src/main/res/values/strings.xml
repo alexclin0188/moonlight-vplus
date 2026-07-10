@@ -1046,11 +1046,25 @@
     <string name="perf_summary_enable_overlay">Show performance overlay during streaming</string>
     <string name="perf_summary_post_stream_toast">Show streaming summary after disconnecting</string>
     <string name="perf_title_disable_warnings">Disable warnings</string>
-    <string name="perf_title_display_items">Display items</string>
+    <string name="perf_title_display_items">Performance overlay display items</string>
     <string name="perf_title_enable_analytics">Enable analytics</string>
     <string name="perf_title_enable_overlay">Enable overlay</string>
-    <string name="perf_title_overlay_position">Overlay position</string>
+    <string name="perf_title_overlay_position">Performance overlay position</string>
     <string name="perf_title_post_stream_toast">Post-stream summary</string>
+    <string name="perf_title_overlay_opacity">Overlay text opacity</string>
+    <string name="perf_summary_overlay_opacity">Adjust the opacity of text in the performance overlay</string>
+
+    <!-- Performance overlay display items -->
+    <string name="perf_item_resolution">🎬 Resolution &amp; Target FPS</string>
+    <string name="perf_item_decoder">Codec Decoder Info</string>
+    <string name="perf_item_render_fps">Rx/Rd Received &amp; Rendered FPS</string>
+    <string name="perf_item_packet_loss">📶 Packet Loss</string>
+    <string name="perf_item_network_latency">🌐 Bitrate &amp; Network Latency</string>
+    <string name="perf_item_decode_latency">⏱️/⚠️ Decode Latency</string>
+    <string name="perf_item_host_latency">🖥 Host Latency</string>
+    <string name="perf_item_battery">🔋 Battery Level</string>
+    <string name="perf_item_one_percent_low">📉 1% Low FPS (Smoothness)</string>
+
     <string name="scheme_delete_confirm">Delete scheme \"%1$s\"?</string>
     <string name="scheme_delete_failed">Failed to delete scheme: %1$s</string>
     <string name="scheme_delete_title">Delete Scheme</string>

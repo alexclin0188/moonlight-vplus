@@ -98,7 +98,6 @@ class HostSettingsManager(private val context: Context) {
 
         // 其它
         private const val KEY_ENABLE_PERF_OVERLAY = "checkbox_enable_perf_overlay"
-        private const val KEY_PERF_OVERLAY_POSITION = "list_perf_overlay_position"
         private const val KEY_ENABLE_LATENCY_TOAST = "checkbox_enable_post_stream_toast"
         private const val KEY_FAB_OPACITY = "seekbar_fab_opacity"
         private const val KEY_TOOL_PANEL_AUTO_HIDE_MODE = "tool_panel_auto_hide_mode"
@@ -225,8 +224,7 @@ class HostSettingsManager(private val context: Context) {
             showGyroCard = sp.getBoolean(KEY_SHOW_GYRO_CARD, true),
 
             // 其它
-            enablePerfOverlay = bool(KEY_ENABLE_PERF_OVERLAY),
-            perfOverlayPosition = string(KEY_PERF_OVERLAY_POSITION, "top"),
+            enablePerfOverlay = sp.getBoolean(KEY_ENABLE_PERF_OVERLAY, true),
             enableLatencyToast = bool(KEY_ENABLE_LATENCY_TOAST),
             fabOpacity = int(KEY_FAB_OPACITY, 50).coerceIn(10, 100),
             toolPanelAutoHideMode = int(KEY_TOOL_PANEL_AUTO_HIDE_MODE, 2).coerceIn(0, 2),
@@ -329,7 +327,6 @@ class HostSettingsManager(private val context: Context) {
             .putBoolean(KEY_SHOW_GYRO_CARD, settings.showGyroCard)
             // 其它
             .putBoolean(KEY_ENABLE_PERF_OVERLAY, settings.enablePerfOverlay)
-            .putString(KEY_PERF_OVERLAY_POSITION, settings.perfOverlayPosition)
             .putBoolean(KEY_ENABLE_LATENCY_TOAST, settings.enableLatencyToast)
             .putInt(KEY_FAB_OPACITY, settings.fabOpacity)
             .putInt(KEY_TOOL_PANEL_AUTO_HIDE_MODE, settings.toolPanelAutoHideMode)
