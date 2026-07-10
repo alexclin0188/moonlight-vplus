@@ -1039,6 +1039,11 @@
     <string name="engine_unexpected_termination">串流意外结束</string>
     <string name="engine_unknown_device">未知设备</string>
     <string name="engine_unnamed">未命名</string>
+
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_network_issue">⚠️ 网络不稳定：高丢包率（%.1f%%）/ 高延迟（%dms）</string>
+    <string name="warning_connection_local_lag">⚠️ 本机解码较慢（%.0fms），建议降低分辨率或码率</string>
+    <string name="warning_connection_host_lag">⚠️ 主机端处理延迟较高（%.0fms），建议关闭后台程序</string>
     <string name="input_hint_global_keyboard">全局键盘 →</string>
     <string name="input_option_back_key">返回键</string>
     <string name="input_option_other_keys">其他按键</string>

@@ -1002,6 +1002,11 @@
     <string name="engine_unexpected_termination">Stream ended unexpectedly</string>
     <string name="engine_unknown_device">Unknown device</string>
     <string name="engine_unnamed">Unnamed</string>
+
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_network_issue">⚠️ Network unstable: high packet loss (%.1f%%) / latency (%dms)</string>
+    <string name="warning_connection_local_lag">⚠️ Local device decoding is slow (%.0fms), try lowering resolution/bitrate</string>
+    <string name="warning_connection_host_lag">⚠️ Host PC processing is slow (%.0fms), close background apps</string>
     <string name="input_hint_global_keyboard">Global keyboard →</string>
     <string name="input_option_back_key">Back key</string>
     <string name="input_option_other_keys">Other keys</string>

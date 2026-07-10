@@ -451,6 +451,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
                     latestPerfInfo = performanceInfo
                     onPerfInfoUpdate?.invoke(performanceInfo)
+
+                    // 连接质量检测与提示
+                    checkConnectionQuality(performanceInfo)
                 }
                 override fun onPerfUpdateWG(performanceInfo: PerformanceInfo) {
                     latestPerfInfo = performanceInfo
@@ -1687,6 +1690,97 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             com.limelight.binding.input.KeyboardTranslator.VK_MENU.toShort(),
             0x42.toShort()
         ))
+    }
+
+    // ── 连接质量检测 ──
+
+    /** 三种连接问题类型 */
+    private enum class ConnectionIssue {
+        NETWORK,    // 网络不畅：高丢包 / 高延迟
+        LOCAL_LAG,  // 本地卡顿：解码慢 / 渲染掉帧
+        HOST_LAG    // 主机端延迟大：主机处理慢
+    }
+
+    /** 各类问题上次警告时间戳 */
+    private val lastWarningTimes = mutableMapOf<ConnectionIssue, Long>()
+
+    /** 各问题类型的警告冷却时间 (ms) */
+    private val warningCooldowns = mapOf(
+        ConnectionIssue.NETWORK to 15_000L,
+        ConnectionIssue.LOCAL_LAG to 30_000L,
+        ConnectionIssue.HOST_LAG to 30_000L
+    )
+
+    /** 串流开始后的首次检测延迟（跳过刚启动时的不稳定期） */
+    private var streamStartTimeMs: Long = 0L
+
+    /** 检测连接质量并在严重时弹出 Toast 提示 */
+    private fun checkConnectionQuality(info: PerformanceInfo) {
+        if (prefConfig.disableWarnings) return
+        if (streamStartTimeMs == 0L) {
+            streamStartTimeMs = System.currentTimeMillis()
+            return
+        }
+        // 跳过刚启动前 15 秒的不稳定期
+        if (System.currentTimeMillis() - streamStartTimeMs < 15_000L) return
+
+        // 需接收足够帧数才判断，避免刚恢复时误报
+        if (info.receivedFps < 1f) return
+
+        val now = System.currentTimeMillis()
+
+        // RTT（网络往返时间）：rttInfo 低 32 位（ms）
+        val rttMs = info.rttInfo.toInt()
+        // 丢包率（%）
+        val packetLoss = info.lostFrameRate
+        // 解码延迟（ms）
+        val decodeTime = info.decodeTimeMs
+        // 主机端处理延迟（ms），仅在有数据时判断
+        val hostLatency = if (info.framesWithHostProcessingLatency > 0) info.aveHostProcessingLatency else -1f
+        // 渲染帧率与接收帧率的差距（掉帧严重表示本地卡顿）
+        val frameDropRatio = if (info.receivedFps > 0f) (info.receivedFps - info.renderedFps) / info.receivedFps else 0f
+
+        // 判断逻辑：优先报告最可能的根因
+        var issue: ConnectionIssue? = null
+
+        // 1. 主机端延迟高（网络正常时，说明是主机性能问题）
+        if (hostLatency > 15f && packetLoss <= 3f && rttMs <= 80) {
+            issue = ConnectionIssue.HOST_LAG
+        }
+        // 2. 网络问题：高丢包或高 RTT
+        else if (packetLoss > 5f || rttMs > 100) {
+            issue = ConnectionIssue.NETWORK
+        }
+        // 3. 本地卡顿：解码慢或掉帧严重（且网络正常）
+        else if (decodeTime > 15f || frameDropRatio > 0.3f) {
+            issue = ConnectionIssue.LOCAL_LAG
+        }
+
+        if (issue == null) return
+
+        // 冷却检查：同类问题不频繁提示
+        val lastTime = lastWarningTimes[issue] ?: 0L
+        val cooldown = warningCooldowns[issue] ?: 15_000L
+        if (now - lastTime < cooldown) return
+        lastWarningTimes[issue] = now
+
+        // 显示 Toast
+        val message = when (issue) {
+            ConnectionIssue.NETWORK -> activity.getString(
+                R.string.warning_connection_network_issue,
+                packetLoss,
+                rttMs
+            )
+            ConnectionIssue.LOCAL_LAG -> activity.getString(
+                R.string.warning_connection_local_lag,
+                decodeTime.toDouble()
+            )
+            ConnectionIssue.HOST_LAG -> activity.getString(
+                R.string.warning_connection_host_lag,
+                hostLatency.toDouble()
+            )
+        }
+        displayTransientMessage(message)
     }
 
     // 性能面板
