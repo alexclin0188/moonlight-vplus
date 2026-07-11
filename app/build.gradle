@@ -175,7 +175,13 @@ dependencies {
     implementation libs.seismic
     implementation libs.flexbox
     implementation libs.tvprovider
-    implementation libs.zxing.embedded
+
+    // CameraX + ML Kit QR code scanning（替代 zxing-android-embedded）
+    implementation libs.camerax.core
+    implementation libs.camerax.camera2
+    implementation libs.camerax.lifecycle
+    implementation libs.camerax.view
+    implementation libs.mlkit.barcode.scanning
 
     // Firebase Analytics + Crashlytics
     // BOM 版本说明: https://firebase.google.com/support/release-notes/android

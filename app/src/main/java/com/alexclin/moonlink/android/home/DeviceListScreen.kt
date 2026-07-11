@@ -49,8 +49,6 @@ import com.alexclin.moonlink.android.stream.StreamActivity
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.BackgroundOverlay
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
 import com.alexclin.moonlink.android.home.ComputerManagerService
@@ -125,10 +123,11 @@ fun DeviceListScreen(
     var refreshTrigger by remember { mutableStateOf(0) }
 
     val qrCodeLauncher = rememberLauncherForActivityResult(
-        contract = ScanContract()
+        contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val contents = result.contents?.trim()
-        if (contents == null) return@rememberLauncherForActivityResult
+        if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+        val contents = result.data?.getStringExtra(QrScannerActivity.EXTRA_SCAN_RESULT)?.trim()
+            ?: return@rememberLauncherForActivityResult
 
         val uri = contents.toUri()
         if ("moonlight" != uri.scheme || "pair" != uri.host) {
@@ -452,12 +451,8 @@ fun DeviceListScreen(
                                     text = { Text(context.getString(com.alexclin.moonlink.android.R.string.addpc_qr_scan)) },
                                     onClick = {
                                         showAddMenu = false
-                                        val options = ScanOptions().apply {
-                                            setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                                            setPrompt(context.getString(com.alexclin.moonlink.android.R.string.qr_scan_prompt))
-                                            setBeepEnabled(false)
-                                        }
-                                        qrCodeLauncher.launch(options)
+                                        val intent = Intent(context, QrScannerActivity::class.java)
+                                        qrCodeLauncher.launch(intent)
                                     }
                                 )
                             }

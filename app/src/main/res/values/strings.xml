@@ -98,6 +98,7 @@
     <string name="addpc_qr_scan">Scan QR Code</string>
     <string name="qr_scan_prompt">Scan the QR code from Sunshine Web UI</string>
     <string name="qr_invalid_code">Unrecognized QR code</string>
+    <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
     <string name="msg_add_pc">Connecting to the PC…</string>
     <string name="addpc_fail">Unable to connect to the specified computer. Make sure the required ports are allowed through the firewall.</string>
     <string name="addpc_success">Successfully added computer</string>

@@ -27,21 +27,29 @@ import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.stream.engine.DeviceStateManager
 import com.alexclin.moonlink.android.theme.MoonLinkTheme
 import com.alexclin.moonlink.android.home.ComputerManagerService
+import com.alexclin.moonlink.android.util.LimeLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
  * MoonLink 新版主页 Activity — 替代 PcView 作为 App 入口。
  *
+ * 使用 singleTask 启动模式，确保全局仅有一个实例。
  * 负责绑定 [ComputerManagerService]，通过 [DeviceStateManager] 维护设备列表，
  * 然后将设备管理器向下传递给 Compose UI 树。
  */
 class MoonLinkMainActivity : BaseComponentActivity() {
 
-        override fun onCreate(savedInstanceState: Bundle?) {
+    /** singleTask 下由 onNewIntent 更新的导航目标 UUID（Compose MutableState 保证响应式） */
+    private val pendingNavigateToUuid = mutableStateOf<String?>(null)
+
+    override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        // 初始化 pending 值
+        pendingNavigateToUuid.value = intent.getStringExtra("navigate_to_uuid")
 
         setContent {
             val binderState = remember { mutableStateOf<ComputerManagerService.ComputerManagerBinder?>(null) }
@@ -134,9 +142,18 @@ class MoonLinkMainActivity : BaseComponentActivity() {
                     onComputerRemoved = { uuid ->
                         deviceManager.devices.removeAll { it.uuid == uuid }
                     },
-                    initialNavigateToUuid = intent.getStringExtra("navigate_to_uuid"),
+                    initialNavigateToUuid = pendingNavigateToUuid.value,
                 )
             }
         }
+    }
+
+    /**
+     * singleTask 模式下收到新 Intent 时更新导航目标。
+     */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        LimeLog.info("MoonLinkMainActivity: onNewIntent 收到唤起")
+        pendingNavigateToUuid.value = intent.getStringExtra("navigate_to_uuid")
     }
 }

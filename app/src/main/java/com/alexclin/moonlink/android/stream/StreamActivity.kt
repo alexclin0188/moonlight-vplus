@@ -103,9 +103,16 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
             } catch (_: NoSuchMethodError) {
                 // 部分定制 ROM（如华为/小米早期版本）声称 >= R 但实际无此方法
             }
-            window.insetsController?.let {
-                it.hide(WindowInsets.Type.systemBars())
-                it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+            try {
+                // window.insetsController 内部调用 PhoneWindow.getInsetsController()
+                // 后者在某些定制 ROM（如 OPPO/ColorOS）上可能因 DecorView 尚未初始化而抛 NPE。
+                // 此处用 try-catch 兜底，?.let 无法防护，因为 NPE 来自 getter 内部。
+                window.insetsController?.let {
+                    it.hide(WindowInsets.Type.systemBars())
+                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                }
+            } catch (_: NullPointerException) {
+                // 定制 ROM 兼容性：DecorView 尚未就绪，忽略此处的全屏设置
             }
         } else {
             @Suppress("DEPRECATION")
@@ -1460,9 +1467,13 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
         super.onWindowFocusChanged(hasFocus)
         if (hasFocus) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.insetsController?.let {
-                    it.hide(WindowInsets.Type.systemBars())
-                    it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                try {
+                    window.insetsController?.let {
+                        it.hide(WindowInsets.Type.systemBars())
+                        it.systemBarsBehavior = WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                    }
+                } catch (_: NullPointerException) {
+                    // 定制 ROM 兼容性：DecorView 尚未就绪
                 }
             } else {
                 @Suppress("DEPRECATION")
