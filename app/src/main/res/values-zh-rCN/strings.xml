@@ -70,7 +70,7 @@
     <string name="title_add_pc">添加远程主机</string>
     <string name="addpc_manual">输入 IP 地址</string>
     <string name="addpc_qr_scan">扫描二维码</string>
-    <string name="qr_scan_prompt">扫描 Sunshine 网页界面上的二维码</string>
+    <string name="qr_scan_prompt">扫描Sunshine基地版配对二维码</string>
     <string name="qr_invalid_code">无法识别的二维码</string>
     <string name="msg_add_pc"> 正在连接电脑…… </string>
     <string name="addpc_fail">无法连接至指定电脑。请确保所需端口没有被防火墙阻止。</string>

@@ -3,9 +3,9 @@ package com.alexclin.moonlink.android.home
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,6 +15,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.BaseComponentActivity
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.theme.MoonLinkTheme
 
@@ -32,7 +34,7 @@ import com.alexclin.moonlink.android.theme.MoonLinkTheme
  *
  * 返回结果通过 Intent extra "SCAN_RESULT" 获取扫码文本。
  */
-class QrScannerActivity : ComponentActivity() {
+class QrScannerActivity : BaseComponentActivity() {
 
     companion object {
         const val EXTRA_SCAN_RESULT = "SCAN_RESULT"
@@ -63,8 +65,17 @@ class QrScannerActivity : ComponentActivity() {
             cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
 
+        // 读取主题偏好，与 MoonLinkMainActivity 保持一致
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val themeMode = prefs.getString("list_theme_mode", "dark") ?: "dark"
+        val darkTheme = when (themeMode) {
+            "dark"  -> true
+            "light" -> false
+            else    -> (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+        }
+
         setContent {
-            MoonLinkTheme {
+            MoonLinkTheme(darkTheme = darkTheme) {
                 // 权限未获准时不渲染相机预览（权限请求完成后自动重组触发渲染）
                 if (permissionGranted.value) {
                     QrScannerScreen(

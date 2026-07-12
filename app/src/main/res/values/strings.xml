@@ -96,7 +96,7 @@
     <string name="title_add_pc">Add Remote Host</string>
     <string name="addpc_manual">Enter IP Address</string>
     <string name="addpc_qr_scan">Scan QR Code</string>
-    <string name="qr_scan_prompt">Scan the QR code from Sunshine Web UI</string>
+    <string name="qr_scan_prompt">Scan the Sunshine (foundation) pairing QR code</string>
     <string name="qr_invalid_code">Unrecognized QR code</string>
     <string name="camera_permission_required">Camera permission is required to scan QR codes</string>
     <string name="msg_add_pc">Connecting to the PC…</string>

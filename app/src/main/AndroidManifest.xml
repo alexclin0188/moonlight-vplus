@@ -316,7 +316,7 @@
             android:exported="false"
             android:resizeableActivity="true"
             android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
-            android:theme="@style/Theme.App.Starting" />
+            android:theme="@style/AppTheme" />
     </application>
 
 </manifest>

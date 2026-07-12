@@ -10,7 +10,6 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -18,7 +17,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -42,6 +40,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * - 检测到有效 QR 码后通过 [onQrCodeScanned] 回调返回
  * - 支持跟随设备横竖屏旋转（无方向锁定）
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QrScannerScreen(
     onQrCodeScanned: (String) -> Unit,
@@ -62,10 +61,35 @@ fun QrScannerScreen(
         onDispose { analyzerExecutor.shutdown() }
     }
 
-    Box(modifier = modifier.background(Color.Black)) {
-        // ── CameraX 相机预览 ────────────────────────────
-        AndroidView(
-            factory = { ctx ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        context.getString(R.string.addpc_qr_scan),
+                        style = MaterialTheme.typography.titleLarge,
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = context.getString(R.string.cd_navigate_back),
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                    scrolledContainerColor = MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+            )
+        },
+    ) { innerPadding ->
+        Box(modifier = modifier.padding(innerPadding).background(Color.Black)) {
+            // ── CameraX 相机预览 ────────────────────────────
+            AndroidView(
+                factory = { ctx ->
                 PreviewView(ctx).apply {
                     // 黑色背景，防止预览加载前闪烁
                     setBackgroundColor(AndroidColor.BLACK)
@@ -123,50 +147,31 @@ fun QrScannerScreen(
             modifier = Modifier.fillMaxSize(),
         )
 
-        // ── 顶部关闭按钮 ────────────────────────────────
-        IconButton(
-            onClick = onBack,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .statusBarsPadding()
-                .padding(12.dp)
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.4f)),
-            colors = IconButtonDefaults.iconButtonColors(
-                contentColor = Color.White,
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Close",
+            // ── 扫码框 ────────────────────────────────────────
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .size(260.dp)
+                    .border(
+                        width = 2.dp,
+                        color = Color.White.copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(16.dp),
+                    ),
+            )
+
+            // ── 底部提示文字 ────────────────────────────────
+            Text(
+                text = context.getString(R.string.qr_scan_prompt),
+                color = Color.White.copy(alpha = 0.9f),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 48.dp)
+                    .padding(horizontal = 32.dp),
             )
         }
-
-        // ── 扫码框 ────────────────────────────────────────
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .size(260.dp)
-                .border(
-                    width = 2.dp,
-                    color = Color.White.copy(alpha = 0.8f),
-                    shape = RoundedCornerShape(16.dp),
-                ),
-        )
-
-        // ── 底部提示文字 ────────────────────────────────
-        Text(
-            text = context.getString(R.string.qr_scan_prompt),
-            color = Color.White.copy(alpha = 0.9f),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .padding(bottom = 48.dp)
-                .padding(horizontal = 32.dp),
-        )
     }
 }
 
