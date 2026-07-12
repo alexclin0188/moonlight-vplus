@@ -31,6 +31,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -138,9 +139,43 @@ fun ComposeKeyboardController(
         }
     }
 
+    // ── 修饰键自动释放定时器 ──
+    // 单次点击修饰键后若 2 秒内无任何按键操作，自动释放该修饰键，避免修饰键"悬空"
+    val autoReleaseHandler = remember { android.os.Handler(android.os.Looper.getMainLooper()) }
+    var autoReleaseRunnable by remember { mutableStateOf<Runnable?>(null) }
+
+    fun scheduleModifierAutoRelease() {
+        autoReleaseRunnable?.let { autoReleaseHandler.removeCallbacks(it) }
+        val runnable = Runnable {
+            autoReleaseRunnable = null
+            for ((kc, state) in modifierStates.toList()) {
+                if (state == MOD_SINGLE && !physicallyHeldModifiers.contains(kc)) {
+                    modifierStates[kc] = MOD_NEUTRAL
+                    bridge.sendKeyEvent(false, kc.toShort())
+                }
+            }
+        }
+        autoReleaseRunnable = runnable
+        autoReleaseHandler.postDelayed(runnable, 2000L)
+    }
+
+    fun cancelModifierAutoRelease() {
+        autoReleaseRunnable?.let { autoReleaseHandler.removeCallbacks(it) }
+        autoReleaseRunnable = null
+    }
+
+    // 组件离开组合时清理定时器
+    DisposableEffect(Unit) {
+        onDispose {
+            autoReleaseRunnable?.let { autoReleaseHandler.removeCallbacks(it) }
+        }
+    }
+
     // ── 按键事件处理 ──
     val onKeyAction: (Int, Boolean, Boolean) -> Unit = remember(modifierStates, physicallyHeldModifiers) {
         { keyCode, isPress, isDoubleTap ->
+            cancelModifierAutoRelease()
+
             if (isDoubleTap && KeyboardLayouts.MODIFIER_KEYS.contains(keyCode)) {
                 // Double tap on modifier: reset to neutral
                 triggerHaptic("heavy")
@@ -158,6 +193,7 @@ fun ComposeKeyboardController(
                         modifierStates[keyCode] = MOD_SINGLE
                         physicallyHeldModifiers.add(keyCode)
                         bridge.sendKeyEvent(true, keyCode.toShort())
+                        scheduleModifierAutoRelease()
                     } else {
                         val newState = (currentState + 1) % 3
                         modifierStates[keyCode] = newState
@@ -173,6 +209,7 @@ fun ComposeKeyboardController(
                     triggerHaptic("normal")
                     bridge.sendKeyEvent(true, keyCode.toShort())
                 }
+                cancelModifierAutoRelease()
             }
         }
     }
