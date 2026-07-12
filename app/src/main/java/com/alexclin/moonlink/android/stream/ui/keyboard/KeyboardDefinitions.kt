@@ -22,7 +22,9 @@ enum class KeyWeight(val factor: Float) {
     W20(2.0f),
     W22(2.2f),
     W40(4.0f),
-    W61(6.1f),
+    W107(1.07f),
+    W11(1.1f),
+    W085(0.86f),
 }
 
 /**
@@ -59,13 +61,9 @@ data class KeyboardRowDef(
  * 键盘页面定义
  *
  * @param rows 各行定义
- * @param rightBlockColumns 右侧固定宽度区块，按列组织。
- *   外层 list = 列（通常 3 列），内层 list = 该列各行的按键（顶→底，不含首行空白）。
- *   null 表示无右侧区块。
  */
 data class KeyboardPageDef(
     val rows: List<KeyboardRowDef>,
-    val rightBlockColumns: List<List<KeyboardKeyDef>>? = null,
 )
 
 /**
@@ -182,6 +180,9 @@ object KeyboardLayouts {
     const val ACTION_TOGGLE_PC = "toggle_pc"
     const val ACTION_BACK_ALPHA = "back_alpha"
     const val ACTION_TOGGLE_FULL = "toggle_full"
+    const val ACTION_SHOW_NUMPAD = "show_numpad"
+    const val ACTION_BACK_FULL = "back_full"
+    const val ACTION_ENTER_MINI = "enter_mini"
 
     // ── 修饰键集合 ──
     val MODIFIER_KEYS = setOf(
@@ -189,9 +190,10 @@ object KeyboardLayouts {
     )
 
     // ── 主键盘布局 (QWERTY) ──
+    // 六行，每行末尾增加一个功能键：↑ ↓ ← → NUM MINI
     val MAIN = KeyboardPageDef(
         rows = listOf(
-            // Row 0: Function key strip — ESC, F1-F12, PrtSc (height matches other rows)
+            // Row 0: Function key strip — ESC, F1-F12, ↑
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("Esc", KEY_ESC, type = KeyType.MODIFIER, weight = KeyWeight.W15),
@@ -207,10 +209,10 @@ object KeyboardLayouts {
                     KeyboardKeyDef("F10", KEY_F10),
                     KeyboardKeyDef("F11", KEY_F11),
                     KeyboardKeyDef("F12", KEY_F12),
-                    KeyboardKeyDef("PrtSc", KEY_PRTSC, type = KeyType.MODIFIER),
+                    KeyboardKeyDef("↑", KEY_DPAD_UP),
                 ),
             ),
-            // Row 1: Numbers + Backspace
+            // Row 1: Numbers + Backspace + ↓
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("` ~", KEY_GRAVE),
@@ -227,9 +229,10 @@ object KeyboardLayouts {
                     KeyboardKeyDef("- _", KEY_MINUS),
                     KeyboardKeyDef("= +", KEY_EQUALS),
                     KeyboardKeyDef("⌫", KEY_DEL, type = KeyType.MODIFIER, weight = KeyWeight.W15),
+                    KeyboardKeyDef("↓", KEY_DPAD_DOWN, weight = KeyWeight.W107),
                 ),
             ),
-            // Row 2: QWERTY
+            // Row 2: QWERTY + ←
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("Tab ⇥", KEY_TAB, type = KeyType.MODIFIER, weight = KeyWeight.W15),
@@ -246,9 +249,10 @@ object KeyboardLayouts {
                     KeyboardKeyDef("[ {", KEY_LBRACKET),
                     KeyboardKeyDef("] }", KEY_RBRACKET),
                     KeyboardKeyDef("\\ |", KEY_BACKSLASH, weight = KeyWeight.W15),
+                    KeyboardKeyDef("←", KEY_DPAD_LEFT,weight = KeyWeight.W11),
                 ),
             ),
-            // Row 3: ASDF + Enter
+            // Row 3: ASDF + Enter + →
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("Caps", KEY_CAPS, type = KeyType.MODIFIER, weight = KeyWeight.W18),
@@ -264,9 +268,10 @@ object KeyboardLayouts {
                     KeyboardKeyDef("; :", KEY_SEMICOLON),
                     KeyboardKeyDef("' \"", KEY_APOSTROPHE),
                     KeyboardKeyDef("Enter ↵", KEY_ENTER, type = KeyType.MODIFIER, weight = KeyWeight.W20),
+                    KeyboardKeyDef("→", KEY_DPAD_RIGHT,weight = KeyWeight.W11),
                 ),
             ),
-            // Row 4: ZXCVB + Shift
+            // Row 4: ZXCVB + Shift + NUM
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("Shift", KEY_LSHIFT, type = KeyType.MODIFIER, weight = KeyWeight.W22),
@@ -281,9 +286,10 @@ object KeyboardLayouts {
                     KeyboardKeyDef(". >", KEY_PERIOD),
                     KeyboardKeyDef("/ ?", KEY_SLASH),
                     KeyboardKeyDef("Shift", KEY_RSHIFT, type = KeyType.MODIFIER, weight = KeyWeight.W22),
+                    KeyboardKeyDef("NUM", actionId = ACTION_SHOW_NUMPAD, type = KeyType.ACTION,weight = KeyWeight.W107),
                 ),
             ),
-            // Row 5: Modifiers + Space
+            // Row 5: Modifiers + Space + MINI
             KeyboardRowDef(
                 keys = listOf(
                     KeyboardKeyDef("Ctrl", KEY_LCTRL, type = KeyType.MODIFIER, weight = KeyWeight.W15),
@@ -292,34 +298,35 @@ object KeyboardLayouts {
                     KeyboardKeyDef("Space", KEY_SPACE, weight = KeyWeight.W40),
                     KeyboardKeyDef("Alt", KEY_RALT, type = KeyType.MODIFIER, weight = KeyWeight.W15),
                     KeyboardKeyDef("Ctrl", KEY_RCTRL, type = KeyType.MODIFIER, weight = KeyWeight.W15),
+                    KeyboardKeyDef("MINI", actionId = ACTION_ENTER_MINI, type = KeyType.ACTION,weight = KeyWeight.W085),
                 ),
-            ),
-        ),
-        // Right block: 3 columns × 4 content rows (spans Rows 1-5, first row blank)
-        // Col0 (R3): Ins, Del, PgUp, ←  |  Col1 (R2): Home, End, ↑, ↓  |  Col2 (R1): ScrLk, Pause, PgDn, →
-        rightBlockColumns = listOf(
-            listOf(
-                KeyboardKeyDef("Ins", KEY_INSERT),
-                KeyboardKeyDef("Del", KEY_FORWARD_DEL),
-                KeyboardKeyDef("PgUp", KEY_PAGE_UP),
-                KeyboardKeyDef("←", KEY_DPAD_LEFT),
-            ),
-            listOf(
-                KeyboardKeyDef("Home", KEY_HOME),
-                KeyboardKeyDef("End", KEY_END),
-                KeyboardKeyDef("↑", KEY_DPAD_UP),
-                KeyboardKeyDef("↓", KEY_DPAD_DOWN),
-            ),
-            listOf(
-                KeyboardKeyDef("ScrLk", KEY_SCROLL_LOCK, type = KeyType.MODIFIER),
-                KeyboardKeyDef("Pause", KEY_PAUSE, type = KeyType.MODIFIER),
-                KeyboardKeyDef("PgDn", KEY_PAGE_DOWN),
-                KeyboardKeyDef("→", KEY_DPAD_RIGHT),
             ),
         ),
     )
 
-    // ── 数字键盘布局（由 NumpadKeyboardContent 自定义渲染） ──
+    // ── 数字键盘右侧 3×3 特殊键 ──
+    val NUMPAD_RIGHT_GRID = listOf(
+        // Row 0: PrtSc / ScrLk / Pause
+        listOf(
+            KeyboardKeyDef("PrtSc", KEY_PRTSC, type = KeyType.MODIFIER),
+            KeyboardKeyDef("ScrLk", KEY_SCROLL_LOCK, type = KeyType.MODIFIER),
+            KeyboardKeyDef("Pause", KEY_PAUSE, type = KeyType.MODIFIER),
+        ),
+        // Row 1: Ins / Home / PgUp
+        listOf(
+            KeyboardKeyDef("Ins", KEY_INSERT),
+            KeyboardKeyDef("Home", KEY_HOME),
+            KeyboardKeyDef("PgUp", KEY_PAGE_UP),
+        ),
+        // Row 2: Del / End / PgDn
+        listOf(
+            KeyboardKeyDef("Del", KEY_FORWARD_DEL),
+            KeyboardKeyDef("End", KEY_END),
+            KeyboardKeyDef("PgDn", KEY_PAGE_DOWN),
+        ),
+    )
+
+    // ── 数字键盘左侧布局（4列，四行均分高度） ──
     val NUMPAD_LEFT_GRID = listOf(
         listOf(
             KeyboardKeyDef("7", KEY_NUMPAD_7),
@@ -338,6 +345,12 @@ object KeyboardLayouts {
             KeyboardKeyDef("2", KEY_NUMPAD_2),
             KeyboardKeyDef("3", KEY_NUMPAD_3),
             KeyboardKeyDef("-", KEY_NUMPAD_SUBTRACT),
+        ),
+        // 底部行：0（2列宽）、.、+，与其他行均分高度
+        listOf(
+            KeyboardKeyDef("0", KEY_NUMPAD_0, weight = KeyWeight.W20),
+            KeyboardKeyDef(".", KEY_NUMPAD_DOT),
+            KeyboardKeyDef("+", KEY_NUMPAD_ADD, type = KeyType.MODIFIER),
         ),
     )
 

@@ -217,6 +217,12 @@ fun KeyboardSubPanel(
                         bridge = keyboardBridge,
                         onHide = onClose,
                         maxHeightDp = effectiveHeightDp,
+                        onSwitchToTab = { tab ->
+                            selectedTab = tab
+                            if (tab == 0) {
+                                // 切换到系统输入法标签时，等待下一帧请求焦点
+                            }
+                        },
                     )
 
                 }

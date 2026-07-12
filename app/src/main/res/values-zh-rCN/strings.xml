@@ -1066,6 +1066,9 @@
     <string name="keyboard_tab_ime">输入法</string>
     <string name="keyboard_tab_shortcuts">快捷键</string>
     <string name="keyboard_tab_virtual">虚拟键盘</string>
+    <string name="keyboard_sidebar_virtual">虚拟</string>
+    <string name="keyboard_sidebar_shortcuts">快捷</string>
+    <string name="keyboard_sidebar_system">系统</string>
     <string name="kme_dir_down">下</string>
     <string name="kme_dir_left">左</string>
     <string name="kme_dir_right">右</string>

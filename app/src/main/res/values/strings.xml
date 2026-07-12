@@ -1030,6 +1030,9 @@
     <string name="keyboard_tab_ime">IME</string>
     <string name="keyboard_tab_shortcuts">Shortcuts</string>
     <string name="keyboard_tab_virtual">Virtual Keyboard</string>
+    <string name="keyboard_sidebar_virtual">Virtual</string>
+    <string name="keyboard_sidebar_shortcuts">Shortcuts</string>
+    <string name="keyboard_sidebar_system">System</string>
     <string name="kme_dir_down">Down</string>
     <string name="kme_dir_left">Left</string>
     <string name="kme_dir_right">Right</string>

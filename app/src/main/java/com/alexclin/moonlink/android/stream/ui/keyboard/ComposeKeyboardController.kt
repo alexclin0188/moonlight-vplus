@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android.stream.ui.keyboard
 
 import android.content.Context
+import com.alexclin.moonlink.android.R
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -16,7 +17,6 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -81,12 +84,14 @@ private const val HOLD_THRESHOLD_MS = 200L
  *
  * @param bridge 按键事件桥接器
  * @param onHide 用户点击隐藏按钮时的回调
+ * @param onSwitchToTab 切换到 KeyboardSubPanel 其他标签的回调（0=系统输入法, 1=快捷键）
  */
 @Composable
 fun ComposeKeyboardController(
     bridge: VirtualKeyboardBridge,
     onHide: () -> Unit,
     maxHeightDp: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified,
+    onSwitchToTab: ((Int) -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("keyboard_settings", Context.MODE_PRIVATE) }
@@ -94,7 +99,7 @@ fun ComposeKeyboardController(
     // ── 键盘模式状态 ──
     // 每次进入虚拟键盘都从默认全键盘开始（不持久化 Mini 模式状态）
     var isMiniMode by remember { mutableStateOf(false) }
-    var activePage by remember { mutableIntStateOf(0) } // 0=Main, 1=Num, 2=Mini
+    var isNumpadMode by remember { mutableStateOf(false) }
     var miniPanel by remember { mutableStateOf("alpha") } // alpha, num, pc
 
     // ── 修饰键状态 ──
@@ -207,10 +212,6 @@ fun ComposeKeyboardController(
         }
     }
 
-    fun saveMiniMode(mini: Boolean) {
-        // 不再持久化 Mini 模式状态，每次进入虚拟键盘均为默认全键盘
-    }
-
     // ── 修饰键 UI 颜色 ──
     fun modifierColor(keyCode: Int): Color {
         val state = modifierStates[keyCode] ?: MOD_NEUTRAL
@@ -224,7 +225,6 @@ fun ComposeKeyboardController(
     // ── 返回全屏模式 ──
     val exitMiniMode = {
         isMiniMode = false
-        activePage = 0
         offsetX = 0f
         offsetY = 0f
         showResizeHandle = false
@@ -234,7 +234,6 @@ fun ComposeKeyboardController(
     val enterMiniMode = {
         isMiniMode = true
         miniPanel = "alpha"
-        activePage = 2
     }
 
     Box(
@@ -285,7 +284,7 @@ fun ComposeKeyboardController(
                 )
             } else {
                 FullKeyboardContent(
-                    activePage = activePage,
+                    isNumpadMode = isNumpadMode,
                     showResizeHandle = showResizeHandle,
                     keyboardHeightPx = keyboardHeightPx,
                     modifierStates = modifierStates,
@@ -300,7 +299,10 @@ fun ComposeKeyboardController(
                         popupVisible = true
                     },
                     onPopupHide = { popupVisible = false },
-                    onPageChange = { activePage = it },
+                    onShowNumpad = { isNumpadMode = true },
+                    onBackToFull = { isNumpadMode = false },
+                    onEnterMini = enterMiniMode,
+                    onSwitchToTab = onSwitchToTab,
                     onHide = {
                         onHide()
                     },
@@ -309,7 +311,6 @@ fun ComposeKeyboardController(
                         keyboardHeightPx = newHeight
                     },
                     onResizeEnd = { saveHeight() },
-                    onEnterMini = enterMiniMode,
                     modifierColor = ::modifierColor,
                     onHeightMeasured = { if (keyboardHeightPx <= 0) keyboardHeightPx = it },
                 )
@@ -356,7 +357,7 @@ fun ComposeKeyboardController(
 
 @Composable
 private fun FullKeyboardContent(
-    activePage: Int,
+    isNumpadMode: Boolean,
     showResizeHandle: Boolean,
     keyboardHeightPx: Int,
     modifierStates: Map<Int, Int>,
@@ -366,12 +367,14 @@ private fun FullKeyboardContent(
     onKeyRelease: (Int, Boolean) -> Unit,
     onPopupShow: (String, Float, Float) -> Unit,
     onPopupHide: () -> Unit,
-    onPageChange: (Int) -> Unit,
+    onShowNumpad: () -> Unit,
+    onBackToFull: () -> Unit,
+    onEnterMini: () -> Unit,
+    onSwitchToTab: ((Int) -> Unit)?,
     onHide: () -> Unit,
     onToggleResize: () -> Unit,
     onResize: (Int) -> Unit,
     onResizeEnd: () -> Unit,
-    onEnterMini: () -> Unit,
     modifierColor: (Int) -> Color,
     onHeightMeasured: (Int) -> Unit,
 ) {
@@ -393,15 +396,11 @@ private fun FullKeyboardContent(
                     onHeightMeasured(coords.size.height)
                 }
             }
-            .then(
-                if (activePage == 1) Modifier
-                else Modifier
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1C1C1E))
-            ),
+            .clip(RoundedCornerShape(8.dp))
+            .background(Color(0xFF1C1C1E)),
     ) {
-        // Resize handle (hidden on Num page since content wraps)
-        if (showResizeHandle && activePage != 1) {
+        // Resize handle
+        if (showResizeHandle) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -428,113 +427,64 @@ private fun FullKeyboardContent(
             }
         }
 
-        // Main content: layout depends on active page
-        // Num page: bottom-centered, wrap-content with sidebars matching numpad height
-        // Other pages: fill all available space
-        if (activePage == 1) {
-            // Num page: push content to bottom with weight spacer so
-            // empty space above doesn't consume touch events
-            Spacer(Modifier.weight(1f))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
+        // ── Unified layout: Left sidebar + Content + Right sidebar ──
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+        ) {
+            // Left sidebar — 虚拟 | 快捷 | 系统
+            Column(
+                modifier = Modifier
+                    .width(46.dp)
+                    .fillMaxHeight()
+                    .padding(2.dp),
             ) {
-                Row(modifier = Modifier
-                    .height(IntrinsicSize.Min)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color(0xFF1C1C1E)),
-                ) {
-                    // Left sidebar — tabs: Main, Num, Mini
-                    Column(
-                        modifier = Modifier
-                            .width(46.dp)
-                            .fillMaxHeight()
-                            .padding(2.dp),
-                    ) {
-                        Box(Modifier.weight(1f).fillMaxWidth()) {
-                            SidebarTab("Main", false) { onPageChange(0) }
-                        }
-                        Box(Modifier.weight(1f).fillMaxWidth()) {
-                            SidebarTab("Num", true) { onPageChange(1) }
-                        }
-                        Box(Modifier.weight(1f).fillMaxWidth()) {
-                            SidebarTab("Mini", false) { onEnterMini() }
-                        }
-                    }
+                // stringResource for sidebar labels
+                val sidebarVirtual = stringResource(R.string.keyboard_sidebar_virtual)
+                val sidebarShortcuts = stringResource(R.string.keyboard_sidebar_shortcuts)
+                val sidebarSystem = stringResource(R.string.keyboard_sidebar_system)
 
-                    // Numpad content — auto-sized, determines row height via intrinsic
-                    NumpadKeyboardContent(
+                // "虚拟" — always active (both full keyboard and numpad are sub-states)
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    SidebarTab(sidebarVirtual, true) {
+                        // If in numpad mode, return to full keyboard
+                        if (isNumpadMode) onBackToFull()
+                    }
+                }
+                // "快捷" — switch to shortcuts tab, hide virtual keyboard
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    SidebarTab(sidebarShortcuts, false) {
+                        onSwitchToTab?.invoke(1)
+                    }
+                }
+                // "系统" — switch to system IME tab, hide virtual keyboard
+                Box(Modifier.weight(1f).fillMaxWidth()) {
+                    SidebarTab(sidebarSystem, false) {
+                        onSwitchToTab?.invoke(0)
+                    }
+                }
+            }
+
+            // Page container — weight(1f) fills remaining space between sidebars
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    .padding(horizontal = 2.dp),
+            ) {
+                if (isNumpadMode) {
+                    NumpadFullWidthContent(
                         modifierStates = modifierStates,
                         onKeyAction = onKeyAction,
                         onKeyRelease = onKeyRelease,
                         onPopupShow = onPopupShow,
                         onPopupHide = onPopupHide,
                         modifierColor = modifierColor,
+                        onBackToFull = onBackToFull,
                     )
-
-                    // Right sidebar — matches numpad height
-                    Column(
-                        modifier = Modifier
-                            .width(46.dp)
-                            .fillMaxHeight()
-                            .padding(2.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        SidebarAction("✕") { onHide() }
-
-                        Spacer(Modifier.height(5.dp))
-                        // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
-                        VerticalOpacitySlider(
-                            value = opacityProgress,
-                            onValueChange = onOpacityChange,
-                            modifier = Modifier
-                                .width(44.dp)
-                                .weight(1f)
-                                .padding(bottom = 5.dp),
-                        )
-                        Text(
-                            "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
-                            color = Color(0x88FFFFFF),
-                            fontSize = 10.sp,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(bottom = 2.dp),
-                        )
-                    }
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(),
-            ) {
-                // Left sidebar — tabs: Main, Num, Mini (Nav removed, keys merged into Main)
-                Column(
-                    modifier = Modifier
-                        .width(46.dp)
-                        .fillMaxHeight()
-                        .padding(2.dp),
-                ) {
-                    Box(Modifier.weight(1f).fillMaxWidth()) {
-                        SidebarTab("Main", activePage == 0) { onPageChange(0) }
-                    }
-                    Box(Modifier.weight(1f).fillMaxWidth()) {
-                        SidebarTab("Num", activePage == 1) { onPageChange(1) }
-                    }
-                    Box(Modifier.weight(1f).fillMaxWidth()) {
-                        SidebarTab("Mini", activePage == 2) { onEnterMini() }
-                    }
-                }
-
-                // Page container — weight(1f) fills remaining space between sidebars
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .padding(horizontal = 2.dp),
-                ) {
-                    when (activePage) {
-                    0 -> KeyboardPageContent(
+                } else {
+                    KeyboardPageContent(
                         page = KeyboardLayouts.MAIN,
                         modifierStates = modifierStates,
                         onKeyAction = onKeyAction,
@@ -542,39 +492,40 @@ private fun FullKeyboardContent(
                         onPopupShow = onPopupShow,
                         onPopupHide = onPopupHide,
                         modifierColor = modifierColor,
+                        actionCallbacks = mapOf(
+                            KeyboardLayouts.ACTION_SHOW_NUMPAD to onShowNumpad,
+                            KeyboardLayouts.ACTION_ENTER_MINI to onEnterMini,
+                        ),
                     )
-                    }
                 }
+            }
 
-                // Right sidebar
-                Column(
+            // Right sidebar
+            Column(
+                modifier = Modifier
+                    .width(46.dp)
+                    .fillMaxHeight()
+                    .padding(2.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                SidebarAction("✕") { onHide() }
+
+                Spacer(Modifier.height(5.dp))
+                VerticalOpacitySlider(
+                    value = opacityProgress,
+                    onValueChange = onOpacityChange,
                     modifier = Modifier
-                        .width(46.dp)
-                        .fillMaxHeight()
-                        .padding(2.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    SidebarAction("✕") { onHide() }
-
-                    Spacer(Modifier.height(5.dp))
-                    // No rotation — uses detectVerticalDragGestures for precise vertical touch handling.
-                    VerticalOpacitySlider(
-                        value = opacityProgress,
-                        onValueChange = onOpacityChange,
-                        modifier = Modifier
-                            .width(44.dp)
-                            .weight(1f)
-                            .padding(bottom = 5.dp),
-                    )
-                    Text(
-                        "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
-                        color = Color(0x88FFFFFF),
-                        fontSize = 10.sp,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.padding(bottom = 2.dp),
-                    )
-                }
-
+                        .width(44.dp)
+                        .weight(1f)
+                        .padding(bottom = 5.dp),
+                )
+                Text(
+                    "${(opacityProgress + 20f).roundToInt()}%\nOpacity",
+                    color = Color(0x88FFFFFF),
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 2.dp),
+                )
             }
         }
     }
@@ -640,7 +591,6 @@ private fun VerticalOpacitySlider(
         )
         // Thumb: bottom = min (slider 0), top = max (slider 80).
         // Active track grows upward from bottom, thumb position mirrors this.
-        // Use actual slider height (not hardcoded 140.dp) so thumb tracks finger 1:1.
         val travelDistance = sliderHeightPx - with(density) { thumbSize.toPx() }
         Box(
             modifier = Modifier
@@ -1012,76 +962,112 @@ private fun MiniPCPanel(
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Numpad Keyboard Content (custom layout: two-column)
+// Numpad Full-Width Content (left numpad + right 3×3 + back button)
 // ────────────────────────────────────────────────────────────────────────────
 
 @Composable
-private fun NumpadKeyboardContent(
+private fun NumpadFullWidthContent(
     modifierStates: Map<Int, Int>,
     onKeyAction: (Int, Boolean, Boolean) -> Unit,
     onKeyRelease: (Int, Boolean) -> Unit,
     onPopupShow: (String, Float, Float) -> Unit,
     onPopupHide: () -> Unit,
     modifierColor: (Int) -> Color,
+    onBackToFull: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.padding(2.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Row(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(2.dp),
     ) {
-        // 3-row, 4-column number grid
-        KeyboardLayouts.NUMPAD_LEFT_GRID.forEach { rowKeys ->
-            Row {
-                rowKeys.forEach { keyDef ->
-                    KeyboardKeyButton(
-                        keyDef = keyDef,
-                        modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
-                        onKeyAction = onKeyAction,
-                        onKeyRelease = onKeyRelease,
-                        onPopupShow = onPopupShow,
-                        onPopupHide = onPopupHide,
-                        modifierColor = modifierColor,
-                        fixedWidth = 60.dp,
-                        fixedHeight = 60.dp,
-                    )
+        // ── Left: 4-column numpad (4 rows, equal height) ──
+        Column(
+            modifier = Modifier
+                .weight(2.0f)
+                .fillMaxHeight(),
+        ) {
+            KeyboardLayouts.NUMPAD_LEFT_GRID.forEach { rowKeys ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                ) {
+                    rowKeys.forEach { keyDef ->
+                        Box(
+                            modifier = Modifier
+                                .weight(keyDef.weight.factor)
+                                .fillMaxHeight(),
+                        ) {
+                            KeyboardKeyButton(
+                                keyDef = keyDef,
+                                modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
+                                onKeyAction = onKeyAction,
+                                onKeyRelease = onKeyRelease,
+                                onPopupShow = onPopupShow,
+                                onPopupHide = onPopupHide,
+                                modifierColor = modifierColor,
+                            )
+                        }
+                    }
                 }
             }
         }
-        // Bottom row: 0 (2 columns wide), ., +
-        Row(modifier = Modifier.width(240.dp)) {
-            Box(modifier = Modifier.weight(2f).height(60.dp)) {
-                KeyboardKeyButton(
-                    keyDef = KeyboardKeyDef("0", KeyboardLayouts.KEY_NUMPAD_0),
-                    modifierState = MOD_NEUTRAL,
-                    onKeyAction = onKeyAction,
-                    onKeyRelease = onKeyRelease,
-                    onPopupShow = onPopupShow,
-                    onPopupHide = onPopupHide,
-                    modifierColor = modifierColor,
-                    fixedHeight = 60.dp,
-                )
+
+        // ── Right: 3×3 special keys ──
+        Column(
+            modifier = Modifier
+                .weight(1.5f)
+                .fillMaxHeight(),
+        ) {
+            KeyboardLayouts.NUMPAD_RIGHT_GRID.forEach { rowKeys ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                ) {
+                    rowKeys.forEach { keyDef ->
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight(),
+                        ) {
+                            KeyboardKeyButton(
+                                keyDef = keyDef,
+                                modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
+                                onKeyAction = onKeyAction,
+                                onKeyRelease = onKeyRelease,
+                                onPopupShow = onPopupShow,
+                                onPopupHide = onPopupHide,
+                                modifierColor = modifierColor,
+                                fontSize = if (keyDef.type == KeyType.MODIFIER) 10.sp else 11.sp,
+                            )
+                        }
+                    }
+                }
             }
-            Box(modifier = Modifier.weight(1f).height(60.dp)) {
-                KeyboardKeyButton(
-                    keyDef = KeyboardKeyDef(".", KeyboardLayouts.KEY_NUMPAD_DOT),
-                    modifierState = MOD_NEUTRAL,
-                    onKeyAction = onKeyAction,
-                    onKeyRelease = onKeyRelease,
-                    onPopupShow = onPopupShow,
-                    onPopupHide = onPopupHide,
-                    modifierColor = modifierColor,
-                    fixedHeight = 60.dp,
-                )
-            }
-            Box(modifier = Modifier.weight(1f).height(60.dp)) {
-                KeyboardKeyButton(
-                    keyDef = KeyboardKeyDef("+", KeyboardLayouts.KEY_NUMPAD_ADD, KeyType.MODIFIER),
-                    modifierState = modifierStates[KeyboardLayouts.KEY_NUMPAD_ADD] ?: MOD_NEUTRAL,
-                    onKeyAction = onKeyAction,
-                    onKeyRelease = onKeyRelease,
-                    onPopupShow = onPopupShow,
-                    onPopupHide = onPopupHide,
-                    modifierColor = modifierColor,
-                    fixedHeight = 60.dp,
+        }
+
+        // ── Far right: vertical ">" back-to-full button ──
+        Box(
+            modifier = Modifier
+                .weight(0.4f)
+                .fillMaxHeight(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .fillMaxWidth()
+                    .padding(2.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(Color.White.copy(alpha = 0.12f))
+                    .clickable { onBackToFull() },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    Icons.Default.ChevronRight,
+                    contentDescription = "Back to full keyboard",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
                 )
             }
         }
@@ -1103,107 +1089,27 @@ private fun KeyboardPageContent(
     modifierColor: (Int) -> Color,
     actionCallbacks: Map<String, () -> Unit> = emptyMap(),
 ) {
-    val columns = page.rightBlockColumns
-    if (columns != null) {
-        // ── Layout with right-block columns: Row 0 full-width, Rows 1-5 alongside right block ──
-        Column(modifier = Modifier.fillMaxSize().padding(2.dp)) {
-            // Row 0: full width (e.g. function key strip)
-            val row0 = page.rows[0]
-            val density0 = LocalDensity.current
+    // ── Regular layout (no right block) ──
+    Column(
+        modifier = Modifier.fillMaxSize().padding(2.dp),
+    ) {
+        page.rows.forEach { row ->
+            val density = LocalDensity.current
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .weight(row0.heightWeight)
-                    .padding(horizontal = with(density0) { row0.horizontalPaddingDp.dp }),
+                    .weight(row.heightWeight)
+                    .padding(horizontal = with(density) { row.horizontalPaddingDp.dp }),
             ) {
-                row0.keys.forEach { keyDef ->
+                row.keys.forEach { keyDef ->
                     KeyItem(keyDef, modifierStates, onKeyAction, onKeyRelease, onPopupShow, onPopupHide, modifierColor, actionCallbacks)
-                }
-            }
-
-            // Rows 1-5: main area (weight 1f) + right block (192dp)
-            val dataRows = page.rows.drop(1)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(dataRows.sumOf { it.heightWeight.toDouble() }.toFloat()),
-            ) {
-                // Main area: rows 1-5
-                Column(
-                    modifier = Modifier
-                        .weight(11.5f)
-                        .fillMaxHeight(),
-                ) {
-                    dataRows.forEach { row ->
-                        val density = LocalDensity.current
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .weight(row.heightWeight)
-                                .padding(horizontal = with(density) { row.horizontalPaddingDp.dp }),
-                        ) {
-                            row.keys.forEach { keyDef ->
-                                KeyItem(keyDef, modifierStates, onKeyAction, onKeyRelease, onPopupShow, onPopupHide, modifierColor, actionCallbacks)
-                            }
-                        }
-                    }
-                }
-
-                // Right block: 3 equal-width columns, each spanning 5 rows (1 blank + 4 content)
-                Row(
-                    modifier = Modifier
-                        .weight(3f)
-                        .fillMaxHeight(),
-                ) {
-                    columns.forEach { colKeys ->
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxHeight(),
-                        ) {
-                            // 4 content rows equally dividing the 5-row height
-                            colKeys.forEach { keyDef ->
-                                Box(Modifier.weight(1f).fillMaxWidth()) {
-                                    KeyboardKeyButton(
-                                        keyDef = keyDef,
-                                        modifierState = modifierStates[keyDef.keyCode] ?: MOD_NEUTRAL,
-                                        onKeyAction = onKeyAction,
-                                        onKeyRelease = onKeyRelease,
-                                        onPopupShow = onPopupShow,
-                                        onPopupHide = onPopupHide,
-                                        modifierColor = modifierColor,
-                                        fontSize = if (keyDef.type == KeyType.MODIFIER) 10.sp else 11.sp,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        // ── Regular layout (no right block) ──
-        Column(
-            modifier = Modifier.fillMaxSize().padding(2.dp),
-        ) {
-            page.rows.forEach { row ->
-                val density = LocalDensity.current
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(row.heightWeight)
-                        .padding(horizontal = with(density) { row.horizontalPaddingDp.dp }),
-                ) {
-                    row.keys.forEach { keyDef ->
-                        KeyItem(keyDef, modifierStates, onKeyAction, onKeyRelease, onPopupShow, onPopupHide, modifierColor, actionCallbacks)
-                    }
                 }
             }
         }
     }
 }
 
-/** Single key rendering helper (reused between regular and right-block layouts). */
+/** Single key rendering helper. */
 @Composable
 private fun RowScope.KeyItem(
     keyDef: KeyboardKeyDef,
@@ -1392,5 +1298,3 @@ private fun resetSingleModifiers(
         }
     }
 }
-
-
