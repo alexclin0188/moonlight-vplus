@@ -57,7 +57,7 @@ import com.limelight.nvstream.http.NvApp
 import com.limelight.nvstream.http.NvHTTP
 import com.limelight.nvstream.http.PairingManager
 import com.alexclin.moonlink.android.util.PlatformBinding
-import com.alexclin.moonlink.android.settings.AddComputerManually
+
 import com.alexclin.moonlink.android.util.ServerHelper
 import com.alexclin.moonlink.android.util.Iperf3Tester
 import com.alexclin.moonlink.android.util.CacheHelper
@@ -118,6 +118,7 @@ fun DeviceListScreen(
 
     // ── Add-device menu state & QR launcher ──────────────────────
     var showAddMenu by remember { mutableStateOf(false) }
+    var showAddManuallyDialog by remember { mutableStateOf(false) }
 
     // ── Trigger to force DeviceBoxArt to reload from disk ────────
     var refreshTrigger by remember { mutableStateOf(0) }
@@ -443,7 +444,7 @@ fun DeviceListScreen(
                                     text = { Text(context.getString(com.alexclin.moonlink.android.R.string.addpc_manual)) },
                                     onClick = {
                                         showAddMenu = false
-                                        context.startActivity(Intent(context, AddComputerManually::class.java))
+                                        showAddManuallyDialog = true
                                     }
                                 )
                                 HorizontalDivider()
@@ -461,6 +462,22 @@ fun DeviceListScreen(
                 }
             }
         }
+    }
+
+    // ── 手动添加电脑对话框 ──
+    if (showAddManuallyDialog) {
+        AddComputerManuallyDialog(
+            managerBinder = managerBinder,
+            onDismiss = { showAddManuallyDialog = false },
+            onSuccess = { msg ->
+                showAddManuallyDialog = false
+                scope.launch { snackbarHostState.showSnackbar(msg) }
+            },
+            onError = { msg ->
+                showAddManuallyDialog = false
+                scope.launch { snackbarHostState.showSnackbar(msg) }
+            },
+        )
     }
 }
 
