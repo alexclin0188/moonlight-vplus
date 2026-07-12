@@ -10,6 +10,8 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.os.SystemClock
 import android.view.View
+import android.view.InputDevice
+import android.view.KeyEvent
 import com.limelight.ui.StreamView
 import android.view.WindowInsets
 import android.view.WindowInsetsController
@@ -51,11 +53,16 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.R
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -84,7 +91,94 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
     private var lastBackPressTime = 0L
     private val backPressDebounceMs = 300L
 
-    // ── Picture-in-Picture ──
+    // ── 物理键盘按键处理 ──
+
+    /** 键盘翻译器（Android 键码 → Windows VK 码） */
+    private val keyboardTranslator = KeyboardTranslator()
+
+    /** 物理键盘修饰键状态 bitmask（SHIFT=0x01, CTRL=0x02, ALT=0x04, META=0x08） */
+    private var keyboardModifierState: Byte = 0
+
+    /**
+     * 处理物理键盘按键事件，翻译并发送到串流主机。
+     * 被 [dispatchKeyEvent] 和 [StreamView.InputCallbacks] 共用。
+     *
+     * @return true=事件已消费（不发往系统），false=未处理
+     */
+    private fun handlePhysicalKeyEvent(event: KeyEvent): Boolean {
+        val conn = engine.conn ?: return false
+
+        // 跟踪修饰键状态
+        val modBit: Byte = when (event.keyCode) {
+            KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT -> KeyboardPacket.MODIFIER_SHIFT
+            KeyEvent.KEYCODE_CTRL_LEFT, KeyEvent.KEYCODE_CTRL_RIGHT -> KeyboardPacket.MODIFIER_CTRL
+            KeyEvent.KEYCODE_ALT_LEFT, KeyEvent.KEYCODE_ALT_RIGHT -> KeyboardPacket.MODIFIER_ALT
+            KeyEvent.KEYCODE_META_LEFT, KeyEvent.KEYCODE_META_RIGHT -> KeyboardPacket.MODIFIER_META
+            else -> 0
+        }
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            keyboardModifierState = (keyboardModifierState.toInt() or modBit.toInt()).toByte()
+        } else if (event.action == KeyEvent.ACTION_UP) {
+            keyboardModifierState = (keyboardModifierState.toInt() and modBit.toInt().inv()).toByte()
+        }
+
+        // 翻译 Android 键码为 Windows VK 码
+        val vkCode = keyboardTranslator.translate(event.keyCode, event.deviceId)
+        if (vkCode.toInt() == 0) return false
+
+        // 发送按键事件
+        val action = if (event.action == KeyEvent.ACTION_DOWN)
+            KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
+        conn.sendKeyboardInput(vkCode, action, keyboardModifierState, 0)
+        return true
+    }
+
+    /** 拦截所有按键事件，优先级最高（在分发给任何 View 之前） */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // 全屏编辑页面激活时不拦截按键，让 Compose 输入框等 UI 元素正常接收键盘输入
+        if (engine.connected && !engine.isFullScreenPageActive) {
+            // 1. 先尝试游戏手柄按键处理（A/B/X/Y/Start/Select/摇杆按键等）
+            val ch = engine.controllerHandler
+            if (ch != null) {
+                if (event.action == KeyEvent.ACTION_DOWN && ch.handleButtonDown(event)) return true
+                if (event.action == KeyEvent.ACTION_UP && ch.handleButtonUp(event)) return true
+            }
+            // 2. 再尝试物理键盘处理（字母/数字/功能键等）
+            if (handlePhysicalKeyEvent(event)) return true
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
+    /**
+     * 重写 dispatchGenericMotionEvent，处理手柄和鼠标事件。
+     * 鼠标滚轮/移动/按键均由 handleNativeMousePointer 统一处理。
+     */
+    override fun dispatchGenericMotionEvent(event: android.view.MotionEvent): Boolean {
+        if (engine.connected && !engine.isFullScreenPageActive) {
+            val source = event.source
+            val isGamepad = (source and InputDevice.SOURCE_JOYSTICK) != 0 ||
+                            (source and InputDevice.SOURCE_GAMEPAD) != 0
+            if (isGamepad) {
+                val ch = engine.controllerHandler
+                if (ch != null) {
+                    if (ch.handleMotionEvent(event)) return true
+                    if (ch.tryHandleTouchpadEvent(event)) return true
+                }
+                return true
+            } else {
+                // 仅处理鼠标按键事件（ACTION_BUTTON_PRESS/RELEASE）。
+                // 滚轮/移动由 Compose pointerInput 捕获，跳过以避免双路径重复处理
+                val action = event.actionMasked
+                if (action != android.view.MotionEvent.ACTION_SCROLL &&
+                    action != android.view.MotionEvent.ACTION_HOVER_MOVE &&
+                    action != android.view.MotionEvent.ACTION_MOVE) {
+                    val th = engine.touchHandler
+                    if (th != null && th.handleMotionEvent(null, event)) return true
+                }
+            }
+        }
+        return super.dispatchGenericMotionEvent(event)
+    }
 
     /** PiP 抑制引用计数（对话框打开时 +1，关闭时 -1，>0 时不进入 PiP） */
     private var suppressPipRefCount = 0
@@ -160,6 +254,10 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
             return
         }
 
+        // 注册 KeyboardTranslator 以响应键盘热插拔，更新 QWERTY 键位映射
+        val inputManager = getSystemService(android.content.Context.INPUT_SERVICE) as android.hardware.input.InputManager
+        inputManager.registerInputDeviceListener(keyboardTranslator, null)
+
         // 提示用户开启通知权限以保证后台保活
         if (engine.isResumeStreamEnabled()) {
             checkNotificationPermission()
@@ -193,7 +291,79 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
             MoonLinkTheme(darkTheme = darkTheme) {
                 // 视频画面居中容器：StreamView 的 onMeasure() 根据 desiredAspectRatio
                 // 约束自身大小，实现原始宽高比；非视频区域显示窗口黑色背景。
-                Box(modifier = Modifier.fillMaxSize(),
+                // Box 尺寸（用于 sendMousePosition 的参考分辨率）
+                val boxWidth = remember { mutableStateOf(1) }
+                val boxHeight = remember { mutableStateOf(1) }
+
+                Box(modifier = Modifier
+                    .fillMaxSize()
+                    .onSizeChanged { size ->
+                        boxWidth.value = size.width.coerceAtLeast(1)
+                        boxHeight.value = size.height.coerceAtLeast(1)
+                        engine.touchHandler?.containerWidth = size.width.coerceAtLeast(1)
+                        engine.touchHandler?.containerHeight = size.height.coerceAtLeast(1)
+                    }
+                    .pointerInput(Unit) {
+                        awaitPointerEventScope {
+                            // 追踪上次已发送的光标位置（避免重复发送相同坐标）
+                            var lastSentX = -1
+                            var lastSentY = -1
+                            while (true) {
+                                val event = awaitPointerEvent()
+                                when (event.type) {
+                                    PointerEventType.Scroll -> {
+                                        if (!engine.isFullScreenPageActive) {
+                                            engine.conn?.let { c ->
+                                                val scrollDelta = event.changes.first().scrollDelta
+                                                if (scrollDelta.y != 0f) {
+                                                    c.sendMouseScroll((-scrollDelta.y).roundToInt().toByte())
+                                                }
+                                                if (scrollDelta.x != 0f) {
+                                                    c.sendMouseHScroll((-scrollDelta.x).roundToInt().toByte())
+                                                }
+                                                event.changes.forEach { it.consume() }
+                                            }
+                                        }
+                                    }
+                                    PointerEventType.Move -> {
+                                        val hasPress = event.changes.any { it.pressed }
+                                        if (!hasPress && !engine.isFullScreenPageActive) {
+                                            val curX = event.changes.first().position.x.roundToInt()
+                                            val curY = event.changes.first().position.y.roundToInt()
+                                            // 使用 StreamView 实测尺寸（与 native handleNativeMousePointer 统一），
+                                            // 计算视频画面区域并仅在光标位于画面内时发送位置。
+                                            val sv = engine.surfaceView
+                                            val svW = sv?.width?.coerceAtLeast(1) ?: boxWidth.value
+                                            val svH = sv?.height?.coerceAtLeast(1) ?: boxHeight.value
+                                            val ox = (boxWidth.value - svW) / 2
+                                            val oy = (boxHeight.value - svH) / 2
+                                            if (curX >= ox && curX < ox + svW && curY >= oy && curY < oy + svH) {
+                                                val videoX = curX - ox
+                                                val videoY = curY - oy
+                                                if (videoX != lastSentX || videoY != lastSentY) {
+                                                    engine.conn?.sendMousePosition(
+                                                        videoX.toShort(), videoY.toShort(),
+                                                        svW.toShort(), svH.toShort()
+                                                    )
+                                                    lastSentX = videoX
+                                                    lastSentY = videoY
+                                                }
+                                            } else {
+                                                lastSentX = -1
+                                                lastSentY = -1
+                                            }
+                                        }
+                                    }
+                                    PointerEventType.Exit -> {
+                                        // 鼠标离开视图时重置追踪，避免重新进入时发送跳变坐标（无动作）
+                                        lastSentX = -1
+                                        lastSentY = -1
+                                    }
+                                    else -> {}
+                                }
+                            }
+                        }
+                    },
                     contentAlignment = Alignment.Center) {
                     // 串流画面 StreamView（自定义 SurfaceView，支持 aspect ratio onMeasure）
                     // 触摸事件监听器引用（供 update 复用）
@@ -201,10 +371,7 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                         if (engine.isFullScreenPageActive) false
                         else engine.touchHandler?.handleMotionEvent(view, event) ?: false
                     }}
-                    val genericMotionListener = remember { View.OnGenericMotionListener { view, event ->
-                        if (engine.isFullScreenPageActive) false
-                        else engine.touchHandler?.handleMotionEvent(view, event) ?: false
-                    }}
+
 
                     AndroidView(
                         factory = { ctx ->
@@ -226,8 +393,25 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                 engine.attachSurfaceView(sv)
                                 sv.holder.addCallback(engine.surfaceCallback)
                                 sv.setOnTouchListener(touchListener)
-                                sv.setOnGenericMotionListener(genericMotionListener)
+
+                                // 物理键盘事件：通过 InputCallbacks（onKeyPreIme）和 OnKeyListener 双路径捕获
+                                sv.isFocusable = true
+                                sv.isFocusableInTouchMode = true
+                                sv.requestFocus()
+                                sv.setInputCallbacks(object : StreamView.InputCallbacks {
+                                    override fun handleKeyDown(event: KeyEvent) = handlePhysicalKeyEvent(event)
+                                    override fun handleKeyUp(event: KeyEvent) = handlePhysicalKeyEvent(event)
+                                })
+                                sv.setOnKeyListener { _, _, event ->
+                                    handlePhysicalKeyEvent(event)
+                                }
                                 frameLayout.addView(sv)
+                                // 外接鼠标悬停移动：FrameLayout 是直接包裹 StreamView 的原生 ViewGroup，
+                                // 其 onGenericMotionEvent 可能绕过 Compose 的拦截
+                                frameLayout.setOnGenericMotionListener { _, event ->
+                                    if (engine.isFullScreenPageActive) false
+                                    else engine.touchHandler?.handleMotionEvent(sv, event) ?: false
+                                }
                             }
                             frameLayout
                         },
@@ -250,6 +434,14 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                 sv.holder.setSizeFromLayout()
                             }
                             sv.requestLayout()
+
+                            // 全屏编辑页面激活时释放 StreamView 焦点（让 Compose 输入框正常接收键盘输入），
+                            // 关闭时恢复焦点（确保外接键盘事件能被 StreamView.InputCallbacks 捕获）
+                            if (engine.isFullScreenPageActive) {
+                                if (sv.hasFocus()) sv.clearFocus()
+                            } else {
+                                if (!sv.hasFocus()) sv.requestFocus()
+                            }
                         },
                         modifier = Modifier.fillMaxSize()
                     )
@@ -424,8 +616,6 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
 
                     /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
                     fun sendKeyboardKey(value: String, isPressed: Boolean, enableRepeat: Boolean = true) {
-                        // 调试日志：记录键值命令 ↓按下 / ↑释放
-                        LimeLog.info("KEY: ${value}${if (isPressed) "↓" else "↑"}")
                         val doSend: (Short, Byte) -> Unit = { code, action ->
                             engine.conn?.sendKeyboardInput(code, action, 0, 0)
                         }
@@ -1337,6 +1527,9 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
     }
 
     override fun onDestroy() {
+        // 注销 KeyboardTranslator
+        val inputManager = getSystemService(android.content.Context.INPUT_SERVICE) as? android.hardware.input.InputManager
+        inputManager?.unregisterInputDeviceListener(keyboardTranslator)
         clearPipReference()
         cancelKeepAliveNotification()
         super.onDestroy()

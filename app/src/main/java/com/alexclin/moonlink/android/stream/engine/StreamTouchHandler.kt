@@ -8,10 +8,13 @@ import com.limelight.binding.input.touch.AbsoluteTouchContext
 import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.binding.input.touch.RelativeTouchContext
 import com.limelight.binding.input.touch.TouchContext
+import com.limelight.binding.input.capture.InputCaptureProvider
 import com.limelight.nvstream.NvConnection
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.nvstream.jni.MoonBridge
 import com.limelight.preferences.PreferenceConfiguration
+import com.alexclin.moonlink.android.util.LimeLog
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
@@ -29,6 +32,9 @@ class StreamTouchHandler(
     /** 光标可见性变化回调（用于与 InputCaptureProvider 联动） */
     var onCursorVisibilityChanged: ((visible: Boolean) -> Unit)? = null,
 ) {
+
+    /** 输入捕获提供者（用于获取指针捕获下的相对鼠标坐标） */
+    var inputCaptureProvider: InputCaptureProvider? = null
 
     /** 本地光标位置变化回调（Compose 光标覆盖层驱动） */
     var onLocalCursorMoved: ((x: Float, y: Float) -> Unit)? = null
@@ -69,6 +75,16 @@ class StreamTouchHandler(
     // 增强触控 - Pointer 管理
     private val nativeTouchPointerMap = HashMap<Int, NativeTouchContext.Pointer>()
 
+    // 按钮事件时上次发送的光标位置（避免重复 sendMousePosition）
+    private var lastSentBtnX = -1
+    private var lastSentBtnY = -1
+
+    /** 容器尺寸（Box/屏幕像素尺寸），由 StreamActivity.onSizeChanged 更新，
+     * 用于与 Box.pointerInput 路径使用统一公式计算视频画面区域。
+     * 仅主线程读写，无需 @Volatile。 */
+    var containerWidth: Int = 0
+    var containerHeight: Int = 0
+
     fun initTouchContexts() {
         for (i in 0 until TOUCH_CONTEXT_LENGTH) {
             absoluteTouchContextMap[i] = AbsoluteTouchContext(conn, i, targetView)
@@ -97,10 +113,14 @@ class StreamTouchHandler(
     fun handleMotionEvent(view: View?, event: MotionEvent): Boolean {
         val source = event.source
 
+        // 优先检测 buttonState：外部鼠标点击可能以 SOURCE_TOUCHSCREEN 到达，
+        // 但 buttonState 非零意味着事件携带鼠标按钮信息，应走鼠标处理路径
         if (prefConfig.enableNativeMousePointer && (source and InputDevice.SOURCE_CLASS_POINTER) != 0) {
             return handleNativeMousePointer(event)
         }
-        if ((source and InputDevice.SOURCE_TOUCHSCREEN) != 0) {
+        // 精确匹配 SOURCE_TOUCHSCREEN（位掩码检查会误伤 SOURCE_MOUSE，
+        // 因为两者共享 SOURCE_CLASS_POINTER 位导致 & SOURCE_TOUCHSCREEN 非零）
+        if (source == InputDevice.SOURCE_TOUCHSCREEN) {
             return handleTouchScreen(view, event)
         }
         if ((source and InputDevice.SOURCE_CLASS_POINTER) != 0) {
@@ -114,13 +134,62 @@ class StreamTouchHandler(
     // ═════════════════════════════════════════════════════
 
     private fun handleNativeMousePointer(event: MotionEvent): Boolean {
+        val isRealPointer = event.source != InputDevice.SOURCE_TOUCHSCREEN
+
+        // 使用与 Box.pointerInput 完全相同的公式计算视频画面区域：
+        // videoSize = targetView 实测尺寸, offset = (containerSize - videoSize) / 2
+        val cw = containerWidth.coerceAtLeast(1)
+        val ch = containerHeight.coerceAtLeast(1)
+        val svW = targetView.width.coerceAtLeast(1)
+        val svH = targetView.height.coerceAtLeast(1)
+        val ox = (cw - svW) / 2
+        val oy = (ch - svH) / 2
+
         when (event.actionMasked) {
-            MotionEvent.ACTION_MOVE -> conn.sendMouseMove(event.rawX.toInt().toShort(), event.rawY.toInt().toShort())
+            MotionEvent.ACTION_HOVER_ENTER -> {}
+            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_HOVER_MOVE -> {
+                if (isRealPointer) {
+                    val rawX = event.rawX.roundToInt()
+                    val rawY = event.rawY.roundToInt()
+                    if (rawX >= ox && rawX < ox + svW && rawY >= oy && rawY < oy + svH) {
+                        val videoX = rawX - ox
+                        val videoY = rawY - oy
+                        conn.sendMousePosition(
+                            videoX.toShort(), videoY.toShort(),
+                            svW.toShort(), svH.toShort()
+                        )
+                    }
+                }
+            }
             MotionEvent.ACTION_SCROLL -> {
-                conn.sendMouseHighResScroll((event.getAxisValue(MotionEvent.AXIS_VSCROLL) * 120).toInt().toShort())
-                conn.sendMouseHighResHScroll((event.getAxisValue(MotionEvent.AXIS_HSCROLL) * 120).toInt().toShort())
+                val vScroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL)
+                val hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL)
+                // 只发送 sendMouseScroll（内部已调用 sendMouseHighResScroll），
+                // 不再重复调用 sendMouseHighResScroll，避免双包抵消
+                if (vScroll != 0f) {
+                    conn.sendMouseScroll((-vScroll).roundToInt().toByte())
+                }
+                if (hScroll != 0f) {
+                    conn.sendMouseHScroll((-hScroll).roundToInt().toByte())
+                }
             }
             else -> {
+                if (isRealPointer) {
+                    val rawX = event.rawX.roundToInt()
+                    val rawY = event.rawY.roundToInt()
+                    if (rawX >= ox && rawX < ox + svW && rawY >= oy && rawY < oy + svH) {
+                        val videoX = rawX - ox
+                        val videoY = rawY - oy
+                        if (videoX != lastSentBtnX || videoY != lastSentBtnY) {
+                            conn.sendMousePosition(
+                                videoX.toShort(), videoY.toShort(),
+                                svW.toShort(), svH.toShort()
+                            )
+                            lastSentBtnX = videoX
+                            lastSentBtnY = videoY
+                        }
+                    }
+                }
                 val changed = event.buttonState xor lastButtonState
                 if (changed and MotionEvent.BUTTON_PRIMARY != 0) {
                     if (event.buttonState and MotionEvent.BUTTON_PRIMARY != 0)
@@ -140,6 +209,18 @@ class StreamTouchHandler(
                     else
                         conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_MIDDLE)
                 }
+                if (changed and MotionEvent.BUTTON_BACK != 0) {
+                    if (event.buttonState and MotionEvent.BUTTON_BACK != 0)
+                        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_X1)
+                    else
+                        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_X1)
+                }
+                if (changed and MotionEvent.BUTTON_FORWARD != 0) {
+                    if (event.buttonState and MotionEvent.BUTTON_FORWARD != 0)
+                        conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_X2)
+                    else
+                        conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_X2)
+                }
                 lastButtonState = event.buttonState
             }
         }
@@ -151,10 +232,29 @@ class StreamTouchHandler(
     // ═════════════════════════════════════════════════════
 
     private fun handleMouseEvent(event: MotionEvent): Boolean {
+        // 鼠标移动（相对坐标，指针捕获模式下有效）
+        val action = event.actionMasked
+        if (action == MotionEvent.ACTION_HOVER_MOVE || action == MotionEvent.ACTION_MOVE) {
+            val cap = inputCaptureProvider
+            if (cap != null && cap.eventHasRelativeMouseAxes(event)) {
+                val dx = cap.getRelativeAxisX(event).toInt()
+                val dy = cap.getRelativeAxisY(event).toInt()
+                if (dx != 0 || dy != 0) {
+                    conn.sendMouseMove(dx.toShort(), dy.toShort())
+                }
+            }
+        }
         val changed = event.buttonState xor lastButtonState
         if (event.actionMasked == MotionEvent.ACTION_SCROLL) {
-            conn.sendMouseHighResScroll((event.getAxisValue(MotionEvent.AXIS_VSCROLL) * 120).toInt().toShort())
-            conn.sendMouseHighResHScroll((event.getAxisValue(MotionEvent.AXIS_HSCROLL) * 120).toInt().toShort())
+            val vScroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL)
+            val hScroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL)
+            // 只发送 sendMouseScroll（内部已调用 sendMouseHighResScroll）
+            if (vScroll != 0f) {
+                conn.sendMouseScroll((-vScroll).roundToInt().toByte())
+            }
+            if (hScroll != 0f) {
+                conn.sendMouseHScroll((-hScroll).roundToInt().toByte())
+            }
         }
         if (changed and MotionEvent.BUTTON_PRIMARY != 0) {
             if (event.buttonState and MotionEvent.BUTTON_PRIMARY != 0) conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_LEFT)
@@ -163,6 +263,18 @@ class StreamTouchHandler(
         if (changed and MotionEvent.BUTTON_SECONDARY != 0) {
             if (event.buttonState and MotionEvent.BUTTON_SECONDARY != 0) conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_RIGHT)
             else conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_RIGHT)
+        }
+        if (changed and MotionEvent.BUTTON_TERTIARY != 0) {
+            if (event.buttonState and MotionEvent.BUTTON_TERTIARY != 0) conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_MIDDLE)
+            else conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_MIDDLE)
+        }
+        if (changed and MotionEvent.BUTTON_BACK != 0) {
+            if (event.buttonState and MotionEvent.BUTTON_BACK != 0) conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_X1)
+            else conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_X1)
+        }
+        if (changed and MotionEvent.BUTTON_FORWARD != 0) {
+            if (event.buttonState and MotionEvent.BUTTON_FORWARD != 0) conn.sendMouseButtonDown(MouseButtonPacket.BUTTON_X2)
+            else conn.sendMouseButtonUp(MouseButtonPacket.BUTTON_X2)
         }
         lastButtonState = event.buttonState
         return true

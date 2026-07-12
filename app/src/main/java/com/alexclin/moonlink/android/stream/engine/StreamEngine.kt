@@ -13,6 +13,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import com.alexclin.moonlink.android.util.ToastUtil
+import com.alexclin.moonlink.android.stream.KeyboardAccessibilityService
 import com.alexclin.moonlink.android.stream.StreamIntentKeys
 import com.alexclin.moonlink.android.util.LimeLog
 import com.alexclin.moonlink.android.util.PlatformBinding
@@ -20,11 +21,13 @@ import com.limelight.binding.audio.AudioVibrationService
 import com.limelight.binding.audio.SmartAudioRenderer
 import com.limelight.binding.input.ControllerHandler
 import com.limelight.binding.input.GameInputDevice
+import com.limelight.binding.input.KeyboardTranslator
 import com.limelight.binding.input.capture.InputCaptureManager
 import com.limelight.binding.input.capture.InputCaptureProvider
 import com.limelight.binding.input.evdev.EvdevListener
 import com.limelight.binding.input.touch.NativeTouchContext
 import com.limelight.nvstream.input.ClipboardSyncManager
+import com.limelight.nvstream.input.KeyboardPacket
 import com.limelight.nvstream.input.MouseButtonPacket
 import com.limelight.ui.GameGestures
 import android.net.ConnectivityManager
@@ -95,6 +98,33 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 输入捕获提供者（光标隐藏/鼠标捕获） */
     var inputCaptureProvider: InputCaptureProvider? = null
         private set
+
+    /** 键盘翻译器（Android 键码 → Windows VK 码） */
+    private val keyboardTranslator = KeyboardTranslator()
+
+    /** KeyboardAccessibilityService 修饰键状态（独立于 VirtualKeyboardBridge 的修饰键状态） */
+    private var accessibilityModifierState: Byte = 0
+
+    /** KeyboardAccessibilityService 按键回调（在连接建立时注册，断开时注销） */
+    private val keyboardAccessibilityCallback = object : KeyboardAccessibilityService.KeyEventCallback {
+        override fun onKeyEvent(event: android.view.KeyEvent) {
+            val c = conn ?: return
+            // 翻译 Android 键码为 Windows VK 码
+            val vkCode = keyboardTranslator.translate(event.keyCode, event.deviceId)
+            if (vkCode.toInt() == 0) return
+            // 跟踪修饰键状态
+            val modBit = getModifierBitForAndroidKeyCode(event.keyCode)
+            if (event.action == android.view.KeyEvent.ACTION_DOWN) {
+                accessibilityModifierState = (accessibilityModifierState.toInt() or modBit.toInt()).toByte()
+            } else {
+                accessibilityModifierState = (accessibilityModifierState.toInt() and modBit.toInt().inv()).toByte()
+            }
+            // 发送按键事件
+            val action = if (event.action == android.view.KeyEvent.ACTION_DOWN)
+                KeyboardPacket.KEY_DOWN else KeyboardPacket.KEY_UP
+            c.sendKeyboardInput(vkCode, action, accessibilityModifierState, 0)
+        }
+    }
 
     /** 剪贴板同步管理器 */
     private var clipboardSyncManager: ClipboardSyncManager? = null
@@ -218,6 +248,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         /** 睡眠快捷键两段式延迟 (ms) */
         private const val SLEEP_DELAY = 200L
+
+        /** 外设插拔 Toast 冷却间隔 (ms) */
+        private const val PERIPHERAL_TOAST_COOLDOWN = 3_000L
 
         /** 当前方案的 SharedPreference key，与旧 PageConfigController 互通 */
         const val PREF_CURRENT_CONFIG_ID = "current_config_id"
@@ -805,6 +838,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 if (connected) setInputGrabState(!visible)
             },
         )
+        handler.inputCaptureProvider = inputCaptureProvider
         handler.onLocalCursorMoved = { x, y ->
             // 将像素坐标转换为比例坐标（0.0~1.0），供 Compose 光标覆盖层使用
             val w = view.width.coerceAtLeast(1)
@@ -871,6 +905,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         inputCaptureProvider = InputCaptureManager.getInputCaptureProvider(
             activity, this
         )
+        // 将 InputCaptureProvider 同步到触控处理器（用于鼠标相对移动）
+        touchHandler?.inputCaptureProvider = inputCaptureProvider
         LimeLog.info("StreamEngine: InputCaptureProvider 已初始化")
     }
 
@@ -1173,6 +1209,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
     /** 注册外设插拔监听 */
     private var peripheralInputManager: InputManager? = null
+    /** 外设插拔 Toast 防抖：上一次提示时间戳，同一提示文本 3 秒内不重复 */
+    private var lastPeripheralToastTime: Long = 0
     private val peripheralDeviceListener = object : InputManager.InputDeviceListener {
         override fun onInputDeviceAdded(id: Int) {
             scanPeripherals()
@@ -1182,7 +1220,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 val device = InputDevice.getDevice(id)
                 val deviceName = device?.name ?: activity.getString(R.string.engine_unknown_device)
                 activity.runOnUiThread {
-                    ToastUtil.show(activity, activity.getString(R.string.engine_device_connected, deviceName), Toast.LENGTH_SHORT)
+                    val now = System.currentTimeMillis()
+                    if (now - lastPeripheralToastTime >= PERIPHERAL_TOAST_COOLDOWN) {
+                        lastPeripheralToastTime = now
+                        ToastUtil.show(activity, activity.getString(R.string.engine_device_connected, deviceName), Toast.LENGTH_SHORT)
+                    }
                 }
             }
         }
@@ -1193,7 +1235,11 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             scanPeripherals()
             if (wasInList != null) {
                 activity.runOnUiThread {
-                    ToastUtil.show(activity, activity.getString(R.string.engine_device_disconnected, deviceName), Toast.LENGTH_SHORT)
+                    val now = System.currentTimeMillis()
+                    if (now - lastPeripheralToastTime >= PERIPHERAL_TOAST_COOLDOWN) {
+                        lastPeripheralToastTime = now
+                        ToastUtil.show(activity, activity.getString(R.string.engine_device_disconnected, deviceName), Toast.LENGTH_SHORT)
+                    }
                 }
             }
         }
@@ -1206,6 +1252,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     fun initPeripheralMonitoring() {
         peripheralInputManager = activity.getSystemService(android.content.Context.INPUT_SERVICE) as InputManager
         peripheralInputManager?.registerInputDeviceListener(peripheralDeviceListener, null)
+        // 注册 KeyboardTranslator 以响应键盘热插拔，更新 QWERTY 键位映射
+        peripheralInputManager?.registerInputDeviceListener(keyboardTranslator, null)
         scanPeripherals()
     }
 
@@ -1891,6 +1939,10 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         lastActiveTime = System.currentTimeMillis()
         isStreamingActive = true
 
+        // 启用无障碍服务键盘拦截（将物理键盘按键转发到主机）
+        KeyboardAccessibilityService.setIntercepting(true)
+        KeyboardAccessibilityService.instance?.keyEventCallback = keyboardAccessibilityCallback
+
         handler.post {
             activity.window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         }
@@ -1914,6 +1966,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         stopAdaptiveBitrate()
         // 停止音频振动（连接断开时立即停止，防止设备/手柄持续震动）
         audioVibrationService?.stop()
+        // 注销无障碍服务键盘拦截
+        KeyboardAccessibilityService.instance?.keyEventCallback = null
+        KeyboardAccessibilityService.setIntercepting(false)
         handler.post {
             // 如果正在切换分辨率/显示器，跳过 UI 提示和 finish，新 Activity 会接管
             if (isChangingResolution) return@post
@@ -2186,6 +2241,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 停止音频振动服务
         audioVibrationService?.stop()
         audioVibrationService = null
+        // 注销 KeyboardTranslator（必须在 stopPeripheralMonitoring 之前，因为后者会置 null）
+        peripheralInputManager?.unregisterInputDeviceListener(keyboardTranslator)
+        stopPeripheralMonitoring()
 
         controllerHandler = null
         inputCaptureProvider?.destroy()
@@ -2198,6 +2256,15 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     // ═══════════════════════════════════════════════════════════
     // 连接设置 — 供 StreamActivity 生命周期使用
     // ═══════════════════════════════════════════════════════════
+
+    /** 从 Android KeyEvent 键码获取对应的修饰键 bitmask */
+    private fun getModifierBitForAndroidKeyCode(keyCode: Int): Byte = when (keyCode) {
+        android.view.KeyEvent.KEYCODE_SHIFT_LEFT, android.view.KeyEvent.KEYCODE_SHIFT_RIGHT -> KeyboardPacket.MODIFIER_SHIFT
+        android.view.KeyEvent.KEYCODE_CTRL_LEFT, android.view.KeyEvent.KEYCODE_CTRL_RIGHT -> KeyboardPacket.MODIFIER_CTRL
+        android.view.KeyEvent.KEYCODE_ALT_LEFT, android.view.KeyEvent.KEYCODE_ALT_RIGHT -> KeyboardPacket.MODIFIER_ALT
+        android.view.KeyEvent.KEYCODE_META_LEFT, android.view.KeyEvent.KEYCODE_META_RIGHT -> KeyboardPacket.MODIFIER_META
+        else -> 0
+    }
 
     /** 读取"自动恢复串流"设置（checkbox_resume_stream） */
     fun isResumeStreamEnabled(): Boolean =
