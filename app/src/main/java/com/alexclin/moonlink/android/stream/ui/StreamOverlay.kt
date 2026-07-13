@@ -12,6 +12,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -23,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -39,14 +41,13 @@ import androidx.compose.runtime.setValue
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
-import com.alexclin.moonlink.android.R
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -55,20 +56,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.random.Random
 import kotlin.math.roundToInt
+import androidx.activity.compose.BackHandler
+import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.R
+import com.alexclin.moonlink.android.settings.PerfOverlayDisplayItemsPreference
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.PanelAnimations
 import com.alexclin.moonlink.android.stream.ui.keyboard.KeyboardSubPanel
 import com.alexclin.moonlink.android.util.MoonPhaseUtils
-import com.alexclin.moonlink.android.settings.PerfOverlayDisplayItemsPreference
-import com.limelight.preferences.PreferenceConfiguration
 import com.alexclin.moonlink.android.util.UiHelper
 import com.limelight.binding.video.PerformanceInfo
+import com.limelight.preferences.PreferenceConfiguration
 import android.content.Context
 import android.os.SystemClock
-import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.widthIn
-import androidx.preference.PreferenceManager
+import com.alexclin.moonlink.android.stream.engine.StreamEngine.ConnectionSeverity
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingSchemeSelector
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingEditor
 import kotlin.time.Duration.Companion.milliseconds
@@ -234,6 +235,11 @@ fun StreamOverlay(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+        // ── 持久连接质量 Banner（置于最上层，从顶部滑入） ──
+        Box(modifier = Modifier.align(Alignment.TopCenter)) {
+            ConnectionBanner(engine = engine)
+        }
+
         // ── 连接进度 overlay（匹配旧版 FullscreenProgressOverlay 设计） ──
         AnimatedVisibility(
             visible = connectionStage != null,
@@ -461,6 +467,61 @@ fun StreamOverlay(
                     )
                 }
             }
+        }
+    }
+}
+
+/** 持久连接质量 Banner — 从顶部滑入，按严重度着色，自动恢复后隐藏 */
+@Composable
+private fun ConnectionBanner(engine: StreamEngine) {
+    val state by engine.connectionBannerState
+
+    // 恢复提示显示 3 秒后自动隐藏
+    LaunchedEffect(state.showRecovery) {
+        if (state.showRecovery) {
+            delay(3_000L)
+            engine.connectionBannerState.value = engine.connectionBannerState.value.copy(showRecovery = false)
+        }
+    }
+
+    val visible = state.visible || state.showRecovery
+
+    val bgColor = when (state.severity) {
+        ConnectionSeverity.YELLOW -> Color(0xCCFFA000.toInt()) // 琥珀色
+        ConnectionSeverity.ORANGE -> Color(0xCCFF6D00.toInt()) // 橙色
+        ConnectionSeverity.RED -> Color(0xCCD32F2F.toInt())    // 红色
+    }
+
+    val textColor = Color.White
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = slideInVertically(
+            initialOffsetY = { -it },
+            animationSpec = tween(300, easing = FastOutSlowInEasing)
+        ) + fadeIn(animationSpec = tween(200)),
+        exit = slideOutVertically(
+            targetOffsetY = { -it },
+            animationSpec = tween(250, easing = FastOutSlowInEasing)
+        ) + fadeOut(animationSpec = tween(150)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(bgColor)
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                text = state.message,
+                color = textColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }

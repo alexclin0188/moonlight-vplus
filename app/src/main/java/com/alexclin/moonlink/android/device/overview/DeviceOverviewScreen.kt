@@ -561,6 +561,9 @@ private fun QuickActionsDialog(
     val activity = context as? android.app.Activity
     val isOnline = computer.state == ComputerDetails.State.ONLINE
     val hasRunningGame = computer.runningGameId != 0
+    // TODO: 2.0 版本恢复 — 关机/重启确认对话框状态
+    // var showRestartConfirm by remember { mutableStateOf(false) }
+    // var showShutdownConfirm by remember { mutableStateOf(false) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -584,44 +587,25 @@ private fun QuickActionsDialog(
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                if (isOnline) {
-                    DialogActionRow(stringResource(R.string.action_shutdown)) {
-                    if (activity != null && managerBinder != null) {
-                        scope.launch {
-                            try {
-                                val address = ServerHelper.getCurrentAddressFromComputer(computer)
-                                val httpConn = NvHTTP(
-                                    address,
-                                    computer.httpsPort,
-                                    managerBinder.getUniqueId(),
-                                    android.os.Build.MODEL,
-                                    computer.serverCert,
-                                    PlatformBinding.getCryptoProvider(context)
-                                )
-                                withContext(Dispatchers.IO) {
-                                    val success = httpConn.pcShutdown()
-                                    withContext(Dispatchers.Main) {
-                                        snackBarHostState.showSnackbar(
-                                            if (success) context.getString(R.string.toast_shutdown_sent) else context.getString(R.string.toast_shutdown_failed)
-                                        )
-                                    }
-                                }
-                            } catch (e: Exception) {
-                                snackBarHostState.showSnackbar(context.getString(R.string.toast_shutdown_exception) + ": ${e.message}")
-                            }
-                        }
-                    }
-                    onDismiss()
-                }
-                }
-                if (isOnline) {
-                    DialogActionRow(stringResource(R.string.action_sleep)) {
-                    if (activity != null && managerBinder != null) {
-                        ServerHelper.pcSleep(activity, computer, managerBinder, null)
-                    }
-                    onDismiss()
-                }
-                }
+                // ── 以下操作 2.0 版本再实现 ──
+                // if (isOnline) {
+                //     DialogActionRow(stringResource(R.string.action_shutdown)) {
+                //     showShutdownConfirm = true
+                // }
+                // }
+                // if (isOnline) {
+                //     DialogActionRow(stringResource(R.string.action_sleep)) {
+                //     if (activity != null && managerBinder != null) {
+                //         ServerHelper.pcSleep(activity, computer, managerBinder, null)
+                //     }
+                //     onDismiss()
+                // }
+                // }
+                // if (isOnline) {
+                //     DialogActionRow(stringResource(R.string.action_restart)) {
+                //     showRestartConfirm = true
+                // }
+                // }
                 if (isOnline) {
                     DialogActionRow(stringResource(R.string.action_secondary_stream)) {
                         computer.useVdd = true
@@ -649,15 +633,16 @@ private fun QuickActionsDialog(
                     onDismiss()
                 }
                 }
-                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
-                if (!isOnline) {
-                    DialogActionRow(stringResource(R.string.pcview_menu_send_wol)) {
-                        scope.launch(Dispatchers.IO) {
-                            try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
-                        }
-                        onDismiss()
-                    }
-                }
+                // TODO: 2.0 版本再实现
+                // HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+                // if (!isOnline) {
+                //     DialogActionRow(stringResource(R.string.pcview_menu_send_wol)) {
+                //         scope.launch(Dispatchers.IO) {
+                //             try { WakeOnLanSender.sendWolPacket(computer) } catch (_: Exception) { /* offline expected */ }
+                //         }
+                //         onDismiss()
+                //     }
+                // }
                 DialogActionRow(stringResource(R.string.action_delete_computer)) {
                     managerBinder?.removeComputer(computer)
                     onDismiss()
@@ -707,7 +692,86 @@ private fun QuickActionsDialog(
             }
         }
     }
+
+    // TODO: 2.0 版本恢复 — 关机/重启确认对话框
+    // ConfirmationDialog(
+    //     show = showShutdownConfirm,
+    //     titleRes = R.string.action_shutdown,
+    //     messageRes = R.string.action_shutdown_confirm,
+    //     onDismiss = { showShutdownConfirm = false },
+    //     onConfirm = {
+    //         showShutdownConfirm = false
+    //         if (activity != null && managerBinder != null) {
+    //             scope.launch {
+    //                 try {
+    //                     val address = ServerHelper.getCurrentAddressFromComputer(computer)
+    //                     val httpConn = NvHTTP(
+    //                         address,
+    //                         computer.httpsPort,
+    //                         managerBinder.getUniqueId(),
+    //                         android.os.Build.MODEL,
+    //                         computer.serverCert,
+    //                         PlatformBinding.getCryptoProvider(context)
+    //                     )
+    //                     withContext(Dispatchers.IO) {
+    //                         val success = httpConn.pcShutdown()
+    //                         withContext(Dispatchers.Main) {
+    //                             snackBarHostState.showSnackbar(
+    //                                 if (success) context.getString(R.string.toast_shutdown_sent) else context.getString(R.string.toast_shutdown_failed)
+    //                             )
+    //                         }
+    //                     }
+    //                 } catch (e: Exception) {
+    //                     snackBarHostState.showSnackbar(context.getString(R.string.toast_shutdown_exception) + ": ${e.message}")
+    //                 }
+    //             }
+    //         }
+    //         onDismiss()
+    //     },
+    // )
+    //
+    // ConfirmationDialog(
+    //     show = showRestartConfirm,
+    //     titleRes = R.string.action_restart,
+    //     messageRes = R.string.action_restart_confirm,
+    //     onDismiss = { showRestartConfirm = false },
+    //     onConfirm = {
+    //         showRestartConfirm = false
+    //         if (activity != null && managerBinder != null) {
+    //             ServerHelper.pcRestart(activity, computer, managerBinder, null)
+    //         }
+    //         onDismiss()
+    //     },
+    // )
 }
+
+// TODO: 2.0 版本恢复
+// @Composable
+// private fun ConfirmationDialog(
+//     show: Boolean,
+//     titleRes: Int,
+//     messageRes: Int,
+//     onDismiss: () -> Unit,
+//     onConfirm: () -> Unit,
+// ) {
+//     if (show) {
+//         AlertDialog(
+//             onDismissRequest = onDismiss,
+//             title = { Text(stringResource(titleRes)) },
+//             text = { Text(stringResource(messageRes)) },
+//             confirmButton = {
+//                 TextButton(onClick = onConfirm) {
+//                     Text(stringResource(R.string.dialog_button_confirm))
+//                 }
+//             },
+//             dismissButton = {
+//                 TextButton(onClick = onDismiss) {
+//                     Text(stringResource(R.string.editor_cancel))
+//                 }
+//             },
+//         )
+//     }
+// }
 
 @Composable
 private fun DialogActionRow(text: String, onClick: () -> Unit) {

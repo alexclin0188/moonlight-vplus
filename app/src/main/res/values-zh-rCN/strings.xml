@@ -624,7 +624,10 @@
     <string name="action_shutdown">关机</string>
     <string name="toast_shutdown_sent">关机命令已发送</string>
     <string name="toast_shutdown_failed">关机失败</string>
+    <string name="action_shutdown_confirm">确定要关闭主机吗？所有正在运行的应用将关闭。</string>
     <string name="action_sleep">睡眠</string>
+    <string name="action_sleep_confirm">确定要睡眠主机吗？</string>
+    <string name="action_restart">重启</string>
     <string name="action_quit_app">退出应用</string>
     <string name="toast_device_address_unavailable">设备地址不可用，请确认设备在线</string>
     <string name="toast_cannot_get_address">无法获取设备地址</string>
@@ -718,6 +721,9 @@
     <string name="label_no_apps_available">暂无应用，请确保设备在线并已配对</string>
     <string name="title_quick_actions">快捷操作</string>
     <string name="toast_shutdown_exception">关机异常</string>
+    <string name="toast_restart_sent">重启命令已发送</string>
+    <string name="toast_restart_exception">重启异常</string>
+    <string name="action_restart_confirm">确定要重启主机吗？所有正在运行的应用将关闭。</string>
     <string name="action_secondary_stream">作为副屏串流（基地适用）</string>
     <string name="action_open_web_admin">打开 Web 管理（Sunshine）</string>
     <string name="action_delete_computer">删除电脑</string>
@@ -1044,6 +1050,11 @@
     <string name="warning_connection_network_issue">⚠️ 网络不稳定：高丢包率（%.1f%%）/ 高延迟（%dms）</string>
     <string name="warning_connection_local_lag">⚠️ 本机解码较慢（%.0fms），建议降低分辨率或码率</string>
     <string name="warning_connection_host_lag">⚠️ 主机端处理延迟较高（%.0fms），建议关闭后台程序</string>
+    <string name="warning_connection_network_severe">🚨 网络极不稳定：丢包率 %.1f%%，延迟 %dms</string>
+    <string name="warning_connection_local_severe">🚨 本机解码严重卡顿（%.0fms），请降低分辨率或码率</string>
+    <string name="connection_slow">⚠️ 连接缓慢</string>
+    <string name="connection_poor">⚠️ 连接较差</string>
+    <string name="connection_restored">✅ 连接已恢复</string>
     <string name="input_hint_global_keyboard">全局键盘 →</string>
     <string name="input_option_back_key">返回键</string>
     <string name="input_option_other_keys">其他按键</string>

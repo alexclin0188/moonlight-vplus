@@ -59,6 +59,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.MutableState
 import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
 import kotlin.math.roundToInt
@@ -1525,6 +1526,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             },
             onBitrateChanged = { kbps, _ ->
                 c.applyBitrateLocally(kbps)
+                lastAbrAdjustTimeMs = System.currentTimeMillis()
             }
         )
         service.start(prefConfig.bitrate, prefConfig.abrMode)
@@ -1761,6 +1763,21 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         HOST_LAG    // 主机端延迟大：主机处理慢
     }
 
+    /** 连接问题严重程度 */
+    enum class ConnectionSeverity {
+        YELLOW,  // 轻度
+        ORANGE,  // 中度
+        RED      // 严重
+    }
+
+    /** 持久连接质量 Banner 状态 */
+    data class ConnectionBannerState(
+        val visible: Boolean = false,
+        val message: String = "",
+        val severity: ConnectionSeverity = ConnectionSeverity.YELLOW,
+        val showRecovery: Boolean = false,
+    )
+
     /** 各类问题上次警告时间戳 */
     private val lastWarningTimes = mutableMapOf<ConnectionIssue, Long>()
 
@@ -1774,15 +1791,22 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 串流开始后的首次检测延迟（跳过刚启动时的不稳定期） */
     private var streamStartTimeMs: Long = 0L
 
-    /** 检测连接质量并在严重时弹出 Toast 提示 */
+    /** ABR 最近一次码率调整时间戳（用于抑制重复警告） */
+    @Volatile
+    var lastAbrAdjustTimeMs: Long = 0L
+
+    /** 持久连接质量 Banner 状态（Compose 可观察 MutableState，由 StreamOverlay 消费） */
+    val connectionBannerState: MutableState<ConnectionBannerState> = mutableStateOf(ConnectionBannerState())
+
+    /** 检测连接质量并在严重时弹出 Toast / 持久 Banner 提示 */
     private fun checkConnectionQuality(info: PerformanceInfo) {
         if (prefConfig.disableWarnings) return
         if (streamStartTimeMs == 0L) {
             streamStartTimeMs = System.currentTimeMillis()
             return
         }
-        // 跳过刚启动前 15 秒的不稳定期
-        if (System.currentTimeMillis() - streamStartTimeMs < 15_000L) return
+        // 跳过刚启动前 8 秒的不稳定期（从 15s 缩短至 8s）
+        if (System.currentTimeMillis() - streamStartTimeMs < 8_000L) return
 
         // 需接收足够帧数才判断，避免刚恢复时误报
         if (info.receivedFps < 1f) return
@@ -1807,8 +1831,8 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         if (hostLatency > 15f && packetLoss <= 3f && rttMs <= 80) {
             issue = ConnectionIssue.HOST_LAG
         }
-        // 2. 网络问题：高丢包或高 RTT
-        else if (packetLoss > 5f || rttMs > 100) {
+        // 2. 网络问题：高丢包或高 RTT（阈值从 >5% 调整至 >8% 以避免与 ABR 重叠）
+        else if (packetLoss > 8f || rttMs > 100) {
             issue = ConnectionIssue.NETWORK
         }
         // 3. 本地卡顿：解码慢或掉帧严重（且网络正常）
@@ -1818,29 +1842,87 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
 
         if (issue == null) return
 
+        // ── ABR 联动抑制 ──
+        // 当 ABR 在最近 3 秒内已主动调整码率时，网络类警告不显示，
+        // 让 ABR 自行处理，避免重复提醒
+        if (issue == ConnectionIssue.NETWORK) {
+            val abrElapsed = now - lastAbrAdjustTimeMs
+            if (abrElapsed < 3_000L && adaptiveBitrateService?.enabled == true) {
+                return
+            }
+        }
+
+        // ── 确定严重程度 ──
+        val severity = when (issue) {
+            ConnectionIssue.NETWORK -> when {
+                packetLoss > 30f || rttMs > 500 -> ConnectionSeverity.RED
+                packetLoss > 15f || rttMs > 200 -> ConnectionSeverity.ORANGE
+                else -> ConnectionSeverity.YELLOW
+            }
+            ConnectionIssue.LOCAL_LAG -> when {
+                decodeTime > 40f || frameDropRatio > 0.5f -> ConnectionSeverity.RED
+                decodeTime > 25f -> ConnectionSeverity.ORANGE
+                else -> ConnectionSeverity.YELLOW
+            }
+            ConnectionIssue.HOST_LAG -> when {
+                hostLatency > 30f -> ConnectionSeverity.RED
+                else -> ConnectionSeverity.ORANGE
+            }
+        }
+
         // 冷却检查：同类问题不频繁提示
         val lastTime = lastWarningTimes[issue] ?: 0L
         val cooldown = warningCooldowns[issue] ?: 15_000L
         if (now - lastTime < cooldown) return
         lastWarningTimes[issue] = now
 
-        // 显示 Toast
-        val message = when (issue) {
-            ConnectionIssue.NETWORK -> activity.getString(
-                R.string.warning_connection_network_issue,
-                packetLoss,
-                rttMs
-            )
-            ConnectionIssue.LOCAL_LAG -> activity.getString(
-                R.string.warning_connection_local_lag,
-                decodeTime.toDouble()
-            )
-            ConnectionIssue.HOST_LAG -> activity.getString(
-                R.string.warning_connection_host_lag,
-                hostLatency.toDouble()
-            )
+        // 严重级别决定 UI 形式：RED/ORANGE → 持久 Banner，YELLOW → Toast
+        if (severity == ConnectionSeverity.YELLOW) {
+            val message = when (issue) {
+                ConnectionIssue.NETWORK -> activity.getString(
+                    R.string.warning_connection_network_issue,
+                    packetLoss,
+                    rttMs
+                )
+                ConnectionIssue.LOCAL_LAG -> activity.getString(
+                    R.string.warning_connection_local_lag,
+                    decodeTime.toDouble()
+                )
+                ConnectionIssue.HOST_LAG -> activity.getString(
+                    R.string.warning_connection_host_lag,
+                    hostLatency.toDouble()
+                )
+            }
+            displayTransientMessage(message)
+        } else {
+            // RED / ORANGE → 持久 Banner（替代 Toast），直到恢复
+            // 注意：此方法运行在解码器后台线程，必须通过 handler.post 切换回主线程写入 Compose MutableState
+            val finalSeverity = severity
+            val message = when (issue) {
+                ConnectionIssue.NETWORK -> {
+                    if (severity == ConnectionSeverity.RED)
+                        activity.getString(R.string.warning_connection_network_severe, packetLoss, rttMs)
+                    else
+                        activity.getString(R.string.warning_connection_network_issue, packetLoss, rttMs)
+                }
+                ConnectionIssue.LOCAL_LAG -> {
+                    if (severity == ConnectionSeverity.RED)
+                        activity.getString(R.string.warning_connection_local_severe, decodeTime.toDouble())
+                    else
+                        activity.getString(R.string.warning_connection_local_lag, decodeTime.toDouble())
+                }
+                ConnectionIssue.HOST_LAG -> {
+                    activity.getString(R.string.warning_connection_host_lag, hostLatency.toDouble())
+                }
+            }
+            handler.post {
+                connectionBannerState.value = ConnectionBannerState(
+                    visible = true,
+                    message = message,
+                    severity = finalSeverity,
+                )
+            }
         }
-        displayTransientMessage(message)
     }
 
     // 性能面板
@@ -2041,7 +2123,41 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         }
     }
 
-    override fun connectionStatusUpdate(connectionStatus: Int) {}
+    override fun connectionStatusUpdate(connectionStatus: Int) {
+        if (prefConfig.disableWarnings) return
+        handler.post {
+            when (connectionStatus) {
+                MoonBridge.CONN_STATUS_POOR -> {
+                    // C 层检测到丢帧超过阈值 → 显示持久 banner
+                    val isHighBitrate = prefConfig.bitrate > 5000
+                    val message = activity.getString(
+                        if (isHighBitrate) R.string.connection_slow
+                        else R.string.connection_poor
+                    )
+                    val severity = if (isHighBitrate) ConnectionSeverity.ORANGE else ConnectionSeverity.RED
+                    connectionBannerState.value = ConnectionBannerState(
+                        visible = true,
+                        message = message,
+                        severity = severity,
+                    )
+                    LimeLog.info("StreamEngine: C层上报 CONN_STATUS_POOR (bitrate=${prefConfig.bitrate}kbps)")
+                }
+                MoonBridge.CONN_STATUS_OKAY -> {
+                    // C 层检测到丢帧恢复 → 隐藏 banner + 显示恢复提示
+                    val wasVisible = connectionBannerState.value.visible
+                    connectionBannerState.value = ConnectionBannerState(
+                        visible = false,
+                        message = activity.getString(R.string.connection_restored),
+                        severity = ConnectionSeverity.YELLOW,
+                        showRecovery = wasVisible,
+                    )
+                    if (wasVisible) {
+                        LimeLog.info("StreamEngine: C层上报 CONN_STATUS_OKAY — 连接恢复")
+                    }
+                }
+            }
+        }
+    }
 
     override fun displayMessage(message: String) {
         LimeLog.info("StreamEngine: displayMessage $message")

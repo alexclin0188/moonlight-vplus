@@ -643,7 +643,10 @@
     <string name="action_shutdown">Shutdown</string>
     <string name="toast_shutdown_sent">Shutdown command sent</string>
     <string name="toast_shutdown_failed">Shutdown failed</string>
+    <string name="action_shutdown_confirm">Are you sure you want to shutdown the host PC? All running apps will be closed.</string>
     <string name="action_sleep">Sleep</string>
+    <string name="action_sleep_confirm">Are you sure you want to put the host PC to sleep?</string>
+    <string name="action_restart">Restart</string>
     <string name="action_quit_app">Quit App</string>
     <string name="toast_device_address_unavailable">Device address unavailable. Make sure the device is online.</string>
     <string name="toast_cannot_get_address">Unable to get device address</string>
@@ -739,6 +742,9 @@
     <string name="label_no_apps_available">No apps available. Please make sure the device is online and paired.</string>
     <string name="title_quick_actions">Quick Actions</string>
     <string name="toast_shutdown_exception">Shutdown error</string>
+    <string name="toast_restart_sent">Restart command sent</string>
+    <string name="toast_restart_exception">Restart error</string>
+    <string name="action_restart_confirm">Are you sure you want to restart the host PC? All running apps will be closed.</string>
     <string name="action_secondary_stream">Stream as Secondary Display (for Base Station)</string>
     <string name="action_open_web_admin">Open Web Admin (Sunshine)</string>
     <string name="action_delete_computer">Delete Computer</string>
@@ -1008,6 +1014,11 @@
     <string name="warning_connection_network_issue">⚠️ Network unstable: high packet loss (%.1f%%) / latency (%dms)</string>
     <string name="warning_connection_local_lag">⚠️ Local device decoding is slow (%.0fms), try lowering resolution/bitrate</string>
     <string name="warning_connection_host_lag">⚠️ Host PC processing is slow (%.0fms), close background apps</string>
+    <string name="warning_connection_network_severe">🚨 Network severely unstable: packet loss %.1f%%, latency %dms</string>
+    <string name="warning_connection_local_severe">🚨 Local device decoding very slow (%.0fms), lower resolution/bitrate</string>
+    <string name="connection_slow">⚠️ Slow connection</string>
+    <string name="connection_poor">⚠️ Poor connection</string>
+    <string name="connection_restored">✅ Connection restored</string>
     <string name="input_hint_global_keyboard">Global keyboard →</string>
     <string name="input_option_back_key">Back key</string>
     <string name="input_option_other_keys">Other keys</string>

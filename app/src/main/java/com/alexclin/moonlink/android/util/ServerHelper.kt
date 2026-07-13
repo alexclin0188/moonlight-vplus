@@ -175,6 +175,50 @@ object ServerHelper {
         }.start()
     }
 
+    fun pcRestart(
+        parent: Activity,
+        computer: ComputerDetails,
+        managerBinder: ComputerManagerService.ComputerManagerBinder,
+        onComplete: Runnable?
+    ) {
+        Thread {
+            var message: String
+            try {
+                val httpConn = NvHTTP(
+                    getCurrentAddressFromComputer(computer), computer.httpsPort,
+                    managerBinder.getUniqueId(), "", computer.serverCert, PlatformBinding.getCryptoProvider(parent)
+                )
+                message = if (httpConn.pcRestart()) {
+                    parent.resources.getString(R.string.toast_restart_sent)
+                } else {
+                    parent.resources.getString(R.string.toast_restart_exception)
+                }
+            } catch (e: HostHttpResponseException) {
+                message = e.message
+            } catch (e: UnknownHostException) {
+                message = parent.resources.getString(R.string.error_unknown_host)
+            } catch (e: FileNotFoundException) {
+                message = parent.resources.getString(R.string.error_404)
+            } catch (e: Exception) {
+                when (e) {
+                    is IOException, is XmlPullParserException -> {
+                        message = e.message ?: ""
+                        e.printStackTrace()
+                    }
+                    is InterruptedException -> {
+                        message = parent.resources.getString(R.string.error_interrupted)
+                    }
+                    else -> throw e
+                }
+            } finally {
+                onComplete?.run()
+            }
+
+            val toastMessage = message
+            parent.runOnUiThread { Toast.makeText(parent, toastMessage, Toast.LENGTH_LONG).show() }
+        }.start()
+    }
+
     fun doQuit(
         parent: Activity,
         computer: ComputerDetails,

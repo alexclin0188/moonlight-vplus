@@ -79,13 +79,15 @@ data class DeviceMenuAction(
 
 private val ALL_MENU_ACTIONS = listOf(
     DeviceMenuAction("pair",           R.string.pcview_menu_pair_pc)            { it.pairState != PairingManager.PairState.PAIRED },
-    DeviceMenuAction("wol",            R.string.pcview_menu_send_wol)           { it.state == ComputerDetails.State.OFFLINE },
+    // TODO: 2.0 版本再实现 — 唤醒/睡眠/重启
+    // DeviceMenuAction("wol",            R.string.pcview_menu_send_wol)           { it.state == ComputerDetails.State.OFFLINE },
     DeviceMenuAction("delete",         R.string.pcview_menu_delete_pc)          { it.pairState == PairingManager.PairState.PAIRED },
     DeviceMenuAction("resume",         R.string.menu_resume_stream)             { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
     DeviceMenuAction("quit",           R.string.action_quit_app)                  { it.state == ComputerDetails.State.ONLINE && it.runningGameId != 0 },
     DeviceMenuAction("applist",        R.string.pcview_menu_app_list)           { true },
     DeviceMenuAction("detail",         R.string.pcview_menu_details)            { true },
-    DeviceMenuAction("sleep",          R.string.send_sleep_command)             { it.state == ComputerDetails.State.ONLINE },
+    // DeviceMenuAction("sleep",          R.string.send_sleep_command)             { it.state == ComputerDetails.State.ONLINE },
+    // DeviceMenuAction("restart",        R.string.action_restart)                 { it.state == ComputerDetails.State.ONLINE },
     DeviceMenuAction("iperf",          R.string.action_network_bandwidth_test)         { true },
     DeviceMenuAction("webui",          R.string.pcview_menu_open_webui)         { true },
     DeviceMenuAction("disable_ipv6",   R.string.pcview_menu_disable_ipv6)       { true },
@@ -840,7 +842,26 @@ private fun DeviceCard(
             )
         }
     }
-}    // ── Menu action handler ───────────────────────────────────────────
+}
+
+// TODO: 2.0 版本恢复
+// private fun showConfirmDialog(
+//     activity: android.app.Activity,
+//     titleRes: Int,
+//     messageRes: Int,
+//     onConfirm: () -> Unit,
+// ) {
+//     android.app.AlertDialog.Builder(activity)
+//         .setTitle(activity.getString(titleRes))
+//         .setMessage(activity.getString(messageRes))
+//         .setPositiveButton(activity.getString(R.string.dialog_button_confirm)) { _, _ ->
+//             onConfirm()
+//         }
+//         .setNegativeButton(activity.getString(R.string.editor_cancel), null)
+//         .show()
+// }
+
+// ── Menu action handler ───────────────────────────────────────────
 
 private fun handleMenuAction(
     actionId: String,
@@ -878,11 +899,22 @@ private fun handleMenuAction(
                 }
             }
         }
-        "sleep" -> {
-            if (managerBinder != null) {
-                ServerHelper.pcSleep(activity, computer, managerBinder, null)
-            }
-        }
+        // TODO: 2.0 版本恢复 — 睡眠
+        // "sleep" -> {
+        //     if (managerBinder != null) {
+        //         showConfirmDialog(activity, R.string.action_sleep, R.string.action_sleep_confirm) {
+        //             ServerHelper.pcSleep(activity, computer, managerBinder, null)
+        //         }
+        //     }
+        // }
+        // TODO: 2.0 版本恢复 — 重启
+        // "restart" -> {
+        //     if (managerBinder != null) {
+        //         showConfirmDialog(activity, R.string.action_restart, R.string.action_restart_confirm) {
+        //             ServerHelper.pcRestart(activity, computer, managerBinder, null)
+        //         }
+        //     }
+        // }
         "quit" -> {
             if (managerBinder != null) {
                 val runningApp = NvApp().apply {
