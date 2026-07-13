@@ -31,6 +31,9 @@ object StreamIntentKeys {
     const val EXTRA_VDD_SCREEN_COMBINATION_MODE = "VDD screen combination mode"
     const val EXTRA_FORCE_RESUME_CURRENT_SESSION = "ForceResumeCurrentSession"
 
+    /** 从主页重定向到串流页面的标记（不带串流参数，仅用于恢复已有实例） */
+    const val EXTRA_FROM_MAIN_REDIRECT = "FromMainRedirect"
+
     // ── Shortcut trampoline extras (migrated from com.limelight.AppView) ──
     const val EXTRA_SHORTCUT_PC_NAME = "Name"
     const val EXTRA_SHORTCUT_PC_UUID = "UUID"

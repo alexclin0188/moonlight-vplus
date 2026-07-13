@@ -1430,16 +1430,28 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
     }
 
     /**
-     * 处理点击通知栏通知 / 其他 singleTask 唤起场景。
+     * 处理点击通知栏通知 / 主页重定向 / 其他 singleTask 唤起场景。
      * 不调用 setIntent()，保留 onCreate 时的原始 intent（含 EXTRA_PC_NAME 等关键参数）。
+     *
+     * 注意：主页重定向的 Intent 仅携带 [StreamIntentKeys.EXTRA_FROM_MAIN_REDIRECT] 标记，
+     * 不含串流参数（EXTRA_HOST 等），绝不能调用 setIntent() 覆盖原始 intent。
      */
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        LimeLog.info("StreamActivity: onNewIntent 收到唤起")
+        if (intent.getBooleanExtra(StreamIntentKeys.EXTRA_FROM_MAIN_REDIRECT, false)) {
+            // 从主页重定向回来，仅恢复串流界面，无需额外处理
+            LimeLog.info("StreamActivity: onNewIntent 从主页重定向恢复")
+        } else {
+            LimeLog.info("StreamActivity: onNewIntent 收到唤起")
+        }
     }
 
     override fun onResume() {
         super.onResume()
+        // 清除后台保活引用（回到前台后不再需要重定向）
+        if (StreamEngine.currentBackgroundStreamActivity === this) {
+            StreamEngine.currentBackgroundStreamActivity = null
+        }
         if (wasPaused) {
             wasPaused = false
             if (wasBackgrounded) {
@@ -1526,11 +1538,19 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
         }
     }
 
+    /** 清除后台保活引用（仅当指向自身时清除） */
+    private fun clearBackgroundStreamReference() {
+        if (StreamEngine.currentBackgroundStreamActivity === this) {
+            StreamEngine.currentBackgroundStreamActivity = null
+        }
+    }
+
     override fun onDestroy() {
         // 注销 KeyboardTranslator
         val inputManager = getSystemService(android.content.Context.INPUT_SERVICE) as? android.hardware.input.InputManager
         inputManager?.unregisterInputDeviceListener(keyboardTranslator)
         clearPipReference()
+        clearBackgroundStreamReference()
         cancelKeepAliveNotification()
         super.onDestroy()
         engine.release()
@@ -1559,6 +1579,8 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
         if ((engine.isExtremeResumeEnabled || engine.isChangingResolution) && !isFinishing) {
             LimeLog.info("StreamActivity: onStop 极速恢复拦截")
             if (!engine.isChangingResolution) {
+                // 记录后台保活引用，供 MoonLinkMainActivity 重定向
+                StreamEngine.currentBackgroundStreamActivity = this
                 showKeepAliveNotification()
             }
             return

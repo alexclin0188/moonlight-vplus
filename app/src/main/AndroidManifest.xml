@@ -219,6 +219,7 @@
             android:supportsPictureInPicture="true"
             android:resizeableActivity="true"
             android:launchMode="singleTask"
+            android:taskAffinity="com.alexclin.moonlink.android.stream"
             android:theme="@style/StreamTheme"
             android:preferMinimalPostProcessing="true"
             android:windowSoftInputMode="adjustResize"

@@ -25,6 +25,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.preference.PreferenceManager
 import com.alexclin.moonlink.android.stream.engine.DeviceStateManager
+import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.theme.MoonLinkTheme
 import com.alexclin.moonlink.android.home.ComputerManagerService
 import com.alexclin.moonlink.android.util.LimeLog
@@ -35,6 +36,8 @@ import kotlinx.coroutines.withContext
  * MoonLink 新版主页 Activity — 替代 PcView 作为 App 入口。
  *
  * 使用 singleTask 启动模式，确保全局仅有一个实例。
+ * StreamActivity 使用独立的 taskAffinity，使两者处于不同的 task，
+ * 这样点击桌面图标恢复主页时不会清除串流 task。
  * 负责绑定 [ComputerManagerService]，通过 [DeviceStateManager] 维护设备列表，
  * 然后将设备管理器向下传递给 Compose UI 树。
  */
@@ -155,5 +158,31 @@ class MoonLinkMainActivity : BaseComponentActivity() {
         super.onNewIntent(intent)
         LimeLog.info("MoonLinkMainActivity: onNewIntent 收到唤起")
         pendingNavigateToUuid.value = intent.getStringExtra("navigate_to_uuid")
+    }
+
+    /**
+     * 点击桌面图标时系统恢复此 Activity 的 task。
+     * 由于 StreamActivity 使用独立 taskAffinity 处于不同 task，
+     * 主页恢复不会清除串流 task。
+     * 如果后台有保活中的串流（极速恢复模式），自动重定向到串流页面。
+     */
+    override fun onResume() {
+        super.onResume()
+        val bgActivity = StreamEngine.currentBackgroundStreamActivity
+        if (bgActivity != null) {
+            // 清除引用，避免重复重定向（无论是否重定向都清除）
+            StreamEngine.currentBackgroundStreamActivity = null
+            if (!bgActivity.isFinishing && !bgActivity.isDestroyed) {
+                LimeLog.info("MoonLinkMainActivity: 检测到后台保活串流，重定向到串流页面")
+                // 启动 StreamActivity — 它是 singleTask，会复用已有实例并触发 onNewIntent
+                val streamIntent = Intent(this, com.alexclin.moonlink.android.stream.StreamActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                    putExtra(com.alexclin.moonlink.android.stream.StreamIntentKeys.EXTRA_FROM_MAIN_REDIRECT, true)
+                }
+                startActivity(streamIntent)
+            } else {
+                LimeLog.info("MoonLinkMainActivity: 后台串流已销毁，清除残留引用")
+            }
+        }
     }
 }

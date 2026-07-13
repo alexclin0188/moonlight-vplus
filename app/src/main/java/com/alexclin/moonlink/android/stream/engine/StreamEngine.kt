@@ -160,8 +160,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 是否应恢复串流会话（从后台返回时重连） */
     var shouldResumeSession = false
 
-    /** 是否启用极速恢复（surface 重建时不中断串流） */
+    /** 是否启用极速恢复（surface 重建时不中断串流）——持久设置标志，仅在 initialize() 时读取，永不消费 */
     var isExtremeResumeEnabled = false
+
+    /** 解码器因后台/surface 销毁已暂停，等待 surface 重建后恢复——一次性标志 */
+    @Volatile
+    var isDecoderPausedForBg = false
 
     /** 是否已尝试过连接（防止 surfaceChanged 重复启动） */
     private var attemptedConnection = false
@@ -263,6 +267,13 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         /** 当前 PiP 串流对应的连接 Activity，用于从首页关闭 PiP */
         @Volatile
         var currentPipActivity: android.app.Activity? = null
+
+        // ── 后台保活串流跟踪 ──
+
+        /** 后台保活中的 StreamActivity 实例（极速恢复模式下未 finish），
+         *  供 MoonLinkMainActivity 在 onResume 时检测并重定向回串流页面 */
+        @Volatile
+        var currentBackgroundStreamActivity: android.app.Activity? = null
     }
 
     // ========================================================================
@@ -702,20 +713,20 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             return
         }
 
-        if (isExtremeResumeEnabled && connected) {
+        if (isDecoderPausedForBg && connected) {
             if (isInPipMode) {
                 // PiP 模式下跳过解码器恢复 — 解码器保持存活无需恢复，surface 正在重建，
                 // 此时 resumeProcessing() 可能因 surface 未就绪而触发 NPE。
                 // 直接清除标志位，退出 PiP 后恢复音频即可。
                 LimeLog.info("StreamEngine: PiP 中跳过极速恢复")
-                isExtremeResumeEnabled = false
+                isDecoderPausedForBg = false
                 return
             }
             LimeLog.info("StreamEngine: 极速恢复，重新设置渲染目标并恢复")
             decoder.setRenderTarget(holder)
             audioRenderer?.resumeProcessing()
             decoder.resumeProcessing()
-            isExtremeResumeEnabled = false
+            isDecoderPausedForBg = false
             return
         }
 
@@ -968,6 +979,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         attemptedConnection = false
         connected = false
         isChangingResolution = false
+        isDecoderPausedForBg = false
         // 重置分辨率跟踪，确保新流首次收到画面时不触发变化提示
         lastFrameWidth = 0
         lastFrameHeight = 0
@@ -1873,7 +1885,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             LimeLog.info("StreamEngine: surfaceDestroyed")
             if (attemptedConnection && connected && !activity.isFinishing && !isInPipMode && isExtremeResumeEnabled) {
                 // 极速恢复：暂停渲染但不中断串流，surface 重建后 resume
-                isExtremeResumeEnabled = true
+                isDecoderPausedForBg = true
                 if (!isBackgroundAudioEnabled()) {
                     audioRenderer?.pauseProcessing()
                     LimeLog.info("StreamEngine: 后台音频已暂停")
@@ -2232,6 +2244,7 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         activeDialog?.dismiss()
         activeDialog = null
         onPerfInfoUpdate = null
+        isDecoderPausedForBg = false
         stopAdaptiveBitrate()
         // 切换分辨率时由新 Activity 接管串流，不在这里 stop
         if (!isChangingResolution && connected) conn?.stop()
