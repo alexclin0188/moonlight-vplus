@@ -764,6 +764,8 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                     // ── 处理 D-Pad 位掩码变化（参考旧 Crown: XOR 检测每个方向的变化） ──
                     fun processDpadBitmaskChange(oldMask: Int, newMask: Int, el: EditorElement) {
                         val changed = oldMask xor newMask
+                        // 方向变更时震动一次（按住滑动导致方向变更）
+                        if (changed != 0) triggerVibration()
                         if ((changed and DPAD_LEFT) != 0) {
                             val v = el.leftValue; if (v.isNotEmpty()) sendDirectionValue(v, (newMask and DPAD_LEFT) != 0)
                         }
@@ -1328,6 +1330,8 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                     val dirState = activeStickDirections.getOrPut(el.elementId) {
                                         mutableSetOf<String>()
                                     }
+                                    // 记录变更前的方向集合快照，用于检测方向变更
+                                    val prevDirSnapshot = dirState.toSet()
                                     // 左方向
                                     if (leftActive && "left" !in dirState) {
                                         dirState.add("left"); sendStickDirection(el, "left", true)
@@ -1352,6 +1356,8 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                     } else if (!downActive && "down" in dirState) {
                                         dirState.remove("down"); sendStickDirection(el, "down", false)
                                     }
+                                    // 方向集合变更时震动一次（按住滑动导致方向变更）
+                                    if (dirState.toSet() != prevDirSnapshot) triggerVibration()
                                     // ── 释放处理：双击保持的 middleValue + 清零轴值 + 释放方向 ──
                                     if (!isPressed) {
                                         // 如果双击 middleValue 正在保持，释放之（旧 Crown notifyOnRevoke）
