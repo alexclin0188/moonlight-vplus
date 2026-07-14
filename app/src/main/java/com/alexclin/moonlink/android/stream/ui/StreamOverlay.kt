@@ -486,13 +486,12 @@ private fun ConnectionBanner(engine: StreamEngine) {
 
     val visible = state.visible || state.showRecovery
 
-    val bgColor = when (state.severity) {
-        ConnectionSeverity.YELLOW -> Color(0xCCFFA000.toInt()) // 琥珀色
-        ConnectionSeverity.ORANGE -> Color(0xCCFF6D00.toInt()) // 橙色
-        ConnectionSeverity.RED -> Color(0xCCD32F2F.toInt())    // 红色
+    // 文字按严重等级着色，70% 不透明度 (0xB3)，背景完全透明
+    val textColor = when (state.severity) {
+        ConnectionSeverity.YELLOW -> Color(0xB3FFA000.toInt()) // 琥珀色 70%
+        ConnectionSeverity.ORANGE -> Color(0xB3FF6D00.toInt()) // 橙色 70%
+        ConnectionSeverity.RED -> Color(0xB3D32F2F.toInt())    // 红色 70%
     }
-
-    val textColor = Color.White
 
     AnimatedVisibility(
         visible = visible,
@@ -508,7 +507,6 @@ private fun ConnectionBanner(engine: StreamEngine) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(bgColor)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,

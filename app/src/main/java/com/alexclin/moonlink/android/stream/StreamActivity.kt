@@ -83,6 +83,9 @@ import com.alexclin.moonlink.android.stream.StreamNotificationService
  * 使用 Compose 构建 UI，通过 [StreamEngine] 封装底层串流连接。
  * 与旧版 [com.limelight.Game] 并行存在，不修改任何旧代码。
  */
+/** 键盘事件全局最小发送间隔（ms），防止过快发送导致主机端无法响应按键 */
+private const val MIN_KEYBOARD_INTERVAL_MS = 30L
+
 class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
 
     private lateinit var engine: StreamEngine
@@ -598,6 +601,13 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                     // 组合键长按计时器（元素ID → Runnable），3000ms 超时（参考旧 Crown DigitalCombineButton）
                     val comboLongClickTimers = remember { HashMap<Long, java.lang.Runnable>() }
 
+                    // ── 全局键盘发送速率控制（MIN_KEYBOARD_INTERVAL_MS = ~33Hz，防止长按重复与普通按键冲突） ──
+                    val rateLimiter = remember {
+                        object {
+                            var lastKeyboardSendTime = 0L
+                        }
+                    }
+
                     // ── 振动反馈（参考原 Crown buttonVibrator） ──
                     fun triggerVibration() {
                         if (!engine.configButtonVibrator) return
@@ -614,10 +624,21 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                         } catch (_: Exception) { }
                     }
 
-                    /** 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown） */
-                    fun sendKeyboardKey(value: String, isPressed: Boolean, enableRepeat: Boolean = true) {
-                        val doSend: (Short, Byte) -> Unit = { code, action ->
-                            engine.conn?.sendKeyboardInput(code, action, 0, 0)
+                    /**
+                     * 发送键盘按键事件（含 50ms 重复逻辑，参考原 Crown）。
+                     * @param isUserAction true=用户直接触发的操作（普通按键点击/松开），无条件立即发送；
+                     *                     false=系统自动触发的重复（长按效果/普通按键重复），受全局速率限制。
+                     */
+                    fun sendKeyboardKey(value: String, isPressed: Boolean, enableRepeat: Boolean = true, isUserAction: Boolean = true) {
+                        val doSend: (Short, Byte, Boolean) -> Unit = { code, action, userAction ->
+                            val now = SystemClock.uptimeMillis()
+                            // 用户操作无条件发送；非用户操作需满足最小间隔（防长按重复 flood 主机）
+                            val canSend = userAction ||
+                                (now - rateLimiter.lastKeyboardSendTime >= MIN_KEYBOARD_INTERVAL_MS)
+                            if (canSend) {
+                                engine.conn?.sendKeyboardInput(code, action, 0, 0)
+                                rateLimiter.lastKeyboardSendTime = now
+                            }
                         }
                         if (value.startsWith("k") && !value.startsWith("k0x")) {
                             val crownIdx = value.substring(1).toIntOrNull()
@@ -626,11 +647,11 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                 if (gfeKeyCode.toInt() != 0) {
                                 if (isPressed) {
                                     keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
-                                    doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
+                                    doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN, isUserAction)
                                     if (enableRepeat) {
                                         val r = object : java.lang.Runnable {
                                             override fun run() {
-                                                doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN)
+                                                doSend(gfeKeyCode, KeyboardPacket.KEY_DOWN, false)
                                                 repeatHandler.postDelayed(this, 50)
                                             }
                                         }
@@ -640,7 +661,7 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                     }
                                 } else {
                                     keyboardRepeatMap.remove(gfeKeyCode)?.let(repeatHandler::removeCallbacks)
-                                    doSend(gfeKeyCode, KeyboardPacket.KEY_UP)
+                                    doSend(gfeKeyCode, KeyboardPacket.KEY_UP, true)
                                 }
                                 }
                             }
@@ -650,11 +671,11 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                 val shortCode = hexCode.toShort()
                                 if (isPressed) {
                                     keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
-                                    doSend(shortCode, KeyboardPacket.KEY_DOWN)
+                                    doSend(shortCode, KeyboardPacket.KEY_DOWN, isUserAction)
                                     if (enableRepeat) {
                                         val r = object : java.lang.Runnable {
                                             override fun run() {
-                                                doSend(shortCode, KeyboardPacket.KEY_DOWN)
+                                                doSend(shortCode, KeyboardPacket.KEY_DOWN, false)
                                                 repeatHandler.postDelayed(this, 50)
                                             }
                                         }
@@ -664,7 +685,7 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                     }
                                 } else {
                                     keyboardRepeatMap.remove(shortCode)?.let(repeatHandler::removeCallbacks)
-                                    doSend(shortCode, KeyboardPacket.KEY_UP)
+                                    doSend(shortCode, KeyboardPacket.KEY_UP, true)
                                 }
                             }
                         } else if (value == "SU") {
@@ -791,14 +812,14 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                         value == "lt" -> ltV.value = if (isPressed) 0xFF.toByte() else 0
                                         value == "rt" -> rtV.value = if (isPressed) 0xFF.toByte() else 0
                                         value.startsWith("k") -> {
-                                            // 开关按键长按效果：独立于 sendKeyboardKey 管理重复，避免泄漏到普通按键
+                                            // 开关按键长按效果：首次按下为"用户操作"，重复为"系统自动"，受全局速率限制防冲突
                                             if (el.type == ElementType.DIGITAL_SWITCH_BUTTON && el.longPressEffect) {
                                                 if (isPressed) {
                                                     longPressRepeatMap.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
-                                                    sendKeyboardKey(value, true, false)
+                                                    sendKeyboardKey(value, true, false, isUserAction = true)
                                                     val r = object : java.lang.Runnable {
                                                         override fun run() {
-                                                            sendKeyboardKey(value, true, false)
+                                                            sendKeyboardKey(value, true, false, isUserAction = false)
                                                             repeatHandler.postDelayed(this, el.longPressRepeatMs.toLong())
                                                         }
                                                     }
@@ -806,7 +827,7 @@ class StreamActivity : com.alexclin.moonlink.android.BaseComponentActivity() {
                                                     repeatHandler.postDelayed(r, el.longPressRepeatMs.toLong())
                                                 } else {
                                                     longPressRepeatMap.remove(el.elementId)?.let(repeatHandler::removeCallbacks)
-                                                    sendKeyboardKey(value, false)
+                                                    sendKeyboardKey(value, false, isUserAction = true)
                                                 }
                                             } else {
                                                 sendKeyboardKey(value, isPressed, enableRepeat)

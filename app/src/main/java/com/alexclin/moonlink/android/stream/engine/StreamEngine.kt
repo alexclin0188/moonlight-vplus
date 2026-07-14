@@ -1798,6 +1798,9 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
     /** 持久连接质量 Banner 状态（Compose 可观察 MutableState，由 StreamOverlay 消费） */
     val connectionBannerState: MutableState<ConnectionBannerState> = mutableStateOf(ConnectionBannerState())
 
+    /** Banner 自动消失定时器（软件层检测：RED=10s, ORANGE=5s） */
+    private var bannerAutoDismissRunnable: Runnable? = null
+
     /** 检测连接质量并在严重时弹出 Toast / 持久 Banner 提示 */
     private fun checkConnectionQuality(info: PerformanceInfo) {
         if (prefConfig.disableWarnings) return
@@ -1840,7 +1843,22 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             issue = ConnectionIssue.LOCAL_LAG
         }
 
-        if (issue == null) return
+        if (issue == null) {
+            // 条件改善，如果 banner 当前可见则触发恢复隐藏
+            if (connectionBannerState.value.visible) {
+                handler.post {
+                    bannerAutoDismissRunnable?.let { handler.removeCallbacks(it) }
+                    bannerAutoDismissRunnable = null
+                    connectionBannerState.value = ConnectionBannerState(
+                        visible = false,
+                        message = activity.getString(R.string.connection_restored),
+                        severity = ConnectionSeverity.YELLOW,
+                        showRecovery = true,
+                    )
+                }
+            }
+            return
+        }
 
         // ── ABR 联动抑制 ──
         // 当 ABR 在最近 3 秒内已主动调整码率时，网络类警告不显示，
@@ -1925,11 +1943,34 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
                 }
             }
             handler.post {
+                // 先取消之前的自动消失定时器
+                bannerAutoDismissRunnable?.let { handler.removeCallbacks(it) }
+
                 connectionBannerState.value = ConnectionBannerState(
                     visible = true,
                     message = message,
                     severity = finalSeverity,
                 )
+
+                // RED 10秒 / ORANGE 5秒 后自动消失（软件层检测的自动恢复）
+                val dismissDelay = when (finalSeverity) {
+                    ConnectionSeverity.RED -> 10_000L
+                    ConnectionSeverity.ORANGE -> 5_000L
+                    else -> 0L
+                }
+                if (dismissDelay > 0) {
+                    bannerAutoDismissRunnable = Runnable {
+                        if (connectionBannerState.value.visible) {
+                            connectionBannerState.value = ConnectionBannerState(
+                                visible = false,
+                                message = activity.getString(R.string.connection_restored),
+                                severity = ConnectionSeverity.YELLOW,
+                                showRecovery = true,
+                            )
+                        }
+                    }
+                    handler.postDelayed(bannerAutoDismissRunnable!!, dismissDelay)
+                }
             }
         }
     }
