@@ -176,4 +176,9 @@
     <string name="custom_key_desc_xbox_game_bar">開啟 Xbox Game Bar</string>
     <string name="custom_key_desc_perf_monitor">小飛機/RTSS 主機效能監控開關</string>
     <string name="custom_key_desc_steam_overlay">開啟 Steam 圖層</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ 封包丟失率高（%.1f%%），請檢查網路</string>
+    <string name="warning_connection_packet_loss_severe">🚨 封包丟失率極高（%.1f%%），請檢查網路</string>
+    <string name="warning_connection_high_latency">⚠️ 延遲高（%dms），請檢查網路</string>
+    <string name="warning_connection_high_latency_severe">🚨 延遲極高（%dms），請檢查網路</string>
 </resources>

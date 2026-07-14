@@ -80,4 +80,9 @@
     <string name="category_host_settings">Nastavení hostitele</string>
     <string name="videoformat_hevcalways">Vždy použít HEVC (může padat)</string>
     <string name="pacing_latency">Preferovat nejnižší zpoždění</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Vysoká ztrátovost paketů (%.1f%%), zkontrolujte síť</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Kritická ztrátovost paketů (%.1f%%), zkontrolujte síť</string>
+    <string name="warning_connection_high_latency">⚠️ Vysoká latence (%dms), zkontrolujte síť</string>
+    <string name="warning_connection_high_latency_severe">🚨 Velmi vysoká latence (%dms), zkontrolujte síť</string>
 </resources>

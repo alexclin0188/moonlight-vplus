@@ -246,4 +246,9 @@
     <string name="pcview_menu_sleep_fail">Falha na suspensão do host</string>
     
     <!-- Drawer Menu -->
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Perda de pacotes elevada (%.1f%%), verifique a sua rede</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Perda de pacotes grave (%.1f%%), verifique a sua rede</string>
+    <string name="warning_connection_high_latency">⚠️ Latência elevada (%dms), verifique a sua rede</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latência muito elevada (%dms), verifique a sua rede</string>
 </resources>

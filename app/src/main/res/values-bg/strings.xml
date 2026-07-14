@@ -68,4 +68,9 @@
     <string name="title_checkbox_stretch_video">Разтегляне на видеото на цял екран</string>
     <string name="category_input_settings">Настройки за въвеждане</string>
     <string name="title_checkbox_multi_controller">Автоматично откриване на наличен контролер</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Висока загуба на пакети (%.1f%%), проверете мрежата си</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Много висока загуба на пакети (%.1f%%), проверете мрежата си</string>
+    <string name="warning_connection_high_latency">⚠️ Високо забавяне (%dms), проверете мрежата си</string>
+    <string name="warning_connection_high_latency_severe">🚨 Много високо забавяне (%dms), проверете мрежата си</string>
 </resources>

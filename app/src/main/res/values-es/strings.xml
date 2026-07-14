@@ -155,4 +155,9 @@
     <string name="tip_wallpaper_change">💡 Consejo: La opción de API de fondo de pantalla puede establecer la API para fuentes de fondo de pantalla aleatorias, o una dirección de imagen única</string>
     <string name="title_checkbox_sync_touch_event_with_display">Sincronizar evento de toque con refresco de pantalla </string>
     <string name="title_key_mapping_features">Asignación de Teclas</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Alta pérdida de paquetes (%.1f%%), revisa tu red</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Pérdida de paquetes severa (%.1f%%), revisa tu red</string>
+    <string name="warning_connection_high_latency">⚠️ Latencia alta (%dms), revisa tu red</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latencia muy alta (%dms), revisa tu red</string>
 </resources>

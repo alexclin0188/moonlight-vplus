@@ -62,4 +62,9 @@
     <string name="title_checkbox_stretch_video">מתחית וידיאו למסך מלא</string>
     <string name="resolution_prefix_native">טבעי</string>
     <string name="category_input_settings">הגדרות קלט</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ אובדן מנות גבוה (%.1f%%), בדוק את הרשת</string>
+    <string name="warning_connection_packet_loss_severe">🚨 אובדן מנות חמור (%.1f%%), בדוק את הרשת</string>
+    <string name="warning_connection_high_latency">⚠️ חביון גבוה (%dms), בדוק את הרשת</string>
+    <string name="warning_connection_high_latency_severe">🚨 חביון גבוה מאוד (%dms), בדוק את הרשת</string>
 </resources>

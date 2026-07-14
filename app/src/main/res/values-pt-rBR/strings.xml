@@ -84,4 +84,9 @@
     <string name="analogscroll_right">Stick analógico direito</string>
     <string name="analogscroll_left">Stick analógico esquerdo</string>
     <string name="title_analog_scrolling">Usar um stick analógico para fazer scroll</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Alta perda de pacotes (%.1f%%), verifique sua rede</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Perda de pacotes severa (%.1f%%), verifique sua rede</string>
+    <string name="warning_connection_high_latency">⚠️ Latência alta (%dms), verifique sua rede</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latência muito alta (%dms), verifique sua rede</string>
 </resources>

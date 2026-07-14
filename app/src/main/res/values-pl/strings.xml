@@ -92,4 +92,9 @@
     <string name="audioconf_stereo">Stereo</string>
     <string name="videoformat_auto">Automatycznie (zalecane)</string>
     <string name="videoformat_av1always">Preferowany AV1 (eksperymentalny)</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Wysoka utrata pakietów (%.1f%%), sprawdź sieć</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Krytyczna utrata pakietów (%.1f%%), sprawdź sieć</string>
+    <string name="warning_connection_high_latency">⚠️ Wysokie opóźnienie (%dms), sprawdź sieć</string>
+    <string name="warning_connection_high_latency_severe">🚨 Bardzo wysokie opóźnienie (%dms), sprawdź sieć</string>
 </resources>

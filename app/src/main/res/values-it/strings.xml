@@ -101,4 +101,9 @@
     <string name="category_gamepad_settings">Impostazioni del gamepad</string>
     <string name="title_checkbox_gamepad_motion_fallback">Emula il supporto dei sensori giroscopici del gamepad</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Controlla sempre il mouse col touchpad</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Elevata perdita di pacchetti (%.1f%%), controlla la rete</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Perdita di pacchetti grave (%.1f%%), controlla la rete</string>
+    <string name="warning_connection_high_latency">⚠️ Latenza alta (%dms), controlla la rete</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latenza molto alta (%dms), controlla la rete</string>
 </resources>

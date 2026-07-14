@@ -87,4 +87,9 @@
     <string name="pacing_smoothness">Максимальная плавность \n(может значительно увеличить задержку)</string>
     <string name="title_privacy_policy">Политика конфиденциальности</string>
     <string name="pacing_balanced_alt">Сбалансированно с лимитом FPS</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Высокие потери пакетов (%.1f%%), проверьте сеть</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Критические потери пакетов (%.1f%%), проверьте сеть</string>
+    <string name="warning_connection_high_latency">⚠️ Высокая задержка (%dms), проверьте сеть</string>
+    <string name="warning_connection_high_latency_severe">🚨 Очень высокая задержка (%dms), проверьте сеть</string>
 </resources>

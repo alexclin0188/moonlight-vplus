@@ -103,4 +103,9 @@
     <string name="analogscroll_none">Keine (beide Sticks bewegen die Maus)</string>
     <string name="analogscroll_right">Rechter Analogstick</string>
     <string name="analogscroll_left">Linker Analogstick</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Hoher Paketverlust (%.1f%%), Netzwerk prüfen</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Sehr hoher Paketverlust (%.1f%%), Netzwerk prüfen</string>
+    <string name="warning_connection_high_latency">⚠️ Hohe Latenz (%dms), Netzwerk prüfen</string>
+    <string name="warning_connection_high_latency_severe">🚨 Sehr hohe Latenz (%dms), Netzwerk prüfen</string>
 </resources>

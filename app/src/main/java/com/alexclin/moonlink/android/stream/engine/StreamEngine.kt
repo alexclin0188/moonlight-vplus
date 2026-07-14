@@ -1879,11 +1879,12 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
         // 严重级别决定 UI 形式：RED/ORANGE → 持久 Banner，YELLOW → Toast
         if (severity == ConnectionSeverity.YELLOW) {
             val message = when (issue) {
-                ConnectionIssue.NETWORK -> activity.getString(
-                    R.string.warning_connection_network_issue,
-                    packetLoss,
-                    rttMs
-                )
+                ConnectionIssue.NETWORK -> {
+                    if (packetLoss > 8f)
+                        activity.getString(R.string.warning_connection_packet_loss, packetLoss)
+                    else
+                        activity.getString(R.string.warning_connection_high_latency, rttMs)
+                }
                 ConnectionIssue.LOCAL_LAG -> activity.getString(
                     R.string.warning_connection_local_lag,
                     decodeTime.toDouble()
@@ -1900,10 +1901,18 @@ class StreamEngine(val activity: Activity) : NvConnectionListener, GameGestures,
             val finalSeverity = severity
             val message = when (issue) {
                 ConnectionIssue.NETWORK -> {
-                    if (severity == ConnectionSeverity.RED)
-                        activity.getString(R.string.warning_connection_network_severe, packetLoss, rttMs)
-                    else
-                        activity.getString(R.string.warning_connection_network_issue, packetLoss, rttMs)
+                    val isPacketLoss = packetLoss > 8f
+                    if (severity == ConnectionSeverity.RED) {
+                        if (isPacketLoss)
+                            activity.getString(R.string.warning_connection_packet_loss_severe, packetLoss)
+                        else
+                            activity.getString(R.string.warning_connection_high_latency_severe, rttMs)
+                    } else {
+                        if (isPacketLoss)
+                            activity.getString(R.string.warning_connection_packet_loss, packetLoss)
+                        else
+                            activity.getString(R.string.warning_connection_high_latency, rttMs)
+                    }
                 }
                 ConnectionIssue.LOCAL_LAG -> {
                     if (severity == ConnectionSeverity.RED)

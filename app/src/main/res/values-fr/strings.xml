@@ -106,4 +106,9 @@
     <string name="analogscroll_right">Stick analogique droit</string>
     <string name="analogscroll_left">Stick analogique gauche</string>
     <string name="title_seekbar_vibrate_fallback_strength">Ajuster l\'intensité de la vibration émulée</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Pertes de paquets élevées (%.1f%%), vérifiez votre réseau</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Pertes de paquets sévères (%.1f%%), vérifiez votre réseau</string>
+    <string name="warning_connection_high_latency">⚠️ Latence élevée (%dms), vérifiez votre réseau</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latence très élevée (%dms), vérifiez votre réseau</string>
 </resources>

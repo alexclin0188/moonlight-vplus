@@ -69,4 +69,9 @@
     <string name="addpc_wrong_sitelocal">Bu adres doğru görünmüyor. İnternet üzerinden akış için yönlendiricinizin genel IP adresini kullanmanız gerekir.</string>
     <string name="title_checkbox_stretch_video">Videoyu tam ekrana genişlet</string>
     <string name="title_checkbox_vibrate_fallback">Titreşim ile gürültü desteğini taklit etme</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Yüksek paket kaybı (%.1f%%), ağınızı kontrol edin</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Şiddetli paket kaybı (%.1f%%), ağınızı kontrol edin</string>
+    <string name="warning_connection_high_latency">⚠️ Yüksek gecikme (%dms), ağınızı kontrol edin</string>
+    <string name="warning_connection_high_latency_severe">🚨 Çok yüksek gecikme (%dms), ağınızı kontrol edin</string>
 </resources>

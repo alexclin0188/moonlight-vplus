@@ -92,4 +92,9 @@
     <string name="title_seekbar_vibrate_fallback_strength">Justera intensiteten på emulerat skakande</string>
     <string name="analogscroll_right">Höger analogspak</string>
     <string name="title_analog_scrolling">Använd en analog spak för att bläddra</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Hög paketförlust (%.1f%%), kontrollera nätverket</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Allvarlig paketförlust (%.1f%%), kontrollera nätverket</string>
+    <string name="warning_connection_high_latency">⚠️ Hög latens (%dms), kontrollera nätverket</string>
+    <string name="warning_connection_high_latency_severe">🚨 Mycket hög latens (%dms), kontrollera nätverket</string>
 </resources>

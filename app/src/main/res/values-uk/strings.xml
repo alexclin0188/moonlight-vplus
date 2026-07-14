@@ -103,4 +103,9 @@
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Завжди керувати мишею за допомогою сенсорної панелі</string>
     <string name="title_checkbox_gamepad_motion_sensors">Дозволити використовувати датчики руху геймпада</string>
     <string name="toast_controller_type_changed">Тип геймпада може бути змінений через емуляцію датчика руху</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Високі втрати пакетів (%.1f%%), перевірте мережу</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Критичні втрати пакетів (%.1f%%), перевірте мережу</string>
+    <string name="warning_connection_high_latency">⚠️ Висока затримка (%dms), перевірте мережу</string>
+    <string name="warning_connection_high_latency_severe">🚨 Дуже висока затримка (%dms), перевірте мережу</string>
 </resources>

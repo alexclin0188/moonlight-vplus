@@ -71,4 +71,9 @@
     <string name="applist_quit_success">Berhasil keluar</string>
     <string name="addpc_unknown_host">Tidak dapat menyelesaikan alamat PC. Pastikan Anda tidak salah ketik di alamat.</string>
     <string name="title_checkbox_mouse_emulation">Emulasi mouse melalui gamepad</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Kehilangan paket tinggi (%.1f%%), periksa jaringan Anda</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Kehilangan paket parah (%.1f%%), periksa jaringan Anda</string>
+    <string name="warning_connection_high_latency">⚠️ Latensi tinggi (%dms), periksa jaringan Anda</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latensi sangat tinggi (%dms), periksa jaringan Anda</string>
 </resources>

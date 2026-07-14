@@ -1011,10 +1011,12 @@
     <string name="engine_unnamed">Unnamed</string>
 
     <!-- Connection quality warnings -->
-    <string name="warning_connection_network_issue">⚠️ Network unstable: high packet loss (%.1f%%) / latency (%dms)</string>
+    <string name="warning_connection_packet_loss">⚠️ High packet loss (%1$.1f%%), check your network</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Severe packet loss (%1$.1f%%), check your network</string>
+    <string name="warning_connection_high_latency">⚠️ High latency (%1$dms), check your network</string>
+    <string name="warning_connection_high_latency_severe">🚨 Very high latency (%1$dms), check your network</string>
     <string name="warning_connection_local_lag">⚠️ Local device decoding is slow (%.0fms), try lowering resolution/bitrate</string>
     <string name="warning_connection_host_lag">⚠️ Host PC processing is slow (%.0fms), close background apps</string>
-    <string name="warning_connection_network_severe">🚨 Network severely unstable: packet loss %.1f%%, latency %dms</string>
     <string name="warning_connection_local_severe">🚨 Local device decoding very slow (%.0fms), lower resolution/bitrate</string>
     <string name="connection_slow">⚠️ Slow connection</string>
     <string name="connection_poor">⚠️ Poor connection</string>

@@ -71,4 +71,9 @@
     <string name="scut_not_paired">PC ikke parret</string>
     <string name="resolution_prefix_native">Innebygd</string>
     <string name="title_checkbox_flip_face_buttons">Veksle diamantknapper</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Høy pakketap (%.1f%%), sjekk nettverket</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Svært høy pakketap (%.1f%%), sjekk nettverket</string>
+    <string name="warning_connection_high_latency">⚠️ Høy latens (%dms), sjekk nettverket</string>
+    <string name="warning_connection_high_latency_severe">🚨 Svært høy latens (%dms), sjekk nettverket</string>
 </resources>

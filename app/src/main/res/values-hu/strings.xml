@@ -85,4 +85,9 @@
     <string name="category_gamepad_settings">Gamepad beállítások</string>
     <string name="title_checkbox_gamepad_touchpad_as_mouse">Az egeret mindig az érintőpaddal vezérelje</string>
     <string name="pacing_latency">A legalacsonyabb késleltetés előnyben részesítése</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Magas csomagvesztés (%.1f%%), ellenőrizze a hálózatot</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Súlyos csomagvesztés (%.1f%%), ellenőrizze a hálózatot</string>
+    <string name="warning_connection_high_latency">⚠️ Magas késleltetés (%dms), ellenőrizze a hálózatot</string>
+    <string name="warning_connection_high_latency_severe">🚨 Nagyon magas késleltetés (%dms), ellenőrizze a hálózatot</string>
 </resources>

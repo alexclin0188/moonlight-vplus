@@ -1,62 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="mic_icon_color_entries">
-        <item>星川蓝</item>
-        <item>云锦紫</item>
-        <item>苔石绿</item>
-        <item>琥珀砂</item>
-        <item>丹霞赤</item>
-        <item>象牙白</item>
-    </string-array>
-
-    <!-- 音频振动路由模式 -->
-    <string-array name="audio_vibration_mode_names">
-        <item>自动</item>
-        <item>仅设备振动</item>
-        <item>仅手柄振动</item>
-        <item>同时振动</item>
-    </string-array>
-
-    <!-- 音频振动场景模式 -->
-    <string-array name="audio_vibration_scene_names">
-        <item>游戏 / 影视</item>
-        <item>音乐</item>
-        <item>自动</item>
-    </string-array>
-
-    <!-- 画面位置选项 -->
-    <string-array name="screen_position_names">
-        <item>左上</item>
-        <item>顶部居中</item>
-        <item>右上</item>
-        <item>左侧居中</item>
-        <item>居中</item>
-        <item>右侧居中</item>
-        <item>左下</item>
-        <item>底部居中</item>
-        <item>右下</item>
-    </string-array>
-
-    <!-- 性能覆盖层方向选项 -->
-    <string-array name="perf_overlay_orientation_names">
-        <item>水平显示</item>
-        <item>垂直显示</item>
-    </string-array>
-
-    <!-- 性能覆盖层位置选项 - 水平方向 -->
-    <string-array name="perf_overlay_position_horizontal_names">
-        <item>顶部</item>
-        <item>底部</item>
-    </string-array>
-
-    <!-- 性能覆盖层位置选项 - 垂直方向 -->
-    <string-array name="perf_overlay_position_vertical_names">
-        <item>左上角</item>
-        <item>右上角</item>
-        <item>左下角</item>
-        <item>右下角</item>
-    </string-array>
-
     <!-- 性能覆盖层显示项目选项 -->
     <string-array name="perf_overlay_display_items_names">
         <item>🎬 目标分辨率与帧率</item>
@@ -68,5 +11,36 @@
         <item>🖥 主机延迟</item>
         <item>🔋 电池电量</item>
         <item>📉 1%Low帧 (帧率平滑性)</item>
+    </string-array>
+
+    <!-- 连接/串流中展示的 Tip 提示文字（共37条） -->
+    <string-array name="tip_messages">
+        <item>💡 小提示：建议使用5GHz WiFi获得更好体验，网速飞起来～</item>
+        <item>💡 小提示：壁纸API选项可以设置随机壁纸来源的API，也可以是单张图片地址哦</item>
+        <item>💡 小提示：点击屏幕**右上角**的悬浮菜单按钮可以打开全新的操作面板，横竖屏幕自适应布局，所有设置一手掌控～</item>
+        <item>💡 小提示：操作面板支持多级返回，按返回键逐级关闭，从子设置到面板再到隐藏，步步清晰不迷路～</item>
+        <item>💡 小提示：在"更多"设置中开启操作面板自动隐藏，面板2秒无操作自动收起，保持游戏画面清爽不遮挡～</item>
+        <item>💡 小提示：使用"平衡"的帧速率模式可以获得最佳的帧率与延迟平衡，完美！</item>
+        <item>💡 小提示：启用HDR可以获得更好的色彩与对比度表现，在Sunshine基地版中绑定对应的HDR配置文件可以更精准地与客户端屏幕同步，色彩绚丽～</item>
+        <item>💡 小提示：调整分辨率可以平衡画质和性能，找到最适合的设置～</item>
+        <item>💡 小提示：性能覆盖层可以选择上下左右四个角落展示或者在上边缘/下边缘站展示</item>
+        <item>💡 小提示：性能覆盖层显示的项目可以自定义，在设置中选择你想看的指标，按需定制你的监控面板～</item>
+        <item>💡 小提示：使用HEVC或AV1解码器时，串流中可以调整码率，不用退出串流即可找到最适合你的网络和设备的最佳码率～</item>
+        <item>💡 小提示：操作面板的触控模式支持三种切换——增强多点触控适合手游、触控板模式模拟鼠标适合办公、经典鼠标模式配合本地指针更跟手～</item>
+        <item>💡 小提示：触控板模式下可以调节灵敏度（1–200级），开启双击拖拽和本地光标渲染，让鼠标操控如丝般顺滑～</item>
+        <item>💡 小提示：按键映射功能开启后，可在串流画面上叠加虚拟手柄按键，支持创建多套方案并在不同游戏间快速切换～</item>
+        <item>💡 小提示：按键映射编辑器中支持网格吸附，开启后拖动按键自动对齐网格线，轻松排布出整洁的按键布局～</item>
+        <item>💡 小提示：在编辑器中可调整按键图层顺序，上移或下移改变重叠按键的显示层级，让每个按键都能被正确触摸到～</item>
+        <item>💡 小提示：按键映射编辑器支持跨方案复制粘贴，在一套方案中复制按键元素，切换到另一套方案直接粘贴使用～</item>
+        <item>💡 小提示：可以创建组合键按钮，一键发送Ctrl+Shift+Esc等快捷键组合，操作更高效～</item>
+        <item>💡 小提示：按键映射支持为每个按键自定义颜色（普通态、按下态、背景色、文字色），让虚拟按键完美融入游戏画面～</item>
+        <item>💡 小提示：快捷操作卡片支持长按拖拽排序，把你最常用的功能放在最前面，随时一键直达～</item>
+        <item>💡 小提示：开启剪贴板同步后，手机复制文本自动同步到主机，反之亦然，跨设备粘贴超便捷～</item>
+        <item>💡 小提示：主机设置中的"自动优化"选项可在启动串流时优化主机性能，让游戏运行更流畅～</item>
+        <item>💡 小提示：在"更多"设置中开启暂停串流功能，临时不需要画面时可以暂停传输，节省带宽和电量～</item>
+        <item>💡 小提示：操作面板中可以直接开关麦克风，无需退出串流进入系统设置，方便快捷～</item>
+        <item>💡 小提示：悬浮按钮的透明度可以在"更多"设置中调整（10%-100%），适应不同的背景画面～</item>
+        <item>💡 小提示：网络质量严重下降时顶部红色提示10秒、橙色5秒后自动消失，网络恢复后也会自动清除提示，不打扰游戏～</item>
+        <item>💡 小提示：可以导出按键映射配置到其它设备使用，会根据屏幕参数自动适配，平板手机按键映射一次搞定～</item>
     </string-array>
 </resources>

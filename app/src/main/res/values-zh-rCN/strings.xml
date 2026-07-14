@@ -1047,10 +1047,12 @@
     <string name="engine_unnamed">未命名</string>
 
     <!-- Connection quality warnings -->
-    <string name="warning_connection_network_issue">⚠️ 网络不稳定：高丢包率（%.1f%%）/ 高延迟（%dms）</string>
+    <string name="warning_connection_packet_loss">⚠️ 丢包率高（%1$.1f%%），请检查网络</string>
+    <string name="warning_connection_packet_loss_severe">🚨 丢包率极高（%1$.1f%%），请检查网络</string>
+    <string name="warning_connection_high_latency">⚠️ 延迟高（%1$dms），请检查网络</string>
+    <string name="warning_connection_high_latency_severe">🚨 延迟极高（%1$dms），请检查网络</string>
     <string name="warning_connection_local_lag">⚠️ 本机解码较慢（%.0fms），建议降低分辨率或码率</string>
     <string name="warning_connection_host_lag">⚠️ 主机端处理延迟较高（%.0fms），建议关闭后台程序</string>
-    <string name="warning_connection_network_severe">🚨 网络极不稳定：丢包率 %.1f%%，延迟 %dms</string>
     <string name="warning_connection_local_severe">🚨 本机解码严重卡顿（%.0fms），请降低分辨率或码率</string>
     <string name="connection_slow">⚠️ 连接缓慢</string>
     <string name="connection_poor">⚠️ 连接较差</string>

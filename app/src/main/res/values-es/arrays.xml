@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Consejos mostrados durante conexión/streaming -->
+    <string-array name="tip_messages">
+        <item>💡 Consejo: Se recomienda usar WiFi de 5GHz para una mejor experiencia, ¡velocidades ultrarrápidas~</item>
+        <item>💡 Consejo: La opción de API de fondo de pantalla puede establecer la API para fuentes de fondos de pantalla aleatorios, o una URL de imagen única</item>
+        <item>💡 Consejo: Haz clic en el botón de menú flotante en la **esquina superior derecha** de la pantalla para abrir un nuevo panel de control con diseño adaptable vertical/horizontal, ¡todos los ajustes al alcance de tu mano~</item>
+        <item>💡 Consejo: El panel de control admite navegación de retorno multinivel. Presiona la tecla de retroceso para cerrar paso a paso, desde subconfiguraciones hasta el panel y ocultarlo, pasos claros sin perderte~</item>
+        <item>💡 Consejo: Activa la auto-ocultación del panel de control en los ajustes &quot;Más&quot;. El panel se retraerá automáticamente tras 2 segundos de inactividad, manteniendo la pantalla de juego limpia y sin obstrucciones~</item>
+        <item>💡 Consejo: Usar el modo de tasa de fotogramas &quot;Equilibrado&quot; proporciona el mejor equilibrio entre tasa de fotogramas y latencia, ¡perfecto!</item>
+        <item>💡 Consejo: Activar HDR proporciona un mejor rendimiento de color y contraste. Vincular el perfil HDR correspondiente en la versión base de Sunshine puede sincronizar con mayor precisión con la pantalla de tu cliente, ¡colores vibrantes~</item>
+        <item>💡 Consejo: Ajustar la resolución puede equilibrar la calidad y el rendimiento, encuentra la configuración que mejor funcione para ti~</item>
+        <item>💡 Consejo: La superposición de rendimiento puede mostrarse en cualquiera de las cuatro esquinas, o en el borde superior/inferior</item>
+        <item>💡 Consejo: Los elementos mostrados en la superposición de rendimiento son personalizables. Selecciona las métricas que deseas ver en los ajustes, adapta tu panel de monitoreo a tus necesidades~</item>
+        <item>💡 Consejo: Cuando uses decodificadores HEVC o AV1, puedes ajustar la tasa de bits durante la transmisión sin salir, encontrando la tasa de bits óptima para tu red y dispositivo~</item>
+        <item>💡 Consejo: El panel de control admite tres modos táctiles — Táctil Multitáctil Mejorado para juegos móviles, Modo Trackpad para simulación de ratón ideal para oficina, y Modo Ratón Clásico con puntero local para mayor capacidad de respuesta~</item>
+        <item>💡 Consejo: En el modo Trackpad, puedes ajustar la sensibilidad (niveles 1-200), activar arrastre con doble toque y renderizado de cursor local para un control del ratón suave como la seda~</item>
+        <item>💡 Consejo: Después de activar la asignación de teclas, puedes superponer botones de control virtual en la pantalla de transmisión, admitiendo múltiples perfiles y cambio rápido entre diferentes juegos~</item>
+        <item>💡 Consejo: El editor de asignación de teclas admite ajuste a la cuadrícula. Cuando está activado, arrastrar botones los alinea automáticamente con las líneas de cuadrícula, facilitando la creación de una disposición limpia~</item>
+        <item>💡 Consejo: Puedes ajustar el orden de capa de los botones en el editor, moviéndolos hacia arriba o hacia abajo para cambiar la jerarquía de visualización de botones superpuestos, asegurando que cada botón pueda ser tocado correctamente~</item>
+        <item>💡 Consejo: El editor de asignación de teclas admite copiar y pegar entre perfiles. Copia elementos de botones en un perfil, cambia a otro y pégalos para usarlos directamente~</item>
+        <item>💡 Consejo: Puedes crear botones de combinación de teclas para enviar combinaciones como Ctrl+Mayús+Esc con un solo toque, haciendo las operaciones más eficientes~</item>
+        <item>💡 Consejo: La asignación de teclas admite colores personalizados para cada botón (estado normal, estado presionado, color de fondo, color de texto), permitiendo que los botones virtuales se integren perfectamente en la pantalla del juego~</item>
+        <item>💡 Consejo: Las tarjetas de acción rápida admiten arrastrar y soltar con pulsación larga para reordenar. Pon tus funciones más usadas al frente para acceder con un solo toque en cualquier momento~</item>
+        <item>💡 Consejo: Después de activar la sincronización del portapapeles, el texto copiado en tu teléfono se sincroniza automáticamente con el host, y viceversa, haciendo que pegar entre dispositivos sea súper conveniente~</item>
+        <item>💡 Consejo: La opción &quot;Optimización automática&quot; en la configuración del host puede optimizar el rendimiento del host al iniciar la transmisión, haciendo que los juegos funcionen más fluidos~</item>
+        <item>💡 Consejo: Activa la función de pausa de transmisión en los ajustes &quot;Más&quot;. Cuando no necesites la transmisión temporalmente, puedes pausar la transmisión para ahorrar ancho de banda y batería~</item>
+        <item>💡 Consejo: Puedes activar o desactivar el micrófono directamente en el panel de control sin salir de la transmisión y entrar en la configuración del sistema, conveniente y rápido~</item>
+        <item>💡 Consejo: La transparencia del botón flotante se puede ajustar en los ajustes &quot;Más&quot; (10%-100%) para adaptarse a diferentes fondos de pantalla~</item>
+        <item>💡 Consejo: Cuando la calidad de la red disminuye gravemente, el banner rojo desaparece automáticamente después de 10 segundos, y el naranja después de 5 segundos. También se limpia automáticamente cuando la red se recupera, sin interrumpir tu juego~</item>
+        <item>💡 Consejo: Puedes exportar configuraciones de asignación de teclas para usarlas en otros dispositivos. Se adaptará automáticamente según los parámetros de la pantalla, ¡una configuración funciona tanto para tabletas como para teléfonos~</item>
+    </string-array>
+</resources>

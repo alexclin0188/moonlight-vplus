@@ -71,4 +71,9 @@
     <string name="audioconf_51surround">Sunet Surround 5.1</string>
     <string name="audioconf_71surround">Sunet Surround 7.1</string>
     <string name="videoformat_hevcalways">Folosește HEVC mereu (se poate bloca)</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Pierdere mare de pachete (%.1f%%), verificați rețeaua</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Pierdere severă de pachete (%.1f%%), verificați rețeaua</string>
+    <string name="warning_connection_high_latency">⚠️ Latență mare (%dms), verificați rețeaua</string>
+    <string name="warning_connection_high_latency_severe">🚨 Latență foarte mare (%dms), verificați rețeaua</string>
 </resources>

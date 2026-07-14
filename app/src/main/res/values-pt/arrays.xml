@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dicas exibidas durante conexão/streaming -->
+    <string-array name="tip_messages">
+        <item>💡 Dica: É recomendado usar WiFi de 5GHz para uma melhor experiência, velocidades extremamente rápidas~</item>
+        <item>💡 Dica: A opção de API de papel de parede pode definir a API para fontes de papel de parede aleatórias, ou uma URL de imagem única</item>
+        <item>💡 Dica: Clique no botão de menu flutuante no **canto superior direito** da tela para abrir um novo painel de controle com layout adaptável retrato/paisagem, todas as configurações na ponta dos seus dedos~</item>
+        <item>💡 Dica: O painel de controle suporta navegação de retorno em vários níveis. Pressione a tecla de voltar para fechar passo a passo, desde subconfigurações até o painel e ocultá-lo, passos claros sem se perder~</item>
+        <item>💡 Dica: Ative a ocultação automática do painel de controle nas configurações &quot;Mais&quot;. O painel será retraído automaticamente após 2 segundos de inatividade, mantendo a tela do jogo limpa e sem obstruções~</item>
+        <item>💡 Dica: Usar o modo de taxa de quadros &quot;Equilibrado&quot; oferece o melhor equilíbrio entre taxa de quadros e latência, perfeito!</item>
+        <item>💡 Dica: Ativar HDR proporciona melhor desempenho de cores e contraste. Vincular o perfil HDR correspondente na versão base do Sunshine pode sincronizar com mais precisão com a tela do seu cliente, cores vibrantes~</item>
+        <item>💡 Dica: Ajustar a resolução pode equilibrar qualidade e desempenho, encontre as configurações que funcionam melhor para você~</item>
+        <item>💡 Dica: A sobreposição de desempenho pode ser exibida em qualquer um dos quatro cantos, ou na borda superior/inferior</item>
+        <item>💡 Dica: Os itens exibidos na sobreposição de desempenho são personalizáveis. Selecione as métricas que deseja ver nas configurações, adapte seu painel de monitoramento às suas necessidades~</item>
+        <item>💡 Dica: Ao usar decodificadores HEVC ou AV1, você pode ajustar a taxa de bits durante o streaming sem sair, encontrando a taxa de bits ideal para sua rede e dispositivo~</item>
+        <item>💡 Dica: O painel de controle suporta três modos de toque — Toque Multitoque Aprimorado para jogos móveis, Modo Trackpad para simulação de mouse ideal para escritório, e Modo Mouse Clássico com ponteiro local para melhor capacidade de resposta~</item>
+        <item>💡 Dica: No modo Trackpad, você pode ajustar a sensibilidade (níveis 1-200), ativar arrastar com toque duplo e renderização de cursor local para um controle de mouse suave como seda~</item>
+        <item>💡 Dica: Após ativar o mapeamento de teclas, você pode sobrepor botões de controle virtuais na tela de streaming, suportando múltiplos perfis e alternância rápida entre diferentes jogos~</item>
+        <item>💡 Dica: O editor de mapeamento de teclas suporta ajuste à grade. Quando ativado, arrastar botões os alinha automaticamente às linhas da grade, facilitando a criação de um layout limpo~</item>
+        <item>💡 Dica: Você pode ajustar a ordem das camadas dos botões no editor, movendo-os para cima ou para baixo para alterar a hierarquia de exibição de botões sobrepostos, garantindo que cada botão possa ser tocado corretamente~</item>
+        <item>💡 Dica: O editor de mapeamento de teclas suporta copiar e colar entre perfis. Copie elementos de botão em um perfil, mude para outro e cole para usar diretamente~</item>
+        <item>💡 Dica: Você pode criar botões de combinação de teclas para enviar combinações como Ctrl+Shift+Esc com um único toque, tornando as operações mais eficientes~</item>
+        <item>💡 Dica: O mapeamento de teclas suporta cores personalizadas para cada botão (estado normal, estado pressionado, cor de fundo, cor do texto), permitindo que os botões virtuais se integrem perfeitamente à tela do jogo~</item>
+        <item>💡 Dica: Os cartões de ação rápida suportam arrastar e soltar com pressionamento longo para reordenar. Coloque suas funções mais usadas na frente para acesso com um toque a qualquer momento~</item>
+        <item>💡 Dica: Após ativar a sincronização da área de transferência, o texto copiado no seu telefone é sincronizado automaticamente com o host, e vice-versa, tornando colar entre dispositivos super conveniente~</item>
+        <item>💡 Dica: A opção &quot;Otimização Automática&quot; nas configurações do host pode otimizar o desempenho do host ao iniciar o streaming, fazendo os jogos funcionarem mais suavemente~</item>
+        <item>💡 Dica: Ative o recurso de pausar streaming nas configurações &quot;Mais&quot;. Quando você não precisar do stream temporariamente, pode pausar a transmissão para economizar largura de banda e bateria~</item>
+        <item>💡 Dica: Você pode ativar ou desativar o microfone diretamente no painel de controle sem sair do streaming e entrar nas configurações do sistema, conveniente e rápido~</item>
+        <item>💡 Dica: A transparência do botão flutuante pode ser ajustada nas configurações &quot;Mais&quot; (10%-100%) para se adaptar a diferentes telas de fundo~</item>
+        <item>💡 Dica: Quando a qualidade da rede cai severamente, o banner vermelho desaparece automaticamente após 10 segundos, e o laranja após 5 segundos. Também é limpo automaticamente quando a rede se recupera, sem interromper seu jogo~</item>
+        <item>💡 Dica: Você pode exportar configurações de mapeamento de teclas para usar em outros dispositivos. Ele se adaptará automaticamente com base nos parâmetros da tela, uma configuração funciona tanto para tablets quanto para telefones~</item>
+    </string-array>
+</resources>

@@ -104,4 +104,9 @@
     <string name="title_checkbox_gamepad_motion_fallback">컨트롤러의 모션 센서 에뮬레이션 지원</string>
     <string name="mic_stats_continuity">오디오 연속성: %1$.1f%% (캡처:%2$d 인코딩:%3$d 전송:%4$d 드롭:%5$d)</string>
     <!-- 오디오 진동 설정 -->
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ 패킷 손실률 높음 (%.1f%%), 네트워크를 확인하세요</string>
+    <string name="warning_connection_packet_loss_severe">🚨 패킷 손실률 매우 높음 (%.1f%%), 네트워크를 확인하세요</string>
+    <string name="warning_connection_high_latency">⚠️ 지연 시간 높음 (%dms), 네트워크를 확인하세요</string>
+    <string name="warning_connection_high_latency_severe">🚨 지연 시간 매우 높음 (%dms), 네트워크를 확인하세요</string>
 </resources>

@@ -65,4 +65,9 @@
     <string name="mic_stats_continuity">音声連続性: %1$.1f%% (キャプチャ:%2$d エンコード:%3$d 送信:%4$d ドロップ:%5$d)</string>
 
     <!-- オーディオ振動設定 -->
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ パケット損失率高（%.1f%%）、ネットワークを確認してください</string>
+    <string name="warning_connection_packet_loss_severe">🚨 パケット損失率極高（%.1f%%）、ネットワークを確認してください</string>
+    <string name="warning_connection_high_latency">⚠️ レイテンシ高（%dms）、ネットワークを確認してください</string>
+    <string name="warning_connection_high_latency_severe">🚨 レイテンシ極高（%dms）、ネットワークを確認してください</string>
 </resources>

@@ -72,4 +72,9 @@
     <string name="category_input_settings">Ρυθμίσεις εισόδου</string>
     <string name="title_checkbox_vibrate_fallback">Μιμηθείτε την υποστήριξη rumble με δόνηση</string>
     <string name="title_seekbar_deadzone">Ρύθμιση της νεκρής ζώνης του αναλογικού μοχλού</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Υψηλή απώλεια πακέτων (%.1f%%), ελέγξτε το δίκτυο</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Πολύ υψηλή απώλεια πακέτων (%.1f%%), ελέγξτε το δίκτυο</string>
+    <string name="warning_connection_high_latency">⚠️ Υψηλή καθυστέρηση (%dms), ελέγξτε το δίκτυο</string>
+    <string name="warning_connection_high_latency_severe">🚨 Πολύ υψηλή καθυστέρηση (%dms), ελέγξτε το δίκτυο</string>
 </resources>

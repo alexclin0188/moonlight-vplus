@@ -25,4 +25,35 @@
         <item>one_percent_low</item>
     </string-array>
 
+    <!-- Tip messages displayed during connection/streaming -->
+    <string-array name="tip_messages">
+        <item>💡 Tip: It\'s recommended to use 5GHz WiFi for a better experience, lightning fast speeds~</item>
+        <item>💡 Tip: The wallpaper API option can set the API for random wallpaper sources, or a single image URL</item>
+        <item>💡 Tip: Click the floating menu button in the **top-right corner** of the screen to open a brand new control panel with adaptive landscape/portrait layout, all settings at your fingertips~</item>
+        <item>💡 Tip: The control panel supports multi-level back navigation. Press the back key to close step by step, from sub-settings to the panel to hiding, clear steps without getting lost~</item>
+        <item>💡 Tip: Enable auto-hide for the control panel in &quot;More&quot; settings. The panel will automatically retract after 2 seconds of inactivity, keeping your game screen clean and unobstructed~</item>
+        <item>💡 Tip: Using &quot;Balanced&quot; frame rate mode provides the best balance between frame rate and latency, perfect!</item>
+        <item>💡 Tip: Enabling HDR provides better color and contrast performance. Binding the corresponding HDR profile in the Sunshine base version can more accurately sync with your client screen, vibrant colors~</item>
+        <item>💡 Tip: Adjusting resolution can balance quality and performance, find the settings that work best for you~</item>
+        <item>💡 Tip: The performance overlay can be displayed in any of the four corners, or at the top/bottom edge</item>
+        <item>💡 Tip: The items displayed in the performance overlay are customizable. Select the metrics you want to see in settings, tailor your monitoring panel to your needs~</item>
+        <item>💡 Tip: When using HEVC or AV1 decoders, you can adjust the bitrate during streaming without exiting, finding the optimal bitrate for your network and device~</item>
+        <item>💡 Tip: The control panel supports three touch modes — Enhanced Multi-Touch for mobile games, Trackpad Mode for mouse simulation ideal for office work, and Classic Mouse Mode with local pointer for better responsiveness~</item>
+        <item>💡 Tip: In Trackpad Mode, you can adjust sensitivity (1-200 levels), enable double-tap drag and local cursor rendering for silky smooth mouse control~</item>
+        <item>💡 Tip: After enabling key mapping, you can overlay virtual controller buttons on the streaming screen, supporting multiple profiles and quick switching between different games~</item>
+        <item>💡 Tip: The key mapping editor supports grid snapping. When enabled, dragging buttons automatically aligns them to grid lines, making it easy to create a clean button layout~</item>
+        <item>💡 Tip: You can adjust the button layer order in the editor, moving up or down to change the display hierarchy of overlapping buttons, ensuring every button can be correctly touched~</item>
+        <item>💡 Tip: The key mapping editor supports cross-profile copy and paste. Copy button elements in one profile, switch to another and paste to use directly~</item>
+        <item>💡 Tip: You can create combo key buttons to send key combinations like Ctrl+Shift+Esc with a single tap, making operations more efficient~</item>
+        <item>💡 Tip: Key mapping supports custom colors for each button (normal state, pressed state, background color, text color), letting virtual buttons perfectly blend into the game screen~</item>
+        <item>💡 Tip: Quick action cards support long-press drag to reorder. Put your most used functions at the front for one-tap access anytime~</item>
+        <item>💡 Tip: After enabling clipboard sync, text copied on your phone is automatically synced to the host, and vice versa, making cross-device pasting super convenient~</item>
+        <item>💡 Tip: The &quot;Auto Optimize&quot; option in host settings can optimize host performance when starting streaming, making games run smoother~</item>
+        <item>💡 Tip: Enable the pause streaming feature in &quot;More&quot; settings. When you don\'t need the stream temporarily, you can pause transmission to save bandwidth and battery~</item>
+        <item>💡 Tip: You can toggle the microphone directly in the control panel without exiting the stream and going into system settings, convenient and fast~</item>
+        <item>💡 Tip: The transparency of the floating button can be adjusted in &quot;More&quot; settings (10%-100%) to suit different background screens~</item>
+        <item>💡 Tip: When network quality severely drops, the red banner auto-dismisses after 10 seconds, and the orange one after 5 seconds. It also clears automatically when network recovers, without interrupting your game~</item>
+        <item>💡 Tip: You can export key mapping configurations for use on other devices. It will automatically adapt based on screen parameters, so one setup works for both tablets and phones~</item>
+    </string-array>
+
 </resources>

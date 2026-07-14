@@ -85,4 +85,9 @@
     <string name="title_checkbox_flip_face_buttons">Face-knoppen omdraaien</string>
     <!-- Array strings -->
     <string name="videoformat_hevcalways">Gebruik HEVC altijd (mogelijkheid tot crashes)</string>
+    <!-- Connection quality warnings -->
+    <string name="warning_connection_packet_loss">⚠️ Hoog pakketverlies (%.1f%%), controleer je netwerk</string>
+    <string name="warning_connection_packet_loss_severe">🚨 Ernstig pakketverlies (%.1f%%), controleer je netwerk</string>
+    <string name="warning_connection_high_latency">⚠️ Hoge latentie (%dms), controleer je netwerk</string>
+    <string name="warning_connection_high_latency_severe">🚨 Zeer hoge latentie (%dms), controleer je netwerk</string>
 </resources>
