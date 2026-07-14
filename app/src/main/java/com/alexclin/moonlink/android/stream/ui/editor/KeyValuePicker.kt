@@ -41,10 +41,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -375,6 +378,9 @@ fun KeyValuePickerDialog(
 ) {
     var selectedTab by remember { mutableIntStateOf(0) }
     val categories = KeyCategory.entries
+    // 固定对话框高度：以键盘 tab 内容高度为基准
+    var keyboardContentHeightPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -438,49 +444,95 @@ fun KeyValuePickerDialog(
                     else -> keyboardKeys
                 }
 
-                LazyColumn(
+                // Box 叠加：透明测量层 + 实际内容层，固定高度避免 tab 切换抖动
+                Box(
                     modifier = Modifier
-                        .fillMaxWidth().wrapContentHeight()
-                        .padding(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                        .fillMaxWidth()
+                        .then(
+                            if (keyboardContentHeightPx > 0) {
+                                Modifier.height(with(density) { keyboardContentHeightPx.toDp() })
+                            } else {
+                                Modifier.wrapContentHeight()
+                            }
+                        )
                 ) {
-                    // 键盘按物理行布局展示
-                    if (selectedTab == 0) {
-                        items(keyboardLayout) { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(3.dp),
-                            ) {
-                                row.forEach { cell ->
-                                    when (cell) {
-                                        is KbCell.Key -> KeyChip(
-                                            key = cell.entry,
-                                            onClick = { onSelect(cell.entry.value, cell.entry.label) },
-                                            modifier = Modifier.weight(cell.weight),
-                                        )
-                                        is KbCell.Spacer -> Spacer(Modifier.weight(cell.weight))
+                    // 透明测量层：仅首帧渲染，alpha=0 不可见，仅用于获取键盘布局固有高度
+                    if (keyboardContentHeightPx == 0) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onGloballyPositioned { coords ->
+                                    keyboardContentHeightPx = coords.size.height
+                                }
+                                .padding(6.dp)
+                                .alpha(0f),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            keyboardLayout.forEach { row ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
+                                    row.forEach { cell ->
+                                        when (cell) {
+                                            is KbCell.Key -> KeyChip(
+                                                key = cell.entry,
+                                                onClick = {},
+                                                modifier = Modifier.weight(cell.weight),
+                                            )
+                                            is KbCell.Spacer -> Spacer(Modifier.weight(cell.weight))
+                                        }
                                     }
                                 }
                             }
                         }
-                    } else {
-                        // 其他类别：4列网格展示
-                        item {
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                keys.chunked(4).forEach { rowKeys ->
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                    ) {
-                                        rowKeys.forEach { key ->
-                                            GridKeyItem(
-                                                key = key,
-                                                onClick = { onSelect(key.value, key.label) },
-                                                modifier = Modifier.weight(1f).heightIn(min = 40.dp),
+                    }
+
+                    // 实际内容层
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        // 键盘按物理行布局展示
+                        if (selectedTab == 0) {
+                            items(keyboardLayout) { row ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(3.dp),
+                                ) {
+                                    row.forEach { cell ->
+                                        when (cell) {
+                                            is KbCell.Key -> KeyChip(
+                                                key = cell.entry,
+                                                onClick = { onSelect(cell.entry.value, cell.entry.label) },
+                                                modifier = Modifier.weight(cell.weight),
                                             )
+                                            is KbCell.Spacer -> Spacer(Modifier.weight(cell.weight))
                                         }
-                                        repeat(4 - rowKeys.size) {
-                                            Spacer(Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        } else {
+                            // 其他类别：4列网格展示
+                            item {
+                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                    keys.chunked(4).forEach { rowKeys ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                        ) {
+                                            rowKeys.forEach { key ->
+                                                GridKeyItem(
+                                                    key = key,
+                                                    onClick = { onSelect(key.value, key.label) },
+                                                    modifier = Modifier.weight(1f).heightIn(min = 40.dp),
+                                                )
+                                            }
+                                            repeat(4 - rowKeys.size) {
+                                                Spacer(Modifier.weight(1f))
+                                            }
                                         }
                                     }
                                 }
