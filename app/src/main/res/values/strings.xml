@@ -221,8 +221,15 @@
     <string name="mic_permission_required">Microphone permission required</string>
     
     <!-- Key Mapping feature area (renamed from Crown) -->
-    <string name="category_key_mapping_features">Key Mapping Features</string>
+    <string name="category_key_mapping_features">Key Mapping Management &amp; Share</string>
     <string name="title_key_mapping_features">Key Mapping</string>
+    <string name="title_import_from_network">Import from Network Link</string>
+    <string name="summary_import_from_network">Import key mapping config from a network link</string>
+    <string name="title_share_key_mapping">Share Key Mapping</string>
+    <string name="summary_share_key_mapping">Share key mapping config to other phones</string>
+    <string name="bar_assistant">Assistant</string>
+    <string name="toast_developing">Under development, coming soon…</string>
+    <string name="toast_assistant_developing">Game assistant under development, coming soon…</string>
 
     
     <!-- Background image API -->

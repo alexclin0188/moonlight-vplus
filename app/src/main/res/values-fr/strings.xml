@@ -111,4 +111,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Pertes de paquets sévères (%.1f%%), vérifiez votre réseau</string>
     <string name="warning_connection_high_latency">⚠️ Latence élevée (%dms), vérifiez votre réseau</string>
     <string name="warning_connection_high_latency_severe">🚨 Latence très élevée (%dms), vérifiez votre réseau</string>
+    <string name="title_import_from_network">Importer depuis un lien réseau</string>
+    <string name="summary_import_from_network">Importer la configuration de mappage des touches depuis un lien réseau</string>
+    <string name="title_share_key_mapping">Partager le mappage des touches</string>
+    <string name="summary_share_key_mapping">Partager la configuration de mappage des touches avec d\'autres téléphones</string>
+    <string name="bar_assistant">Assistant</string>
+    <string name="toast_developing">En développement, à venir prochainement…</string>
+    <string name="toast_assistant_developing">Assistant de jeu en développement, à venir prochainement…</string>
 </resources>

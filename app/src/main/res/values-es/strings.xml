@@ -112,7 +112,7 @@
     <string name="about_dialog_project_info">Basado en el proyecto MoonLink-Android, mejorado por el equipo V+</string>
     <string name="about_dialog_thanks">¡Gracias por usar MoonLink! Si te gusta, por favor danos una estrella en GitHub.</string>
     <string name="accessibility_service_label">Servicio de Teclado MoonLink</string>
-    <string name="category_key_mapping_features">Área de Asignación de Teclas</string>
+    <string name="category_key_mapping_features">Gestión y Compartición de Asignación de Teclas</string>
     <string name="check_for_updates">Buscar actualizaciones</string>
     <string name="copy_content">Copiar Contenido</string>
     <string name="copy_details">Copiar Detalles</string>
@@ -155,6 +155,13 @@
     <string name="tip_wallpaper_change">💡 Consejo: La opción de API de fondo de pantalla puede establecer la API para fuentes de fondo de pantalla aleatorias, o una dirección de imagen única</string>
     <string name="title_checkbox_sync_touch_event_with_display">Sincronizar evento de toque con refresco de pantalla </string>
     <string name="title_key_mapping_features">Asignación de Teclas</string>
+    <string name="title_import_from_network">Importar desde enlace de red</string>
+    <string name="summary_import_from_network">Importar configuración de asignación de teclas desde un enlace de red</string>
+    <string name="title_share_key_mapping">Compartir asignación de teclas</string>
+    <string name="summary_share_key_mapping">Compartir configuración de asignación de teclas con otros teléfonos</string>
+    <string name="bar_assistant">Asistente</string>
+    <string name="toast_developing">En desarrollo, próximamente…</string>
+    <string name="toast_assistant_developing">Asistente de juego en desarrollo, próximamente…</string>
     <!-- Connection quality warnings -->
     <string name="warning_connection_packet_loss">⚠️ Alta pérdida de paquetes (%.1f%%), revisa tu red</string>
     <string name="warning_connection_packet_loss_severe">🚨 Pérdida de paquetes severa (%.1f%%), revisa tu red</string>

@@ -69,9 +69,11 @@ import com.limelight.binding.video.PerformanceInfo
 import com.limelight.preferences.PreferenceConfiguration
 import android.content.Context
 import android.os.SystemClock
+import android.widget.Toast
 import com.alexclin.moonlink.android.stream.engine.StreamEngine.ConnectionSeverity
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingSchemeSelector
 import com.alexclin.moonlink.android.stream.ui.panels.KeyMappingEditor
+import com.alexclin.moonlink.android.util.ToastUtil
 import kotlin.time.Duration.Companion.milliseconds
 
 /** 面板展开状态 */
@@ -103,6 +105,7 @@ enum class FullScreenPage {
  * - HIDDEN → 点击悬浮按钮 → VERTICAL_BAR
  * - VERTICAL_BAR → 点击"操作" → SUB_PANEL（toggle）
  * - VERTICAL_BAR → 点击"键盘" → KEYBOARD_PANEL（toggle）
+ * - VERTICAL_BAR → 点击"助手" → HIDDEN（toast 提示开发中）
  * - VERTICAL_BAR → 点击"桌面"/"窗口" → HIDDEN（直接动作）
  * - 任意面板展开时点击串流画面区域 → HIDDEN
  */
@@ -118,6 +121,7 @@ fun StreamOverlay(
     var detailPage by remember { mutableStateOf(DetailPage.MAIN_LIST) }
     var fullScreenPage by remember { mutableStateOf<FullScreenPage?>(null) }
     var isVirtualKeyboardTab by remember { mutableStateOf(false) }
+    val ctx = LocalContext.current
 
     // ── 全屏页面 BackHandler（仅方案选择器，编辑器已自行处理） ──
     if (fullScreenPage == FullScreenPage.KEY_MAPPING_SCHEME_SELECTOR) {
@@ -184,6 +188,11 @@ fun StreamOverlay(
                     panelState = PanelState.KEYBOARD_PANEL
                     activeEntry = "keyboard"
                 }
+            }
+            "assistant" -> {
+                ToastUtil.show(ctx, ctx.getString(R.string.toast_assistant_developing), Toast.LENGTH_SHORT)
+                panelState = PanelState.HIDDEN
+                activeEntry = null
             }
             "show_desktop" -> {
                 engine.sendWinD()

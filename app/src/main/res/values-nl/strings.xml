@@ -90,4 +90,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Ernstig pakketverlies (%.1f%%), controleer je netwerk</string>
     <string name="warning_connection_high_latency">⚠️ Hoge latentie (%dms), controleer je netwerk</string>
     <string name="warning_connection_high_latency_severe">🚨 Zeer hoge latentie (%dms), controleer je netwerk</string>
+    <string name="title_import_from_network">Importeren van netwerklink</string>
+    <string name="summary_import_from_network">Toetsindeling configuratie importeren van een netwerklink</string>
+    <string name="title_share_key_mapping">Toetsindeling delen</string>
+    <string name="summary_share_key_mapping">Toetsindeling configuratie delen met andere telefoons</string>
+    <string name="bar_assistant">Assistent</string>
+    <string name="toast_developing">In ontwikkeling, binnenkort beschikbaar…</string>
+    <string name="toast_assistant_developing">Spelassistent in ontwikkeling, binnenkort beschikbaar…</string>
 </resources>

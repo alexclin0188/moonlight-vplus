@@ -176,8 +176,15 @@
     <!-- Screen position settings -->
 
     <!-- Key Mapping feature area (from Crown) -->
-    <string name="category_key_mapping_features">按键映射方案管理</string>
+    <string name="category_key_mapping_features">按键映射管理与分享</string>
     <string name="title_key_mapping_features">启用按键映射</string>
+    <string name="title_import_from_network">从网络链接导入按键映射配置</string>
+    <string name="summary_import_from_network">从网络链接导入按键映射配置</string>
+    <string name="title_share_key_mapping">分享按键映射到其它手机</string>
+    <string name="summary_share_key_mapping">分享按键映射到其它手机</string>
+    <string name="bar_assistant">助手</string>
+    <string name="toast_developing">开发中，敬请期待…</string>
+    <string name="toast_assistant_developing">游戏助手开发中,敬请期待…</string>
 
 
     <!-- 按键映射切换（原王冠功能） -->

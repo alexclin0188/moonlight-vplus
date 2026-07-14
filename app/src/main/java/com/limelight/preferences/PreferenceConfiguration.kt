@@ -923,11 +923,13 @@ class PreferenceConfiguration {
                 .apply()
         }
 
-        fun completeLanguagePreferenceMigration(context: Context) {
-            // Put our language option back to default which tells us that we've already migrated it
-            val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-            prefs.edit().putString(LANGUAGE_PREF_STRING, DEFAULT_LANGUAGE).apply()
-        }
+    /** @deprecated 已迁移至 per-app locale 机制，不再需要手动重置偏好。保留仅供兼容。 */
+    @Deprecated("Locale is now managed via LocaleManager.applicationLocales on API 33+")
+    fun completeLanguagePreferenceMigration(context: Context) {
+        // Put our language option back to default which tells us that we've already migrated it
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        prefs.edit().putString(LANGUAGE_PREF_STRING, DEFAULT_LANGUAGE).apply()
+    }
 
         fun isShieldAtvFirmwareWithBrokenHdr(): Boolean {
             // This particular Shield TV firmware crashes when using HDR

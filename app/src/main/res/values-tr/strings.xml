@@ -74,4 +74,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Şiddetli paket kaybı (%.1f%%), ağınızı kontrol edin</string>
     <string name="warning_connection_high_latency">⚠️ Yüksek gecikme (%dms), ağınızı kontrol edin</string>
     <string name="warning_connection_high_latency_severe">🚨 Çok yüksek gecikme (%dms), ağınızı kontrol edin</string>
+    <string name="title_import_from_network">Ağ bağlantısından içe aktar</string>
+    <string name="summary_import_from_network">Bir ağ bağlantısından tuş atama yapılandırmasını içe aktar</string>
+    <string name="title_share_key_mapping">Tuş atamasını paylaş</string>
+    <string name="summary_share_key_mapping">Tuş atama yapılandırmasını diğer telefonlarla paylaş</string>
+    <string name="bar_assistant">Asistan</string>
+    <string name="toast_developing">Geliştirme aşamasında, yakında…</string>
+    <string name="toast_assistant_developing">Oyun asistanı geliştirme aşamasında, yakında…</string>
 </resources>

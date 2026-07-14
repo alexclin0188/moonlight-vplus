@@ -181,4 +181,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 封包丟失率極高（%.1f%%），請檢查網路</string>
     <string name="warning_connection_high_latency">⚠️ 延遲高（%dms），請檢查網路</string>
     <string name="warning_connection_high_latency_severe">🚨 延遲極高（%dms），請檢查網路</string>
+    <string name="title_import_from_network">從網路連結導入按鍵映射配置</string>
+    <string name="summary_import_from_network">從網路連結導入按鍵映射配置</string>
+    <string name="title_share_key_mapping">分享按鍵映射到其他手機</string>
+    <string name="summary_share_key_mapping">分享按鍵映射到其他手機</string>
+    <string name="bar_assistant">助手</string>
+    <string name="toast_developing">開發中，敬請期待…</string>
+    <string name="toast_assistant_developing">遊戲助手開發中，敬請期待…</string>
 </resources>

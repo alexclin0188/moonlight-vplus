@@ -109,4 +109,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 패킷 손실률 매우 높음 (%.1f%%), 네트워크를 확인하세요</string>
     <string name="warning_connection_high_latency">⚠️ 지연 시간 높음 (%dms), 네트워크를 확인하세요</string>
     <string name="warning_connection_high_latency_severe">🚨 지연 시간 매우 높음 (%dms), 네트워크를 확인하세요</string>
+    <string name="title_import_from_network">네트워크 링크에서 가져오기</string>
+    <string name="summary_import_from_network">네트워크 링크에서 키 매핑 구성을 가져오기</string>
+    <string name="title_share_key_mapping">키 매핑 공유</string>
+    <string name="summary_share_key_mapping">키 매핑 구성을 다른 휴대폰과 공유</string>
+    <string name="bar_assistant">어시스턴트</string>
+    <string name="toast_developing">개발 중입니다. 기대해 주세요…</string>
+    <string name="toast_assistant_developing">게임 어시스턴트 개발 중입니다. 기대해 주세요…</string>
 </resources>

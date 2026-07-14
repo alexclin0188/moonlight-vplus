@@ -70,4 +70,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 パケット損失率極高（%.1f%%）、ネットワークを確認してください</string>
     <string name="warning_connection_high_latency">⚠️ レイテンシ高（%dms）、ネットワークを確認してください</string>
     <string name="warning_connection_high_latency_severe">🚨 レイテンシ極高（%dms）、ネットワークを確認してください</string>
+    <string name="title_import_from_network">ネットワークリンクからインポート</string>
+    <string name="summary_import_from_network">ネットワークリンクからキーマッピング設定をインポート</string>
+    <string name="title_share_key_mapping">キーマッピングを共有</string>
+    <string name="summary_share_key_mapping">キーマッピング設定を他の端末と共有</string>
+    <string name="bar_assistant">アシスタント</string>
+    <string name="toast_developing">開発中、お楽しみに…</string>
+    <string name="toast_assistant_developing">ゲームアシスタントは開発中です、お楽しみに…</string>
 </resources>

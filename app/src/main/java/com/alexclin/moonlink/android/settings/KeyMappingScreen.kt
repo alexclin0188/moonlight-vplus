@@ -157,6 +157,20 @@ fun KeyMappingScreen() {
                     onClick = { mdatOpenLauncher.launch(arrayOf("application/json", "*/*")) },
                 )
             }
+            item {
+                ClickablePreference(
+                    title = stringResource(R.string.title_import_from_network),
+                    summary = stringResource(R.string.summary_import_from_network),
+                    onClick = { ToastUtil.show(context, context.getString(R.string.toast_developing), Toast.LENGTH_SHORT) },
+                )
+            }
+            item {
+                ClickablePreference(
+                    title = stringResource(R.string.title_share_key_mapping),
+                    summary = stringResource(R.string.summary_share_key_mapping),
+                    onClick = { ToastUtil.show(context, context.getString(R.string.toast_developing), Toast.LENGTH_SHORT) },
+                )
+            }
             item { Spacer(Modifier.height(32.dp)) }
         }
     }

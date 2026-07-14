@@ -82,4 +82,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Mất gói tin nghiêm trọng (%.1f%%), hãy kiểm tra mạng</string>
     <string name="warning_connection_high_latency">⚠️ Độ trễ cao (%dms), hãy kiểm tra mạng</string>
     <string name="warning_connection_high_latency_severe">🚨 Độ trễ rất cao (%dms), hãy kiểm tra mạng</string>
+    <string name="title_import_from_network">Nhập từ liên kết mạng</string>
+    <string name="summary_import_from_network">Nhập cấu hình ánh xạ phím từ liên kết mạng</string>
+    <string name="title_share_key_mapping">Chia sẻ ánh xạ phím</string>
+    <string name="summary_share_key_mapping">Chia sẻ cấu hình ánh xạ phím với điện thoại khác</string>
+    <string name="bar_assistant">Trợ lý</string>
+    <string name="toast_developing">Đang phát triển, sắp ra mắt…</string>
+    <string name="toast_assistant_developing">Trợ lý trò chơi đang phát triển, sắp ra mắt…</string>
 </resources>

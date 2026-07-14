@@ -1,6 +1,7 @@
 package com.alexclin.moonlink.android
 
 import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.preference.PreferenceManager
@@ -23,7 +24,13 @@ open class BaseComponentActivity : ComponentActivity() {
         // ── 监听语言设置变更，切换语言时重建 Activity ──
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == "list_languages") {
-                recreate()
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // API 33+：设置 applicationLocales 由系统触发单次重建，避免手动 recreate() 导致双重重建
+                    UiHelper.setLocale(this)
+                } else {
+                    // API < 33：无自动重建机制，需手动调用 recreate()
+                    recreate()
+                }
             }
         }
         langChangeListener = listener

@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DesktopWindows
+import androidx.compose.material.icons.filled.Face
 import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Window
@@ -92,6 +93,13 @@ fun VerticalBar(
             )
 
             PanelEntry(
+                icon = Icons.Default.Face,
+                label = stringResource(R.string.bar_assistant),
+                isSelected = false,
+                onClick = { onEntryClick("assistant") },
+            )
+
+            PanelEntry(
                 icon = Icons.Default.DesktopWindows,
                 label = stringResource(R.string.bar_desktop),
                 isSelected = false,
@@ -152,6 +160,13 @@ fun HorizontalBar(
                 label = stringResource(R.string.bar_keyboard),
                 isSelected = activeEntry == "keyboard",
                 onClick = { onEntryClick("keyboard") },
+            )
+
+            PanelEntry(
+                icon = Icons.Default.Face,
+                label = stringResource(R.string.bar_assistant),
+                isSelected = false,
+                onClick = { onEntryClick("assistant") },
             )
 
             PanelEntry(

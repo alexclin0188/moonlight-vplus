@@ -89,4 +89,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Perda de pacotes severa (%.1f%%), verifique sua rede</string>
     <string name="warning_connection_high_latency">⚠️ Latência alta (%dms), verifique sua rede</string>
     <string name="warning_connection_high_latency_severe">🚨 Latência muito alta (%dms), verifique sua rede</string>
+    <string name="title_import_from_network">Importar de link de rede</string>
+    <string name="summary_import_from_network">Importar configuração de mapeamento de teclas de um link de rede</string>
+    <string name="title_share_key_mapping">Compartilhar mapeamento de teclas</string>
+    <string name="summary_share_key_mapping">Compartilhar configuração de mapeamento de teclas com outros celulares</string>
+    <string name="bar_assistant">Assistente</string>
+    <string name="toast_developing">Em desenvolvimento, em breve…</string>
+    <string name="toast_assistant_developing">Assistente de jogo em desenvolvimento, em breve…</string>
 </resources>

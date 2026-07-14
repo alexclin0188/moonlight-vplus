@@ -94,25 +94,35 @@ object UiHelper {
 
     fun setLocale(activity: Activity) {
         val locale = PreferenceConfiguration.readPreferences(activity).language
-        if (locale != PreferenceConfiguration.DEFAULT_LANGUAGE) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                val localeManager = activity.getSystemService(LocaleManager::class.java)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            // API 33+ 统一使用 per-app locale 机制，无论是否跟随系统都要显式设置
+            val localeManager = activity.getSystemService(LocaleManager::class.java)
+            if (locale != PreferenceConfiguration.DEFAULT_LANGUAGE) {
                 localeManager.applicationLocales = LocaleList.forLanguageTags(locale)
-                PreferenceConfiguration.completeLanguagePreferenceMigration(activity)
             } else {
-                val resolvedLocale = if (locale.contains("-")) {
+                // "跟随系统" → 清除 per-app locale，回退到系统语言
+                localeManager.applicationLocales = LocaleList.getEmptyLocaleList()
+            }
+        } else {
+            // API < 33: 手动更新 Configuration
+            val resolvedLocale: Locale
+            if (locale != PreferenceConfiguration.DEFAULT_LANGUAGE) {
+                resolvedLocale = if (locale.contains("-")) {
                     Locale(locale.substring(0, locale.indexOf('-')), locale.substring(locale.indexOf('-') + 1))
                 } else {
                     Locale(locale)
                 }
-                // 同时更新 Activity 和 Application 的资源，确保所有上下文都使用正确语言
-                val config = Configuration(activity.resources.configuration)
-                config.locale = resolvedLocale
-                @Suppress("DEPRECATION")
-                activity.resources.updateConfiguration(config, activity.resources.displayMetrics)
-                @Suppress("DEPRECATION")
-                activity.applicationContext.resources.updateConfiguration(config, activity.resources.displayMetrics)
+            } else {
+                // 跟随系统 → 使用系统默认 Locale
+                resolvedLocale = Locale.getDefault()
             }
+            // 同时更新 Activity 和 Application 的资源，确保所有上下文都使用正确语言
+            val config = Configuration(activity.resources.configuration)
+            config.setLocale(resolvedLocale)
+            @Suppress("DEPRECATION")
+            activity.resources.updateConfiguration(config, activity.resources.displayMetrics)
+            @Suppress("DEPRECATION")
+            activity.applicationContext.resources.updateConfiguration(config, activity.resources.displayMetrics)
         }
     }
 

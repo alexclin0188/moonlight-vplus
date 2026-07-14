@@ -92,4 +92,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Критические потери пакетов (%.1f%%), проверьте сеть</string>
     <string name="warning_connection_high_latency">⚠️ Высокая задержка (%dms), проверьте сеть</string>
     <string name="warning_connection_high_latency_severe">🚨 Очень высокая задержка (%dms), проверьте сеть</string>
+    <string name="title_import_from_network">Импорт по сетевой ссылке</string>
+    <string name="summary_import_from_network">Импортировать конфигурацию клавиш из сетевой ссылки</string>
+    <string name="title_share_key_mapping">Поделиться настройками клавиш</string>
+    <string name="summary_share_key_mapping">Отправить конфигурацию клавиш на другие устройства</string>
+    <string name="bar_assistant">Ассистент</string>
+    <string name="toast_developing">В разработке, скоро появится…</string>
+    <string name="toast_assistant_developing">Игровой ассистент в разработке, скоро появится…</string>
 </resources>

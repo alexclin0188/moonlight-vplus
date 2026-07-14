@@ -108,4 +108,11 @@
     <string name="warning_connection_packet_loss_severe">🚨 Sehr hoher Paketverlust (%.1f%%), Netzwerk prüfen</string>
     <string name="warning_connection_high_latency">⚠️ Hohe Latenz (%dms), Netzwerk prüfen</string>
     <string name="warning_connection_high_latency_severe">🚨 Sehr hohe Latenz (%dms), Netzwerk prüfen</string>
+    <string name="title_import_from_network">Von Netzwerk-Link importieren</string>
+    <string name="summary_import_from_network">Tastenzuordnung von einem Netzwerk-Link importieren</string>
+    <string name="title_share_key_mapping">Tastenzuordnung teilen</string>
+    <string name="summary_share_key_mapping">Tastenzuordnung mit anderen Geräten teilen</string>
+    <string name="bar_assistant">Assistent</string>
+    <string name="toast_developing">In Entwicklung, bald verfügbar…</string>
+    <string name="toast_assistant_developing">Spielassistent in Entwicklung, bald verfügbar…</string>
 </resources>
