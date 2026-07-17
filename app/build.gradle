@@ -80,17 +80,25 @@ android {
         }
     }
 
-    // 基于环境变量的可选签名配置（用于 CI 等环境）
-    def keystorePath = System.getenv("KEYSTORE_PATH")
-    def keystorePassword = System.getenv("KEYSTORE_PASSWORD")
-    def envKeyAlias = System.getenv("KEY_ALIAS")
-    def envKeyPassword = System.getenv("KEY_PASSWORD")
-    def hasSigningConfig = keystorePath != null && keystorePassword != null && envKeyAlias != null && envKeyPassword != null && new File(keystorePath).exists()
+    // 签名配置：优先使用环境变量（CI），其次使用 keystore.properties（本地开发）
+    def keystorePropsFile = rootProject.file('keystore.properties')
+    def keystoreProps = new Properties()
+    if (keystorePropsFile.exists()) {
+        keystoreProps.load(new FileInputStream(keystorePropsFile))
+    }
+
+    def keystorePath = System.getenv("KEYSTORE_PATH") ?: keystoreProps['storeFile']
+    def keystorePassword = System.getenv("KEYSTORE_PASSWORD") ?: keystoreProps['storePassword']
+    def envKeyAlias = System.getenv("KEY_ALIAS") ?: keystoreProps['keyAlias']
+    def envKeyPassword = System.getenv("KEY_PASSWORD") ?: keystoreProps['keyPassword']
+    // 支持绝对路径和相对路径（相对路径基于项目根目录解析）
+    def keystoreFile = keystorePath != null ? (new File(keystorePath).isAbsolute() ? new File(keystorePath) : new File(rootProject.projectDir, keystorePath)) : null
+    def hasSigningConfig = keystoreFile != null && keystorePassword != null && envKeyAlias != null && envKeyPassword != null && keystoreFile.exists()
 
     signingConfigs {
         if (hasSigningConfig) {
             release {
-                storeFile file(keystorePath)
+                storeFile keystoreFile
                 storePassword keystorePassword
                 keyAlias envKeyAlias
                 keyPassword envKeyPassword

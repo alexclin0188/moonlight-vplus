@@ -79,3 +79,7 @@ package-lock.json
 
 plan/
 /lint_output.txt
+
+# Keystore config (contains passwords)
+keystore.properties
+moonlink.keystore
