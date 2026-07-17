@@ -4,7 +4,7 @@
     android:initialLayout="@layout/widget_initial_layout"
     android:minWidth="110dp"
     android:minHeight="110dp"
-    android:previewImage="@drawable/vplus"
+    android:previewImage="@drawable/moonlink"
     android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen" />

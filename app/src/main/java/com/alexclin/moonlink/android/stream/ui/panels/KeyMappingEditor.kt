@@ -95,6 +95,7 @@ import com.alexclin.moonlink.android.stream.ui.editor.getDisplayName
 import com.alexclin.moonlink.android.stream.ui.editor.ButtonPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.StickPropertyDialog
 import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
+import com.alexclin.moonlink.android.stream.ui.editor.findSpiralPlacement
 import com.alexclin.moonlink.android.stream.ui.editor.snapToGrid
 import com.alexclin.moonlink.android.stream.ui.editor.toContentValues
 import com.alexclin.moonlink.android.stream.ui.editor.collectElementDisplayNames
@@ -267,8 +268,8 @@ fun KeyMappingEditor(
             centralY = (src.centralY + 30).coerceAtMost(MAX_SCREEN_PX),
             layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
         )
-        editorState.addElement(newEl)
-        selectedIds = setOf(newEl.elementId)
+        val actualId = editorState.addElement(newEl)
+        selectedIds = setOf(actualId)
         reloadElements()
         ToastUtil.show(context, context.getString(R.string.editor_toast_duplicated, src.text.ifBlank { src.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
@@ -292,10 +293,10 @@ fun KeyMappingEditor(
         ) ?: return
 
         // 插入粘贴的元素
-        editorState.addElement(result.rootElement)
+        val actualId = editorState.addElement(result.rootElement)
 
         reloadElements()
-        selectedIds = setOf(result.rootElement.elementId)
+        selectedIds = setOf(actualId)
 
         ToastUtil.show(context, context.getString(R.string.editor_toast_pasted, result.rootElement.text.ifBlank { result.rootElement.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
@@ -694,8 +695,14 @@ fun KeyMappingEditor(
             val title = context.getString(R.string.editor_title_new_element, el.type.getDisplayName(context))
             val existingTextNames = collectElementDisplayNames(elements)
             val onSaveNew: (EditorElement) -> Unit = { updated ->
-                val centerX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
-                val centerY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50)
+                val (centerX, centerY) = findSpiralPlacement(
+                    existingElements = elements,
+                    newElementWidth = updated.width,
+                    newElementHeight = updated.height,
+                    canvasWidth = canvasWidthPx,
+                    canvasHeight = canvasHeightPx,
+                    maxScreenPx = MAX_SCREEN_PX,
+                )
                 val finalEl = updated.copy(
                     elementId = System.currentTimeMillis(),
                     configId = currentConfigId,
@@ -703,8 +710,8 @@ fun KeyMappingEditor(
                     centralY = centerY,
                     layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
                 )
-                editorState.addElement(finalEl)
-                selectedIds = setOf(finalEl.elementId)
+                val actualId = editorState.addElement(finalEl)
+                selectedIds = setOf(actualId)
                 reloadElements()
                 pendingNewElement = null
                 ToastUtil.show(context, context.getString(R.string.editor_toast_created, el.type.getDisplayName(context)), Toast.LENGTH_SHORT)
@@ -756,15 +763,23 @@ fun KeyMappingEditor(
                         ToastUtil.show(context, context.getString(R.string.editor_toast_combo_updated), Toast.LENGTH_SHORT)
                     } else {
                         // 新建组合键
+                        val (comboCx, comboCy) = findSpiralPlacement(
+                            existingElements = elements,
+                            newElementWidth = newEl.width,
+                            newElementHeight = newEl.height,
+                            canvasWidth = canvasWidthPx,
+                            canvasHeight = canvasHeightPx,
+                            maxScreenPx = MAX_SCREEN_PX,
+                        )
                         val finalEl = newEl.copy(
                             elementId = System.currentTimeMillis(),
                             configId = currentConfigId,
-                            centralX = (canvasWidthPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
-                            centralY = (canvasHeightPx / 2).coerceIn(50, MAX_SCREEN_PX - 50),
+                            centralX = comboCx,
+                            centralY = comboCy,
                             layer = (elements.maxOfOrNull { it.layer } ?: 50) + 1,
                         )
-                        editorState.addElement(finalEl)
-                        selectedIds = setOf(finalEl.elementId)
+                        val actualId = editorState.addElement(finalEl)
+                        selectedIds = setOf(actualId)
                         reloadElements()
                         ToastUtil.show(context, context.getString(R.string.editor_toast_combo_created, finalEl.text), Toast.LENGTH_SHORT)
                     }

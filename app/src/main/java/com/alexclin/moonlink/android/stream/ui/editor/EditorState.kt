@@ -5,6 +5,8 @@ import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.stream.data.ConfigColumns
 import com.alexclin.moonlink.android.stream.data.ElementColumns
 import com.alexclin.moonlink.android.stream.data.KeymappingDatabaseHelper
+import kotlin.math.min
+import kotlin.math.roundToInt
 
 // ════════════════════════════════════════════════════════════════════════════
 //  元素类型枚举（与旧 Element.java 常量完全对应）
@@ -151,12 +153,13 @@ class EditorState(
         db.updateElement(configId, element.elementId, element.toContentValues())
     }
 
-    /** 插入新元素（自动分配不重复的 elementId，从 1 开始） */
-    fun addElement(element: EditorElement) {
+    /** 插入新元素（自动分配不重复的 elementId，从 1 开始），返回实际写入的 elementId */
+    fun addElement(element: EditorElement): Long {
         val existingIds = db.queryAllElementIds(configId).toSet()
         var newId = 1L
         while (newId in existingIds) newId++
         db.insertElement(element.copy(elementId = newId).toContentValues())
+        return newId
     }
 
     /** 插入新元素（通过 ContentValues 快捷创建） */
@@ -206,6 +209,19 @@ class EditorState(
             ElementType.ANALOG_STICK, ElementType.INVISIBLE_ANALOG_STICK,
         )
 
+        val defaultWidth = when {
+            isPad -> 300
+            isInvisible -> 400
+            isStick -> 200
+            else -> 100
+        }
+        val defaultHeight = when {
+            isPad -> 300
+            isInvisible -> 400
+            isStick -> 200
+            else -> 100
+        }
+
         return EditorElement(
             elementId = 0L,
             configId = configId,
@@ -245,18 +261,8 @@ class EditorState(
                 ElementType.DIGITAL_STICK, ElementType.INVISIBLE_DIGITAL_STICK -> "k59"
                 else -> ""
             },
-            width = when {
-                isPad -> 300
-                isInvisible -> 400
-                isStick -> 200
-                else -> 100
-            },
-            height = when {
-                isPad -> 300
-                isInvisible -> 400
-                isStick -> 200
-                else -> 100
-            },
+            width = defaultWidth,
+            height = defaultHeight,
             centralX = when {
                 isStick -> 250
                 else -> 100
@@ -285,10 +291,7 @@ class EditorState(
                 isStick -> 30
                 else -> 100
             },
-            radius = when {
-                isStick -> 100
-                else -> 0
-            },
+            radius = if (isStick) 100 else (min(defaultWidth, defaultHeight) * 0.1f).roundToInt(),
             flag1 = 0,
             extraAttributesJson = when (type) {
                 ElementType.DIGITAL_MOVABLE_BUTTON -> """{"isTrackpadMode":false}"""
