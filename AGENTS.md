@@ -1,8 +1,8 @@
-# AGENTS.md — Moonlight X (moonlink-android)
+# AGENTS.md — MoonLink (moonlink-android)
 
 ## 项目简介
 
-本项目是基于 [Moonlight](https://github.com/moonlight-stream/moonlight-android) 的增强版 Android 游戏串流客户端（别名 **Moonlight X**）。支持 NVIDIA GameStream / Sunshine 串流协议，在保持上游核心功能的基础上增加了键位映射编辑、虚拟键盘、自定义布局等增强特性。
+本项目是基于 [Moonlight](https://github.com/moonlight-stream/moonlight-android) 的增强版 Android 游戏串流客户端（**MoonLink**）。支持 NVIDIA GameStream / Sunshine 串流协议，在保持上游核心功能的基础上增加了键位映射编辑、虚拟键盘、自定义布局等增强特性。
 
 ## 新开发代码位置
 

@@ -1,4 +1,4 @@
-Moonlight X is an enhanced version of the popular Moonlight game streaming app, featuring advanced capabilities and optimizations for the ultimate streaming experience.
+MoonLink is an enhanced version of the popular Moonlight game streaming app, featuring advanced capabilities and optimizations for the ultimate streaming experience.
 
 This app streams games, programs, or your full desktop from your PC or <a href="https://github.com/LizardByte/Sunshine">Sunshine</a> on your local network or the Internet. Mouse, keyboard, and controller input is sent from your Android device to the PC.
 
