@@ -59,12 +59,21 @@ class DeviceStateManager(
         b.startPolling()
         collectJob?.cancel()
         collectJob = scope.launch {
-            b.computerUpdates.collectLatest { details ->
-                val idx = devices.indexOfFirst { it.uuid == details.uuid }
-                if (idx >= 0) {
-                    devices[idx] = details
-                } else {
-                    devices.add(details)
+            // 收集设备更新（状态变化、新设备加入）
+            launch {
+                b.computerUpdates.collectLatest { details ->
+                    val idx = devices.indexOfFirst { it.uuid == details.uuid }
+                    if (idx >= 0) {
+                        devices[idx] = details
+                    } else {
+                        devices.add(details)
+                    }
+                }
+            }
+            // 收集设备移除信号（未配对设备离线、网络丢失等）
+            launch {
+                b.computerRemovals.collectLatest { uuid ->
+                    devices.removeAll { it.uuid == uuid }
                 }
             }
         }

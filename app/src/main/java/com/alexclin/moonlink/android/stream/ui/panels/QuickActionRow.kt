@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.alexclin.moonlink.android.stream.engine.StreamEngine
 import com.alexclin.moonlink.android.stream.ui.common.MoonLinkQuickActions
 import com.alexclin.moonlink.android.stream.ui.common.getActionIcon
-import com.alexclin.moonlink.android.stream.ui.common.getActionLabelResId
+import com.alexclin.moonlink.android.stream.ui.common.getActionShortLabelResId
 import com.alexclin.moonlink.android.util.QuickActionRegistry
 import com.limelight.binding.input.KeyboardTranslator
 import android.widget.Toast
@@ -107,7 +107,7 @@ fun QuickActionRow(
                     else -> null
                 }
                 val icon = getActionIcon(id, isActive)
-                val label = stringResource(getActionLabelResId(id))
+                val label = stringResource(getActionShortLabelResId(id))
                 val isAvailable = id != "toggle_mic" || engine.prefConfig.enableMic
 
                 QuickActionChip(

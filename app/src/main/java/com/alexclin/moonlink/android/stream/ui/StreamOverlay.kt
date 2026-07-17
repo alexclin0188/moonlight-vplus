@@ -537,31 +537,11 @@ private fun ConnectionBanner(engine: StreamEngine) {
 @Composable
 private fun ConnectionProgressOverlay(connectionStage: String?) {
     val context = LocalContext.current
-    val tipResIds = remember {
-        intArrayOf(
-            R.string.tip_esc_exit,
-            R.string.tip_double_tap_mouse,
-            R.string.tip_long_press_controller,
-            R.string.tip_volume_keys,
-            R.string.tip_wallpaper_change,
-            R.string.tip_5ghz_wifi,
-            R.string.tip_close_apps,
-            R.string.tip_home_saves,
-            R.string.tip_hdr_colors,
-            R.string.tip_touch_modes,
-            R.string.tip_custom_keys,
-            R.string.tip_performance_overlay,
-            R.string.tip_audio_config,
-            R.string.tip_external_display,
-            R.string.tip_virtual_display,
-            R.string.tip_dynamic_bitrate,
-            R.string.tip_cards_show,
-        )
-    }
+    val tipMessages = remember { context.resources.getStringArray(R.array.tip_messages) }
     val random = remember { Random }
     // connectionStage 变化时换一条新 tip
     val currentTip by remember(connectionStage) {
-        mutableStateOf(context.getString(tipResIds[random.nextInt(tipResIds.size)]))
+        mutableStateOf(tipMessages[random.nextInt(tipMessages.size)])
     }
 
     Box(

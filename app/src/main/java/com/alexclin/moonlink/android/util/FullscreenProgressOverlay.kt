@@ -35,25 +35,7 @@ class FullscreenProgressOverlay(
     var computer: ComputerDetails? = null
 
     init {
-        tips = arrayOf(
-            activity.getString(R.string.tip_esc_exit),
-            activity.getString(R.string.tip_double_tap_mouse),
-            activity.getString(R.string.tip_long_press_controller),
-            activity.getString(R.string.tip_volume_keys),
-            activity.getString(R.string.tip_wallpaper_change),
-            activity.getString(R.string.tip_5ghz_wifi),
-            activity.getString(R.string.tip_close_apps),
-            activity.getString(R.string.tip_home_saves),
-            activity.getString(R.string.tip_hdr_colors),
-            activity.getString(R.string.tip_touch_modes),
-            activity.getString(R.string.tip_custom_keys),
-            activity.getString(R.string.tip_performance_overlay),
-            activity.getString(R.string.tip_audio_config),
-            activity.getString(R.string.tip_external_display),
-            activity.getString(R.string.tip_virtual_display),
-            activity.getString(R.string.tip_dynamic_bitrate),
-            activity.getString(R.string.tip_cards_show)
-        )
+        tips = activity.resources.getStringArray(R.array.tip_messages)
 
         rootView = activity.findViewById(android.R.id.content)
 

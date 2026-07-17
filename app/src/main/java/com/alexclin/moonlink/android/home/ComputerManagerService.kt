@@ -79,6 +79,14 @@ class ComputerManagerService : Service() {
     )
     val computerUpdates: SharedFlow<ComputerDetails> = _computerUpdates.asSharedFlow()
 
+    // 设备移除信号（UUID），用于通知 DeviceStateManager 从未配对设备从列表中移除
+    private val _computerRemovals = MutableSharedFlow<String>(
+        replay = 0,
+        extraBufferCapacity = 128,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val computerRemovals: SharedFlow<String> = _computerRemovals.asSharedFlow()
+
     private val activePolls = AtomicInteger(0)
     @Volatile
     private var pollingActive = false
@@ -144,6 +152,15 @@ class ComputerManagerService : Service() {
         }
 
         if (details.state == ComputerDetails.State.ONLINE) {
+            // 未配对设备不持久化到 DB，仅作为 mDNS 瞬态存在于内存中
+            if (details.pairState != PairingManager.PairState.PAIRED) {
+                if (!newPc || details.state == ComputerDetails.State.ONLINE) {
+                    _computerUpdates.tryEmit(details)
+                }
+                releaseLocalDatabaseReference()
+                return true
+            }
+
             val existingComputer = dbManager.getComputerByUUID(details.uuid!!)
 
             if (!newPc && existingComputer == null) {
@@ -206,6 +223,20 @@ class ComputerManagerService : Service() {
                 if (!polled) {
                     LimeLog.warning("${tuple.computer.name} is offline (try $offlineCount)")
                     offlineCount++
+
+                    // 未配对设备连续离线 → 自动移除（不展示离线状态）
+                    if (offlineCount >= OFFLINE_POLL_TRIES &&
+                        tuple.computer.pairState != PairingManager.PairState.PAIRED
+                    ) {
+                        val uuid = tuple.computer.uuid
+                        val name = tuple.computer.name
+                        LimeLog.info("Removing unpaired offline device: $name")
+                        removeComputer(tuple.computer)
+                        if (uuid != null) {
+                            _computerRemovals.tryEmit(uuid)
+                        }
+                        break
+                    }
                 } else {
                     tuple.lastSuccessfulPollMs = SystemClock.elapsedRealtime()
                     offlineCount = 0
@@ -229,6 +260,9 @@ class ComputerManagerService : Service() {
          */
         val computerUpdates: SharedFlow<ComputerDetails>
             get() = this@ComputerManagerService.computerUpdates
+
+        val computerRemovals: SharedFlow<String>
+            get() = this@ComputerManagerService.computerRemovals
 
         fun startPolling() {
             startPollingInternal()
@@ -752,7 +786,11 @@ class ComputerManagerService : Service() {
 
         if (!getLocalDatabaseReference()) return
 
-        for (computer in dbManager.getAllComputers()) {
+        // 清理历史残留的未配对离线设备记录（ServerCert IS NULL）
+        dbManager.deleteUnpairedComputers()
+
+        // 仅加载已配对设备；未配对设备通过 mDNS 发现后加入内存
+        for (computer in dbManager.getPairedComputers()) {
             addTuple(computer)
         }
 
@@ -784,12 +822,24 @@ class ComputerManagerService : Service() {
                     LimeLog.info("Offlining PCs due to network loss")
                     networkDiagnostics?.diagnoseNetwork()
                     synchronized(pollingTuples) {
-                        for (tuple in pollingTuples) {
-                            // 使用 tuple.networkLock 轮询锁防止竞态（Fix: 网络回调与轮询锁不一致）
-                            synchronized(tuple.networkLock) {
-                                tuple.computer.state = ComputerDetails.State.OFFLINE
+                        val iterator = pollingTuples.iterator()
+                        while (iterator.hasNext()) {
+                            val tuple = iterator.next()
+                            if (tuple.computer.pairState != PairingManager.PairState.PAIRED) {
+                                // 未配对设备：网络丢失直接移除，不展示离线状态
+                                val uuid = tuple.computer.uuid
+                                tuple.job?.cancel()
+                                iterator.remove()
+                                if (uuid != null) {
+                                    _computerRemovals.tryEmit(uuid)
+                                }
+                            } else {
+                                // 已配对设备：正常设置离线状态
+                                synchronized(tuple.networkLock) {
+                                    tuple.computer.state = ComputerDetails.State.OFFLINE
+                                }
+                                _computerUpdates.tryEmit(tuple.computer)
                             }
-                            _computerUpdates.tryEmit(tuple.computer)
                         }
                     }
                 }

@@ -72,6 +72,7 @@
     <string name="addpc_qr_scan">扫描二维码</string>
     <string name="qr_scan_prompt">扫描Sunshine基地版配对二维码</string>
     <string name="qr_invalid_code">无法识别的二维码</string>
+    <string name="camera_permission_required">扫描二维码需要相机权限</string>
     <string name="msg_add_pc"> 正在连接电脑…… </string>
     <string name="addpc_fail">无法连接至指定电脑。请确保所需端口没有被防火墙阻止。</string>
     <string name="addpc_success"> 成功添加电脑 </string>
@@ -216,25 +217,6 @@
 
     <!-- Reverse resolution -->
     <string name="title_checkbox_rotable_screen">跟随屏幕旋转</string>
-
-    <!-- Tip strings -->
-    <string name="tip_esc_exit">💡 串流小课堂：使用"退出"按钮可以快速完全地退出串流，让屏幕恢复到串流前的状态哦～</string>
-    <string name="tip_double_tap_mouse">💡 串流小课堂：主机列表页面长按顶部空白区域可以下载当前涩图呢～</string>
-    <string name="tip_long_press_controller">💡 串流小课堂：长按应用可以选择使用虚拟显示器串流，超方便的！</string>
-    <string name="tip_volume_keys">💡 串流小课堂：建议使用5GHz WiFi获得更好体验，网速飞起来～</string>
-    <string name="tip_wallpaper_change">💡 串流小课堂：壁纸API选项可以设置随机壁纸来源的API，也可以是单张图片地址哦</string>
-    <string name="tip_5ghz_wifi">💡 串流小课堂：使用"平衡"的帧速率模式可以获得最佳的帧率与延迟平衡，完美！</string>
-    <string name="tip_close_apps">💡 串流小课堂：启用HDR可以获得更好的色彩与对比度表现，在Sunshine基地版中绑定对应的HDR配置文件可以更精准地与客户端屏幕同步，色彩绚丽～</string>
-    <string name="tip_home_saves">💡 串流小课堂：主页的5个小鲨牙可以快速保存和切换串流配置～</string>
-    <string name="tip_hdr_colors">💡 串流小课堂：调整分辨率可以平衡画质和性能，找到最适合的设置～</string>
-    <string name="tip_touch_modes">💡 串流小课堂：游戏菜单中可以切换触控模式，增强式多点触控适合手游，触控板模式适合办公，找到最适合你的操作方式～</string>
-    <string name="tip_custom_keys">💡 串流小课堂：可以添加自定义按键组合，比如Ctrl+Shift+Esc快速打开任务管理器，让操作更便捷～</string>
-    <string name="tip_performance_overlay">💡 串流小课堂：性能覆盖层可以拖动到任意位置，双击可以切换横竖布局，点击各项指标还能查看详细说明哦～</string>
-    <string name="tip_audio_config">💡 串流小课堂：启用Dolby Atmos或DTS:X可以获得更沉浸的音频体验，而此时需要启用系统均衡器来获得最佳效果～</string>
-    <string name="tip_external_display">💡 串流小课堂：连接外接显示器时，可以在设置中选择在外接显示器上显示串流画面，大屏游戏更爽～</string>
-    <string name="tip_virtual_display">💡 串流小课堂：虚拟显示器功能可以创建独立的显示空间，特别适合多任务场景，让串流更灵活～</string>
-    <string name="tip_dynamic_bitrate">💡 串流小课堂：使用HEVC或AV1解码器时，串流中可以调整码率，不用退出串流即可找到最适合你的网络和设备的最佳码率～</string>
-    <string name="tip_cards_show">💡 串流小课堂：游戏菜单最下方可以编辑展示的功能卡片，不需要的卡片可以收起来哦～</string>
 
     <!-- 触控模式切换菜单 -->
     <string name="game_menu_touch_mode_enhanced">增强式多点触控</string>
@@ -773,6 +755,9 @@
     <string name="qa_label_performance">性能</string>
     <string name="qa_label_pip">画中画</string>
     <string name="qa_label_adaptive_bitrate">智能码率</string>
+    <string name="qa_label_short_adaptive_bitrate">智能码率</string>
+    <string name="qa_label_short_gyro">体感</string>
+    
 
     <!-- Shortcut descriptions -->
     <string name="shortcut_desc_copy">复制</string>
@@ -1044,6 +1029,7 @@
     <string name="engine_no_video_traffic">没有视频流量</string>
     <string name="engine_orientation_landscape">横屏</string>
     <string name="engine_orientation_portrait">竖屏</string>
+    <string name="engine_perf_visible">性能图层可见</string>
     <string name="engine_perf_hidden">性能图层已隐藏</string>
     <string name="engine_pip_off">画中画已关闭</string>
     <string name="engine_pip_on">画中画已开启</string>
@@ -1168,4 +1154,38 @@
     <string name="custom_key_desc_xbox_game_bar">打开 Xbox Game Bar</string>
     <string name="custom_key_desc_perf_monitor">小飞机/RTSS 主机性能监控开关</string>
     <string name="custom_key_desc_steam_overlay">打开 Steam 图层</string>
+
+    <!-- ═══ Premium / 高级版 ═══ -->
+    <string name="category_premium">高级版</string>
+    <string name="premium_title">升级到高级版</string>
+    <string name="premium_subtitle">解锁全部高级功能</string>
+    <string name="premium_one_time_purchase">一次性购买，永久有效</string>
+    <string name="premium_feature_remove_ads">移除所有广告</string>
+    <string name="premium_feature_remove_ads_desc">无插屏和开屏广告</string>
+    <string name="premium_feature_network_import">从网络链接导入按键映射</string>
+    <string name="premium_feature_network_import_desc">通过 URL 从其它设备导入配置</string>
+    <string name="premium_feature_share_keymapping">分享按键映射到其它手机</string>
+    <string name="premium_feature_share_keymapping_desc">与好友分享你的配置</string>
+    <string name="premium_feature_unlimited_schemes">无限按键映射方案</string>
+    <string name="premium_feature_unlimited_schemes_desc">创建任意数量的方案（免费版：最多 3 个）</string>
+    <string name="premium_feature_custom_bg">自定义网络背景图</string>
+    <string name="premium_feature_custom_bg_desc">使用网络图片或 API 作为应用背景</string>
+    <string name="premium_buy_button">升级高级版</string>
+    <string name="premium_restore">恢复购买</string>
+    <string name="premium_active_title">高级版已激活</string>
+    <string name="premium_active_thanks">感谢你的支持！</string>
+    <string name="premium_loading">加载中…</string>
+    <string name="premium_price_unavailable">价格不可用</string>
+    <string name="premium_purchase_success">高级版已激活！享受全部功能。</string>
+    <string name="premium_purchase_failed">购买失败，请重试。</string>
+    <string name="premium_purchase_canceled">购买已取消。</string>
+    <string name="premium_restore_success">高级版恢复成功。</string>
+    <string name="premium_restore_none">未找到已购买的记录。</string>
+    <string name="premium_restore_failed">恢复失败，请重试。</string>
+    <string name="premium_billing_unavailable">此设备不支持 Google Play 内购。</string>
+    <string name="premium_upgrade_prompt_title">高级版功能</string>
+    <string name="premium_upgrade_prompt_msg">此功能需要高级版，是否立即升级？</string>
+    <string name="premium_free_scheme_limit">免费版最多 3 个方案，升级后无限制。</string>
+    <string name="toast_coming_soon">即将上线…</string>
+
 </resources>

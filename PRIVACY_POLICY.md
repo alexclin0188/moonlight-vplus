@@ -1,8 +1,8 @@
-# Moonlight X 隐私政策
+# MoonLink 隐私政策
 
 ## 概述
 
-本隐私政策适用于 Moonlight X 应用（以下简称"本应用"）。本应用基于开源的 Moonlight 项目开发，并增加了统计分析功能以改善用户体验。
+本隐私政策适用于 MoonLink 应用（以下简称"本应用"）。本应用由AI参考开源的 Moonlight V+ 项目重写界面功能，更人性化的界面交互和易用的按键映射编辑管理功能。
 
 > **注意**：本应用基于 [Moonlight](https://moonlight-stream.org/) 项目开发，您可以查看 [Moonlight 官方隐私政策](https://moonlight-stream.org/privacy.html) 了解更多信息。
 
@@ -113,7 +113,7 @@
 
 如果您对本隐私政策有任何疑问或建议，请通过以下方式联系我们：
 
-- **GitHub Issues**：[项目 Issues 页面](https://github.com/qiin2333/moonlight-x/issues)
+- **GitHub Issues**：[项目 Issues 页面](https://github.com/alexclin0188/moonlink/issues)
 - **邮箱**：通过 GitHub 项目页面联系
 
 ## 相关链接
@@ -127,7 +127,7 @@
 
 ---
 
-**最后更新时间**：2025年9月
+**最后更新时间**：2026年7月
 
-**版本**：1.0.1
+**版本**：1.0.0
 

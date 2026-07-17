@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.ProcessLifecycleOwner
 import androidx.core.content.ContextCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.preference.PreferenceManager
@@ -168,6 +169,7 @@ class MoonLinkMainActivity : BaseComponentActivity() {
      */
     override fun onResume() {
         super.onResume()
+
         val bgActivity = StreamEngine.currentBackgroundStreamActivity
         if (bgActivity != null) {
             // 清除引用，避免重复重定向（无论是否重定向都清除）
@@ -180,9 +182,14 @@ class MoonLinkMainActivity : BaseComponentActivity() {
                     putExtra(com.alexclin.moonlink.android.stream.StreamIntentKeys.EXTRA_FROM_MAIN_REDIRECT, true)
                 }
                 startActivity(streamIntent)
+                return
             } else {
                 LimeLog.info("MoonLinkMainActivity: 后台串流已销毁，清除残留引用")
             }
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
     }
 }

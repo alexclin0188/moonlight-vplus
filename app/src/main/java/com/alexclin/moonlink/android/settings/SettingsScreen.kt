@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.alexclin.moonlink.android.BuildConfig
 import com.alexclin.moonlink.android.navigation.MoonLinkRoute
 import com.alexclin.moonlink.android.R
 import com.alexclin.moonlink.android.home.ComputerManagerService
@@ -39,7 +40,7 @@ data class SettingsCategory(
 /** Resolve category title from string resources. Call from within @Composable. */
 @Composable
 private fun rememberSettingsCategories(context: Context): List<SettingsCategory> = remember {
-    listOf(
+    val all = listOf(
         SettingsCategory("ui",          context.getString(R.string.category_ui_settings),             Icons.Default.Palette,         "settings_ui"),
         SettingsCategory("performance", context.getString(R.string.category_performance_analytics),    Icons.Default.Speed,           "settings_performance"),
         SettingsCategory("gamepad",     context.getString(R.string.category_gamepad_settings),        Icons.Default.Gamepad,         "settings_gamepad"),
@@ -49,6 +50,7 @@ private fun rememberSettingsCategories(context: Context): List<SettingsCategory>
         SettingsCategory("connection",  context.getString(R.string.category_connection_settings),     Icons.Default.Lan,             "settings_connection"),
         SettingsCategory("help",        context.getString(R.string.help),                    Icons.Default.HelpOutline,     "settings_help"),
     )
+    all
 }
 
 @Composable

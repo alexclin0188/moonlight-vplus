@@ -148,6 +148,7 @@ fun TouchModeCategory(settings: HostSettings, onSettingsChange: (HostSettings) -
                     selectedMode = value
                     onSettingsChange(settings.copy(enableEnhancedTouch = value == "enhanced", touchscreenTrackpad = value == "trackpad", enableNativeMousePointer = value == "mouse" && settings.enableNativeMousePointer))
                 },
+                chipMinHeight = 40.dp,
             )
         }
         item {
@@ -308,7 +309,7 @@ fun DisplayCategory(settings: HostSettings, onSettingsChange: (HostSettings) -> 
         item {
             Divider()
             Text(stringResource(R.string.label_frame_pacing), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(vertical = 6.dp))
-            ChipSelector(options = listOf(stringResource(R.string.pacing_latency) to "0", stringResource(R.string.abr_mode_balanced) to "1", stringResource(R.string.pacing_balanced_alt) to "2", stringResource(R.string.pacing_smoothness) to "3", stringResource(R.string.pacing_experimental_low_latency) to "4", stringResource(R.string.pacing_precise_sync) to "5"), selectedValue = settings.framePacing.toString(), onSelect = { value -> onSettingsChange(settings.copy(framePacing = value.toIntOrNull() ?: 0)) }, columns = 3, spacingDp = 6)
+            ChipSelector(options = listOf(stringResource(R.string.pacing_latency) to "0", stringResource(R.string.abr_mode_balanced) to "1", stringResource(R.string.pacing_balanced_alt) to "2", stringResource(R.string.pacing_smoothness) to "3", stringResource(R.string.pacing_experimental_low_latency) to "4", stringResource(R.string.pacing_precise_sync) to "5"), selectedValue = settings.framePacing.toString(), onSelect = { value -> onSettingsChange(settings.copy(framePacing = value.toIntOrNull() ?: 0)) }, columns = 3, spacingDp = 6, chipMinHeight = 44.dp)
         }
         item {
             Divider()

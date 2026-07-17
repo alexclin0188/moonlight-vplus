@@ -258,25 +258,6 @@
     <!-- Placeholder for unavailable values -->
     <string name="value_placeholder">—</string>
 
-    <!-- Tip strings -->
-    <string name="tip_esc_exit">💡 Tip: Use the "Exit" button to quickly and completely exit the stream, restoring your screen to its pre-stream state~</string>
-    <string name="tip_double_tap_mouse">💡 Tip: Long press the top blank area on the host list page to download the current wallpaper~</string>
-    <string name="tip_long_press_controller">💡 Tip: Long press an app to choose virtual display streaming, super convenient!</string>
-    <string name="tip_volume_keys">💡 Tip: Using 5GHz WiFi provides a better experience, lightning fast speeds~</string>
-    <string name="tip_wallpaper_change">💡 Tip: The wallpaper API option can set the API for random wallpaper sources, or a single image address</string>
-    <string name="tip_5ghz_wifi">💡 Tip: Using "Balanced" frame rate mode gives you the best balance of frame rate and latency, perfect!</string>
-    <string name="tip_close_apps">💡 Tip: Enabling HDR provides better color and contrast performance. In Sunshine base version, binding the corresponding HDR profile can more precisely sync with the client screen, gorgeous colors~</string>
-    <string name="tip_home_saves">💡 Tip: The 5 small sharks on the home page can quickly save and switch streaming configurations~</string>
-    <string name="tip_hdr_colors">💡 Tip: Adjusting resolution can balance quality and performance, find the perfect settings~</string>
-    <string name="tip_touch_modes">💡 Tip: You can switch touch modes in the game menu. Enhanced multi-touch is suitable for mobile games, trackpad mode is great for office work. Find the operation method that suits you best~</string>
-    <string name="tip_custom_keys">💡 Tip: You can add custom key combinations, like Ctrl+Shift+Esc to quickly open Task Manager, making operations more convenient~</string>
-    <string name="tip_performance_overlay">💡 Tip: The performance overlay can be dragged to any position, double-tap to switch between horizontal and vertical layouts, and click on various metrics to view detailed explanations~</string>
-    <string name="tip_audio_config">💡 Tip: Enabling Dolby Atmos or DTS:X provides a more immersive audio experience, and you need to enable the system equalizer for the best effect~</string>
-    <string name="tip_external_display">💡 Tip: When connecting an external display, you can choose to display the stream on the external display in settings, making big screen gaming even more enjoyable~</string>
-    <string name="tip_virtual_display">💡 Tip: Virtual display function can create independent display spaces, especially suitable for multi-tasking scenarios, making streaming more flexible~</string>
-    <string name="tip_dynamic_bitrate">💡 Tip: When using HEVC or AV1 decoders, you can adjust the bitrate during streaming without exiting, finding the optimal bitrate for your network and device~</string>
-    <string name="tip_cards_show">💡 Tip: You can edit the displayed function cards in the game menu. Unnecessary cards can be hidden~</string>
-
     <!-- 触控模式切换菜单 -->
     <string name="game_menu_touch_mode_enhanced">Enhanced Multi Touch</string>
     <string name="game_menu_touch_mode_classic">Classic Mouse Mode</string>
@@ -426,8 +407,8 @@
     <!-- Compose UI hardcoded strings (extracted from Kotlin files) -->
     <string name="stream_control_only_hint">Current control-only mode\nTo exit, turn off the video toggle in the host streaming settings</string>
     <string name="quick_action_mic_unavailable">Microphone unavailable, requires virtual driver on PC</string>
-    <string name="quick_action_terminate">Terminate Stream</string>
-    <string name="quick_action_pause_stream">Pause Stream</string>
+    <string name="quick_action_terminate">Terminate</string>
+    <string name="quick_action_pause_stream">Pause</string>
     <string name="fab_menu">Menu</string>
     <string name="settings_title">Settings</string>
     <string name="settings_placeholder_desc">Settings categories will be implemented here</string>
@@ -1144,6 +1125,8 @@
     <string name="qa_label_performance">Performance</string>
     <string name="qa_label_pip">PiP</string>
     <string name="qa_label_adaptive_bitrate">Adaptive Bitrate</string>
+    <string name="qa_label_short_adaptive_bitrate">ABR</string>
+    <string name="qa_label_short_gyro">Gyro</string>
 
     <!-- Shortcut descriptions -->
     <string name="shortcut_desc_copy">Copy</string>
@@ -1181,4 +1164,38 @@
     <string name="custom_key_desc_xbox_game_bar">Open Xbox Game Bar</string>
     <string name="custom_key_desc_perf_monitor">Toggle performance monitor (RTSS/OSD)</string>
     <string name="custom_key_desc_steam_overlay">Open Steam overlay</string>
+
+    <!-- ═══ Premium / 高级版 ═══ -->
+    <string name="category_premium">Premium</string>
+    <string name="premium_title">Upgrade to Premium</string>
+    <string name="premium_subtitle">Unlock all advanced features</string>
+    <string name="premium_one_time_purchase">One-time purchase, permanent access</string>
+    <string name="premium_feature_remove_ads">Remove all ads</string>
+    <string name="premium_feature_remove_ads_desc">No interstitial or app open ads</string>
+    <string name="premium_feature_network_import">Import key mapping from network link</string>
+    <string name="premium_feature_network_import_desc">Import configurations via URL from other devices</string>
+    <string name="premium_feature_share_keymapping">Share key mapping to other phones</string>
+    <string name="premium_feature_share_keymapping_desc">Share your configurations with friends</string>
+    <string name="premium_feature_unlimited_schemes">Unlimited key mapping schemes</string>
+    <string name="premium_feature_unlimited_schemes_desc">Create as many schemes as you need (free: max 3)</string>
+    <string name="premium_feature_custom_bg">Custom background from URL</string>
+    <string name="premium_feature_custom_bg_desc">Use network images or API as app background</string>
+    <string name="premium_buy_button">Upgrade to Premium</string>
+    <string name="premium_restore">Restore Purchase</string>
+    <string name="premium_active_title">Premium Active</string>
+    <string name="premium_active_thanks">Thank you for your support!</string>
+    <string name="premium_loading">Loading…</string>
+    <string name="premium_price_unavailable">Price unavailable</string>
+    <string name="premium_purchase_success">Premium activated! Enjoy all features.</string>
+    <string name="premium_purchase_failed">Purchase failed. Please try again.</string>
+    <string name="premium_purchase_canceled">Purchase canceled.</string>
+    <string name="premium_restore_success">Premium restored successfully.</string>
+    <string name="premium_restore_none">No previous purchase found.</string>
+    <string name="premium_restore_failed">Restore failed. Please try again.</string>
+    <string name="premium_billing_unavailable">Google Play Billing is unavailable on this device.</string>
+    <string name="premium_upgrade_prompt_title">Premium Feature</string>
+    <string name="premium_upgrade_prompt_msg">This feature requires Premium. Upgrade now?</string>
+    <string name="premium_free_scheme_limit">Free version allows up to 3 schemes. Upgrade for unlimited.</string>
+    <string name="toast_coming_soon">Coming soon…</string>
+
 </resources>

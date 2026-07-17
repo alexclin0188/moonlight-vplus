@@ -69,6 +69,21 @@ fun getActionLabelResId(id: String): Int {
     }
 }
 
+/**
+ * 获取快捷操作在快捷行中显示的简写 label 资源 ID。
+ * 与 [getActionLabelResId] 不同，此函数返回适合 56dp 窄按钮的短文本。
+ */
+fun getActionShortLabelResId(id: String): Int {
+    return when (id) {
+        "toggle_keyboard" -> R.string.quick_btn_keyboard
+        "toggle_controller" -> R.string.quick_btn_controller
+        "toggle_perf" -> R.string.quick_btn_perf
+        "toggle_adaptive_bitrate" -> R.string.qa_label_short_adaptive_bitrate
+        "toggle_gyro" -> R.string.qa_label_short_gyro
+        else -> getActionLabelResId(id) // 其余项简写=全称，复用
+    }
+}
+
 fun getAllActionIds(): List<String> {
     val builtinIds = QuickActionRegistry.DEFAULT_IDS.toList()
     val moonlinkIds = listOf(

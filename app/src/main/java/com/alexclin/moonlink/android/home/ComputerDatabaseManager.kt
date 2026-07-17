@@ -177,6 +177,38 @@ class ComputerDatabaseManager(c: Context) {
         }
     }
 
+    /**
+     * 仅获取已配对的设备（ServerCert 非 null）。
+     * 未配对设备不持久化，仅通过 mDNS 发现存在于内存中。
+     */
+    fun getPairedComputers(): List<ComputerDetails> {
+        computerDb.rawQuery(
+            "SELECT * FROM $COMPUTER_TABLE_NAME WHERE $SERVER_CERT_COLUMN_NAME IS NOT NULL",
+            null
+        ).use { c ->
+            val computerList = LinkedList<ComputerDetails>()
+            while (c.moveToNext()) {
+                computerList.add(getComputerFromCursor(c))
+            }
+            return computerList
+        }
+    }
+
+    /**
+     * 删除所有未配对设备记录（ServerCert 为 null）。
+     * 在 Service 启动时调用，清理历史残留的未配对离线设备。
+     */
+    fun deleteUnpairedComputers() {
+        val deleted = computerDb.delete(
+            COMPUTER_TABLE_NAME,
+            "$SERVER_CERT_COLUMN_NAME IS NULL",
+            null
+        )
+        if (deleted > 0) {
+            LimeLog.info("Cleaned up $deleted unpaired computer records from database")
+        }
+    }
+
     fun getComputerByName(name: String): ComputerDetails? {
         computerDb.query(
             COMPUTER_TABLE_NAME, null, "$COMPUTER_NAME_COLUMN_NAME=?",
