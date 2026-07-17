@@ -883,7 +883,7 @@
     <string name="editor_content_desc_confirm_name">Confirm name</string>
     <string name="editor_content_desc_copy_clipboard">Copy to clipboard</string>
     <string name="editor_content_desc_delete">Delete</string>
-    <string name="editor_content_desc_duplicate">Duplicate</string>
+    <string name="editor_content_desc_duplicate">Clone</string>
     <string name="editor_content_desc_edit_name">Edit name</string>
     <string name="editor_content_desc_layer_down">Layer down</string>
     <string name="editor_content_desc_layer_up">Layer up</string>
