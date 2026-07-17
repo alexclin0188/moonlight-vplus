@@ -43,7 +43,6 @@
         <item>💡 Tip: After enabling key mapping, you can overlay virtual controller buttons on the streaming screen, supporting multiple profiles and quick switching between different games~</item>
         <item>💡 Tip: The key mapping editor supports grid snapping. When enabled, dragging buttons automatically aligns them to grid lines, making it easy to create a clean button layout~</item>
         <item>💡 Tip: You can adjust the button layer order in the editor, moving up or down to change the display hierarchy of overlapping buttons, ensuring every button can be correctly touched~</item>
-        <item>💡 Tip: The key mapping editor supports cross-profile copy and paste. Copy button elements in one profile, switch to another and paste to use directly~</item>
         <item>💡 Tip: You can create combo key buttons to send key combinations like Ctrl+Shift+Esc with a single tap, making operations more efficient~</item>
         <item>💡 Tip: Key mapping supports custom colors for each button (normal state, pressed state, background color, text color), letting virtual buttons perfectly blend into the game screen~</item>
         <item>💡 Tip: Quick action cards support long-press drag to reorder. Put your most used functions at the front for one-tap access anytime~</item>

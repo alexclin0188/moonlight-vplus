@@ -573,6 +573,7 @@
     <string name="qa_label_short_adaptive_bitrate">自適應位元率</string>
     <string name="qa_label_short_gyro">體感</string>
     <string name="shortcut_desc_copy">複製</string>
+    <string name="shortcut_desc_paste">貼上</string>
     <string name="shortcut_desc_cut">剪下</string>
     <string name="shortcut_desc_select_all">全選</string>
     <string name="shortcut_desc_start_menu">開始功能表</string>
@@ -714,7 +715,6 @@
     <string name="editor_color_customize">自定義</string>
     <string name="editor_confirm_clear">清除</string>
     <string name="editor_content_desc_confirm_name">確認名稱</string>
-    <string name="editor_content_desc_copy_clipboard">複製到剪貼板</string>
     <string name="editor_content_desc_delete">刪除</string>
     <string name="editor_content_desc_duplicate">複製</string>
     <string name="editor_content_desc_edit_name">編輯名稱</string>
@@ -770,14 +770,12 @@
     <string name="editor_toast_color_updated">顏色已更新</string>
     <string name="editor_toast_combo_created">組合鍵「%1$s」已創建</string>
     <string name="editor_toast_combo_updated">組合鍵已更新</string>
-    <string name="editor_toast_copied_clipboard">已將「%1$s」複製到剪貼板</string>
     <string name="editor_toast_create_failed">創建失敗：%1$s</string>
     <string name="editor_toast_created">已創建%1$s</string>
     <string name="editor_toast_duplicate_direction">檢測到重複方向：%1$s</string>
     <string name="editor_toast_duplicate_name">「%1$s」已存在</string>
     <string name="editor_toast_duplicate_scheme">已存在同名方案「%1$s」</string>
     <string name="editor_toast_duplicated">已複製「%1$s」</string>
-    <string name="editor_toast_pasted">已粘貼「%1$s」</string>
     <string name="editor_toast_property_updated">屬性已更新</string>
     <string name="editor_toast_saved">已保存</string>
     <string name="editor_toast_scheme_created">方案「%1$s」已創建</string>
@@ -790,7 +788,6 @@
     <string name="editor_toolbar_grid_off">關閉網格</string>
     <string name="editor_toolbar_key_list">按鍵列表</string>
     <string name="editor_toolbar_keys">按鍵</string>
-    <string name="editor_toolbar_paste">粘貼</string>
     <string name="engine_abr_off">智能碼率已關閉</string>
     <string name="engine_abr_on">智能碼率已開啓</string>
     <string name="engine_audio_off">音頻已關閉</string>

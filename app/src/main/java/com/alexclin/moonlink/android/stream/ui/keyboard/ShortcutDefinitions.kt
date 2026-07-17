@@ -65,7 +65,7 @@ object ShortcutDefinitions {
     val presets: List<PresetShortcut> = listOf(
         // ── 第1行（编辑按钮由 UI 层处理） ──
         PresetShortcut("Ctrl+C", com.alexclin.moonlink.android.R.string.shortcut_desc_copy,    listOf(VK_LCONTROL, VK_C)),
-        PresetShortcut("Ctrl+V", com.alexclin.moonlink.android.R.string.editor_toolbar_paste,    listOf(VK_LCONTROL, VK_V)),
+        PresetShortcut("Ctrl+V", com.alexclin.moonlink.android.R.string.shortcut_desc_paste,    listOf(VK_LCONTROL, VK_V)),
         PresetShortcut("Ctrl+X", com.alexclin.moonlink.android.R.string.shortcut_desc_cut,    listOf(VK_LCONTROL, VK_X)),
         PresetShortcut("Ctrl+A", com.alexclin.moonlink.android.R.string.shortcut_desc_select_all,    listOf(VK_LCONTROL, VK_A)),
         PresetShortcut("Win",    com.alexclin.moonlink.android.R.string.shortcut_desc_start_menu, listOf(VK_LWIN)),

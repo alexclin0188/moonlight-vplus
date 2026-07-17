@@ -35,9 +35,7 @@ import androidx.compose.material.icons.filled.BorderColor
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.ContentPaste
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.FileCopy
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.LayersClear
@@ -85,7 +83,6 @@ import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerDialog
 import com.alexclin.moonlink.android.stream.ui.editor.ColorPickerItem
 import com.alexclin.moonlink.android.stream.ui.editor.ComboKeyEditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.EditorCanvas
-import com.alexclin.moonlink.android.stream.ui.editor.EditorClipboard
 import com.alexclin.moonlink.android.stream.ui.editor.EditorElement
 import com.alexclin.moonlink.android.stream.ui.editor.EditorPropertiesPanel
 import com.alexclin.moonlink.android.stream.ui.editor.EditorState
@@ -222,8 +219,6 @@ fun KeyMappingEditor(
     // 画布尺寸缓存（用于自动居中）
     var canvasWidthPx by remember { mutableIntStateOf(1080) }
     var canvasHeightPx by remember { mutableIntStateOf(1920) }
-    // 跨方案剪贴板状态（用于刷新粘贴按钮的可见性）
-    var clipboardHasData by remember { mutableStateOf(EditorClipboard.hasData) }
     // 网格滑块展开/收起（由 EditorToolbar 控制，canvasTap 也可收起）
     var showGridSlider by remember { mutableStateOf(false) }
     // 全屏颜色编辑对话框
@@ -272,33 +267,6 @@ fun KeyMappingEditor(
         selectedIds = setOf(actualId)
         reloadElements()
         ToastUtil.show(context, context.getString(R.string.editor_toast_duplicated, src.text.ifBlank { src.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
-    }
-
-    // ── 复制到跨方案剪贴板 ──
-    fun copySelectedToClipboard() {
-        val src = elements.find { it.elementId in selectedIds } ?: return
-        EditorClipboard.copy(src)
-        clipboardHasData = true
-        ToastUtil.show(context, context.getString(R.string.editor_toast_copied_clipboard, src.text.ifBlank { src.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
-    }
-
-    // ── 从跨方案剪贴板粘贴 ──
-    fun pasteFromClipboard() {
-        val existingIds = editorState.loadElements().map { it.elementId }.toSet()
-        val result = EditorClipboard.paste(
-            configId = currentConfigId,
-            existingIds = existingIds,
-            offsetX = 30,
-            offsetY = 30,
-        ) ?: return
-
-        // 插入粘贴的元素
-        val actualId = editorState.addElement(result.rootElement)
-
-        reloadElements()
-        selectedIds = setOf(actualId)
-
-        ToastUtil.show(context, context.getString(R.string.editor_toast_pasted, result.rootElement.text.ifBlank { result.rootElement.type.getDisplayName(context) }), Toast.LENGTH_SHORT)
     }
 
     // ── 删除元素 ──
@@ -408,8 +376,6 @@ fun KeyMappingEditor(
         addElement = { showAddMenu = true },
         showElementList = { showElementList = true },
         clearAll = { showClearAllConfirm = true },
-        copyToClipboard = { copySelectedToClipboard() },
-        pasteClipboard = { pasteFromClipboard() },
         save = { saveAllAndExit() },
         exit = exitEditor,
         delete = { showDeleteConfirm = true },
@@ -561,7 +527,6 @@ fun KeyMappingEditor(
                     actions = toolbarActions,
                     hasSelection = false,
                     showSelectionBar = false,
-                    clipboardHasData = clipboardHasData,
                     gridWidth = gridWidth,
                     onGridWidthChange = { gridWidth = it },
                     showGridSlider = showGridSlider,
@@ -883,8 +848,6 @@ private data class ToolbarActions(
     val addElement: () -> Unit = {},
     val showElementList: () -> Unit = {},
     val clearAll: () -> Unit = {},
-    val copyToClipboard: () -> Unit = {},
-    val pasteClipboard: () -> Unit = {},
     val save: () -> Unit = {},
     val exit: () -> Unit = {},
     val delete: () -> Unit = {},
@@ -904,7 +867,6 @@ private fun EditorToolbar(
     actions: ToolbarActions = ToolbarActions(),
     hasSelection: Boolean = false,
     showSelectionBar: Boolean = true,
-    clipboardHasData: Boolean = false,
     gridWidth: Int = 8,
     onGridWidthChange: (Int) -> Unit = {},
     showGridSlider: Boolean = false,
@@ -969,15 +931,6 @@ private fun EditorToolbar(
 
                 HorizontalDivider(modifier = Modifier.height(24.dp).width(1.dp),
                     color = MaterialTheme.colorScheme.outlineVariant)
-
-                // ── 跨方案粘贴按钮（剪贴板有内容时显示） ──
-                if (clipboardHasData) {
-                    TextButton(onClick = actions.pasteClipboard) {
-                        Icon(Icons.Default.ContentPaste, contentDescription = null, modifier = Modifier.size(16.dp))
-                        Spacer(Modifier.width(2.dp))
-                        Text(stringResource(R.string.editor_toolbar_paste), style = MaterialTheme.typography.labelMedium)
-                    }
-                }
 
                 // ── 网格列数选择（点击展开/隐藏滑块） ──
                 TextButton(onClick = onToggleGridSlider) {
@@ -1080,10 +1033,6 @@ private fun EditorToolbar(
                             Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.editor_content_desc_duplicate),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                         }
-                        IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
-                            Icon(Icons.Default.FileCopy, contentDescription = stringResource(R.string.editor_content_desc_copy_clipboard),
-                                tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                        }
                         IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {
                             Icon(Icons.Default.Layers, contentDescription = stringResource(R.string.editor_content_desc_layer_up),
                                 tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
@@ -1127,10 +1076,6 @@ private fun EditorSelectionBar(
             }
             IconButton(onClick = actions.duplicate, modifier = Modifier.size(32.dp)) {
                 Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.editor_content_desc_duplicate),
-                    tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-            }
-            IconButton(onClick = actions.copyToClipboard, modifier = Modifier.size(32.dp)) {
-                Icon(Icons.Default.FileCopy, contentDescription = stringResource(R.string.editor_content_desc_copy_clipboard),
                     tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
             }
             IconButton(onClick = actions.layerUp, modifier = Modifier.size(32.dp)) {

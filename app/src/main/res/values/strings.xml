@@ -881,7 +881,6 @@
     <string name="editor_color_customize">Customize</string>
     <string name="editor_confirm_clear">Clear</string>
     <string name="editor_content_desc_confirm_name">Confirm name</string>
-    <string name="editor_content_desc_copy_clipboard">Copy to clipboard</string>
     <string name="editor_content_desc_delete">Delete</string>
     <string name="editor_content_desc_duplicate">Clone</string>
     <string name="editor_content_desc_edit_name">Edit name</string>
@@ -940,14 +939,12 @@
     <string name="editor_toast_color_updated">Color updated</string>
     <string name="editor_toast_combo_created">Combo \"%1$s\" created</string>
     <string name="editor_toast_combo_updated">Combo updated</string>
-    <string name="editor_toast_copied_clipboard">\"%1$s\" copied to clipboard</string>
     <string name="editor_toast_create_failed">Failed to create: %1$s</string>
     <string name="editor_toast_created">%1$s created</string>
     <string name="editor_toast_duplicate_direction">Duplicate direction: %1$s</string>
     <string name="editor_toast_duplicate_name">\"%1$s\" already exists</string>
     <string name="editor_toast_duplicate_scheme">A scheme named \"%1$s\" already exists</string>
     <string name="editor_toast_duplicated">\"%1$s\" duplicated</string>
-    <string name="editor_toast_pasted">\"%1$s\" pasted</string>
     <string name="editor_toast_property_updated">Property updated</string>
     <string name="editor_toast_saved">Saved</string>
     <string name="editor_toast_scheme_created">Scheme \"%1$s\" created</string>
@@ -960,7 +957,6 @@
     <string name="editor_toolbar_grid_off">Grid Off</string>
     <string name="editor_toolbar_key_list">Key List</string>
     <string name="editor_toolbar_keys">Keys</string>
-    <string name="editor_toolbar_paste">Paste</string>
     <string name="engine_abr_off">Adaptive bitrate off</string>
     <string name="engine_abr_on">Adaptive bitrate on</string>
     <string name="engine_audio_off">Audio off</string>
@@ -1130,6 +1126,7 @@
 
     <!-- Shortcut descriptions -->
     <string name="shortcut_desc_copy">Copy</string>
+    <string name="shortcut_desc_paste">Paste</string>
     <string name="shortcut_desc_cut">Cut</string>
     <string name="shortcut_desc_select_all">Select All</string>
     <string name="shortcut_desc_start_menu">Start Menu</string>
