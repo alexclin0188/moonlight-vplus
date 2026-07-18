@@ -2,7 +2,9 @@ package com.alexclin.moonlink.android.app
 
 import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.os.Build
+import androidx.core.content.FileProvider
 
 import com.alexclin.moonlink.android.BuildConfig
 
@@ -18,7 +20,7 @@ import java.util.Locale
  *
  * Complements Firebase Crashlytics for users on builds that ship without
  * `google-services.json` (forks, sideloads, F-Droid-style distributions).
- * The collected text file is meant to be shared by the user manually next
+ * The collected text files are meant to be shared by the user manually next
  * time they launch the app — see [pendingReportFile] / [shareIntentFor].
  *
  * Design choices:
@@ -27,12 +29,20 @@ import java.util.Locale
  * - Writes synchronously: the process is dying, so a queued task may never run.
  * - Catches and swallows any failure during write — the user-visible crash
  *   dialog must not be replaced by a nested crash from our reporter.
- * - Single rolling file (`crash/last.txt`); we don't need history.
+ * - Keeps up to [MAX_FILES] timestamped crash logs; the oldest are deleted
+ *   when the limit is exceeded.
  */
 object CrashReporter {
 
     private const val DIR_NAME = "crash"
-    private const val FILE_NAME = "last.txt"
+    private const val FILE_PREFIX = "crash_"
+    private const val FILE_SUFFIX = ".txt"
+
+    /** Maximum number of crash log files to retain. */
+    private const val MAX_FILES = 10
+
+    /** Date-time format used in the filename (sortable, no colons on Windows). */
+    private val FILE_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US)
 
     fun install(app: Application) {
         val previous = Thread.getDefaultUncaughtExceptionHandler()
@@ -46,24 +56,49 @@ object CrashReporter {
         }
     }
 
-    /** @return the saved crash file if one is pending, else null. */
+    /** @return the most recent saved crash file if one is pending, else null. */
     fun pendingReportFile(ctx: Context): File? {
-        val f = reportFile(ctx)
-        return if (f.exists() && f.length() > 0) f else null
+        val files = listCrashFiles(ctx)
+        return if (files.isNotEmpty()) files.last() else null
     }
 
-    /** Best-effort delete of the saved report. Safe to call even if absent. */
-    fun clear(ctx: Context) {
-        runCatching { reportFile(ctx).delete() }
-    }
-
-    /** Read the report's contents, or null on any I/O failure. */
+    /** Read the most recent report's contents, or null on any I/O failure. */
     fun readReport(ctx: Context): String? = runCatching {
-        reportFile(ctx).readText()
+        pendingReportFile(ctx)?.readText()
     }.getOrNull()
 
-    private fun reportFile(ctx: Context): File =
-        File(File(ctx.filesDir, DIR_NAME), FILE_NAME)
+    /** Best-effort delete of all saved crash reports. */
+    fun clear(ctx: Context) {
+        listCrashFiles(ctx).forEach { it.delete() }
+    }
+
+    /**
+     * Create an [Intent.ACTION_SEND] intent for the most recent crash report,
+     * or null if there is no pending report.
+     */
+    fun shareIntentFor(ctx: Context): Intent? {
+        val file = pendingReportFile(ctx) ?: return null
+        val uri = FileProvider.getUriForFile(
+            ctx, "${ctx.packageName}.fileprovider", file
+        )
+        return Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+    }
+
+    // ── internal helpers ──────────────────────────────────────────────────
+
+    /** List crash log files sorted by name (which is chronological). */
+    private fun listCrashFiles(ctx: Context): List<File> {
+        val dir = File(ctx.filesDir, DIR_NAME)
+        if (!dir.isDirectory) return emptyList()
+        return dir.listFiles()
+            ?.filter { it.name.startsWith(FILE_PREFIX) && it.name.endsWith(FILE_SUFFIX) }
+            ?.sortedBy { it.name }
+            ?: emptyList()
+    }
 
     private fun writeReport(ctx: Context, thread: Thread, throwable: Throwable) {
         val dir = File(ctx.filesDir, DIR_NAME)
@@ -83,6 +118,25 @@ object CrashReporter {
             pw.println("---- stack ----")
             throwable.printStackTrace(pw)
         }
-        reportFile(ctx).writeText(sw.toString())
+
+        // Write to a timestamped file
+        val fileName = FILE_PREFIX + FILE_DATE_FORMAT.format(Date()) + FILE_SUFFIX
+        File(dir, fileName).writeText(sw.toString())
+
+        // Prune old files beyond the limit
+        pruneOldFiles(dir)
+    }
+
+    /** Delete the oldest crash files when the total exceeds [MAX_FILES]. */
+    private fun pruneOldFiles(dir: File) {
+        val files = dir.listFiles()
+            ?.filter { it.name.startsWith(FILE_PREFIX) && it.name.endsWith(FILE_SUFFIX) }
+            ?.sortedBy { it.name }
+            ?: return
+
+        val excess = files.size - MAX_FILES
+        if (excess > 0) {
+            files.take(excess).forEach { it.delete() }
+        }
     }
 }
