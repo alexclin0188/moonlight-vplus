@@ -1003,7 +1003,7 @@
     <string name="engine_abr_on">智能码率已开启</string>
     <string name="engine_audio_off">音频已关闭</string>
     <string name="engine_audio_on">音频已开启</string>
-    <string name="engine_conn_failed_msg">连接失败 (阶段: %1$d, 错误: %2$d)</string>
+    <string name="engine_conn_failed_msg">连接失败 (阶段: %1$s, 错误: %2$d)</string>
     <string name="engine_conn_failed_title">连接失败</string>
     <string name="engine_conn_failed_vdd">您的显卡驱动可能已崩溃，请尝试重启电脑。</string>
     <string name="engine_device_connected">%1$s 已连接</string>

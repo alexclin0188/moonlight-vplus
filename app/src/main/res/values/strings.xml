@@ -961,7 +961,7 @@
     <string name="engine_abr_on">Adaptive bitrate on</string>
     <string name="engine_audio_off">Audio off</string>
     <string name="engine_audio_on">Audio on</string>
-    <string name="engine_conn_failed_msg">Connection failed (Stage: %1$d, Error: %2$d)</string>
+    <string name="engine_conn_failed_msg">Connection failed (Stage: %1$s, Error: %2$d)</string>
     <string name="engine_conn_failed_title">Connection Failed</string>
     <string name="engine_conn_failed_vdd">Your graphics driver may have crashed. Try restarting your computer.</string>
     <string name="engine_device_connected">%1$s connected</string>

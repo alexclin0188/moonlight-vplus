@@ -792,7 +792,7 @@
     <string name="engine_abr_on">智能碼率已開啓</string>
     <string name="engine_audio_off">音頻已關閉</string>
     <string name="engine_audio_on">音頻已開啓</string>
-    <string name="engine_conn_failed_msg">連接失敗 (階段: %1$d, 錯誤: %2$d)</string>
+    <string name="engine_conn_failed_msg">連接失敗 (階段: %1$s, 錯誤: %2$d)</string>
     <string name="engine_conn_failed_title">連接失敗</string>
     <string name="engine_conn_failed_vdd">您的顯卡驅動可能已崩潰，請嘗試重啓電腦。</string>
     <string name="engine_device_connected">%1$s 已連接</string>
