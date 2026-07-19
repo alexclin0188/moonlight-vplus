@@ -107,7 +107,8 @@ enum class FullScreenPage {
  * - VERTICAL_BAR → 点击"键盘" → KEYBOARD_PANEL（toggle）
  * - VERTICAL_BAR → 点击"助手" → HIDDEN（toast 提示开发中）
  * - VERTICAL_BAR → 点击"桌面"/"窗口" → HIDDEN（直接动作）
- * - 任意面板展开时点击串流画面区域 → HIDDEN
+ * - SUB_PANEL 时点击串流画面区域 → VERTICAL_BAR（先隐藏子面板，保留窄面板）
+ * - VERTICAL_BAR 时再次点击串流画面区域 → HIDDEN（再隐藏窄面板）
  */
 @Composable
 fun StreamOverlay(
@@ -282,14 +283,25 @@ fun StreamOverlay(
                         indication = null,
                         interactionSource = remember { MutableInteractionSource() },
                     ) {
-                        // 点击外部关闭时，如有待重启变更加载设置
-                        if (panelState == PanelState.SUB_PANEL && engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
-                            engine.changeResolution()
-                            return@clickable
+                        when (panelState) {
+                            PanelState.SUB_PANEL -> {
+                                // 点击外部关闭时，如有待重启变更加载设置
+                                if (engine.displaySettingsRestartPending && !engine.activity.isFinishing) {
+                                    engine.changeResolution()
+                                    return@clickable
+                                }
+                                // 先隐藏子面板，保留窄面板
+                                detailPage = DetailPage.MAIN_LIST
+                                panelState = PanelState.VERTICAL_BAR
+                                activeEntry = null
+                            }
+                            PanelState.VERTICAL_BAR -> {
+                                // 再隐藏窄面板
+                                panelState = PanelState.HIDDEN
+                                activeEntry = null
+                            }
+                            else -> { /* 不应发生 */ }
                         }
-                        detailPage = DetailPage.MAIN_LIST
-                        panelState = PanelState.HIDDEN
-                        activeEntry = null
                     },
             )
         }
