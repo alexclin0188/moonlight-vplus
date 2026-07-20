@@ -47,6 +47,8 @@ import com.alexclin.moonlink.android.stream.ui.common.CustomKeyRepository
 import com.alexclin.moonlink.android.stream.ui.common.SaveResult
 import com.alexclin.moonlink.android.stream.ui.editor.EditorDialog
 import com.alexclin.moonlink.android.stream.ui.editor.KeyValuePickerDialog
+import com.alexclin.moonlink.android.stream.ui.editor.getKeyLabelByValue
+import com.limelight.binding.input.KeyboardTranslator
 
 /**
  * 添加自定义快捷键对话框。
@@ -65,6 +67,7 @@ fun AddCustomKeyDialog(
     onSaved: () -> Unit,
 ) {
     val context = LocalContext.current
+    val keyboardTranslator = remember { KeyboardTranslator() }
 
     var description by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -75,7 +78,7 @@ fun AddCustomKeyDialog(
     /** 根据已选按键的标签生成名称（如 ["k29","k62"] → "A+Space"） */
     fun generateName(): String {
         if (selectedPickerValues.isEmpty()) return ""
-        val labels = selectedPickerValues.mapNotNull { KeyToVkMapping.toLabel(it) }
+        val labels = selectedPickerValues.mapNotNull { getKeyLabelByValue(it) }
         return labels.joinToString("+")
     }
 
@@ -96,7 +99,15 @@ fun AddCustomKeyDialog(
         }
 
         // 将选择器的值转换为 VK 十六进制码
-        val hexCodes = KeyToVkMapping.toHexVkList(selectedPickerValues)
+        val hexCodes = selectedPickerValues.mapNotNull { value ->
+            if (value.startsWith("k") && value.length > 1) {
+                val keyCode = value.substring(1).toIntOrNull()
+                if (keyCode != null) {
+                    val vkCode = keyboardTranslator.translate(keyCode, -1).toInt()
+                    if (vkCode != 0) "0x${(vkCode and 0xFF).toString(16).uppercase()}" else null
+                } else null
+            } else null
+        }
         if (hexCodes.isEmpty()) {
             errorMessage = context.getString(R.string.customkey_error_keys_empty)
             return
@@ -182,7 +193,7 @@ fun AddCustomKeyDialog(
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     selectedPickerValues.forEachIndexed { index, value ->
-                        val label = KeyToVkMapping.toLabel(value) ?: value
+                        val label = getKeyLabelByValue(value) ?: value
                         Surface(
                             modifier = Modifier.clip(RoundedCornerShape(6.dp)),
                             shape = RoundedCornerShape(6.dp),
