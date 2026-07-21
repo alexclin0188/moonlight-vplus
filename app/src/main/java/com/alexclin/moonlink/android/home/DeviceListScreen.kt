@@ -1137,6 +1137,7 @@ private fun doPair(
                         managerBinder.getComputer(computer.uuid!!)?.let { c ->
                             c.serverCert = pm.pairedCert
                             c.pairState = PairingManager.PairState.PAIRED
+                            managerBinder.updateComputer(c)
                         }
                         "success:${pairResult.pairName}"
                     }

@@ -58,6 +58,7 @@ suspend fun handleQrPairResult(
             managerBinder?.getComputer(addDetails.uuid!!)?.let { c ->
                 c.serverCert = pm.pairedCert
                 c.pairState = PairingManager.PairState.PAIRED
+                managerBinder?.updateComputer(c)
             }
             pairResult.pairName?.let { name ->
                 context.getSharedPreferences("pair_name_map", Context.MODE_PRIVATE)
