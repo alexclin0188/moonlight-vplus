@@ -43,7 +43,7 @@ fun HelpSettingsScreen() {
                     .clickable {
                         val intent = android.content.Intent(
                             android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://github.com/alexclin0188/moonlink/blob/master/PRIVACY_POLICY.md")
+                            android.net.Uri.parse("https://github.com/alexclin0188/moonlink-android/blob/moonlink_grame/PRIVACY_POLICY.md")
                         )
                         context.startActivity(intent)
                     },
