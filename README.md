@@ -20,11 +20,13 @@
 ## 截图
 
 <div align="center">
-  <img src="https://github.com/user-attachments/assets/bb174547-9b0d-4827-81cf-59308f3cfa9e" width="640" alt="主界面">
+  <img width="640" src="https://github.com/user-attachments/assets/6a505163-3c87-44ff-b8df-63a52f65bc23" alt="串流界面"/>
   <br/>
-  <img src="https://github.com/user-attachments/assets/5e227bab-afaa-4452-ae38-ac2cc9d22988" width="240" alt="游戏列表">
-  <img src="https://github.com/user-attachments/assets/9101bf19-782e-4c6f-977f-34b138b93990" width="240" alt="串流界面">
-  <img src="https://github.com/user-attachments/assets/5046dd58-7013-494e-9f17-26e4de56a7dd" width="240" alt="设置界面">
+  <img width="640" src="https://github.com/user-attachments/assets/539f6258-c3be-448e-94ea-f8f8e2a7fa7a"  alt="操作面板"/>
+  <br/>
+  <img width="240" src="https://github.com/user-attachments/assets/5eb56667-493f-4351-8597-bbe08f31efde" alt="主页界面"/>
+  <img width="240" src="https://github.com/user-attachments/assets/be4b5fd7-a2c9-40dd-91d2-6bd1c1c23107" alt="设备界面"/>
+  <img width="240" src="https://github.com/user-attachments/assets/1c120a2e-1490-4f98-9ea3-da8ef895e117" alt="设置界面"/>
 </div>
 
 ## 特性概览
