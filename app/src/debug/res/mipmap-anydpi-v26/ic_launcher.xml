@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground>
+        <layer-list>
+            <!-- 原始前景图（inset 20% 确保不被遮罩裁剪） -->
+            <item>
+                <inset android:drawable="@mipmap/ic_launcher_foreground"
+                    android:inset="16%" />
+            </item>
+            <!-- debug 小标记 → 右下角（内缩 20dp 避开裁剪区域） -->
+            <item
+                android:drawable="@drawable/ic_debug_badge"
+                android:gravity="bottom|right"
+                android:width="40dp"
+                android:height="40dp"
+                android:right="30dp"
+                android:bottom="30dp" />
+        </layer-list>
+    </foreground>
+</adaptive-icon>

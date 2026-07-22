@@ -57,6 +57,10 @@ class DeviceStateManager(
         // 始终启动轮询并建立 Flow 收集
         // 旧 Service 的 Flow 已随 serviceScope.cancel() 终止，不重启则设备状态永不更新
         b.startPolling()
+        // 兜底：进程被杀重建 / Service 重连场景下，onResume 可能在 binder 就绪前触发，
+        // forceRefresh 沦为空操作。bind() 一定能拿到有效 binder，此处强制刷新一次，
+        // 确保返回主页后已配对设备在几秒内更新为正确在线状态。
+        b.forceRefresh()
         collectJob?.cancel()
         collectJob = scope.launch {
             // 收集设备更新（状态变化、新设备加入）

@@ -112,9 +112,6 @@ android {
         debug {
             applicationIdSuffix ".debug"
             resValue "string", "app_label", "MoonLink"
-
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
         release {
             // To whomever is releasing/using an APK in release mode with

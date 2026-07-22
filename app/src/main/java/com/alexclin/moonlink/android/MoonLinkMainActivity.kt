@@ -60,6 +60,10 @@ class MoonLinkMainActivity : BaseComponentActivity() {
             val deviceManager = remember { DeviceStateManager() }
             var binderReady by remember { mutableStateOf(false) }
 
+            // 标记 onResume 时是否待刷新；binder 就绪后消费此标志，避免 onResume
+            // 早于 onServiceConnected 时 forceRefresh 沦为空操作而丢失刷新时机。
+            var pendingForceRefresh by remember { mutableStateOf(false) }
+
             DisposableEffect(Unit) {
                 val connection = object : ServiceConnection {
                     override fun onServiceConnected(name: ComponentName, service: IBinder) {
@@ -67,6 +71,11 @@ class MoonLinkMainActivity : BaseComponentActivity() {
                         binderState.value = b
                         deviceManager.bind(b, b.getAllComputers())
                         binderReady = true
+                        // 若 onResume 已先于此回调触发，则现在补偿刷新一次
+                        if (pendingForceRefresh) {
+                            pendingForceRefresh = false
+                            deviceManager.forceRefresh()
+                        }
                     }
 
                     override fun onServiceDisconnected(name: ComponentName) {
@@ -92,7 +101,13 @@ class MoonLinkMainActivity : BaseComponentActivity() {
             DisposableEffect(lifecycleOwner) {
                 val observer = LifecycleEventObserver { _, event ->
                     if (event == Lifecycle.Event.ON_RESUME) {
-                        deviceManager.forceRefresh()
+                        // binder 已就绪 → 立即刷新；否则标记待刷新，
+                        // onServiceConnected 中会消费此标志补偿刷新一次
+                        if (binderReady) {
+                            deviceManager.forceRefresh()
+                        } else {
+                            pendingForceRefresh = true
+                        }
                     }
                 }
                 lifecycleOwner.lifecycle.addObserver(observer)
